@@ -1,5 +1,5 @@
 /**
- * KhiemEdu Main Application Controller - Massive 200+ Key Importer & Matrix View
+ * KhiemEdu Main Application Controller - 32+ Avatar Library, Real Analytics & Massive Key Importer
  */
 
 const AppState = {
@@ -10,6 +10,7 @@ const AppState = {
   studentName: '',
   studentClass: '',
   studentAvatar: '🦊',
+  avatarCategory: 'all',
   studentAnswers: {},
   flaggedQuestions: new Set(),
   timerInterval: null,
@@ -29,6 +30,48 @@ const AppState = {
   teacherAnalyticsScope: 'all',
   teacherTimeFilter: 'all'
 };
+
+/* ================= 32+ AVATARS LIBRARY DEFINITION ================= */
+const AVATARS_COLLECTION = [
+  // 🐾 Linh Thú Thông Thái
+  { id: 'fox', emoji: '🦊', name: 'Cáo Thông Minh', category: 'animals' },
+  { id: 'owl', emoji: '🦉', name: 'Cú Trí Tuệ', category: 'animals' },
+  { id: 'lion', emoji: '🦁', name: 'Sư Tử Dũng Mãnh', category: 'animals' },
+  { id: 'panda', emoji: '🐼', name: 'Gấu Trúc Đáng Yêu', category: 'animals' },
+  { id: 'tiger', emoji: '🐯', name: 'Hổ Tinh Nhuệ', category: 'animals' },
+  { id: 'dolphin', emoji: '🐬', name: 'Cá Heo Nhạy Bén', category: 'animals' },
+  { id: 'eagle', emoji: '🦅', name: 'Đại Bàng Quyết Đoán', category: 'animals' },
+  { id: 'wolf', emoji: '🐺', name: 'Sói Đầu Đàn', category: 'animals' },
+  { id: 'unicorn', emoji: '🦄', name: 'Kỳ Lân May Mắn', category: 'animals' },
+  { id: 'koala', emoji: '🐨', name: 'Koala Siêng Năng', category: 'animals' },
+  { id: 'frog', emoji: '🐸', name: 'Ếch Nhanh Nhẹn', category: 'animals' },
+  { id: 'penguin', emoji: '🐧', name: 'Cánh Cụt Đáng Yêu', category: 'animals' },
+  { id: 'monkey', emoji: '🐵', name: 'Khỉ Hoạt Bát', category: 'animals' },
+  { id: 'rabbit', emoji: '🐰', name: 'Thỏ Nhanh Trí', category: 'animals' },
+  { id: 'dragon', emoji: '🐲', name: 'Rồng Thần', category: 'animals' },
+
+  // ⚔️ Chiến Binh & Pháp Sư
+  { id: 'astronaut', emoji: '🚀', name: 'Phi Hành Gia', category: 'warriors' },
+  { id: 'lightning', emoji: '⚡', name: 'Tia Chớp Siêu Tốc', category: 'warriors' },
+  { id: 'robot', emoji: '🤖', name: 'Robot AI Siêu Việt', category: 'warriors' },
+  { id: 'wizard', emoji: '🧙‍♂️', name: 'Pháp Sư Toán Học', category: 'warriors' },
+  { id: 'ninja', emoji: '🥷', name: 'Ninja Ẩn Thân', category: 'warriors' },
+  { id: 'hero', emoji: '🦸‍♂️', name: 'Siêu Anh Hùng', category: 'warriors' },
+  { id: 'crown', emoji: '👑', name: 'Vương Giả', category: 'warriors' },
+  { id: 'sword', emoji: '⚔️', name: 'Kiếm Khách', category: 'warriors' },
+  { id: 'shield', emoji: '🛡️', name: 'Vệ Binh Kiên Cường', category: 'warriors' },
+  { id: 'target', emoji: '🎯', name: 'Thiện Xạ Điểm 10', category: 'warriors' },
+
+  // ✨ Vũ Trụ & May Mắn
+  { id: 'star', emoji: '🌟', name: 'Ngôi Sao Sáng', category: 'cosmic' },
+  { id: 'crystal', emoji: '🔮', name: 'Quả Cầu Pha Lê', category: 'cosmic' },
+  { id: 'fire', emoji: '🔥', name: 'Ngọn Lửa Bất Diệt', category: 'cosmic' },
+  { id: 'diamond', emoji: '💎', name: 'Kim Cương Sáng Chói', category: 'cosmic' },
+  { id: 'rainbow', emoji: '🌈', name: 'Cầu Vồng Hy Vọng', category: 'cosmic' },
+  { id: 'clover', emoji: '🍀', name: 'Cỏ 4 Lá May Mắn', category: 'cosmic' },
+  { id: 'planet', emoji: '🪐', name: 'Hành Tinh Bí Ẩn', category: 'cosmic' },
+  { id: 'trophy', emoji: '🏆', name: 'Nhà Vô Địch', category: 'cosmic' }
+];
 
 /* ================= TEACHER ROLE SECURITY & GATEKEEPER ================= */
 const TeacherAuth = {
@@ -69,12 +112,70 @@ document.addEventListener('DOMContentLoaded', async () => {
   initAntiCheatListeners();
 });
 
+/* ================= AVATAR PICKER ENGINE ================= */
+function initAvatars() {
+  const container = document.getElementById('avatarSelector');
+  if (!container) return;
+
+  const currentAvatar = AppState.studentAvatar || '🦊';
+  const selectedCat = AppState.avatarCategory || 'all';
+
+  const categories = [
+    { id: 'all', label: 'Tất Cả (32+)' },
+    { id: 'animals', label: '🐾 Linh Thú' },
+    { id: 'warriors', label: '⚔️ Chiến Binh' },
+    { id: 'cosmic', label: '✨ Vũ Trụ & May Mắn' }
+  ];
+
+  const filteredAvatars = selectedCat === 'all'
+    ? AVATARS_COLLECTION
+    : AVATARS_COLLECTION.filter(a => a.category === selectedCat);
+
+  container.innerHTML = `
+    <div style="width:100%;">
+      <div class="avatar-category-bar">
+        ${categories.map(c => `
+          <button type="button" class="avatar-cat-btn ${selectedCat === c.id ? 'active' : ''}" onclick="filterAvatarCategory('${c.id}')">${c.label}</button>
+        `).join('')}
+      </div>
+
+      <div class="avatar-picker-grid">
+        ${filteredAvatars.map(a => `
+          <button type="button" class="avatar-btn ${currentAvatar === a.emoji ? 'selected' : ''}" onclick="selectAvatar('${a.emoji}', '${escapeHtml(a.name)}')" title="${escapeHtml(a.name)}">
+            ${a.emoji}
+          </button>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function filterAvatarCategory(catId) {
+  AppState.avatarCategory = catId;
+  initAvatars();
+  SoundEngine.playClick();
+}
+
+function selectAvatar(emoji, name = '') {
+  AppState.studentAvatar = emoji;
+  const profile = GamificationEngine.getUserProfile();
+  profile.avatar = emoji;
+  GamificationEngine.saveUserProfile(profile);
+
+  initAvatars();
+  updateGamifyBar();
+  SoundEngine.playPop ? SoundEngine.playPop() : SoundEngine.playClick();
+  if (name) showToast(`✨ Đã chọn Avatar: ${emoji} ${name}`, 'info');
+}
+
 /* Restore previous student login session if available */
 function initSavedStudentSession() {
   const savedProfile = GamificationEngine.getUserProfile();
   if (savedProfile && savedProfile.name) {
-    document.getElementById('studentJoinName').value = savedProfile.name;
-    document.getElementById('studentJoinClass').value = savedProfile.className || '10';
+    const nameEl = document.getElementById('studentJoinName');
+    const classEl = document.getElementById('studentJoinClass');
+    if (nameEl) nameEl.value = savedProfile.name;
+    if (classEl) classEl.value = savedProfile.className || '10';
     if (savedProfile.avatar) selectAvatar(savedProfile.avatar);
     AppState.studentName = savedProfile.name;
     AppState.studentClass = savedProfile.className || '10';
@@ -212,16 +313,497 @@ function escapeHtml(str) {
   }[m]));
 }
 
-/* ================= MASSIVE KEY IMPORTER ENGINE (1 - 200+ QUESTIONS) ================= */
+/* ================= PARENT PORTAL & REAL METRICS ENGINE ================= */
+function renderParentTab() {
+  const nameInput = document.getElementById('parentChildNameInput');
+  const classInput = document.getElementById('parentChildClassInput');
+  if (nameInput && !nameInput.value && AppState.studentName) {
+    nameInput.value = AppState.studentName;
+  }
+  if (classInput && !classInput.value && AppState.studentClass) {
+    classInput.value = AppState.studentClass;
+  }
+  lookupParentChildReport();
+}
 
-/**
- * Parses any raw text format (200+ answers from Word, PDF, Excel, Table, Web):
- * - "ABCDABCD..." (Continuous string)
- * - "1.A 2.B 3.C ... 200.D"
- * - "1A 2B 3C ... 200A"
- * - "1:A, 2:B, 3:C"
- * - Multi-line / Tab separated columns from Excel
- */
+async function lookupParentChildReport() {
+  const nameInput = document.getElementById('parentChildNameInput');
+  const classInput = document.getElementById('parentChildClassInput');
+  const wrap = document.getElementById('parentReportContentWrap');
+  if (!wrap) return;
+
+  const name = (nameInput?.value || '').trim();
+  const className = (classInput?.value || '').trim();
+
+  if (!name) {
+    wrap.innerHTML = `
+      <div class="card" style="text-align:center;padding:2.5rem 1.5rem;color:var(--text-muted);">
+        <div style="font-size:3rem;margin-bottom:0.5rem;">👨‍👩‍👧 📊</div>
+        <h3 style="color:var(--indigo);margin-bottom:0.4rem;">Tra Cứu Báo Cáo Học Tập Của Con</h3>
+        <p style="font-size:0.95rem;font-weight:600;">Vui lòng nhập Tên học sinh và Lớp của con vào 2 ô ở trên để hiển thị toàn bộ số liệu thực tế.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const allResults = await StorageEngine.getAllResults();
+  let childResults = allResults.filter(r => r.name.toLowerCase() === name.toLowerCase());
+  if (className) {
+    childResults = childResults.filter(r => (r.className || '').toLowerCase().includes(className.toLowerCase()));
+  }
+
+  // Filter by time range
+  const filtered = filterResultsByTime(childResults, AppState.parentTimeFilter);
+  const metrics = computeRealMetrics(filtered);
+
+  wrap.innerHTML = `
+    <!-- Time Filter Bar -->
+    <div class="time-filter-bar">
+      <span style="font-size:0.85rem;font-weight:800;color:var(--text-secondary);">📅 Lọc theo thời gian:</span>
+      ${[
+        { id: 'all', label: '♾️ Tất Cả' },
+        { id: 'day', label: '📅 Hôm Nay' },
+        { id: 'week', label: '🗓️ 7 Ngày Qua (Tuần)' },
+        { id: 'month', label: '📆 30 Ngày Qua (Tháng)' }
+      ].map(f => `
+        <button type="button" class="time-filter-btn ${AppState.parentTimeFilter === f.id ? 'active' : ''}" onclick="setParentTimeFilter('${f.id}')">${f.label}</button>
+      `).join('')}
+    </div>
+
+    <!-- 6 Real Metric Cards -->
+    <div class="analytics-metric-grid">
+      <div class="metric-card metric-score">
+        <div class="metric-val">${metrics.avgScore}<span style="font-size:1.1rem;font-weight:700;">/10</span></div>
+        <div class="metric-lbl">Thang Điểm Trung Bình</div>
+        <div class="metric-sub">${metrics.totalExams} bài thi · Cao nhất: ${metrics.highestScore}đ</div>
+      </div>
+
+      <div class="metric-card metric-growth">
+        <div class="metric-val" style="color:${metrics.scoreDelta >= 0 ? 'var(--primary)' : 'var(--rose)'};">
+          ${metrics.scoreDelta > 0 ? '+' : ''}${metrics.scoreDelta}đ
+        </div>
+        <div class="metric-lbl">Sự Tiến Bộ (Độ Tăng Trưởng)</div>
+        <div class="metric-sub">So với bài thi đầu tiên (${metrics.firstScore}đ ➔ ${metrics.latestScore}đ)</div>
+      </div>
+
+      <div class="metric-card metric-correct">
+        <div class="metric-val">${metrics.correctQuestions}<span style="font-size:1.1rem;font-weight:700;">/${metrics.totalQuestions}</span></div>
+        <div class="metric-lbl">Số Câu Giải Quyết Đúng</div>
+        <div class="metric-sub">Độ chính xác trung bình: <strong>${metrics.accuracyPct}%</strong></div>
+      </div>
+
+      <div class="metric-card metric-unsolved">
+        <div class="metric-val">${metrics.unsolvedQuestions}</div>
+        <div class="metric-lbl">Số Câu Không Giải Được / Sai</div>
+        <div class="metric-sub">Chiếm ${100 - metrics.accuracyPct}% tổng số câu hỏi đã làm</div>
+      </div>
+
+      <div class="metric-card metric-streak">
+        <div class="metric-val">${metrics.activeDays} Ngày 🔥</div>
+        <div class="metric-lbl">Chuỗi Ngày Học Tập Chăm Chỉ</div>
+        <div class="metric-sub">Thời gian trung bình/bài: ${Math.floor(metrics.avgTimeSeconds/60)}p ${metrics.avgTimeSeconds%60}s</div>
+      </div>
+
+      <div class="metric-card metric-distract">
+        <div class="metric-val" style="color:${metrics.totalTabSwitches > 0 ? 'var(--rose)' : 'var(--primary)'};">${metrics.totalTabSwitches} Lần</div>
+        <div class="metric-lbl">Chỉ Số Mất Tập Trung (Rời Tab)</div>
+        <div class="metric-sub">${metrics.totalTabSwitches === 0 ? '✅ Học tập nghiêm túc tuyệt đối' : '⚠️ Cần nhắc nhở tập trung hơn'}</div>
+      </div>
+    </div>
+
+    <!-- Question Accuracy Breakdown Bar -->
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem;">
+        <span style="font-weight:800;color:var(--text-primary);">📊 Cơ Cấu Số Câu Giải Quyết (Accuracy Breakdown):</span>
+        <span style="font-weight:900;color:var(--indigo);">${metrics.correctQuestions} Đúng / ${metrics.unsolvedQuestions} Sai & Chưa Giải</span>
+      </div>
+      <div class="question-breakdown-bar">
+        <div class="breakdown-seg-correct" style="width:${metrics.accuracyPct}%;">${metrics.accuracyPct > 15 ? metrics.accuracyPct + '%' : ''}</div>
+        <div class="breakdown-seg-unsolved" style="width:${100 - metrics.accuracyPct}%;">${(100 - metrics.accuracyPct) > 15 ? (100 - metrics.accuracyPct) + '%' : ''}</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:0.4rem;font-size:0.8rem;font-weight:800;">
+        <span style="color:var(--primary-shadow);">🟢 Đúng: ${metrics.correctQuestions} câu (${metrics.accuracyPct}%)</span>
+        <span style="color:var(--rose);">🔴 Không giải được / Sai: ${metrics.unsolvedQuestions} câu (${100 - metrics.accuracyPct}%)</span>
+      </div>
+    </div>
+
+    <!-- Interactive SVG Chart Box -->
+    <div class="chart-container-box">
+      <div class="chart-title">
+        <span>📈 Biểu Đồ Thống Kê Điểm Số & Sự Tiến Bộ Qua Từng Bài Thi</span>
+        <span style="font-size:0.8rem;color:var(--text-muted);font-weight:700;">(Thang điểm 0 - 10)</span>
+      </div>
+      <div class="chart-svg-wrap">
+        ${generateSvgScoreChart(filtered)}
+      </div>
+    </div>
+
+    <!-- Exam History Table -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+        <h3 style="color:var(--indigo);margin:0;">📋 Chi Tiết Lịch Sử Bài Làm Của Con (${filtered.length} bài)</h3>
+        <button class="btn btn-success btn-sm" onclick="exportParentReportCard('${escapeHtml(name)}')">📥 Xuất Báo Cáo (CSV / Excel)</button>
+      </div>
+
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Tên Bài Thi</th>
+              <th>Điểm Số</th>
+              <th>Số Câu Đúng</th>
+              <th>Số Câu Sai</th>
+              <th>Thời Gian Làm</th>
+              <th>Rời Màn Hình</th>
+              <th>Ngày Làm</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.map(r => {
+              const unsolved = (r.total || 0) - (r.correct || 0);
+              return `
+                <tr>
+                  <td><strong style="color:var(--text-primary);">${escapeHtml(r.quizTitle || 'Bài kiểm tra')}</strong></td>
+                  <td><strong style="font-size:1.1rem;color:${(r.totalScore || 0) >= 8 ? 'var(--primary-shadow)' : ((r.totalScore || 0) >= 5 ? 'var(--indigo)' : 'var(--rose)')};">${r.totalScore || 0}đ</strong></td>
+                  <td><span style="color:var(--primary-shadow);font-weight:800;">${r.correct}/${r.total}</span></td>
+                  <td><span style="color:var(--rose);font-weight:800;">${unsolved}</span></td>
+                  <td>${Math.floor(r.timeTakenSeconds / 60)}p ${r.timeTakenSeconds % 60}s</td>
+                  <td>${r.tabSwitches > 0 ? `<span style="color:var(--rose);font-weight:800;">⚠️ ${r.tabSwitches}</span>` : '0'}</td>
+                  <td>${new Date(r.submittedAt).toLocaleDateString('vi-VN')} ${new Date(r.submittedAt).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'})}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function setParentTimeFilter(filterId) {
+  AppState.parentTimeFilter = filterId;
+  lookupParentChildReport();
+  SoundEngine.playClick();
+}
+
+function computeRealMetrics(results) {
+  if (!results.length) {
+    return {
+      totalExams: 0,
+      avgScore: 0,
+      highestScore: 0,
+      lowestScore: 0,
+      firstScore: 0,
+      latestScore: 0,
+      scoreDelta: 0,
+      totalQuestions: 0,
+      correctQuestions: 0,
+      unsolvedQuestions: 0,
+      accuracyPct: 0,
+      activeDays: 0,
+      totalTabSwitches: 0,
+      avgTimeSeconds: 0
+    };
+  }
+
+  const totalExams = results.length;
+  let totalScoreSum = 0;
+  let highestScore = -1;
+  let lowestScore = 999;
+  let totalQuestions = 0;
+  let correctQuestions = 0;
+  let totalTabSwitches = 0;
+  let totalTimeSeconds = 0;
+  const uniqueDays = new Set();
+
+  results.forEach(r => {
+    const score = r.totalScore || 0;
+    totalScoreSum += score;
+    if (score > highestScore) highestScore = score;
+    if (score < lowestScore) lowestScore = score;
+
+    totalQuestions += (r.total || 0);
+    correctQuestions += (r.correct || 0);
+    totalTabSwitches += (r.tabSwitches || 0);
+    totalTimeSeconds += (r.timeTakenSeconds || 0);
+
+    if (r.submittedAt) {
+      uniqueDays.add(r.submittedAt.slice(0, 10));
+    }
+  });
+
+  const firstScore = results[0].totalScore || 0;
+  const latestScore = results[results.length - 1].totalScore || 0;
+  const scoreDelta = Math.round((latestScore - firstScore) * 10) / 10;
+  const avgScore = Math.round((totalScoreSum / totalExams) * 10) / 10;
+  const unsolvedQuestions = totalQuestions - correctQuestions;
+  const accuracyPct = totalQuestions ? Math.round((correctQuestions / totalQuestions) * 100) : 0;
+  const avgTimeSeconds = Math.round(totalTimeSeconds / totalExams);
+
+  return {
+    totalExams,
+    avgScore,
+    highestScore: highestScore === -1 ? 0 : highestScore,
+    lowestScore: lowestScore === 999 ? 0 : lowestScore,
+    firstScore,
+    latestScore,
+    scoreDelta,
+    totalQuestions,
+    correctQuestions,
+    unsolvedQuestions,
+    accuracyPct,
+    activeDays: uniqueDays.size,
+    totalTabSwitches,
+    avgTimeSeconds
+  };
+}
+
+function filterResultsByTime(results, filterId) {
+  if (filterId === 'all') return results;
+  const now = new Date();
+
+  return results.filter(r => {
+    if (!r.submittedAt) return true;
+    const itemDate = new Date(r.submittedAt);
+    const diffMs = now - itemDate;
+    const diffHours = diffMs / (1000 * 60 * 60);
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+    if (filterId === 'day') return diffHours <= 24;
+    if (filterId === 'week') return diffDays <= 7;
+    if (filterId === 'month') return diffDays <= 30;
+    return true;
+  });
+}
+
+function generateSvgScoreChart(results) {
+  if (!results.length) {
+    return `<div style="text-align:center;padding:2rem;color:var(--text-muted);font-weight:700;">Chưa có dữ liệu bài thi để vẽ biểu đồ.</div>`;
+  }
+
+  const width = 720;
+  const height = 220;
+  const padLeft = 45;
+  const padRight = 35;
+  const padTop = 25;
+  const padBottom = 35;
+
+  const chartW = width - padLeft - padRight;
+  const chartH = height - padTop - padBottom;
+
+  const points = results.map((r, idx) => {
+    const x = results.length === 1 
+      ? padLeft + chartW / 2 
+      : padLeft + (idx / (results.length - 1)) * chartW;
+    const score = Math.max(0, Math.min(10, r.totalScore || 0));
+    const y = padTop + chartH - (score / 10) * chartH;
+    return { x, y, score, title: r.quizTitle || `Bài ${idx + 1}` };
+  });
+
+  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+  const areaPath = `${linePath} L ${points[points.length - 1].x.toFixed(1)} ${(padTop + chartH)} L ${points[0].x.toFixed(1)} ${(padTop + chartH)} Z`;
+
+  return `
+    <svg viewBox="0 0 ${width} ${height}" class="chart-svg" style="width:100%;height:220px;overflow:visible;">
+      <defs>
+        <linearGradient id="scoreAreaGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="var(--indigo)" stop-opacity="0.35"/>
+          <stop offset="100%" stop-color="var(--indigo)" stop-opacity="0.0"/>
+        </linearGradient>
+      </defs>
+
+      <!-- Grid lines for 0, 2.5, 5, 7.5, 10 -->
+      ${[0, 2.5, 5, 7.5, 10].map(s => {
+        const y = padTop + chartH - (s / 10) * chartH;
+        return `
+          <line x1="${padLeft}" y1="${y}" x2="${width - padRight}" y2="${y}" stroke="var(--border-color)" stroke-dasharray="4 4" stroke-width="1.2"/>
+          <text x="${padLeft - 8}" y="${y + 4}" fill="var(--text-muted)" font-size="11" font-weight="700" text-anchor="end">${s}đ</text>
+        `;
+      }).join('')}
+
+      <!-- Gradient Area -->
+      <path d="${areaPath}" fill="url(#scoreAreaGrad)"/>
+
+      <!-- Score Line -->
+      <path d="${linePath}" fill="none" stroke="var(--indigo)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+      <!-- Data Points & Labels -->
+      ${points.map((p, i) => `
+        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="6" fill="#fff" stroke="var(--indigo)" stroke-width="3"/>
+        <text x="${p.x.toFixed(1)}" y="${(p.y - 10).toFixed(1)}" fill="var(--indigo)" font-size="11" font-weight="900" text-anchor="middle">${p.score}đ</text>
+        <text x="${p.x.toFixed(1)}" y="${height - 12}" fill="var(--text-secondary)" font-size="10" font-weight="700" text-anchor="middle">#${i + 1}</text>
+      `).join('')}
+    </svg>
+  `;
+}
+
+function exportParentReportCard(studentName) {
+  StorageEngine.getAllResults().then(all => {
+    const list = all.filter(r => r.name.toLowerCase() === studentName.toLowerCase());
+    if (!list.length) return;
+    let csv = '\uFEFF';
+    csv += 'Họ Tên,Lớp,Tên Đề,Điểm Số /10,Số Câu Đúng,Số Câu Sai,Thời Gian (giây),Rời Màn Hình,Ngày Làm\n';
+    list.forEach(r => {
+      const unsolved = (r.total || 0) - (r.correct || 0);
+      csv += `"${r.name}","${r.className}","${r.quizTitle || r.quizId}","${r.totalScore}","${r.correct}","${unsolved}","${r.timeTakenSeconds}","${r.tabSwitches}","${r.submittedAt}"\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `BaoCaoHocTap_${studentName}_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast('✅ Đã xuất báo cáo học tập thành công!', 'success');
+  });
+}
+
+/* ================= TEACHER REAL ANALYTICS DASHBOARD ================= */
+async function renderTeacherAnalyticsDashboard() {
+  const wrap = document.getElementById('teacherAnalyticsDashboardWrap');
+  if (!wrap) return;
+
+  const allResults = await StorageEngine.getAllResults();
+  const roster = AppState.studentRoster || [];
+
+  let filtered = allResults;
+  if (AppState.teacherAnalyticsScope !== 'all') {
+    filtered = allResults.filter(r => r.name.toLowerCase() === AppState.teacherAnalyticsScope.toLowerCase());
+  }
+
+  filtered = filterResultsByTime(filtered, AppState.teacherTimeFilter);
+  const metrics = computeRealMetrics(filtered);
+
+  const studentOptions = [
+    { value: 'all', label: '🌍 Toàn Bộ Học Sinh' },
+    ...roster.map(s => ({ value: s.name, label: `👤 ${s.avatar || '👤'} ${s.name} (Lớp ${s.className})` }))
+  ];
+
+  wrap.innerHTML = `
+    <!-- Scope & Time Selector Bar -->
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:1.25rem;">
+      <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+        <label style="font-weight:800;color:var(--indigo);font-size:0.9rem;">🎯 Phạm Vi Phân Tích:</label>
+        <select style="font-weight:700;padding:0.4rem 0.8rem;border:2px solid var(--border-color);border-radius:var(--radius-md);" onchange="setTeacherAnalyticsScope(this.value)">
+          ${studentOptions.map(opt => `
+            <option value="${escapeHtml(opt.value)}" ${AppState.teacherAnalyticsScope === opt.value ? 'selected' : ''}>${escapeHtml(opt.label)}</option>
+          `).join('')}
+        </select>
+      </div>
+
+      <div class="time-filter-bar" style="margin:0;">
+        ${[
+          { id: 'all', label: '♾️ Tất Cả' },
+          { id: 'day', label: '📅 Hôm Nay' },
+          { id: 'week', label: '🗓️ 7 Ngày' },
+          { id: 'month', label: '📆 30 Ngày' }
+        ].map(f => `
+          <button type="button" class="time-filter-btn ${AppState.teacherTimeFilter === f.id ? 'active' : ''}" onclick="setTeacherTimeFilter('${f.id}')">${f.label}</button>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- 6 Real Metric Cards -->
+    <div class="analytics-metric-grid">
+      <div class="metric-card metric-score">
+        <div class="metric-val">${metrics.avgScore}<span style="font-size:1.1rem;font-weight:700;">/10</span></div>
+        <div class="metric-lbl">Điểm Trung Bình ${AppState.teacherAnalyticsScope === 'all' ? 'Toàn Trường' : 'Học Sinh'}</div>
+        <div class="metric-sub">${metrics.totalExams} bài thi · Điểm cao nhất: ${metrics.highestScore}đ</div>
+      </div>
+
+      <div class="metric-card metric-growth">
+        <div class="metric-val" style="color:${metrics.scoreDelta >= 0 ? 'var(--primary)' : 'var(--rose)'};">
+          ${metrics.scoreDelta > 0 ? '+' : ''}${metrics.scoreDelta}đ
+        </div>
+        <div class="metric-lbl">Tiến Độ Tăng Trưởng Học Lực</div>
+        <div class="metric-sub">Chênh lệch giữa bài đầu & bài gần nhất</div>
+      </div>
+
+      <div class="metric-card metric-correct">
+        <div class="metric-val">${metrics.correctQuestions}<span style="font-size:1.1rem;font-weight:700;">/${metrics.totalQuestions}</span></div>
+        <div class="metric-lbl">Số Câu Giải Quyết Đúng</div>
+        <div class="metric-sub">Tỷ lệ chính xác: <strong>${metrics.accuracyPct}%</strong></div>
+      </div>
+
+      <div class="metric-card metric-unsolved">
+        <div class="metric-val">${metrics.unsolvedQuestions}</div>
+        <div class="metric-lbl">Số Câu Không Giải Được / Sai</div>
+        <div class="metric-sub">Chiếm ${100 - metrics.accuracyPct}% tổng câu hỏi</div>
+      </div>
+
+      <div class="metric-card metric-streak">
+        <div class="metric-val">${metrics.activeDays} Ngày 🔥</div>
+        <div class="metric-lbl">Ngày Hoạt Động Chuyên Cần</div>
+        <div class="metric-sub">Thời gian TB: ${Math.floor(metrics.avgTimeSeconds/60)}p ${metrics.avgTimeSeconds%60}s / bài</div>
+      </div>
+
+      <div class="metric-card metric-distract">
+        <div class="metric-val" style="color:${metrics.totalTabSwitches > 0 ? 'var(--rose)' : 'var(--primary)'};">${metrics.totalTabSwitches} Lần</div>
+        <div class="metric-lbl">Số Lần Rời Tab Phòng Thi</div>
+        <div class="metric-sub">Giám sát nghiêm túc phòng thi</div>
+      </div>
+    </div>
+
+    <!-- Breakdown Bar -->
+    <div style="background:var(--bg-card);padding:1rem 1.25rem;border-radius:var(--radius-lg);border:2px solid var(--border-color);margin-bottom:1.25rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem;">
+        <span style="font-weight:800;color:var(--text-primary);">📊 Cơ Cấu Câu Hỏi Toàn Bộ:</span>
+        <span style="font-weight:900;color:var(--indigo);">${metrics.correctQuestions} Câu Đúng (${metrics.accuracyPct}%) &nbsp;|&nbsp; ${metrics.unsolvedQuestions} Câu Không Giải Được (${100 - metrics.accuracyPct}%)</span>
+      </div>
+      <div class="question-breakdown-bar">
+        <div class="breakdown-seg-correct" style="width:${metrics.accuracyPct}%;"></div>
+        <div class="breakdown-seg-unsolved" style="width:${100 - metrics.accuracyPct}%;"></div>
+      </div>
+    </div>
+
+    <!-- SVG Progress Chart -->
+    <div class="chart-container-box" style="margin-bottom:1.5rem;">
+      <div class="chart-title">
+        <span>📈 Biểu Đồ Thống Kê Tiến Độ Điểm Số Theo Thời Gian</span>
+      </div>
+      <div class="chart-svg-wrap">
+        ${generateSvgScoreChart(filtered)}
+      </div>
+    </div>
+  `;
+}
+
+function setTeacherAnalyticsScope(scope) {
+  AppState.teacherAnalyticsScope = scope;
+  renderTeacherAnalyticsDashboard();
+  SoundEngine.playClick();
+}
+
+function setTeacherTimeFilter(filterId) {
+  AppState.teacherTimeFilter = filterId;
+  renderTeacherAnalyticsDashboard();
+  SoundEngine.playClick();
+}
+
+/* ================= MASSIVE KEY IMPORTER ENGINE (1 - 200+ QUESTIONS) ================= */
+function initSeparatedTeacherGrids(mcqCount = 10, essayCount = 2) {
+  const opts = ['A', 'B', 'C', 'D'];
+  AppState.teacherMcqKeys = Array.from({ length: mcqCount }, (_, i) => ({
+    num: i + 1,
+    type: 'mcq',
+    correct: opts[i % 4],
+    score: 0.5
+  }));
+
+  AppState.teacherEssayKeys = Array.from({ length: essayCount }, (_, i) => ({
+    num: mcqCount + i + 1,
+    type: 'essay',
+    correct: i === 0 ? '12 | x=12' : '3/4 | 0.75',
+    score: 2.5,
+    testInput: ''
+  }));
+
+  renderTeacherMcqGrid();
+  renderTeacherEssayGrid();
+  updateTotalExamPointsCalculation();
+}
+
 function parseMassiveKeyString() {
   const textarea = document.getElementById('massiveKeyTextarea');
   if (!textarea) return;
@@ -239,10 +821,8 @@ function parseMassiveKeyString() {
     return;
   }
 
-  // Sort by question number
   parsedItems.sort((a, b) => a.num - b.num);
 
-  // Auto calculate score evenly to make total sum = 10.0 (or remaining after essays)
   const essaySum = AppState.teacherEssayKeys.reduce((sum, k) => sum + (k.score || 0), 0);
   const remainingForMcq = Math.max(1, 10 - essaySum);
   const perScore = Math.round((remainingForMcq / parsedItems.length) * 100) / 100;
@@ -265,8 +845,6 @@ function parseMassiveKeyString() {
 
 function extractKeyItemsFromText(raw) {
   const items = [];
-
-  // Pattern 1: Numbered answers: "1.A", "1 A", "1-A", "1:A", "Câu 1: A", "1) A"
   const regexNumbered = /(?:câu\s*)?(\d+)[\s.:)\-–—=]+([A-D])/gi;
   let match;
   const foundNums = new Set();
@@ -282,7 +860,6 @@ function extractKeyItemsFromText(raw) {
 
   if (items.length > 0) return items;
 
-  // Pattern 2: Multi-line / Tab-separated / Comma-separated (like copy from Excel)
   const lines = raw.split(/[\r\n,;]+/);
   lines.forEach(line => {
     const tokens = line.trim().split(/[\s\t]+/);
@@ -298,7 +875,6 @@ function extractKeyItemsFromText(raw) {
 
   if (items.length > 0) return items;
 
-  // Pattern 3: Pure continuous letters: "ABCDABCD..." (Up to 200+ characters)
   const cleanChars = raw.toUpperCase().replace(/[^A-D]/g, '').split('');
   cleanChars.forEach((c, idx) => {
     items.push({ num: idx + 1, correct: c });
@@ -307,7 +883,6 @@ function extractKeyItemsFromText(raw) {
   return items;
 }
 
-/* File Upload for Key (TXT / CSV / JSON) */
 function handleKeyFileUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -322,13 +897,11 @@ function handleKeyFileUpload(e) {
   reader.readAsText(file);
 }
 
-/* Auto-Balance total exam points to exactly 10.0 */
 function autoBalance10Points() {
   const totalCount = AppState.teacherMcqKeys.length + AppState.teacherEssayKeys.length;
   if (!totalCount) return;
 
   if (AppState.teacherEssayKeys.length > 0) {
-    // Keep essay score higher (e.g. 2.0đ each), distribute rest to MCQ
     const essayCount = AppState.teacherEssayKeys.length;
     const mcqCount = AppState.teacherMcqKeys.length;
     
@@ -343,7 +916,6 @@ function autoBalance10Points() {
     AppState.teacherEssayKeys.forEach(k => k.score = essayScoreEach);
     AppState.teacherMcqKeys.forEach(k => k.score = mcqScoreEach);
   } else {
-    // Only MCQ
     const perScore = Math.round((10.0 / totalCount) * 100) / 100;
     AppState.teacherMcqKeys.forEach(k => k.score = perScore);
   }
@@ -355,7 +927,6 @@ function autoBalance10Points() {
   SoundEngine.playCorrect();
 }
 
-/* Quick Fill Presets */
 function quickFillAllKeys(choice) {
   AppState.teacherMcqKeys.forEach(k => k.correct = choice);
   renderTeacherMcqGrid();
@@ -404,7 +975,6 @@ function setCustomQuestionCount(count) {
   SoundEngine.playClick();
 }
 
-/* SECTION 1: Render MCQ Grid (Compact Matrix Grid for 10-200+ questions) */
 function renderTeacherMcqGrid() {
   const container = document.getElementById('teacherMcqGridContainer');
   const countBadge = document.getElementById('teacherMcqCountBadge');
@@ -418,7 +988,6 @@ function renderTeacherMcqGrid() {
     return;
   }
 
-  // Render Compact Matrix Grid (Super fast & neat for 50-200 questions)
   container.innerHTML = `
     <div class="key-matrix-grid">
       ${AppState.teacherMcqKeys.map((item, idx) => `
@@ -446,7 +1015,6 @@ function setTeacherMcqScore(idx, val) {
   updateTotalExamPointsCalculation();
 }
 
-/* SECTION 2: Render Math Essay Grid */
 function renderTeacherEssayGrid() {
   const container = document.getElementById('teacherEssayGridContainer');
   const countBadge = document.getElementById('teacherEssayCountBadge');
@@ -573,7 +1141,7 @@ function updateTotalExamPointsCalculation() {
   }
 }
 
-/* ================= RESULTS & REST OF APP ================= */
+/* ================= QUIZ PUBLISHING & RESULTS ================= */
 async function publishTeacherQuiz() {
   const combinedKeys = [...AppState.teacherMcqKeys, ...AppState.teacherEssayKeys];
 
@@ -664,7 +1232,7 @@ function generateQuizCode() {
   return s;
 }
 
-/* ================= ROSTER & BATCH & RESULTS ================= */
+/* ================= ROSTER & ASSIGN SELECTOR ================= */
 async function loadStudentRoster() {
   AppState.studentRoster = await StorageEngine.getStudentRoster();
 }
@@ -714,7 +1282,7 @@ function showAddStudentModal() {
   const className = prompt('Nhập Lớp học của học sinh (VD: 10, 8, 7, 12...):', '10');
   if (!className || !className.trim()) return;
 
-  const avatars = ['🦊', '🦉', '🦁', '🐼', '🚀', '⚡', '🌟'];
+  const avatars = ['🦊', '🦉', '🦁', '🐼', '🚀', '⚡', '🌟', '🦄', '🤖', '🥷'];
   const randomAvatar = avatars[Math.floor(Math.random() * avatars.length)];
 
   AppState.studentRoster.push({
@@ -901,7 +1469,7 @@ async function resetSampleQuiz() {
   SoundEngine.playCorrect();
 }
 
-/* ================= STRICT PERSONALIZED EXAM FEED ================= */
+/* ================= PERSONALIZED EXAM FEED ================= */
 function updatePersonalizedExamFeed() {
   const currentName = (document.getElementById('studentJoinName')?.value || '').trim();
   const currentClass = (document.getElementById('studentJoinClass')?.value || '').trim();
@@ -1061,7 +1629,7 @@ async function startExamWithQuizId(quizId) {
   const profile = GamificationEngine.getUserProfile();
   profile.name = name;
   profile.className = className;
-  if (matchedStudent && matchedStudent.avatar) profile.avatar = matchedStudent.avatar;
+  if (AppState.studentAvatar) profile.avatar = AppState.studentAvatar;
   GamificationEngine.saveUserProfile(profile);
 
   document.getElementById('studentJoinSection').classList.add('hidden');
@@ -1372,7 +1940,7 @@ async function submitStudentExam(isAuto = false) {
     quizTitle: quiz.title,
     name: AppState.studentName,
     className: AppState.studentClass,
-    avatar: AppState.studentAvatar,
+    avatar: AppState.studentAvatar || '🦊',
     correct: correctCount,
     total,
     totalScore: finalScore10,
@@ -1619,4 +2187,206 @@ function restartStudentJoin() {
   document.getElementById('studentJoinSection').classList.remove('hidden');
   updatePersonalizedExamFeed();
   SoundEngine.playClick();
+}
+
+/* ================= GAMIFICATION / VINH DANH ================= */
+function updateGamifyBar() {
+  const profile = GamificationEngine.getUserProfile();
+  const levelInfo = GamificationEngine.getLevelInfo(profile.xp || 0);
+
+  const streakEl = document.getElementById('topStreakVal');
+  const xpEl = document.getElementById('topXpVal');
+  const levelEl = document.getElementById('topLevelVal');
+
+  if (streakEl) streakEl.textContent = profile.streak || 1;
+  if (xpEl) xpEl.textContent = profile.xp || 0;
+  if (levelEl) levelEl.textContent = `Lv.${levelInfo.level} ${levelInfo.name}`;
+}
+
+async function renderGamificationTab() {
+  const profile = GamificationEngine.getUserProfile();
+  const levelInfo = GamificationEngine.getLevelInfo(profile.xp || 0);
+
+  const nameEl = document.getElementById('gamifyUserName');
+  const levelNameEl = document.getElementById('gamifyLevelName');
+  const avatarEl = document.getElementById('gamifyUserAvatar');
+  const xpTextEl = document.getElementById('gamifyXpText');
+  const xpProgEl = document.getElementById('gamifyXpProgress');
+
+  if (nameEl) nameEl.textContent = profile.name || 'Học Sinh';
+  if (levelNameEl) levelNameEl.textContent = `Cấp ${levelInfo.level}: ${levelInfo.name}`;
+  if (avatarEl) avatarEl.textContent = profile.avatar || AppState.studentAvatar || '🦊';
+  if (xpTextEl) xpTextEl.textContent = `${levelInfo.currentXp} / ${levelInfo.nextXp} XP (${levelInfo.progress}%)`;
+  if (xpProgEl) xpProgEl.style.width = `${levelInfo.progress}%`;
+
+  const totalExamsEl = document.getElementById('statTotalExams');
+  const perfScoresEl = document.getElementById('statPerfectScores');
+  const streakEl = document.getElementById('statCurrentStreak');
+
+  if (totalExamsEl) totalExamsEl.textContent = profile.examsCount || 0;
+  if (perfScoresEl) perfScoresEl.textContent = profile.perfectCount || 0;
+  if (streakEl) streakEl.textContent = `${profile.streak || 1} Ngày 🔥`;
+
+  // Render Badges
+  const badgesGrid = document.getElementById('badgesShowcaseGrid');
+  if (badgesGrid) {
+    const unlocked = new Set(profile.unlockedBadges || []);
+    badgesGrid.innerHTML = BADGES_DEFINITIONS.map(b => {
+      const isUnlocked = unlocked.has(b.id);
+      return `
+        <div class="badge-card ${isUnlocked ? 'unlocked' : 'locked'}" onclick="triggerBadgeCelebration('${b.name}', ${isUnlocked})">
+          <div class="badge-icon">${b.icon}</div>
+          <div class="badge-title">${escapeHtml(b.name)}</div>
+          <div class="badge-desc">${escapeHtml(b.desc)}</div>
+          <div style="margin-top:0.4rem;font-size:0.75rem;font-weight:800;color:${isUnlocked ? 'var(--primary-shadow)' : 'var(--text-muted)'};">
+            ${isUnlocked ? '✅ ĐÃ MỞ KHÓA' : '🔒 CHƯA ĐẠT'}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Render Hall of Fame Top 3 & List
+  renderHallOfFameLeaderboard();
+}
+
+async function renderHallOfFameLeaderboard() {
+  const podiumWrap = document.getElementById('hallOfFamePodiumWrap');
+  const listWrap = document.getElementById('hallOfFameListWrap');
+  if (!podiumWrap || !listWrap) return;
+
+  const roster = await StorageEngine.getStudentRoster();
+  const allResults = await StorageEngine.getAllResults();
+
+  // Aggregate stats per student
+  const statsMap = {};
+  roster.forEach(s => {
+    statsMap[s.name.toLowerCase()] = {
+      name: s.name,
+      className: s.className,
+      avatar: s.avatar || '🦊',
+      xp: 200,
+      exams: 0,
+      avgScore: 0,
+      totalScore: 0
+    };
+  });
+
+  allResults.forEach(r => {
+    const key = r.name.toLowerCase();
+    if (!statsMap[key]) {
+      statsMap[key] = {
+        name: r.name,
+        className: r.className || '10',
+        avatar: r.avatar || '🦊',
+        xp: 150,
+        exams: 0,
+        avgScore: 0,
+        totalScore: 0
+      };
+    }
+    statsMap[key].exams++;
+    statsMap[key].totalScore += (r.totalScore || 0);
+    statsMap[key].xp += (r.totalScore >= 8 ? 150 : 80);
+  });
+
+  const studentsList = Object.values(statsMap);
+  studentsList.forEach(s => {
+    s.avgScore = s.exams ? (Math.round((s.totalScore / s.exams) * 10) / 10) : 8.5;
+  });
+
+  studentsList.sort((a, b) => b.xp - a.xp || b.avgScore - a.avgScore);
+
+  const top1 = studentsList[0] || { name: 'SURI', className: '10', avatar: '🦊', xp: 850, avgScore: 9.5 };
+  const top2 = studentsList[1] || { name: 'NGHĨA', className: '10', avatar: '🦉', xp: 620, avgScore: 8.8 };
+  const top3 = studentsList[2] || { name: 'GIANG', className: '10', avatar: '🦁', xp: 480, avgScore: 8.2 };
+
+  podiumWrap.innerHTML = `
+    <div class="podium-container">
+      <!-- #2 Silver -->
+      <div class="podium-column podium-col-2">
+        <div class="podium-avatar-bubble">
+          <div class="podium-avatar">${top2.avatar}</div>
+          <div class="podium-rank-badge badge-rank-2">2</div>
+        </div>
+        <div class="podium-stand stand-silver">
+          <div class="podium-user-name">${escapeHtml(top2.name)}</div>
+          <div class="podium-user-score">⭐ ${top2.xp} XP</div>
+          <div class="podium-step-number">#2</div>
+        </div>
+      </div>
+
+      <!-- #1 Gold -->
+      <div class="podium-column podium-col-1">
+        <div class="podium-avatar-bubble">
+          <div class="podium-crown">👑</div>
+          <div class="podium-avatar">${top1.avatar}</div>
+          <div class="podium-rank-badge badge-rank-1">1</div>
+        </div>
+        <div class="podium-stand stand-gold">
+          <div class="podium-user-name">${escapeHtml(top1.name)}</div>
+          <div class="podium-user-score">⭐ ${top1.xp} XP</div>
+          <div class="podium-step-number">#1</div>
+        </div>
+      </div>
+
+      <!-- #3 Bronze -->
+      <div class="podium-column podium-col-3">
+        <div class="podium-avatar-bubble">
+          <div class="podium-avatar">${top3.avatar}</div>
+          <div class="podium-rank-badge badge-rank-3">3</div>
+        </div>
+        <div class="podium-stand stand-bronze">
+          <div class="podium-user-name">${escapeHtml(top3.name)}</div>
+          <div class="podium-user-score">⭐ ${top3.xp} XP</div>
+          <div class="podium-step-number">#3</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  listWrap.innerHTML = `
+    <div class="table-responsive" style="margin-top:1.5rem;">
+      <table>
+        <thead>
+          <tr>
+            <th>Hạng</th>
+            <th>Chiến Binh</th>
+            <th>Lớp</th>
+            <th>Kinh Nghiệm (XP)</th>
+            <th>Điểm TB</th>
+            <th>Bài Thi Đã Làm</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${studentsList.slice(3).map((s, idx) => `
+            <tr>
+              <td><strong>#${idx + 4}</strong></td>
+              <td><strong>${s.avatar} ${escapeHtml(s.name)}</strong></td>
+              <td><span class="badge-status badge-pass">Lớp ${escapeHtml(s.className)}</span></td>
+              <td><strong style="color:var(--indigo);">⭐ ${s.xp} XP</strong></td>
+              <td><strong>${s.avgScore}/10đ</strong></td>
+              <td>${s.exams} bài</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function triggerBadgeCelebration(badgeName, isUnlocked) {
+  if (isUnlocked) {
+    GamificationEngine.fireConfetti();
+    SoundEngine.playFanfare();
+    showToast(`🏆 Huy hiệu: ${badgeName} đã mở khóa!`, 'success');
+  } else {
+    SoundEngine.playWarning();
+    showToast(`🔒 Huy hiệu: ${badgeName} chưa đạt. Hãy luyện thêm bài thi nhé!`, 'warn');
+  }
+}
+
+function celebrateConfetti() {
+  GamificationEngine.fireConfetti();
+  SoundEngine.playFanfare();
 }
