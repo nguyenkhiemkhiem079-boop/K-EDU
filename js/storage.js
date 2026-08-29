@@ -1,12 +1,13 @@
 /**
  * KhiemEdu Storage Engine with IndexedDB & LocalStorage
- * Stores quizzes, results, and large PDF attachments efficiently.
+ * Stores quizzes, results, and student essay submission photos efficiently.
  */
 
 const STORAGE_PREFIX = 'khiemedu_';
 const DB_NAME = 'KhiemEdu_DB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_PDFS = 'pdf_store';
+const STORE_SUBMISSIONS = 'submission_photos';
 
 const StorageEngine = {
   db: null,
@@ -29,6 +30,9 @@ const StorageEngine = {
         const db = e.target.result;
         if (!db.objectStoreNames.contains(STORE_PDFS)) {
           db.createObjectStore(STORE_PDFS);
+        }
+        if (!db.objectStoreNames.contains(STORE_SUBMISSIONS)) {
+          db.createObjectStore(STORE_SUBMISSIONS);
         }
       };
       req.onsuccess = (e) => {
@@ -66,6 +70,32 @@ const StorageEngine = {
       });
     }
     return this.get('pdf_' + quizId);
+  },
+
+  async saveSubmissionPhoto(photoKey, dataUrl) {
+    if (this.db) {
+      return new Promise((resolve) => {
+        const tx = this.db.transaction([STORE_SUBMISSIONS], 'readwrite');
+        const store = tx.objectStore(STORE_SUBMISSIONS);
+        store.put(dataUrl, photoKey);
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => resolve(false);
+      });
+    }
+    return this.set(photoKey, dataUrl);
+  },
+
+  async getSubmissionPhoto(photoKey) {
+    if (this.db) {
+      return new Promise((resolve) => {
+        const tx = this.db.transaction([STORE_SUBMISSIONS], 'readonly');
+        const store = tx.objectStore(STORE_SUBMISSIONS);
+        const req = store.get(photoKey);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => resolve(null);
+      });
+    }
+    return this.get(photoKey);
   },
 
   async set(key, value) {
@@ -136,10 +166,15 @@ const StorageEngine = {
 
   // Results
   async saveResult(result) {
-    const key = `result:${result.quizId}:${result.className}_${result.name}_${Date.now()}`;
-    await this.set(key, result);
+    const resultKey = `result:${result.quizId}:${result.className}_${result.name}_${Date.now()}`;
+    result.id = resultKey;
+    await this.set(resultKey, result);
     await this.set(`submitted:${result.quizId}:${result.className}_${result.name}`, '1');
-    return key;
+    return resultKey;
+  },
+
+  async updateResult(resultKey, updatedResult) {
+    return await this.set(resultKey, updatedResult);
   },
 
   async hasSubmitted(quizId, className, name) {
@@ -152,12 +187,15 @@ const StorageEngine = {
     const results = [];
     for (const key of keys) {
       const r = await this.get(key);
-      if (r) results.push(r);
+      if (r) {
+        r.key = key;
+        results.push(r);
+      }
     }
     return results;
   },
 
-  // Seed sample exam
+  // Seed sample exam with both MCQ, True/False, Short Essay & Photo Essay
   seedSampleDataIfEmpty() {
     const sampleKey = 'quiz:AZOTA01';
     if (!localStorage.getItem(STORAGE_PREFIX + sampleKey)) {
@@ -166,9 +204,9 @@ const StorageEngine = {
         title: 'Đề Kiểm Tra Giữa Học Kỳ I — Toán 8',
         timeLimit: 45,
         totalQuestions: 12,
-        examMode: 'split_pdf', // 'split_pdf' (Azota style) or 'interactive'
+        examMode: 'split_pdf',
         pdfFileName: 'De_Kiem_Tra_Toan_8.pdf',
-        pdfDataUrl: null, // Will use sample viewer
+        pdfDataUrl: null,
         shuffle: false,
         showLeaderboard: true,
         antiCheat: true,
@@ -184,8 +222,8 @@ const StorageEngine = {
           { num: 8, type: 'mcq', correct: 'A', score: 0.5 },
           { num: 9, type: 'truefalse', correct: 'Đúng', score: 1 },
           { num: 10, type: 'truefalse', correct: 'Sai', score: 1 },
-          { num: 11, type: 'essay', correct: '12', score: 2 },
-          { num: 12, type: 'essay', correct: '25', score: 2 }
+          { num: 11, type: 'essay', correct: '12', score: 1.5, note: 'Điền đáp số' },
+          { num: 12, type: 'essay_photo', correct: '', score: 2.5, note: 'Tự luận nộp ảnh bài làm chi tiết' }
         ]
       };
       this.saveQuiz(sampleQuiz);
