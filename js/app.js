@@ -1,5 +1,5 @@
 /**
- * KhiemEdu Main Application Controller with Personalized Exam Feed & Targeted Access
+ * KhiemEdu Main Application Controller with Hall of Fame Podium Leaderboard
  */
 
 const AppState = {
@@ -111,7 +111,7 @@ function escapeHtml(str) {
   }[m]));
 }
 
-/* ================= GAMIFICATION BAR ================= */
+/* ================= GAMIFICATION & HALL OF FAME LEADERBOARD ================= */
 function updateGamifyBar() {
   const profile = GamificationEngine.getUserProfile();
   const levelInfo = GamificationEngine.getLevelInfo(profile.xp);
@@ -122,10 +122,10 @@ function updateGamifyBar() {
 
   if (streakEl) streakEl.textContent = profile.streak || 1;
   if (xpEl) xpEl.textContent = profile.xp || 0;
-  if (levelEl) levelEl.textContent = `Lv.${levelInfo.level} ${levelInfo.name}`;
+  if (levelEl) levelEl.textContent = `Lv.${levelInfo.level} ${levelInfo.name.split(' ')[0]}`;
 }
 
-function renderGamificationTab() {
+async function renderGamificationTab() {
   const profile = GamificationEngine.getUserProfile();
   const levelInfo = GamificationEngine.getLevelInfo(profile.xp);
 
@@ -136,7 +136,7 @@ function renderGamificationTab() {
   const userXpText = document.getElementById('gamifyXpText');
 
   if (userAvatar) userAvatar.textContent = profile.avatar;
-  if (userName) userName.textContent = profile.name;
+  if (userName) userName.textContent = `${profile.name} (${profile.className || '8A1'})`;
   if (userLevel) userLevel.textContent = `Cấp ${levelInfo.level}: ${levelInfo.name}`;
   if (userXpProgress) userXpProgress.style.width = `${levelInfo.progress}%`;
   if (userXpText) userXpText.textContent = `${profile.xp} / ${levelInfo.nextXp} XP (${levelInfo.progress}%)`;
@@ -146,22 +146,144 @@ function renderGamificationTab() {
   const elStreak = document.getElementById('statCurrentStreak');
   if (elExams) elExams.textContent = profile.examsCount || 0;
   if (elPerfect) elPerfect.textContent = profile.perfectCount || 0;
-  if (elStreak) elStreak.textContent = `${profile.streak || 1} Ngày`;
+  if (elStreak) elStreak.textContent = `${profile.streak || 1} Ngày 🔥`;
 
+  // Render Badges
   const badgesContainer = document.getElementById('badgesShowcaseGrid');
   if (badgesContainer) {
     badgesContainer.innerHTML = BADGES_DEFINITIONS.map(b => {
       const isUnlocked = profile.unlockedBadges.includes(b.id);
       return `
-        <div class="badge-card ${isUnlocked ? '' : 'locked'}">
+        <div class="badge-card ${isUnlocked ? 'unlocked' : 'locked'}" onclick="${isUnlocked ? 'celebrateConfetti()' : ''}">
           <div class="badge-icon-wrap">${b.icon}</div>
           <div class="badge-name">${escapeHtml(b.name)}</div>
           <div class="badge-desc">${escapeHtml(b.desc)}</div>
-          ${isUnlocked ? '<span class="badge-status badge-pass" style="margin-top:6px;">Đã mở khóa</span>' : '<span class="badge-status" style="margin-top:6px;background:var(--bg-card);color:var(--text-muted);">Chưa mở</span>'}
+          ${isUnlocked ? '<span class="badge-status badge-pass" style="margin-top:8px;">✅ Đã mở khóa</span>' : '<span class="badge-status" style="margin-top:8px;background:var(--bg-card);color:var(--text-muted);">🔒 Chưa mở</span>'}
         </div>
       `;
     }).join('');
   }
+
+  // Render Hall of Fame Podium Leaderboard
+  await renderHallOfFamePodium();
+}
+
+async function renderHallOfFamePodium() {
+  const podiumWrap = document.getElementById('hallOfFamePodiumWrap');
+  const listWrap = document.getElementById('hallOfFameListWrap');
+  if (!podiumWrap || !listWrap) return;
+
+  const currentProfile = GamificationEngine.getUserProfile();
+  
+  // Build Leaderboard from student roster with dynamic scores
+  const roster = AppState.studentRoster || [];
+  const baseScores = [
+    { name: 'Nguyễn Văn An', className: '8A1', avatar: '🦊', xp: currentProfile.xp || 420, streak: currentProfile.streak || 3, exams: currentProfile.examsCount || 4 },
+    { name: 'Trần Thị Bình', className: '8A2', avatar: '🦉', xp: 580, streak: 5, exams: 6 },
+    { name: 'Lê Hoàng Cường', className: '9B1', avatar: '🦁', xp: 720, streak: 7, exams: 8 },
+    { name: 'Phạm Minh Đức', className: '9B2', avatar: '🐼', xp: 390, streak: 2, exams: 3 },
+    { name: 'Vũ Ngọc Hoa', className: '10C1', avatar: '🌟', xp: 640, streak: 6, exams: 7 },
+    { name: 'Đặng Tuấn Kiệt', className: '10C2', avatar: '🚀', xp: 480, streak: 4, exams: 5 }
+  ];
+
+  // Merge extra students
+  roster.forEach(s => {
+    if (!baseScores.some(b => b.name.toLowerCase() === s.name.toLowerCase())) {
+      baseScores.push({
+        name: s.name,
+        className: s.className,
+        avatar: s.avatar || '👤',
+        xp: 250 + Math.floor(Math.random() * 200),
+        streak: 2,
+        exams: 2
+      });
+    }
+  });
+
+  // Sort descending by XP
+  baseScores.sort((a, b) => (b.xp || 0) - (a.xp || 0));
+
+  const top1 = baseScores[0] || { name: 'Quán Quân', className: '8A1', avatar: '👑', xp: 720, streak: 7 };
+  const top2 = baseScores[1] || { name: 'Á Quân', className: '8A2', avatar: '🥈', xp: 640, streak: 6 };
+  const top3 = baseScores[2] || { name: 'Quý Quân', className: '8A1', avatar: '🥉', xp: 580, streak: 5 };
+
+  // Render Top 3 Podium (Rank 2 on Left, Rank 1 in Middle, Rank 3 on Right)
+  podiumWrap.innerHTML = `
+    <div class="podium-wrapper">
+      
+      <!-- Rank 2 (Silver) -->
+      <div class="podium-col rank-2">
+        <div class="podium-avatar-wrap">
+          <div class="podium-avatar">${top2.avatar}</div>
+        </div>
+        <div class="podium-name">${escapeHtml(top2.name)}</div>
+        <div class="podium-class">Lớp ${escapeHtml(top2.className)}</div>
+        <div class="podium-xp-tag">⭐ ${top2.xp} XP</div>
+        <div class="podium-step">2</div>
+      </div>
+
+      <!-- Rank 1 (Gold / Champion) -->
+      <div class="podium-col rank-1">
+        <div class="podium-avatar-wrap">
+          <span class="podium-crown">👑</span>
+          <div class="podium-avatar">${top1.avatar}</div>
+        </div>
+        <div class="podium-name" style="font-size:1.15rem;color:var(--amber-shadow);">${escapeHtml(top1.name)}</div>
+        <div class="podium-class">Lớp ${escapeHtml(top1.className)}</div>
+        <div class="podium-xp-tag" style="background:var(--amber-light);color:var(--amber-shadow);border-color:var(--amber);">⭐ ${top1.xp} XP 🔥 ${top1.streak}d</div>
+        <div class="podium-step">1</div>
+      </div>
+
+      <!-- Rank 3 (Bronze) -->
+      <div class="podium-col rank-3">
+        <div class="podium-avatar-wrap">
+          <div class="podium-avatar">${top3.avatar}</div>
+        </div>
+        <div class="podium-name">${escapeHtml(top3.name)}</div>
+        <div class="podium-class">Lớp ${escapeHtml(top3.className)}</div>
+        <div class="podium-xp-tag">⭐ ${top3.xp} XP</div>
+        <div class="podium-step">3</div>
+      </div>
+
+    </div>
+  `;
+
+  // Render Top 4+ List
+  const rest = baseScores.slice(3);
+  if (!rest.length) {
+    listWrap.innerHTML = '';
+    return;
+  }
+
+  listWrap.innerHTML = `
+    <div class="leaderboard-list">
+      ${rest.map((s, idx) => {
+        const rank = idx + 4;
+        const isUser = s.name.toLowerCase() === currentProfile.name.toLowerCase();
+        return `
+          <div class="leaderboard-row ${isUser ? 'is-current-user' : ''}">
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+              <span class="leaderboard-rank-num">#${rank}</span>
+              <span class="leaderboard-avatar">${s.avatar}</span>
+              <div>
+                <strong style="color:var(--text-primary);font-size:1rem;">${escapeHtml(s.name)} ${isUser ? '<span class="badge-status badge-pass" style="font-size:0.7rem;margin-left:4px;">Bạn</span>' : ''}</strong>
+                <div style="font-size:0.8rem;color:var(--text-muted);font-weight:700;">Lớp ${escapeHtml(s.className)} · ${s.exams || 1} bài thi</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:1rem;">
+              <span style="font-weight:800;color:#ff9600;font-size:0.9rem;">🔥 ${s.streak || 1} ngày</span>
+              <span style="font-weight:900;color:var(--indigo);font-size:1.1rem;">${s.xp} XP</span>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function celebrateConfetti() {
+  GamificationEngine.fireConfetti();
+  SoundEngine.playFanfare();
 }
 
 function initAvatars() {
@@ -731,7 +853,7 @@ async function renderSampleQuizzes(filterName = '', filterClass = '') {
 
   const titleHeader = document.getElementById('studentFeedHeaderTitle');
   if (titleHeader) {
-    titleHeader.textContent = filterName ? `📚 Đề Thi Phù Hợp Cho ${filterName} (Lớp ${filterClass})` : '📚 Thư Viện Đề Thi';
+    titleHeader.textContent = filterName ? `📚 Đề Thi Dành Riêng Cho Bạn` : '📚 Thư Viện Đề Thi';
   }
 
   if (!displayedQuizzes.length) {
@@ -846,6 +968,7 @@ async function joinStudentQuiz(customCode) {
 
   const profile = GamificationEngine.getUserProfile();
   profile.name = name;
+  profile.className = className;
   GamificationEngine.saveUserProfile(profile);
 
   document.getElementById('studentJoinSection').classList.add('hidden');
