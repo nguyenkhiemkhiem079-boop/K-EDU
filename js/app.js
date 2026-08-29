@@ -1,5 +1,5 @@
 /**
- * KhiemEdu Main Application Controller with Batch Exam Publishing Engine
+ * KhiemEdu Main Application Controller - Enhanced Math Essay Key Editor & Smart Matcher
  */
 
 const AppState = {
@@ -19,7 +19,7 @@ const AppState = {
   teacherPdfData: null,
   teacherFileName: '',
   teacherAnswerKeys: [],
-  batchExamsQueue: [], // Array of { id, title, timeLimit, fileName, fileData, answerKeys, assignType, assignedClasses, assignedStudents }
+  batchExamsQueue: [],
   leaderboardTimer: null,
   studentRoster: []
 };
@@ -415,7 +415,7 @@ function renderAssignTargetsSelector() {
   }
 }
 
-/* ================= BATCH EXAM PUBLISHING ENGINE (PHÁT HÀNH NHIỀU ĐỀ HÀNG LOẠT) ================= */
+/* ================= BATCH EXAM PUBLISHING ENGINE ================= */
 function handleBatchFilesSelect() {
   const fileInput = document.getElementById('batchExamFilesInput');
   if (!fileInput.files || !fileInput.files.length) return;
@@ -429,13 +429,12 @@ function handleBatchFilesSelect() {
 
   let loadedCount = 0;
 
-  files.forEach((file, idx) => {
+  files.forEach((file) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const fileData = e.target.result;
       const cleanTitle = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
 
-      // Generate default answer keys for this exam
       const keys = [];
       const defaultScore = Math.round((10 / defaultNumQuestions) * 100) / 100;
       for (let q = 1; q <= defaultNumQuestions; q++) {
@@ -626,7 +625,7 @@ async function publishAllBatchExams() {
   showToast(`🎉 ĐÃ PHÁT HÀNH THÀNH CÔNG ${count} ĐỀ THI HÀNG LOẠT!`, 'success');
 }
 
-/* ================= TEACHER: SINGLE PDF & QUICK ANSWER KEY GENERATION ================= */
+/* ================= TEACHER: SINGLE PDF & MATH ESSAY ENHANCED KEY GENERATION ================= */
 function handleTeacherPdfSelect() {
   const fileInput = document.getElementById('teacherPdfFileInput');
   if (!fileInput.files[0]) return;
@@ -662,9 +661,10 @@ function initTeacherAnswerGrid(count) {
   for (let i = 1; i <= num; i++) {
     AppState.teacherAnswerKeys.push({
       num: i,
-      type: 'mcq',
-      correct: 'A',
-      score: defaultScore
+      type: i > 10 ? 'essay' : 'mcq',
+      correct: i > 10 ? (i === 11 ? '12 | x=12' : '1/2 | 0.5') : 'A',
+      score: defaultScore,
+      testInput: ''
     });
   }
   renderTeacherAnswerKeyGrid();
@@ -690,14 +690,14 @@ function parseFastAnswerString() {
     if (val.toUpperCase() === 'ĐÚNG' || val.toUpperCase() === 'SAI') type = 'truefalse';
     else if (!/^[A-D]$/i.test(val)) type = 'essay';
 
-    items.push({ num, type, correct: val, score: 0.5 });
+    items.push({ num, type, correct: val, score: 0.5, testInput: '' });
   }
 
   if (!hasNumberedMatches) {
     const letters = raw.toUpperCase().replace(/[^A-D]/g, '').split('');
     if (letters.length > 0) {
       letters.forEach((l, idx) => {
-        items.push({ num: idx + 1, type: 'mcq', correct: l, score: 0.5 });
+        items.push({ num: idx + 1, type: 'mcq', correct: l, score: 0.5, testInput: '' });
       });
     }
   }
@@ -717,12 +717,16 @@ function parseFastAnswerString() {
   SoundEngine.playCorrect();
 }
 
+/* Render Teacher Key Grid with Math Symbols & Live Match Tester */
 function renderTeacherAnswerKeyGrid() {
   const container = document.getElementById('teacherAnswerKeyGrid');
   if (!container) return;
 
+  const mathSymbols = ['±', '√', 'π', '°', '²', '³', '≤', '≥', '≠', '/', '|'];
+
   container.innerHTML = AppState.teacherAnswerKeys.map((item, idx) => {
     let bodyControls = '';
+
     if (item.type === 'mcq') {
       bodyControls = `
         <div style="display:flex;gap:0.35rem;align-items:center;">
@@ -739,22 +743,49 @@ function renderTeacherAnswerKeyGrid() {
         </div>
       `;
     } else {
+      // Enhanced Essay / Short Math Answer Editor with Live Match Tester
+      const testVal = item.testInput || '';
+      const isTestMatch = testVal ? checkAnswerMatch(testVal, item.correct) : null;
+
       bodyControls = `
-        <input type="text" style="width:130px;padding:0.35rem 0.6rem;font-size:0.85rem;border:2px solid var(--border-color);border-radius:var(--radius-sm);" placeholder="Đáp số" value="${escapeHtml(item.correct)}" oninput="setTeacherKeyAnswer(${idx}, this.value)">
+        <div style="flex:1;min-width:320px;">
+          <div style="display:flex;gap:0.4rem;align-items:center;">
+            <input type="text" id="teacherKeyInput_${idx}" style="flex:1;padding:0.35rem 0.6rem;font-size:0.9rem;font-weight:700;border:2px solid var(--border-color);border-radius:var(--radius-sm);color:var(--indigo);" placeholder="Đáp số chuẩn (dùng | để thêm nhiều cách viết, VD: 12 | x=12)" value="${escapeHtml(item.correct)}" oninput="setTeacherKeyAnswer(${idx}, this.value)">
+          </div>
+
+          <!-- Quick Math Symbols Toolbar -->
+          <div class="math-symbol-bar">
+            <span style="font-size:0.75rem;font-weight:800;color:var(--text-muted);margin-right:2px;">Chèn nhanh:</span>
+            ${mathSymbols.map(sym => `
+              <button type="button" class="math-sym-btn" onclick="insertMathSymbol(${idx}, '${sym}')">${sym}</button>
+            `).join('')}
+          </div>
+
+          <!-- Live Match Tester -->
+          <div class="math-tester-box">
+            <span style="font-size:0.75rem;font-weight:800;color:var(--text-secondary);">🧪 Chấm thử:</span>
+            <input type="text" class="math-tester-input" placeholder="Gõ thử câu trả lời..." value="${escapeHtml(testVal)}" oninput="testTeacherAnswerMatch(${idx}, this.value)">
+            ${testVal ? (isTestMatch ? '<span class="math-tester-pill badge-pass">✅ Chấm ĐÚNG</span>' : '<span class="math-tester-pill badge-fail">❌ Chấm SAI</span>') : '<span style="font-size:0.75rem;color:var(--text-muted);">Nhập để thử</span>'}
+          </div>
+        </div>
       `;
     }
 
     return `
-      <div class="key-grid-item">
-        <span style="font-weight:800;color:var(--indigo);min-width:60px;">Câu ${item.num}:</span>
-        <div style="display:flex;gap:0.4rem;align-items:center;">
+      <div class="key-grid-item" style="align-items:flex-start;padding:0.75rem;">
+        <div style="display:flex;gap:0.4rem;align-items:center;min-width:70px;margin-top:4px;">
+          <span style="font-weight:900;color:var(--indigo);font-size:0.95rem;">Câu ${item.num}:</span>
+        </div>
+        <div style="display:flex;gap:0.6rem;align-items:flex-start;flex:1;flex-wrap:wrap;">
           ${bodyControls}
-          <input type="number" step="0.25" min="0.25" max="10" style="width:60px;padding:0.35rem 0.4rem;font-size:0.85rem;text-align:center;font-weight:700;" value="${item.score}" title="Điểm của câu này" onchange="setTeacherKeyScore(${idx}, this.value)">
-          <select style="padding:0.3rem 0.4rem;font-size:0.8rem;width:110px;" onchange="changeTeacherKeyType(${idx}, this.value)">
-            <option value="mcq" ${item.type === 'mcq' ? 'selected' : ''}>Trắc nghiệm</option>
-            <option value="truefalse" ${item.type === 'truefalse' ? 'selected' : ''}>Đúng/Sai</option>
-            <option value="essay" ${item.type === 'essay' ? 'selected' : ''}>Điền đáp số</option>
-          </select>
+          <div style="display:flex;gap:0.4rem;align-items:center;margin-top:2px;">
+            <input type="number" step="0.25" min="0.25" max="10" style="width:60px;padding:0.35rem 0.4rem;font-size:0.85rem;text-align:center;font-weight:800;" value="${item.score}" title="Điểm của câu này" onchange="setTeacherKeyScore(${idx}, this.value)">
+            <select style="padding:0.35rem 0.4rem;font-size:0.85rem;width:125px;font-weight:700;" onchange="changeTeacherKeyType(${idx}, this.value)">
+              <option value="mcq" ${item.type === 'mcq' ? 'selected' : ''}>Trắc nghiệm A-D</option>
+              <option value="truefalse" ${item.type === 'truefalse' ? 'selected' : ''}>Đúng / Sai</option>
+              <option value="essay" ${item.type === 'essay' ? 'selected' : ''}>✍️ Tự luận điền số</option>
+            </select>
+          </div>
         </div>
       </div>
     `;
@@ -763,10 +794,27 @@ function renderTeacherAnswerKeyGrid() {
   document.getElementById('teacherTotalQuestionsCount').textContent = `${AppState.teacherAnswerKeys.length} câu`;
 }
 
+function insertMathSymbol(idx, sym) {
+  const input = document.getElementById(`teacherKeyInput_${idx}`);
+  if (input) {
+    const start = input.selectionStart || input.value.length;
+    const end = input.selectionEnd || input.value.length;
+    const val = input.value;
+    input.value = val.substring(0, start) + sym + val.substring(end);
+    input.focus();
+    input.selectionStart = input.selectionEnd = start + sym.length;
+    setTeacherKeyAnswer(idx, input.value);
+    SoundEngine.playClick();
+  }
+}
+
+function testTeacherAnswerMatch(idx, val) {
+  AppState.teacherAnswerKeys[idx].testInput = val;
+  renderTeacherAnswerKeyGrid();
+}
+
 function setTeacherKeyAnswer(idx, ans) {
   AppState.teacherAnswerKeys[idx].correct = ans;
-  renderTeacherAnswerKeyGrid();
-  SoundEngine.playClick();
 }
 
 function setTeacherKeyScore(idx, score) {
@@ -778,7 +826,7 @@ function changeTeacherKeyType(idx, type) {
   if (type === 'truefalse') {
     AppState.teacherAnswerKeys[idx].correct = 'Đúng';
   } else if (type === 'essay') {
-    AppState.teacherAnswerKeys[idx].correct = '12';
+    AppState.teacherAnswerKeys[idx].correct = '12 | x=12';
     AppState.teacherAnswerKeys[idx].score = 1.0;
   } else {
     AppState.teacherAnswerKeys[idx].correct = 'A';
@@ -792,7 +840,8 @@ function addOneTeacherKeyQuestion() {
     num: nextNum,
     type: 'mcq',
     correct: 'A',
-    score: 0.5
+    score: 0.5,
+    testInput: ''
   });
   renderTeacherAnswerKeyGrid();
   SoundEngine.playClick();
@@ -1317,17 +1366,18 @@ function initAntiCheatListeners() {
   });
 }
 
-/* Smart Math Matcher */
+/* ================= ENHANCED SMART MATH MATCHER ================= */
 function checkAnswerMatch(given, correct) {
   if (!given || !correct) return false;
   
   const gRaw = given.toString().trim();
   const cRaw = correct.toString().trim();
 
+  // Support multiple acceptable variations separated by | or ;
   const acceptableList = cRaw.split(/[|;]/).map(s => s.trim()).filter(Boolean);
   
   for (const target of acceptableList) {
-    if (matchSingleAnswer(gRaw, target)) {
+    if (matchSingleMathAnswer(gRaw, target)) {
       return true;
     }
   }
@@ -1335,33 +1385,42 @@ function checkAnswerMatch(given, correct) {
   return false;
 }
 
-function matchSingleAnswer(gStr, cStr) {
-  const g = gStr.toLowerCase().replace(/\s+/g, '');
-  const c = cStr.toLowerCase().replace(/\s+/g, '');
+function matchSingleMathAnswer(gStr, cStr) {
+  // Strip units (cm, cm2, cm3, m, mm, km/h, kg, g, deg, độ, °...)
+  const unitRegex = /\s*(cm[23]?|m[23]?|mm|km(\/h)?|kg|g|độ|°|rad)\s*$/i;
+  let gClean = gStr.replace(unitRegex, '').trim().toLowerCase().replace(/\s+/g, '');
+  let cClean = cStr.replace(unitRegex, '').trim().toLowerCase().replace(/\s+/g, '');
 
-  if (g === c) return true;
+  if (gClean === cClean) return true;
 
-  const gStrippedVar = g.replace(/^[a-z]=[=]?/, '');
-  const cStrippedVar = c.replace(/^[a-z]=[=]?/, '');
+  // Strip leading variables like x=, y=, z=, t=, x==
+  const gStrippedVar = gClean.replace(/^[a-z]=[=]?/, '');
+  const cStrippedVar = cClean.replace(/^[a-z]=[=]?/, '');
   if (gStrippedVar === cStrippedVar) return true;
 
+  // Decimal number comparison with tolerance 1e-4
   const gNum = parseMathNumber(gStr);
   const cNum = parseMathNumber(cStr);
-
   if (gNum !== null && cNum !== null) {
-    if (Math.abs(gNum - cNum) < 1e-5) return true;
+    if (Math.abs(gNum - cNum) < 1e-4) return true;
   }
 
+  // Fraction comparison
   const gFrac = parseFraction(gStr);
   const cFrac = parseFraction(cStr);
   if (gFrac !== null && cFrac !== null) {
-    if (Math.abs(gFrac - cFrac) < 1e-5) return true;
+    if (Math.abs(gFrac - cFrac) < 1e-4) return true;
   }
   if (gFrac !== null && cNum !== null) {
-    if (Math.abs(gFrac - cNum) < 1e-5) return true;
+    if (Math.abs(gFrac - cNum) < 1e-4) return true;
   }
   if (gNum !== null && cFrac !== null) {
-    if (Math.abs(gNum - cFrac) < 1e-5) return true;
+    if (Math.abs(gNum - cFrac) < 1e-4) return true;
+  }
+
+  // Set of multiple roots (e.g. "2, 3" vs "3, 2" or "x=2; x=3")
+  if (matchSetOfRoots(gStr, cStr)) {
+    return true;
   }
 
   return false;
@@ -1369,7 +1428,7 @@ function matchSingleAnswer(gStr, cStr) {
 
 function parseMathNumber(str) {
   if (!str) return null;
-  const clean = str.trim().replace(',', '.').replace(/^[a-z]\s*=\s*/i, '');
+  const clean = str.trim().replace(',', '.').replace(/^[a-z]\s*=\s*/i, '').replace(/[^\d.-]/g, '');
   if (/^-?\d+(\.\d+)?$/.test(clean)) {
     const val = parseFloat(clean);
     return isNaN(val) ? null : val;
@@ -1387,6 +1446,18 @@ function parseFraction(str) {
     if (den !== 0) return num / den;
   }
   return null;
+}
+
+function matchSetOfRoots(gStr, cStr) {
+  const gItems = gStr.split(/[,;\s]+/).map(s => s.replace(/^[a-z]=[=]?/i, '').trim()).filter(Boolean);
+  const cItems = cStr.split(/[,;\s]+/).map(s => s.replace(/^[a-z]=[=]?/i, '').trim()).filter(Boolean);
+
+  if (gItems.length > 1 && gItems.length === cItems.length) {
+    const gSorted = [...gItems].sort();
+    const cSorted = [...cItems].sort();
+    return gSorted.every((val, i) => val.toLowerCase() === cSorted[i].toLowerCase() || Math.abs(parseFloat(val) - parseFloat(cSorted[i])) < 1e-4);
+  }
+  return false;
 }
 
 /* Submit Exam */

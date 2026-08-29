@@ -1123,3 +1123,67 @@ tr:hover td { background: var(--bg-card-hover); }
   .podium-col.rank-2 .podium-step { height: 85px; font-size: 1.8rem; }
   .podium-col.rank-3 .podium-step { height: 65px; font-size: 1.5rem; }
 }
+/* ================= TEACHER MATH ESSAY KEY ENHANCEMENTS ================= */
+.math-symbol-bar {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  margin-top: 0.4rem;
+  padding: 0.35rem 0.5rem;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+}
+
+.math-sym-btn {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0.15rem 0.45rem;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: var(--indigo);
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.math-sym-btn:hover {
+  background: var(--indigo-light);
+  border-color: var(--indigo);
+  transform: scale(1.1);
+}
+
+.math-sym-btn:active {
+  transform: scale(0.95);
+}
+
+.math-tester-box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  background: #f8fafc;
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--border-color);
+}
+
+[data-theme="dark"] .math-tester-box {
+  background: #1e293b;
+}
+
+.math-tester-input {
+  width: 130px;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.8rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+}
+
+.math-tester-pill {
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-full);
+}
