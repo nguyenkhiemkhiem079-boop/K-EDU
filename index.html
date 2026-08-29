@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KhiemEdu — Đấu Trường Học Tập & Thi Trực Tuyến</title>
+  <title>K-EDU — Đấu Trường Học Tập & Thi Trực Tuyến</title>
   
   <!-- Google Fonts: Plus Jakarta Sans & Outfit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -41,12 +41,81 @@
     </div>
   </div>
 
+  <!-- ================= ADD STUDENT MODAL ================= -->
+  <div id="addStudentModal" class="roster-modal-backdrop hidden">
+    <div class="roster-modal-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+        <h3 style="color:var(--primary);margin:0;font-size:1.35rem;">➕ Thêm Học Sinh Vào Danh Bạ</h3>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeAddStudentModal()">✕ Đóng</button>
+      </div>
+
+      <form onsubmit="saveStudentFromModal(); return false;">
+        <div class="form-group">
+          <label>👤 Tên Học Sinh (hoặc Họ & Tên):</label>
+          <input type="text" id="modalStudentNameInput" placeholder="VD: SURI, NGHĨA, GIANG, MINH TRIẾT..." required>
+        </div>
+
+        <div class="form-group">
+          <label>🏫 Lớp Học Của Học Sinh:</label>
+          <input type="text" id="modalStudentClassInput" placeholder="VD: 10, 8, 7, 12, 10A1..." value="10" required>
+        </div>
+
+        <div class="form-group">
+          <label>✨ Chọn Avatar Đại Diện:</label>
+          <div id="modalAvatarSelectorGrid" class="roster-avatar-grid"></div>
+        </div>
+
+        <div style="display:flex;gap:0.75rem;justify-content:flex-end;margin-top:1.5rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeAddStudentModal()">Hủy Bỏ</button>
+          <button type="submit" class="btn btn-primary btn-lg">Lưu Học Sinh 💾</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= BATCH IMPORT STUDENTS MODAL ================= -->
+  <div id="batchStudentModal" class="roster-modal-backdrop hidden">
+    <div class="roster-modal-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+        <h3 style="color:var(--indigo);margin:0;font-size:1.35rem;">⚡ Nhập Hàng Loạt Danh Sách Cả Lớp</h3>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeBatchStudentModal()">✕ Đóng</button>
+      </div>
+
+      <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.75rem;">
+        Copy danh sách từ Excel hoặc Word dán vào ô bên dưới (mỗi dòng 1 bạn, có thể ghi kèm lớp: <code>Tên, Lớp</code> hoặc chỉ cần <code>Tên</code>):
+      </p>
+
+      <form onsubmit="saveBatchStudentsFromText(); return false;">
+        <div class="form-group">
+          <label>🏫 Lớp Học Mặc Định (áp dụng cho các bạn không ghi lớp):</label>
+          <input type="text" id="batchDefaultClassInput" value="10" placeholder="VD: 10">
+        </div>
+
+        <div class="form-group">
+          <label>📋 Danh Sách Học Sinh:</label>
+          <textarea id="batchStudentsTextarea" class="bulk-textarea" style="height:150px;" placeholder="VD:
+NGUYỄN VĂN AN, 10
+TRẦN THỊ BÍCH, 10
+LÊ HOÀNG NAM, 10
+SURI, 10
+NGHĨA, 7
+GIANG, 8"></textarea>
+        </div>
+
+        <div style="display:flex;gap:0.75rem;justify-content:flex-end;margin-top:1.25rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeBatchStudentModal()">Hủy Bỏ</button>
+          <button type="submit" class="btn btn-primary btn-lg">⚡ Thêm Toàn Bộ Vào Danh Bạ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ================= TOP NAVBAR ================= -->
   <header class="navbar">
     <div class="nav-container">
       <a href="#" class="brand" onclick="switchTab('student'); return false;">
         <div class="brand-icon">📐</div>
-        <div class="brand-title">KhiemEdu</div>
+        <div class="brand-title">K-EDU</div>
       </a>
 
       <nav class="nav-tabs">
@@ -116,8 +185,8 @@
             </div>
 
             <div class="form-group">
-              <label>✨ Chọn Avatar Yêu Thích</label>
-              <div id="avatarSelector" style="display:flex;gap:0.6rem;flex-wrap:wrap;margin-top:0.3rem;"></div>
+              <label>✨ Chọn Avatar Yêu Thích (32+ Linh Thú & Chiến Binh)</label>
+              <div id="avatarSelector" style="margin-top:0.3rem;"></div>
             </div>
           </form>
           <div id="joinQuizStatus" style="margin-top:0.5rem;font-size:0.95rem;text-align:center;font-weight:700;"></div>
@@ -132,12 +201,12 @@
         </div>
       </div>
 
-      <!-- Split-Screen Exam Layout (Azota + Duolingo Redesign) -->
+      <!-- Split-Screen Exam Layout -->
       <div id="studentExamSection" class="hidden">
         
         <!-- Cheat Warning Banner -->
         <div class="cheat-banner hidden" id="splitExamCheatBanner">
-          ⚠️ CẢNH BÁO: Hệ thống phát hiện bạn vừa rời khỏi màn hình làm bài! Số lần vi phạm sẽ lưu vào bảng điểm.
+          ⚠️ CẢNH BÁO: Bạn đã rời khỏi màn hình làm bài! Số lần vi phạm sẽ lưu vào bảng điểm.
         </div>
 
         <div class="split-exam-layout">
@@ -535,7 +604,7 @@
         <div class="form-row">
           <div class="form-group">
             <label>Mã Đề Thi</label>
-            <input type="text" id="lookupQuizCodeInput" placeholder="VD: AZOTA01" style="text-transform:uppercase;font-weight:800;letter-spacing:1.5px;color:var(--indigo);">
+            <input type="text" id="lookupQuizCodeInput" placeholder="VD: TOAN10_GK1" style="text-transform:uppercase;font-weight:800;letter-spacing:1.5px;color:var(--indigo);">
           </div>
           <div class="form-group">
             <label>Lọc Theo Lớp (để trống = xem tất cả các lớp)</label>
@@ -551,7 +620,7 @@
       <div id="teacherResultsTableWrap"></div>
     </section>
 
-    <!-- ================= GAMIFICATION / LEADERBOARD VIEW (HALL OF FAME) ================= -->
+    <!-- ================= GAMIFICATION / LEADERBOARD VIEW ================= -->
     <section id="tabGamification" class="view-section">
       
       <!-- Top 3 Podium Card -->

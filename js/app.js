@@ -1,5 +1,5 @@
 /**
- * KhiemEdu Main Application Controller - 32+ Avatar Library, Real Analytics & Massive Key Importer
+ * KhiemEdu Main Application Controller - 32+ Avatar Library, Real Analytics & Modern Student Roster Modal
  */
 
 const AppState = {
@@ -10,6 +10,7 @@ const AppState = {
   studentName: '',
   studentClass: '',
   studentAvatar: '🦊',
+  modalSelectedAvatar: '🦊',
   avatarCategory: 'all',
   studentAnswers: {},
   flaggedQuestions: new Set(),
@@ -243,7 +244,7 @@ function switchTab(tabId) {
   }
 }
 
-/* --- Teacher Modal Controls --- */
+/* --- Teacher PIN Modal --- */
 function openTeacherAuthModal() {
   const modal = document.getElementById('teacherAuthModal');
   const input = document.getElementById('teacherPinInput');
@@ -313,6 +314,285 @@ function escapeHtml(str) {
   }[m]));
 }
 
+/* ================= MODERN STUDENT ROSTER MANAGEMENT ================= */
+async function loadStudentRoster() {
+  AppState.studentRoster = await StorageEngine.getStudentRoster();
+  if (!AppState.studentRoster || !AppState.studentRoster.length) {
+    StorageEngine.seedStudentRosterIfEmpty();
+    AppState.studentRoster = await StorageEngine.getStudentRoster();
+  }
+}
+
+function renderTeacherRosterManager() {
+  const wrap = document.getElementById('teacherRosterManagerWrap');
+  if (!wrap) return;
+
+  const roster = AppState.studentRoster || [];
+
+  wrap.innerHTML = `
+    <div style="margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;">
+      <span style="font-weight:800;color:var(--text-primary);">Tổng số học sinh quản lý: <strong style="color:var(--primary);font-size:1.15rem;">${roster.length}</strong></span>
+      
+      <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+        <button type="button" class="btn btn-primary btn-sm" onclick="openAddStudentModal()">+ Thêm Học Sinh Mới</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="openBatchStudentModal()">⚡ Nhập Cả Lớp (Excel / Text)</button>
+        <button type="button" class="btn btn-sm" style="background:var(--bg-tertiary);" onclick="resetDefaultStudentRoster()" title="Nạp lại 5 học sinh mẫu">🔄 Nạp Danh Sách Mẫu</button>
+      </div>
+    </div>
+
+    ${!roster.length ? `
+      <div style="text-align:center;padding:2rem 1rem;background:var(--bg-tertiary);border:2px dashed var(--border-color);border-radius:var(--radius-lg);">
+        <p style="font-weight:700;color:var(--text-secondary);margin-bottom:0.75rem;">Danh bạ hiện đang trống. Thầy/Cô có thể bấm thêm học sinh hoặc nạp danh sách mẫu:</p>
+        <button type="button" class="btn btn-primary" onclick="resetDefaultStudentRoster()">🔄 Nạp Danh Sách Mẫu Chuẩn</button>
+      </div>
+    ` : `
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Mã HS</th>
+              <th>Avatar</th>
+              <th>Tên Học Sinh</th>
+              <th>Lớp Học</th>
+              <th>Thao Tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${roster.map((s, idx) => `
+              <tr>
+                <td><span class="code-badge" style="font-size:0.8rem;padding:2px 6px;">${s.id || 'HS' + (idx + 1)}</span></td>
+                <td style="font-size:1.5rem;">${s.avatar || '👤'}</td>
+                <td><strong style="color:var(--text-primary);font-size:1rem;">${escapeHtml(s.name)}</strong></td>
+                <td><span class="badge-status badge-pass">Lớp ${escapeHtml(s.className)}</span></td>
+                <td>
+                  <button type="button" class="btn btn-danger btn-sm" onclick="deleteRosterStudent(${idx})">🗑️ Xóa</button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `}
+  `;
+}
+
+/* --- Add Single Student Modal --- */
+function openAddStudentModal() {
+  const modal = document.getElementById('addStudentModal');
+  const nameInput = document.getElementById('modalStudentNameInput');
+  const classInput = document.getElementById('modalStudentClassInput');
+  const avatarGrid = document.getElementById('modalAvatarSelectorGrid');
+
+  AppState.modalSelectedAvatar = '🦊';
+
+  if (nameInput) {
+    nameInput.value = '';
+    setTimeout(() => nameInput.focus(), 150);
+  }
+  if (classInput) classInput.value = '10';
+
+  if (avatarGrid) {
+    avatarGrid.innerHTML = AVATARS_COLLECTION.map(a => `
+      <button type="button" class="roster-avatar-item ${AppState.modalSelectedAvatar === a.emoji ? 'active' : ''}" onclick="selectModalStudentAvatar('${a.emoji}')" title="${escapeHtml(a.name)}">
+        ${a.emoji}
+      </button>
+    `).join('');
+  }
+
+  if (modal) modal.classList.remove('hidden');
+  SoundEngine.playClick();
+}
+
+function closeAddStudentModal() {
+  const modal = document.getElementById('addStudentModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function selectModalStudentAvatar(emoji) {
+  AppState.modalSelectedAvatar = emoji;
+  const avatarGrid = document.getElementById('modalAvatarSelectorGrid');
+  if (avatarGrid) {
+    avatarGrid.querySelectorAll('.roster-avatar-item').forEach(btn => {
+      btn.classList.toggle('active', btn.textContent.trim() === emoji);
+    });
+  }
+  SoundEngine.playClick();
+}
+
+async function saveStudentFromModal() {
+  const name = (document.getElementById('modalStudentNameInput')?.value || '').trim();
+  const className = (document.getElementById('modalStudentClassInput')?.value || '10').trim();
+
+  if (!name) {
+    showToast('⚠️ Vui lòng nhập Tên học sinh!', 'warn');
+    return;
+  }
+
+  const newStudent = {
+    id: name.toUpperCase().replace(/\s+/g, '') + className,
+    name: name.toUpperCase(),
+    className: className,
+    avatar: AppState.modalSelectedAvatar || '🦊'
+  };
+
+  AppState.studentRoster.push(newStudent);
+  await StorageEngine.saveStudentRoster(AppState.studentRoster);
+
+  closeAddStudentModal();
+  renderTeacherRosterManager();
+  renderAssignTargetsSelector();
+  renderTeacherAnalyticsDashboard();
+  updatePersonalizedExamFeed();
+
+  showToast(`✅ Đã thêm học sinh: ${newStudent.avatar} ${newStudent.name} (Lớp ${newStudent.className})!`, 'success');
+  SoundEngine.playCorrect();
+}
+
+/* --- Batch Add Students Modal --- */
+function openBatchStudentModal() {
+  const modal = document.getElementById('batchStudentModal');
+  const textarea = document.getElementById('batchStudentsTextarea');
+  if (textarea) textarea.value = '';
+  if (modal) modal.classList.remove('hidden');
+  SoundEngine.playClick();
+}
+
+function closeBatchStudentModal() {
+  const modal = document.getElementById('batchStudentModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+async function saveBatchStudentsFromText() {
+  const raw = (document.getElementById('batchStudentsTextarea')?.value || '').trim();
+  const defaultClass = (document.getElementById('batchDefaultClassInput')?.value || '10').trim();
+
+  if (!raw) {
+    showToast('⚠️ Vui lòng dán danh sách học sinh!', 'warn');
+    return;
+  }
+
+  const lines = raw.split(/[\r\n]+/);
+  let addedCount = 0;
+
+  lines.forEach(line => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+
+    let name = '';
+    let className = defaultClass;
+
+    if (trimmed.includes(',')) {
+      const parts = trimmed.split(',');
+      name = parts[0].trim();
+      className = parts[1].trim() || defaultClass;
+    } else if (trimmed.includes('\t')) {
+      const parts = trimmed.split('\t');
+      name = parts[0].trim();
+      className = parts[1].trim() || defaultClass;
+    } else {
+      name = trimmed;
+    }
+
+    if (name) {
+      const randomAvatar = AVATARS_COLLECTION[Math.floor(Math.random() * AVATARS_COLLECTION.length)].emoji;
+      AppState.studentRoster.push({
+        id: name.toUpperCase().replace(/\s+/g, '') + className,
+        name: name.toUpperCase(),
+        className: className,
+        avatar: randomAvatar
+      });
+      addedCount++;
+    }
+  });
+
+  await StorageEngine.saveStudentRoster(AppState.studentRoster);
+  closeBatchStudentModal();
+  renderTeacherRosterManager();
+  renderAssignTargetsSelector();
+  renderTeacherAnalyticsDashboard();
+  updatePersonalizedExamFeed();
+
+  showToast(`⚡ ĐÃ NHẬP THÀNH CÔNG ${addedCount} HỌC SINH VÀO DANH BẠ!`, 'success');
+  SoundEngine.playFanfare();
+}
+
+async function resetDefaultStudentRoster() {
+  const initialRoster = [
+    { id: 'SURI10', name: 'SURI', className: '10', avatar: '🦊' },
+    { id: 'NGHIA7', name: 'NGHĨA', className: '7', avatar: '🚀' },
+    { id: 'GIANG8', name: 'GIANG', className: '8', avatar: '🦁' },
+    { id: 'TIEN12', name: 'TIÊN', className: '12', avatar: '🦉' },
+    { id: 'MINH10', name: 'MINH', className: '10', avatar: '⚡' }
+  ];
+
+  AppState.studentRoster = initialRoster;
+  await StorageEngine.saveStudentRoster(initialRoster);
+
+  renderTeacherRosterManager();
+  renderAssignTargetsSelector();
+  renderTeacherAnalyticsDashboard();
+  updatePersonalizedExamFeed();
+
+  showToast('🔄 Đã nạp thành công 5 học sinh mẫu chuẩn!', 'success');
+  SoundEngine.playCorrect();
+}
+
+async function deleteRosterStudent(idx) {
+  const stu = AppState.studentRoster[idx];
+  if (confirm(`Bạn có chắc muốn xóa học sinh [${stu.name}] khỏi danh bạ?`)) {
+    AppState.studentRoster.splice(idx, 1);
+    await StorageEngine.saveStudentRoster(AppState.studentRoster);
+    renderTeacherRosterManager();
+    renderAssignTargetsSelector();
+    renderTeacherAnalyticsDashboard();
+    updatePersonalizedExamFeed();
+    showToast('🗑️ Đã xóa học sinh khỏi danh bạ.', 'success');
+    SoundEngine.playClick();
+  }
+}
+
+function renderAssignTargetsSelector() {
+  const typeSelect = document.getElementById('assignTypeSelect');
+  if (!typeSelect) return;
+
+  const selectedType = typeSelect.value;
+  const classesWrap = document.getElementById('assignClassesBox');
+  const studentsWrap = document.getElementById('assignStudentsBox');
+  const roster = AppState.studentRoster || [];
+
+  if (selectedType === 'all') {
+    classesWrap.classList.add('hidden');
+    studentsWrap.classList.add('hidden');
+  } else if (selectedType === 'classes') {
+    classesWrap.classList.remove('hidden');
+    studentsWrap.classList.add('hidden');
+    
+    const uniqueClasses = [...new Set(roster.map(s => s.className))];
+    const container = document.getElementById('assignClassCheckboxes');
+    if (container) {
+      container.innerHTML = uniqueClasses.map(c => `
+        <label style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.4rem 0.8rem;background:var(--bg-card);border:2px solid var(--border-color);border-radius:var(--radius-md);cursor:pointer;">
+          <input type="checkbox" name="assign_class_cb" value="${escapeHtml(c)}" checked style="width:18px;height:18px;">
+          <strong>Lớp ${escapeHtml(c)}</strong>
+        </label>
+      `).join('');
+    }
+  } else {
+    classesWrap.classList.add('hidden');
+    studentsWrap.classList.remove('hidden');
+
+    const container = document.getElementById('assignStudentCheckboxes');
+    if (container) {
+      container.innerHTML = roster.map(s => `
+        <label style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.4rem 0.8rem;background:var(--bg-card);border:2px solid var(--border-color);border-radius:var(--radius-md);cursor:pointer;">
+          <input type="checkbox" name="assign_student_cb" value="${escapeHtml(s.name)} (${escapeHtml(s.className)})" checked style="width:18px;height:18px;">
+          <span>${s.avatar} <strong>${escapeHtml(s.name)}</strong> (Lớp ${escapeHtml(s.className)})</span>
+        </label>
+      `).join('');
+    }
+  }
+}
+
 /* ================= PARENT PORTAL & REAL METRICS ENGINE ================= */
 function renderParentTab() {
   const nameInput = document.getElementById('parentChildNameInput');
@@ -352,7 +632,6 @@ async function lookupParentChildReport() {
     childResults = childResults.filter(r => (r.className || '').toLowerCase().includes(className.toLowerCase()));
   }
 
-  // Filter by time range
   const filtered = filterResultsByTime(childResults, AppState.parentTimeFilter);
   const metrics = computeRealMetrics(filtered);
 
@@ -612,7 +891,6 @@ function generateSvgScoreChart(results) {
         </linearGradient>
       </defs>
 
-      <!-- Grid lines for 0, 2.5, 5, 7.5, 10 -->
       ${[0, 2.5, 5, 7.5, 10].map(s => {
         const y = padTop + chartH - (s / 10) * chartH;
         return `
@@ -621,13 +899,9 @@ function generateSvgScoreChart(results) {
         `;
       }).join('')}
 
-      <!-- Gradient Area -->
       <path d="${areaPath}" fill="url(#scoreAreaGrad)"/>
-
-      <!-- Score Line -->
       <path d="${linePath}" fill="none" stroke="var(--indigo)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
 
-      <!-- Data Points & Labels -->
       ${points.map((p, i) => `
         <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="6" fill="#fff" stroke="var(--indigo)" stroke-width="3"/>
         <text x="${p.x.toFixed(1)}" y="${(p.y - 10).toFixed(1)}" fill="var(--indigo)" font-size="11" font-weight="900" text-anchor="middle">${p.score}đ</text>
@@ -1232,130 +1506,6 @@ function generateQuizCode() {
   return s;
 }
 
-/* ================= ROSTER & ASSIGN SELECTOR ================= */
-async function loadStudentRoster() {
-  AppState.studentRoster = await StorageEngine.getStudentRoster();
-}
-
-function renderTeacherRosterManager() {
-  const wrap = document.getElementById('teacherRosterManagerWrap');
-  if (!wrap) return;
-
-  wrap.innerHTML = `
-    <div style="margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;">
-      <span style="font-weight:800;color:var(--text-primary);">Tổng số học sinh quản lý: <strong>${AppState.studentRoster.length}</strong></span>
-      <button class="btn btn-primary btn-sm" onclick="showAddStudentModal()">+ Thêm Học Sinh Mới</button>
-    </div>
-
-    <div class="table-responsive">
-      <table>
-        <thead>
-          <tr>
-            <th>Mã HS</th>
-            <th>Avatar</th>
-            <th>Tên Học Sinh</th>
-            <th>Lớp Học</th>
-            <th>Thao Tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${AppState.studentRoster.map((s, idx) => `
-            <tr>
-              <td><span class="code-badge" style="font-size:0.8rem;padding:2px 6px;">${s.id || 'HS' + (idx + 1)}</span></td>
-              <td style="font-size:1.5rem;">${s.avatar || '👤'}</td>
-              <td><strong style="color:var(--text-primary);font-size:1rem;">${escapeHtml(s.name)}</strong></td>
-              <td><span class="badge-status badge-pass">Lớp ${escapeHtml(s.className)}</span></td>
-              <td>
-                <button class="btn btn-danger btn-sm" onclick="deleteRosterStudent(${idx})">🗑️ Xóa</button>
-              </td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-  `;
-}
-
-function showAddStudentModal() {
-  const name = prompt('Nhập Tên học sinh (VD: SURI, NGHĨA, GIANG...):');
-  if (!name || !name.trim()) return;
-  const className = prompt('Nhập Lớp học của học sinh (VD: 10, 8, 7, 12...):', '10');
-  if (!className || !className.trim()) return;
-
-  const avatars = ['🦊', '🦉', '🦁', '🐼', '🚀', '⚡', '🌟', '🦄', '🤖', '🥷'];
-  const randomAvatar = avatars[Math.floor(Math.random() * avatars.length)];
-
-  AppState.studentRoster.push({
-    id: name.trim().toUpperCase() + className.trim(),
-    name: name.trim().toUpperCase(),
-    className: className.trim(),
-    avatar: randomAvatar
-  });
-
-  StorageEngine.saveStudentRoster(AppState.studentRoster);
-  renderTeacherRosterManager();
-  renderAssignTargetsSelector();
-  renderTeacherAnalyticsDashboard();
-  updatePersonalizedExamFeed();
-  showToast(`✅ Đã thêm học sinh: ${name.trim()} (Lớp ${className.trim()})`, 'success');
-  SoundEngine.playCorrect();
-}
-
-async function deleteRosterStudent(idx) {
-  const stu = AppState.studentRoster[idx];
-  if (confirm(`Bạn có chắc muốn xóa học sinh [${stu.name}] khỏi danh bạ?`)) {
-    AppState.studentRoster.splice(idx, 1);
-    await StorageEngine.saveStudentRoster(AppState.studentRoster);
-    renderTeacherRosterManager();
-    renderAssignTargetsSelector();
-    renderTeacherAnalyticsDashboard();
-    updatePersonalizedExamFeed();
-    showToast('🗑️ Đã xóa học sinh khỏi danh bạ.', 'success');
-    SoundEngine.playClick();
-  }
-}
-
-function renderAssignTargetsSelector() {
-  const typeSelect = document.getElementById('assignTypeSelect');
-  if (!typeSelect) return;
-
-  const selectedType = typeSelect.value;
-  const classesWrap = document.getElementById('assignClassesBox');
-  const studentsWrap = document.getElementById('assignStudentsBox');
-
-  if (selectedType === 'all') {
-    classesWrap.classList.add('hidden');
-    studentsWrap.classList.add('hidden');
-  } else if (selectedType === 'classes') {
-    classesWrap.classList.remove('hidden');
-    studentsWrap.classList.add('hidden');
-    
-    const uniqueClasses = [...new Set(AppState.studentRoster.map(s => s.className))];
-    const container = document.getElementById('assignClassCheckboxes');
-    if (container) {
-      container.innerHTML = uniqueClasses.map(c => `
-        <label style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.4rem 0.8rem;background:var(--bg-card);border:2px solid var(--border-color);border-radius:var(--radius-md);cursor:pointer;">
-          <input type="checkbox" name="assign_class_cb" value="${escapeHtml(c)}" checked style="width:18px;height:18px;">
-          <strong>Lớp ${escapeHtml(c)}</strong>
-        </label>
-      `).join('');
-    }
-  } else {
-    classesWrap.classList.add('hidden');
-    studentsWrap.classList.remove('hidden');
-
-    const container = document.getElementById('assignStudentCheckboxes');
-    if (container) {
-      container.innerHTML = AppState.studentRoster.map(s => `
-        <label style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.4rem 0.8rem;background:var(--bg-card);border:2px solid var(--border-color);border-radius:var(--radius-md);cursor:pointer;">
-          <input type="checkbox" name="assign_student_cb" value="${escapeHtml(s.name)} (${escapeHtml(s.className)})" checked style="width:18px;height:18px;">
-          <span>${s.avatar} <strong>${escapeHtml(s.name)}</strong> (Lớp ${escapeHtml(s.className)})</span>
-        </label>
-      `).join('');
-    }
-  }
-}
-
 /* ================= QUIZ & RESULTS MANAGER ================= */
 async function renderTeacherQuizManager() {
   const wrap = document.getElementById('teacherQuizManagerWrap');
@@ -1374,7 +1524,7 @@ async function renderTeacherQuizManager() {
   }
 
   wrap.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:gap:0.5rem;">
       <span style="font-weight:800;color:var(--text-secondary);">Tổng số đề thi: <strong>${quizzes.length}</strong></span>
       <div style="display:flex;gap:0.5rem;">
         <button class="btn btn-primary btn-sm" onclick="bulkSetAllQuizzesPublic()">🌍 Công Khai Tất Cả Đề</button>
@@ -1625,7 +1775,6 @@ async function startExamWithQuizId(quizId) {
   AppState.flaggedQuestions.clear();
   AppState.tabSwitches = 0;
 
-  const matchedStudent = AppState.studentRoster.find(s => s.name.toLowerCase() === name.toLowerCase());
   const profile = GamificationEngine.getUserProfile();
   profile.name = name;
   profile.className = className;
@@ -2227,7 +2376,6 @@ async function renderGamificationTab() {
   if (perfScoresEl) perfScoresEl.textContent = profile.perfectCount || 0;
   if (streakEl) streakEl.textContent = `${profile.streak || 1} Ngày 🔥`;
 
-  // Render Badges
   const badgesGrid = document.getElementById('badgesShowcaseGrid');
   if (badgesGrid) {
     const unlocked = new Set(profile.unlockedBadges || []);
@@ -2246,7 +2394,6 @@ async function renderGamificationTab() {
     }).join('');
   }
 
-  // Render Hall of Fame Top 3 & List
   renderHallOfFameLeaderboard();
 }
 
@@ -2258,7 +2405,6 @@ async function renderHallOfFameLeaderboard() {
   const roster = await StorageEngine.getStudentRoster();
   const allResults = await StorageEngine.getAllResults();
 
-  // Aggregate stats per student
   const statsMap = {};
   roster.forEach(s => {
     statsMap[s.name.toLowerCase()] = {
