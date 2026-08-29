@@ -1258,3 +1258,90 @@ tr:hover td { background: var(--bg-card-hover); }
   font-size: 0.8rem;
   font-weight: 800;
 }
+/* ================= PARENT PORTAL STYLES ================= */
+.parent-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin: 1.25rem 0;
+}
+
+.parent-kpi-card {
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.parent-kpi-val {
+  font-family: var(--font-heading);
+  font-size: 1.85rem;
+  font-weight: 900;
+  color: var(--indigo);
+  margin: 0.2rem 0;
+}
+
+.parent-kpi-lbl {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.pedagogy-advice-box {
+  background: linear-gradient(135deg, rgba(238, 242, 255, 0.9) 0%, rgba(224, 231, 255, 0.6) 100%);
+  border: 2px solid var(--indigo);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+[data-theme="dark"] .pedagogy-advice-box {
+  background: rgba(30, 27, 75, 0.4);
+  border-color: var(--indigo);
+}
+
+.pedagogy-icon {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.pedagogy-content h4 {
+  color: var(--indigo);
+  font-size: 1.1rem;
+  margin: 0 0 0.4rem 0;
+  font-weight: 800;
+}
+
+.pedagogy-content p {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+  font-weight: 600;
+}
+
+.timeline-exam-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.timeline-exam-card:hover {
+  border-color: var(--indigo);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
