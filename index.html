@@ -251,10 +251,10 @@
       <!-- Lookup Card -->
       <div class="card" style="border-left: 6px solid var(--indigo);">
         <div class="card-header">
-          <h2><span>👨‍👩‍👧</span> Cổng Thông Tin Phụ Huynh — Theo Dõi Tiến Độ Học Tập</h2>
+          <h2><span>👨‍👩‍👧</span> Cổng Thông Tin Phụ Huynh — Theo Dõi Số Liệu Thực Tế</h2>
         </div>
         <p class="card-subtitle">
-          Kính chào Quý Phụ Huynh! Vui lòng nhập Tên và Lớp học của con để xem toàn bộ kết quả, mức độ chuyên cần và nhận xét sư phạm:
+          Kính chào Quý Phụ Huynh! Vui lòng nhập Tên và Lớp học của con để xem toàn bộ số liệu thực tế, số câu không giải được và biểu đồ thống kê tiến độ:
         </p>
 
         <div class="form-row">
@@ -269,11 +269,11 @@
         </div>
 
         <div style="display:flex;gap:0.75rem;align-items:center;">
-          <button type="button" class="btn btn-primary" onclick="lookupParentChildReport()">🔍 Xem Báo Cáo Học Tập</button>
+          <button type="button" class="btn btn-primary" onclick="lookupParentChildReport()">🔍 Xem Báo Cáo Thống Kê</button>
         </div>
       </div>
 
-      <!-- Dynamic Report Content -->
+      <!-- Dynamic Real Metrics & Charts Content -->
       <div id="parentReportContentWrap"></div>
 
     </section>
@@ -296,7 +296,18 @@
         </div>
       </div>
 
-      <!-- Section 0: Student & Class Roster Manager -->
+      <!-- Section 0: REAL METRICS & ANALYTICS DASHBOARD FOR TEACHERS -->
+      <div class="card" style="border-left: 6px solid var(--indigo);background:linear-gradient(180deg, var(--bg-card) 0%, rgba(240, 244, 255, 0.4) 100%);">
+        <div class="card-header">
+          <h2><span>📈</span> Trung Tâm Thống Kê & Phân Tích Số Liệu Thực Tế (Analytics Dashboard)</h2>
+        </div>
+        <p class="card-subtitle">
+          Thống kê chi tiết số câu đúng, số câu không giải được, thang điểm trung bình và biểu đồ tiến độ học lực theo Ngày / Tuần / Tháng:
+        </p>
+        <div id="teacherAnalyticsDashboardWrap"></div>
+      </div>
+
+      <!-- Section 1: Student & Class Roster Manager -->
       <div class="card" style="border-left: 6px solid var(--primary);">
         <div class="card-header">
           <h2><span>👥</span> Quản Lý Danh Bạ Học Sinh & Lớp Học</h2>
@@ -307,7 +318,7 @@
         <div id="teacherRosterManagerWrap"></div>
       </div>
 
-      <!-- Section 1: Manage & Delete Quizzes -->
+      <!-- Section 2: Manage & Delete Quizzes -->
       <div class="card" style="border-left: 6px solid var(--indigo);">
         <div class="card-header">
           <h2><span>📂</span> Quản Lý Đề Thi Hiện Có (Admin Desk)</h2>
@@ -318,7 +329,7 @@
         <div id="teacherQuizManagerWrap"></div>
       </div>
 
-      <!-- Section 2: BATCH EXAM PUBLISHING -->
+      <!-- Section 3: BATCH EXAM PUBLISHING -->
       <div class="card" style="border-left: 6px solid var(--sky);background: linear-gradient(180deg, var(--bg-card) 0%, rgba(224, 242, 254, 0.2) 100%);">
         <div class="card-header">
           <h2><span>⚡</span> Tải Lên & Phát Hành Hàng Loạt Nhiều Đề Thi (Batch Upload)</h2>
@@ -362,7 +373,7 @@
         <div id="batchQueueTableWrap"></div>
       </div>
 
-      <!-- Section 3: SEPARATED SINGLE EXAM CREATOR (MCQ & ESSAY) -->
+      <!-- Section 4: SEPARATED SINGLE EXAM CREATOR (MCQ & ESSAY) -->
       <div class="card">
         <div class="card-header">
           <h2><span>➕</span> Tạo & Thiết Lập 1 Đề Thi Riêng Biệt</h2>

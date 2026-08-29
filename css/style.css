@@ -1345,3 +1345,139 @@ tr:hover td { background: var(--bg-card-hover); }
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
+/* ================= REAL METRICS & INTERACTIVE CHARTS STYLES ================= */
+.analytics-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 1rem;
+  margin: 1.25rem 0;
+}
+
+.metric-card {
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.15rem 1rem;
+  text-align: center;
+  position: relative;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--indigo);
+}
+
+.metric-card .metric-val {
+  font-family: var(--font-heading);
+  font-size: 1.9rem;
+  font-weight: 900;
+  margin: 0.15rem 0;
+}
+
+.metric-card .metric-lbl {
+  font-size: 0.825rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metric-card .metric-sub {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+/* Time Filter Segmented Controls */
+.time-filter-bar {
+  display: inline-flex;
+  background: var(--bg-tertiary);
+  padding: 0.25rem;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--border-color);
+  gap: 0.25rem;
+}
+
+.time-filter-btn {
+  background: transparent;
+  border: none;
+  padding: 0.35rem 0.9rem;
+  border-radius: var(--radius-full);
+  font-size: 0.825rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.time-filter-btn.active {
+  background: var(--indigo);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.35);
+}
+
+/* Chart Canvas / SVG Container */
+.chart-container-box {
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem 1.25rem;
+  margin: 1.25rem 0;
+  position: relative;
+}
+
+.chart-svg-wrap {
+  width: 100%;
+  height: 240px;
+  position: relative;
+}
+
+.chart-svg-wrap svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Question Breakdown Progress Bar */
+.question-breakdown-bar {
+  display: flex;
+  height: 20px;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  border: 2px solid var(--border-color);
+  margin: 0.75rem 0;
+  background: var(--bg-tertiary);
+}
+
+.breakdown-seg-correct {
+  background: var(--primary);
+  transition: width 0.4s ease;
+}
+
+.breakdown-seg-unsolved {
+  background: var(--rose);
+  transition: width 0.4s ease;
+}
+
+.breakdown-legend {
+  display: flex;
+  gap: 1.25rem;
+  font-size: 0.85rem;
+  font-weight: 800;
+  flex-wrap: wrap;
+  margin-top: 0.4rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-full);
+}
