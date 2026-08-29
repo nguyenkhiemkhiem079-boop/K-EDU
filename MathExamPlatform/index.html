@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ToanMath Platform - Quản lý CSDL & Phòng Thi Toán THCS</title>
+  
+  <!-- Google Fonts & KaTeX CSS -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+
+  <!-- Application Stylesheets -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/exam-room.css">
+  <link rel="stylesheet" href="css/print.css">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="app-header">
+    <div class="brand-wrapper">
+      <div class="brand-icon">∑</div>
+      <div class="brand-text">
+        <h1>ToanMath Platform</h1>
+        <p>Hệ thống CSDL & Luyện thi Toán THCS</p>
+      </div>
+    </div>
+
+    <!-- Tách biệt 2 phân hệ độc lập -->
+    <nav class="module-tabs">
+      <button class="module-tab-btn active" id="tabBtnCreator" onclick="switchModule('creator')">
+        <span>📚</span> Ngân hàng & Tạo Đề
+      </button>
+      <button class="module-tab-btn" id="tabBtnExam" onclick="switchModule('exam')">
+        <span>✍️</span> Phòng Thi Trực Tuyến
+      </button>
+    </nav>
+
+    <div class="header-actions">
+      <button class="btn-icon" id="themeToggleBtn" onclick="toggleTheme()" title="Chuyển đổi Sáng/Tối">
+        🌓
+      </button>
+    </div>
+  </header>
+
+  <!-- Print Sheet Template (Chỉ hiện khi In/Xuất PDF) -->
+  <div id="printSheet" class="print-only">
+    <div class="print-header">
+      <div class="print-school-info">
+        <h4>PHÒNG GD&ĐT QUẬN / HUYỆN</h4>
+        <h3>TRƯỜNG THCS TOANMATH</h3>
+      </div>
+      <div class="print-exam-info">
+        <h2 id="printExamTitle">ĐỀ KIỂM TRA ĐỊNH KỲ TOÁN</h2>
+        <p id="printExamSubtitle">Thời gian làm bài: 45 phút (Không kể thời gian phát đề)</p>
+        <p id="printExamCode">Mã đề thi: 101</p>
+      </div>
+    </div>
+    <div class="print-student-info">
+      <div>Họ và tên thí sinh: ............................................................................</div>
+      <div>Lớp: ................ SBD: ................</div>
+    </div>
+    <div id="printQuestionsList"></div>
+    <div id="printAnswerKeySection" style="margin-top: 30px; page-break-before: always; display: none;">
+      <h3 style="text-align: center; margin-bottom: 15px;">ĐÁP ÁN & HƯỚNG DẪN CHẤM CHI TIẾT</h3>
+      <div id="printAnswerKeyContent"></div>
+    </div>
+  </div>
+
+  <main class="main-container">
+
+    <!-- ==================== PHÂN HỆ 1: QUẢN LÝ DỮ LIỆU & TẠO ĐỀ ==================== -->
+    <section id="moduleCreator" class="view-section active">
+      <div class="section-header">
+        <div class="section-title">
+          <h2><span>📊</span> Quản lý CSDL Câu hỏi & Tạo Đề</h2>
+          <p>Thu thập và biên soạn câu hỏi Toán THCS (Lớp 6, 7, 8, 9, Tuyển sinh 10) với hỗ trợ công thức $\LaTeX$</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+          <button class="btn btn-secondary" onclick="openImportExportModal()">
+            <span>🔄</span> Sao lưu / Khôi phục
+          </button>
+          <button class="btn btn-primary" onclick="openAddQuestionModal()">
+            <span>➕</span> Thêm Câu Hỏi Mới
+          </button>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom: 2rem;">
+        
+        <!-- Cột Trái: Bộ Sinh Đề Thông Minh Theo Ma Trận -->
+        <div class="card">
+          <div class="card-header">
+            <h3><span>⚙️</span> Bộ Tạo Đề Theo Ma Trận</h3>
+            <span class="badge badge-type">Tự Động & Xuất Bản In</span>
+          </div>
+
+          <form id="matrixForm" onsubmit="handleGenerateExam(event)">
+            <div class="form-group">
+              <label class="form-label">Tên bài kiểm tra / Đề thi:</label>
+              <input type="text" id="cfgExamTitle" class="form-control" value="Đề Kiểm Tra Định Kỳ Môn Toán" required>
+            </div>
+
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Khối lớp:</label>
+                <select id="cfgGrade" class="form-select">
+                  <option value="all">Tất cả khối THCS</option>
+                  <option value="6">Toán Lớp 6</option>
+                  <option value="7">Toán Lớp 7</option>
+                  <option value="8">Toán Lớp 8</option>
+                  <option value="9" selected>Toán Lớp 9</option>
+                  <option value="10">Luyện thi vào Lớp 10</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Thời gian làm bài:</label>
+                <select id="cfgDuration" class="form-select">
+                  <option value="15">15 phút (Kiểm tra nhanh)</option>
+                  <option value="45" selected>45 phút (1 tiết)</option>
+                  <option value="60">60 phút</option>
+                  <option value="90">90 phút (Học kỳ)</option>
+                  <option value="120">120 phút (Thi tuyển sinh 10)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Số câu Trắc nghiệm:</label>
+                <input type="number" id="cfgNumChoice" class="form-control" value="10" min="0" max="50">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Số câu Tự luận Điền số:</label>
+                <input type="number" id="cfgNumEssay" class="form-control" value="2" min="0" max="20">
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+              <button type="submit" class="btn btn-primary" style="flex: 1;">
+                <span>⚡</span> Sinh Đề Thi Ngay
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Cột Phải: Thống kê & Đề đã tạo gần nhất -->
+        <div class="card">
+          <div class="card-header">
+            <h3><span>📑</span> Đề Thi Đã Sinh</h3>
+            <span class="badge badge-nb" id="generatedExamStatus">Sẵn sàng</span>
+          </div>
+
+          <div id="latestExamPreview" style="min-height: 200px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; color: var(--text-muted);">
+            <p>Chưa sinh đề thi nào. Hãy bấm "Sinh Đề Thi Ngay" để tạo đề từ cơ sở dữ liệu!</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Khu vực Tùy chỉnh & Đổi số trực tiếp cho từng câu Tự luận trong đề (Theo đúng yêu cầu) -->
+      <div class="card" id="essayCustomizerCard" style="display: none; margin-bottom: 2rem;">
+        <div class="card-header">
+          <h3><span>✍️</span> Bảng Tùy Chỉnh Số & Đánh Số Câu Tự Luận (13, 13a, 13b, 13c...)</h3>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="addNewEssayQuestionToCurrentExam()">
+              ➕ Thêm Câu Tự Luận Mới
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="randomizeAllEssayQuestions()">
+              🎲 Đổi số TẤT CẢ câu tự luận
+            </button>
+          </div>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Bạn có thể tùy chỉnh <strong>Số thứ tự / Nhãn câu</strong> (ví dụ: <code>13</code>, <code>13a</code>, <code>13b</code>, <code>13c</code>, <code>Bài 1.a</code>), thêm các ý con, đổi số liệu hoặc chỉnh sửa đáp số chuẩn chấp nhận được.
+        </p>
+        <div id="essayCustomizerItemsContainer"></div>
+      </div>
+
+      <!-- Danh Sách & Bộ Lọc Ngân Hàng Câu Hỏi -->
+      <div class="card">
+        <div class="card-header">
+          <h3><span>📚</span> Danh Sách Câu Hỏi Trong Ngân Hàng</h3>
+          <span class="badge badge-grade" id="totalQuestionsBadge">0 câu hỏi</span>
+        </div>
+
+        <!-- Bộ Lọc -->
+        <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+          <div style="flex: 1; min-width: 200px;">
+            <input type="text" id="searchQuestionInput" class="form-control" placeholder="🔍 Tìm kiếm câu hỏi, chuyên đề..." oninput="handleSearchQuestion()">
+          </div>
+          <select id="filterGrade" class="form-select" style="width: 150px;" onchange="handleFilterChange()">
+            <option value="all">Tất cả Lớp</option>
+            <option value="6">Toán 6</option>
+            <option value="7">Toán 7</option>
+            <option value="8">Toán 8</option>
+            <option value="9">Toán 9</option>
+            <option value="10">Vào Lớp 10</option>
+          </select>
+          <select id="filterLevel" class="form-select" style="width: 160px;" onchange="handleFilterChange()">
+            <option value="all">Mọi mức độ</option>
+            <option value="NB">Nhận biết</option>
+            <option value="TH">Thông hiểu</option>
+            <option value="VD">Vận dụng</option>
+            <option value="VDC">Vận dụng cao</option>
+          </select>
+          <select id="filterType" class="form-select" style="width: 160px;" onchange="handleFilterChange()">
+            <option value="all">Mọi hình thức</option>
+            <option value="choice">Trắc nghiệm</option>
+            <option value="essay">Tự luận điền số</option>
+          </select>
+        </div>
+
+        <!-- Bảng danh sách câu hỏi -->
+        <div id="questionBankList" class="questions-container"></div>
+      </div>
+    </section>
+
+    <!-- ==================== PHÂN HỆ 2: PHÒNG THI TRỰC TUYẾN ĐỘC LẬP ==================== -->
+    <section id="moduleExam" class="view-section">
+      
+      <!-- Màn hình 1: Danh sách Đề Thi / Chọn Đề -->
+      <div id="examSelectScreen">
+        <div class="section-header">
+          <div class="section-title">
+            <h2><span>✍️</span> Cổng Phòng Thi Trực Tuyến (Thí sinh)</h2>
+            <p>Môi trường thi chuẩn hóa, bấm giờ tập trung, độc lập với khu vực quản trị soạn đề</p>
+          </div>
+        </div>
+
+        <div class="grid-3" id="availableExamsGrid"></div>
+      </div>
+
+      <!-- Màn hình 2: Phòng Thi Trực Tuyến Đang Chạy (Zen Mode) -->
+      <div id="examRoomActiveScreen" style="display: none;">
+        <div class="exam-viewport">
+          
+          <!-- Thanh trạng thái thi -->
+          <div class="exam-bar">
+            <div class="exam-info">
+              <h2 id="activeExamTitle">Đề Thi Môn Toán</h2>
+              <div class="exam-meta">
+                <span id="activeExamGrade">Lớp 9</span>
+                <span>•</span>
+                <span id="activeExamTotalQ">0 câu</span>
+                <span>•</span>
+                <span>Mã đề: <strong id="activeExamCode">101</strong></span>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <div class="timer-box" id="timerBoxWrapper">
+                <span>⏱️</span>
+                <span id="examTimerDisplay">45:00</span>
+              </div>
+              <button class="btn btn-success" onclick="confirmSubmitExam()">
+                <span>📤</span> Nộp Bài
+              </button>
+            </div>
+          </div>
+
+          <!-- Bố cục thi -->
+          <div class="exam-layout">
+            
+            <!-- Danh sách câu hỏi làm bài -->
+            <div id="activeExamQuestionsList" class="questions-container"></div>
+
+            <!-- Bảng điều hướng câu hỏi bên cạnh -->
+            <div class="exam-sidebar">
+              <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.5rem;">Bảng điều hướng câu hỏi</h4>
+              <p style="font-size: 0.75rem; color: var(--text-muted);">Bấm vào số câu để chuyển nhanh đến câu đó</p>
+
+              <div class="question-grid" id="examNavGrid"></div>
+
+              <div style="font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.35rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem; margin-top: 0.75rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span style="display: inline-block; width: 12px; height: 12px; border-radius: 3px; background: rgba(16, 185, 129, 0.4); border: 1px solid #10b981;"></span>
+                  <span>Đã trả lời</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span style="display: inline-block; width: 12px; height: 12px; border-radius: 3px; background: var(--bg-input); border: 1px solid var(--border-color);"></span>
+                  <span>Chưa trả lời</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span style="color: #f59e0b; font-weight: bold;">★</span>
+                  <span>Đánh dấu xem lại</span>
+                </div>
+              </div>
+
+              <button class="btn btn-primary" style="width: 100%; margin-top: 1.25rem;" onclick="confirmSubmitExam()">
+                Nộp Bài Thi
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Màn hình 3: Kết Quả & Xem Lời Giải Chi Tiết -->
+      <div id="examResultScreen" style="display: none;">
+        <div class="exam-viewport">
+          <div class="result-card">
+            <div class="score-badge-circle">
+              <span class="score-num" id="resScoreNum">10.0</span>
+              <span class="score-scale">Thang điểm 10</span>
+            </div>
+            
+            <h2 id="resEvaluationTitle" style="font-size: 1.6rem; font-weight: 700; margin-bottom: 0.5rem;">Hoàn Thành Bài Thi!</h2>
+            <p id="resExamSubtitle" style="color: var(--text-muted);">Đề kiểm tra Toán THCS</p>
+
+            <div class="stats-grid">
+              <div class="stat-item">
+                <div class="stat-val" style="color: #10b981;" id="resCorrectCount">0/0</div>
+                <div class="stat-label">Số câu đúng</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-val" style="color: #38bdf8;" id="resTimeSpent">00:00</div>
+                <div class="stat-label">Thời gian làm bài</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-val" style="color: #c084fc;" id="resAccuracy">100%</div>
+                <div class="stat-label">Độ chính xác</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-val" style="color: #f59e0b;" id="resGradeLevel">Giỏi</div>
+                <div class="stat-label">Xếp loại</div>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 2rem;">
+              <button class="btn btn-primary" onclick="showExamSelectScreen()">
+                <span>🔄</span> Làm Đề Khác
+              </button>
+              <button class="btn btn-secondary" onclick="window.print()">
+                <span>🖨️</span> In Báo Cáo Kết Quả
+              </button>
+            </div>
+          </div>
+
+          <!-- Danh sách câu hỏi kèm Lời giải chi tiết KaTeX -->
+          <div class="card">
+            <div class="card-header">
+              <h3><span>💡</span> Xem Lại Chi Tiết & Lời Giải Từng Bước</h3>
+              <span class="badge badge-grade">Công thức $\LaTeX$ Sắc Nét</span>
+            </div>
+            <div id="resultQuestionsReviewList" class="questions-container"></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ==================== MODAL THÊM CÂU HỎI MỚI & TÙY CHỈNH TỰ LUẬN ==================== -->
+  <div id="addQuestionModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; padding: 1rem; overflow-y: auto;">
+    <div class="card" style="max-width: 750px; width: 100%; max-height: 90vh; overflow-y: auto;">
+      <div class="card-header">
+        <h3><span>✍️</span> Thêm Câu Hỏi Mới / Tùy Chỉnh Tự Luận</h3>
+        <button class="btn-icon" onclick="closeAddQuestionModal()">✕</button>
+      </div>
+
+      <form id="addQuestionForm" onsubmit="handleSaveNewQuestion(event)">
+        <div class="grid-3">
+          <div class="form-group">
+            <label class="form-label">Khối lớp:</label>
+            <select id="newGrade" class="form-select">
+              <option value="6">Toán 6</option>
+              <option value="7">Toán 7</option>
+              <option value="8">Toán 8</option>
+              <option value="9" selected>Toán 9</option>
+              <option value="10">Vào Lớp 10</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Mức độ nhận thức:</label>
+            <select id="newLevel" class="form-select">
+              <option value="NB">Nhận biết</option>
+              <option value="TH" selected>Thông hiểu</option>
+              <option value="VD">Vận dụng</option>
+              <option value="VDC">Vận dụng cao</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Hình thức:</label>
+            <select id="newType" class="form-select" onchange="handleNewQuestionTypeChange()">
+              <option value="choice">Trắc nghiệm (4 lựa chọn)</option>
+              <option value="essay">Tự luận điền số</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Chuyên đề:</label>
+            <input type="text" id="newTopic" class="form-control" value="Đại số" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nội dung con:</label>
+            <input type="text" id="newSubtopic" class="form-control" value="Phương trình & Hệ phương trình">
+          </div>
+        </div>
+
+        <!-- Thanh chèn nhanh ký hiệu Toán học -->
+        <div class="form-group">
+          <label class="form-label">Nội dung câu hỏi (hỗ trợ công thức $\LaTeX$):</label>
+          <div class="symbol-toolbar">
+            <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-right: 4px;">Chèn nhanh ký hiệu:</span>
+            <button type="button" class="symbol-btn" onclick="insertSymbol('newContent', '±')">±</button>
+            <button type="button" class="symbol-btn" onclick="insertSymbol('newContent', '√')">√</button>
+            <button type="button" class="symbol-btn" onclick="insertSymbol('newContent', 'π')">π</button>
+            <button type="button" class="symbol-btn" onclick="insertSymbol('newContent', '°')">°</button>
+            <button type="button" class="symbol-btn" onclick="insertSymbol('newContent', '²')">²</button>
+            <button type="button" class="symbol-btn" onclick="insertSymbol('newContent', '³')">³</button>
+            <button type="button" class="symbol-btn" onclick="insertSymbol('newContent', '≤')">≤</button>
+            <button type="button" class="symbol-btn" onclick="insertSymbol('newContent', '≥')">≥</button>
+            <button type="button" class="symbol-btn" onclick="insertSymbol('newContent', '≠')">≠</button>
+            <button type="button" class="symbol-btn" onclick="insertSymbol('newContent', '/')">/</button>
+            <button type="button" class="symbol-btn" onclick="insertSymbol('newContent', '|')">|</button>
+            <button type="button" class="symbol-btn" onclick="insertSymbol('newContent', '\\dfrac{a}{b}')">$\frac{a}{b}$</button>
+            <button type="button" class="symbol-btn" onclick="insertSymbol('newContent', '\\sqrt{x}')">$\sqrt{x}$</button>
+          </div>
+          <textarea id="newContent" class="form-control" rows="3" required oninput="renderMathPreview('newContent', 'contentPreview')">Cho phương trình $2x - 6 = 0$. Tìm nghiệm $x$.</textarea>
+          <div id="contentPreview" class="latex-preview-box"></div>
+        </div>
+
+        <!-- Cấu hình Trắc nghiệm -->
+        <div id="choiceConfigSection">
+          <label class="form-label">4 Phương án lựa chọn (chọn nút tròn cho đáp án đúng):</label>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <input type="radio" name="newCorrectChoice" value="0" checked>
+              <span style="font-weight: 700;">A.</span>
+              <input type="text" id="newOpt0" class="form-control" value="$x = 3$" required>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <input type="radio" name="newCorrectChoice" value="1">
+              <span style="font-weight: 700;">B.</span>
+              <input type="text" id="newOpt1" class="form-control" value="$x = -3$" required>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <input type="radio" name="newCorrectChoice" value="2">
+              <span style="font-weight: 700;">C.</span>
+              <input type="text" id="newOpt2" class="form-control" value="$x = 6$" required>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <input type="radio" name="newCorrectChoice" value="3">
+              <span style="font-weight: 700;">D.</span>
+              <input type="text" id="newOpt3" class="form-control" value="$x = 0$" required>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cấu hình Tùy chỉnh Tự luận Điền Số (Theo yêu cầu người dùng) -->
+        <div id="essayConfigSection" style="display: none;" class="tuan-custom-box">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <label class="form-label" style="margin-bottom: 0; font-size: 1rem; color: #818cf8;">
+              🎯 Đáp số chuẩn (Dùng dấu <code>|</code> để thêm nhiều cách viết tương đương):
+            </label>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="handleAutoRandomizeVariant()">
+              🎲 Sinh ngẫu nhiên bộ số
+            </button>
+          </div>
+
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+            Ví dụ: <code>12 | x=12 | x = 12</code> hoặc <code>1/2 | 0.5</code>
+          </div>
+
+          <input type="text" id="newEssayAnswer" class="form-control" value="3 | x=3 | x = 3">
+
+          <div class="symbol-toolbar" style="margin-top: 0.75rem;">
+            <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-right: 4px;">Chèn nhanh ký hiệu:</span>
+            <button type="button" class="symbol-btn" onclick="insertSymbol('newEssayAnswer', '±')">±</button>
+            <button type="button" class="symbol-btn" onclick="insertSymbol('newEssayAnswer', '√')">√</button>
+            <button type="button" class="symbol-btn" onclick="insertSymbol('newEssayAnswer', 'π')">π</button>
+            <button type="button" class="symbol-btn" onclick="insertSymbol('newEssayAnswer', '°')">°</button>
+            <button type="button" class="symbol-btn" onclick="insertSymbol('newEssayAnswer', '²')">²</button>
+            <button type="button" class="symbol-btn" onclick="insertSymbol('newEssayAnswer', '³')">³</button>
+            <button type="button" class="symbol-btn" onclick="insertSymbol('newEssayAnswer', '≤')">≤</button>
+            <button type="button" class="symbol-btn" onclick="insertSymbol('newEssayAnswer', '≥')">≥</button>
+            <button type="button" class="symbol-btn" onclick="insertSymbol('newEssayAnswer', '≠')">≠</button>
+            <button type="button" class="symbol-btn" onclick="insertSymbol('newEssayAnswer', '/')">/</button>
+            <button type="button" class="symbol-btn" onclick="insertSymbol('newEssayAnswer', '|')">|</button>
+          </div>
+
+          <!-- Ô Chấm thử trực tiếp câu trả lời của học sinh -->
+          <div style="margin-top: 1rem; border-top: 1px dashed var(--border-color); padding-top: 0.75rem;">
+            <label class="form-label" style="font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem;">
+              🧪 Chấm thử câu trả lời của học sinh:
+            </label>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <input type="text" id="liveTestStudentAnswer" class="form-control" placeholder="Gõ thử câu trả lời bất kỳ..." oninput="handleLiveAnswerTest()">
+              <span id="liveTestResultBadge" style="font-size: 0.85rem; white-space: nowrap; color: var(--text-muted);">Nhập để xem thử kết quả</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 1rem;">
+          <label class="form-label">Hướng dẫn giải chi tiết / Lời giải:</label>
+          <textarea id="newSolution" class="form-control" rows="3" required oninput="renderMathPreview('newSolution', 'solutionPreview')">Ta có: $2x = 6 \iff x = 3$. Vậy nghiệm là $x = 3$.</textarea>
+          <div id="solutionPreview" class="latex-preview-box"></div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeAddQuestionModal()">Hủy</button>
+          <button type="submit" class="btn btn-primary">Lưu Vào Ngân Hàng</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL CHỈNH SỬA TOÀN DIỆN ĐỀ THI ==================== -->
+  <div id="editExamModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; padding: 1rem; overflow-y: auto;">
+    <div class="card" style="max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto;">
+      <div class="card-header">
+        <h3><span>🛠️</span> Chỉnh Sửa Đề Thi Đang Chọn</h3>
+        <button class="btn-icon" onclick="closeEditExamModal()">✕</button>
+      </div>
+
+      <form id="editExamForm" onsubmit="handleSaveExamMetadata(event)">
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Tên bài thi / Đề kiểm tra:</label>
+            <input type="text" id="editExamTitle" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Mã đề thi:</label>
+            <input type="text" id="editExamCode" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Khối lớp:</label>
+            <input type="text" id="editExamGrade" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Thời gian làm bài (phút):</label>
+            <input type="number" id="editExamDuration" class="form-control" min="5" max="300" required>
+          </div>
+        </div>
+
+        <div class="card-header" style="margin-top: 1.5rem; margin-bottom: 0.75rem;">
+          <h4 style="font-size: 1rem; font-weight: 700;">Danh Sách Câu Hỏi Trong Đề (<span id="editExamQCount">0</span> câu)</h4>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Sắp xếp hoặc xóa bớt câu không cần thiết</span>
+        </div>
+
+        <div id="editExamQuestionsList" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 350px; overflow-y: auto; padding-right: 4px;"></div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeEditExamModal()">Đóng</button>
+          <button type="submit" class="btn btn-primary">Lưu Thay Đổi Đề Thi</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- KaTeX JavaScript Engine -->
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+  <!-- Application Logic Modules -->
+  <script src="js/data-bank.js"></script>
+  <script src="js/data-manager.js"></script>
+  <script src="js/exam-builder.js"></script>
+  <script src="js/exam-runner.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
