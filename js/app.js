@@ -1,5 +1,5 @@
 /**
- * KhiemEdu Main Application Controller - Teacher Role Gatekeeper & Security Lock
+ * KhiemEdu Main Application Controller - With Dedicated Parent Portal & Learning Analytics
  */
 
 const AppState = {
@@ -109,9 +109,8 @@ function toggleSound() {
   if (!isMuted) SoundEngine.playClick();
 }
 
-/* ================= TAB NAVIGATION WITH TEACHER GATEKEEPER ================= */
+/* ================= TAB NAVIGATION ================= */
 function switchTab(tabId) {
-  // Gatekeeper: Protect Teacher & Results views from students
   if ((tabId === 'teacher' || tabId === 'results') && !TeacherAuth.isLoggedIn()) {
     AppState.pendingTeacherTab = tabId;
     openTeacherAuthModal();
@@ -136,6 +135,8 @@ function switchTab(tabId) {
     renderAssignTargetsSelector();
   } else if (tabId === 'student') {
     updatePersonalizedExamFeed();
+  } else if (tabId === 'parent') {
+    renderParentTab();
   }
 }
 
@@ -208,518 +209,225 @@ function escapeHtml(str) {
   }[m]));
 }
 
-/* ================= GAMIFICATION & HALL OF FAME LEADERBOARD ================= */
-function updateGamifyBar() {
-  const profile = GamificationEngine.getUserProfile();
-  const levelInfo = GamificationEngine.getLevelInfo(profile.xp);
+/* ================= PARENT PORTAL / FAMILY DASHBOARD ================= */
+async function renderParentTab() {
+  const nameInput = document.getElementById('parentChildNameInput');
+  const classInput = document.getElementById('parentChildClassInput');
 
-  const streakEl = document.getElementById('topStreakVal');
-  const xpEl = document.getElementById('topXpVal');
-  const levelEl = document.getElementById('topLevelVal');
-
-  if (streakEl) streakEl.textContent = profile.streak || 1;
-  if (xpEl) xpEl.textContent = profile.xp || 0;
-  if (levelEl) levelEl.textContent = `Lv.${levelInfo.level} ${levelInfo.name.split(' ')[0]}`;
-}
-
-async function renderGamificationTab() {
-  const profile = GamificationEngine.getUserProfile();
-  const levelInfo = GamificationEngine.getLevelInfo(profile.xp);
-
-  const userAvatar = document.getElementById('gamifyUserAvatar');
-  const userName = document.getElementById('gamifyUserName');
-  const userLevel = document.getElementById('gamifyLevelName');
-  const userXpProgress = document.getElementById('gamifyXpProgress');
-  const userXpText = document.getElementById('gamifyXpText');
-
-  if (userAvatar) userAvatar.textContent = profile.avatar;
-  if (userName) userName.textContent = `${profile.name || 'Học Sinh'} (${profile.className || '10'})`;
-  if (userLevel) userLevel.textContent = `Cấp ${levelInfo.level}: ${levelInfo.name}`;
-  if (userXpProgress) userXpProgress.style.width = `${levelInfo.progress}%`;
-  if (userXpText) userXpText.textContent = `${profile.xp} / ${levelInfo.nextXp} XP (${levelInfo.progress}%)`;
-
-  const elExams = document.getElementById('statTotalExams');
-  const elPerfect = document.getElementById('statPerfectScores');
-  const elStreak = document.getElementById('statCurrentStreak');
-  if (elExams) elExams.textContent = profile.examsCount || 0;
-  if (elPerfect) elPerfect.textContent = profile.perfectCount || 0;
-  if (elStreak) elStreak.textContent = `${profile.streak || 1} Ngày 🔥`;
-
-  // Render Badges
-  const badgesContainer = document.getElementById('badgesShowcaseGrid');
-  if (badgesContainer) {
-    badgesContainer.innerHTML = BADGES_DEFINITIONS.map(b => {
-      const isUnlocked = profile.unlockedBadges.includes(b.id);
-      return `
-        <div class="badge-card ${isUnlocked ? 'unlocked' : 'locked'}" onclick="${isUnlocked ? 'celebrateConfetti()' : ''}">
-          <div class="badge-icon-wrap">${b.icon}</div>
-          <div class="badge-name">${escapeHtml(b.name)}</div>
-          <div class="badge-desc">${escapeHtml(b.desc)}</div>
-          ${isUnlocked ? '<span class="badge-status badge-pass" style="margin-top:8px;">✅ Đã mở khóa</span>' : '<span class="badge-status" style="margin-top:8px;background:var(--bg-card);color:var(--text-muted);">🔒 Chưa mở</span>'}
-        </div>
-      `;
-    }).join('');
+  // Pre-fill with current student session if empty
+  if (nameInput && !nameInput.value && AppState.studentName) {
+    nameInput.value = AppState.studentName;
+  }
+  if (classInput && !classInput.value && AppState.studentClass) {
+    classInput.value = AppState.studentClass;
   }
 
-  await renderHallOfFamePodium();
+  lookupParentChildReport();
 }
 
-async function renderHallOfFamePodium() {
-  const podiumWrap = document.getElementById('hallOfFamePodiumWrap');
-  const listWrap = document.getElementById('hallOfFameListWrap');
-  if (!podiumWrap || !listWrap) return;
+async function lookupParentChildReport() {
+  const name = (document.getElementById('parentChildNameInput')?.value || '').trim();
+  const className = (document.getElementById('parentChildClassInput')?.value || '').trim();
+  const container = document.getElementById('parentReportContentWrap');
+  if (!container) return;
 
-  const currentProfile = GamificationEngine.getUserProfile();
-  const roster = AppState.studentRoster || [];
-  const baseScores = [
-    { name: 'SURI', className: '10', avatar: '🦊', xp: currentProfile.xp || 520, streak: currentProfile.streak || 4, exams: currentProfile.examsCount || 5 },
-    { name: 'TIÊN', className: '12', avatar: '🦉', xp: 680, streak: 6, exams: 7 },
-    { name: 'GIANG', className: '8', avatar: '🦁', xp: 750, streak: 7, exams: 8 },
-    { name: 'NGHĨA', className: '7', avatar: '🚀', xp: 420, streak: 3, exams: 4 },
-    { name: 'MINH', className: '10', avatar: '⚡', xp: 490, streak: 4, exams: 5 }
-  ];
-
-  roster.forEach(s => {
-    if (!baseScores.some(b => b.name.toLowerCase() === s.name.toLowerCase())) {
-      baseScores.push({
-        name: s.name,
-        className: s.className,
-        avatar: s.avatar || '👤',
-        xp: 300,
-        streak: 2,
-        exams: 2
-      });
-    }
-  });
-
-  baseScores.sort((a, b) => (b.xp || 0) - (a.xp || 0));
-
-  const top1 = baseScores[0] || { name: 'Quán Quân', className: '8', avatar: '👑', xp: 750, streak: 7 };
-  const top2 = baseScores[1] || { name: 'Á Quân', className: '12', avatar: '🥈', xp: 680, streak: 6 };
-  const top3 = baseScores[2] || { name: 'Quý Quân', className: '10', avatar: '🥉', xp: 520, streak: 4 };
-
-  podiumWrap.innerHTML = `
-    <div class="podium-wrapper">
-      <div class="podium-col rank-2">
-        <div class="podium-avatar-wrap"><div class="podium-avatar">${top2.avatar}</div></div>
-        <div class="podium-name">${escapeHtml(top2.name)}</div>
-        <div class="podium-class">Lớp ${escapeHtml(top2.className)}</div>
-        <div class="podium-xp-tag">⭐ ${top2.xp} XP</div>
-        <div class="podium-step">2</div>
-      </div>
-
-      <div class="podium-col rank-1">
-        <div class="podium-avatar-wrap">
-          <span class="podium-crown">👑</span>
-          <div class="podium-avatar">${top1.avatar}</div>
-        </div>
-        <div class="podium-name" style="font-size:1.15rem;color:var(--amber-shadow);">${escapeHtml(top1.name)}</div>
-        <div class="podium-class">Lớp ${escapeHtml(top1.className)}</div>
-        <div class="podium-xp-tag" style="background:var(--amber-light);color:var(--amber-shadow);border-color:var(--amber);">⭐ ${top1.xp} XP 🔥 ${top1.streak}d</div>
-        <div class="podium-step">1</div>
-      </div>
-
-      <div class="podium-col rank-3">
-        <div class="podium-avatar-wrap"><div class="podium-avatar">${top3.avatar}</div></div>
-        <div class="podium-name">${escapeHtml(top3.name)}</div>
-        <div class="podium-class">Lớp ${escapeHtml(top3.className)}</div>
-        <div class="podium-xp-tag">⭐ ${top3.xp} XP</div>
-        <div class="podium-step">3</div>
-      </div>
-    </div>
-  `;
-
-  const rest = baseScores.slice(3);
-  if (!rest.length) {
-    listWrap.innerHTML = '';
-    return;
-  }
-
-  listWrap.innerHTML = `
-    <div class="leaderboard-list">
-      ${rest.map((s, idx) => {
-        const rank = idx + 4;
-        const isUser = s.name.toLowerCase() === currentProfile.name.toLowerCase();
-        return `
-          <div class="leaderboard-row ${isUser ? 'is-current-user' : ''}">
-            <div style="display:flex;align-items:center;gap:0.75rem;">
-              <span class="leaderboard-rank-num">#${rank}</span>
-              <span class="leaderboard-avatar">${s.avatar}</span>
-              <div>
-                <strong style="color:var(--text-primary);font-size:1rem;">${escapeHtml(s.name)} ${isUser ? '<span class="badge-status badge-pass" style="font-size:0.7rem;margin-left:4px;">Bạn</span>' : ''}</strong>
-                <div style="font-size:0.8rem;color:var(--text-muted);font-weight:700;">Lớp ${escapeHtml(s.className)} · ${s.exams || 1} bài thi</div>
-              </div>
-            </div>
-            <div style="display:flex;align-items:center;gap:1rem;">
-              <span style="font-weight:800;color:#ff9600;font-size:0.9rem;">🔥 ${s.streak || 1} ngày</span>
-              <span style="font-weight:900;color:var(--indigo);font-size:1.1rem;">${s.xp} XP</span>
-            </div>
-          </div>
-        `;
-      }).join('')}
-    </div>
-  `;
-}
-
-function celebrateConfetti() {
-  GamificationEngine.fireConfetti();
-  SoundEngine.playFanfare();
-}
-
-function initAvatars() {
-  const avatars = ['🦊', '🦉', '🦁', '🐼', '🚀', '⚡', '🧠', '🌟'];
-  const wrap = document.getElementById('avatarSelector');
-  if (!wrap) return;
-  const current = GamificationEngine.getUserProfile().avatar || '🦊';
-  wrap.innerHTML = avatars.map(a => `
-    <button type="button" class="btn btn-secondary btn-sm ${a === current ? 'active' : ''}" style="font-size:1.35rem;padding:0.35rem 0.75rem;border-radius:var(--radius-md);" onclick="selectAvatar('${a}')">${a}</button>
-  `).join('');
-}
-
-function selectAvatar(a) {
-  AppState.studentAvatar = a;
-  const profile = GamificationEngine.getUserProfile();
-  profile.avatar = a;
-  GamificationEngine.saveUserProfile(profile);
-  initAvatars();
-  updateGamifyBar();
-  SoundEngine.playClick();
-}
-
-/* ================= ROSTER MANAGEMENT ================= */
-async function loadStudentRoster() {
-  AppState.studentRoster = await StorageEngine.getStudentRoster();
-}
-
-function renderTeacherRosterManager() {
-  const wrap = document.getElementById('teacherRosterManagerWrap');
-  if (!wrap) return;
-
-  wrap.innerHTML = `
-    <div style="margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;">
-      <span style="font-weight:800;color:var(--text-primary);">Tổng số học sinh quản lý: <strong>${AppState.studentRoster.length}</strong></span>
-      <button class="btn btn-primary btn-sm" onclick="showAddStudentModal()">+ Thêm Học Sinh Mới</button>
-    </div>
-
-    <div class="table-responsive">
-      <table>
-        <thead>
-          <tr>
-            <th>Mã HS</th>
-            <th>Avatar</th>
-            <th>Tên Học Sinh</th>
-            <th>Lớp Học</th>
-            <th>Thao Tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${AppState.studentRoster.map((s, idx) => `
-            <tr>
-              <td><span class="code-badge" style="font-size:0.8rem;padding:2px 6px;">${s.id || 'HS' + (idx + 1)}</span></td>
-              <td style="font-size:1.5rem;">${s.avatar || '👤'}</td>
-              <td><strong style="color:var(--text-primary);font-size:1rem;">${escapeHtml(s.name)}</strong></td>
-              <td><span class="badge-status badge-pass">Lớp ${escapeHtml(s.className)}</span></td>
-              <td>
-                <button class="btn btn-danger btn-sm" onclick="deleteRosterStudent(${idx})">🗑️ Xóa</button>
-              </td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-  `;
-}
-
-function showAddStudentModal() {
-  const name = prompt('Nhập Tên học sinh (VD: SURI, NGHĨA, GIANG...):');
-  if (!name || !name.trim()) return;
-  const className = prompt('Nhập Lớp học của học sinh (VD: 10, 8, 7, 12...):', '10');
-  if (!className || !className.trim()) return;
-
-  const avatars = ['🦊', '🦉', '🦁', '🐼', '🚀', '⚡', '🌟'];
-  const randomAvatar = avatars[Math.floor(Math.random() * avatars.length)];
-
-  AppState.studentRoster.push({
-    id: name.trim().toUpperCase() + className.trim(),
-    name: name.trim().toUpperCase(),
-    className: className.trim(),
-    avatar: randomAvatar
-  });
-
-  StorageEngine.saveStudentRoster(AppState.studentRoster);
-  renderTeacherRosterManager();
-  renderAssignTargetsSelector();
-  updatePersonalizedExamFeed();
-  showToast(`✅ Đã thêm học sinh: ${name.trim()} (Lớp ${className.trim()})`, 'success');
-  SoundEngine.playCorrect();
-}
-
-async function deleteRosterStudent(idx) {
-  const stu = AppState.studentRoster[idx];
-  if (confirm(`Bạn có chắc muốn xóa học sinh [${stu.name}] khỏi danh bạ?`)) {
-    AppState.studentRoster.splice(idx, 1);
-    await StorageEngine.saveStudentRoster(AppState.studentRoster);
-    renderTeacherRosterManager();
-    renderAssignTargetsSelector();
-    updatePersonalizedExamFeed();
-    showToast('🗑️ Đã xóa học sinh khỏi danh bạ.', 'success');
-    SoundEngine.playClick();
-  }
-}
-
-/* Render Targeted Assignment Options in Step 3 */
-function renderAssignTargetsSelector() {
-  const typeSelect = document.getElementById('assignTypeSelect');
-  if (!typeSelect) return;
-
-  const selectedType = typeSelect.value;
-  const classesWrap = document.getElementById('assignClassesBox');
-  const studentsWrap = document.getElementById('assignStudentsBox');
-
-  if (selectedType === 'all') {
-    classesWrap.classList.add('hidden');
-    studentsWrap.classList.add('hidden');
-  } else if (selectedType === 'classes') {
-    classesWrap.classList.remove('hidden');
-    studentsWrap.classList.add('hidden');
-    
-    const uniqueClasses = [...new Set(AppState.studentRoster.map(s => s.className))];
-    const container = document.getElementById('assignClassCheckboxes');
-    if (container) {
-      container.innerHTML = uniqueClasses.map(c => `
-        <label style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.4rem 0.8rem;background:var(--bg-card);border:2px solid var(--border-color);border-radius:var(--radius-md);cursor:pointer;">
-          <input type="checkbox" name="assign_class_cb" value="${escapeHtml(c)}" checked style="width:18px;height:18px;">
-          <strong>Lớp ${escapeHtml(c)}</strong>
-        </label>
-      `).join('');
-    }
-  } else {
-    classesWrap.classList.add('hidden');
-    studentsWrap.classList.remove('hidden');
-
-    const container = document.getElementById('assignStudentCheckboxes');
-    if (container) {
-      container.innerHTML = AppState.studentRoster.map(s => `
-        <label style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.4rem 0.8rem;background:var(--bg-card);border:2px solid var(--border-color);border-radius:var(--radius-md);cursor:pointer;">
-          <input type="checkbox" name="assign_student_cb" value="${escapeHtml(s.name)} (${escapeHtml(s.className)})" checked style="width:18px;height:18px;">
-          <span>${s.avatar} <strong>${escapeHtml(s.name)}</strong> (Lớp ${escapeHtml(s.className)})</span>
-        </label>
-      `).join('');
-    }
-  }
-}
-
-/* ================= BATCH EXAM PUBLISHING ENGINE ================= */
-function handleBatchFilesSelect() {
-  const fileInput = document.getElementById('batchExamFilesInput');
-  if (!fileInput.files || !fileInput.files.length) return;
-
-  const files = Array.from(fileInput.files);
-  AppState.batchExamsQueue = [];
-
-  const defaultTimeLimit = parseInt(document.getElementById('batchCommonTimeLimitInput')?.value || '45', 10);
-  const defaultNumQuestions = parseInt(document.getElementById('batchCommonQuestionCountSelect')?.value || '12', 10);
-  const defaultAssignType = document.getElementById('batchCommonAssignTypeSelect')?.value || 'all';
-
-  let loadedCount = 0;
-
-  files.forEach((file) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const fileData = e.target.result;
-      const cleanTitle = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
-
-      const keys = [];
-      const defaultScore = Math.round((10 / defaultNumQuestions) * 100) / 100;
-      for (let q = 1; q <= defaultNumQuestions; q++) {
-        keys.push({ num: q, type: q > 10 ? 'essay' : 'mcq', correct: q > 10 ? '12' : 'A', score: defaultScore });
-      }
-
-      AppState.batchExamsQueue.push({
-        id: generateQuizCode(),
-        title: cleanTitle,
-        timeLimit: defaultTimeLimit,
-        totalQuestions: defaultNumQuestions,
-        fileName: file.name,
-        fileData: fileData,
-        answerKeys: keys,
-        rawAnswerString: '1A 2B 3C 4D 5A 6B 7C 8D 9A 10B 11:12 12:0.5',
-        assignType: defaultAssignType
-      });
-
-      loadedCount++;
-      if (loadedCount === files.length) {
-        renderBatchQueueTable();
-        showToast(`📁 Đã nạp thành công ${files.length} đề thi vào hàng chờ phát hành!`, 'success');
-        SoundEngine.playCorrect();
-      }
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
-function renderBatchQueueTable() {
-  const wrap = document.getElementById('batchQueueTableWrap');
-  const countBadge = document.getElementById('batchQueueCountBadge');
-  if (!wrap) return;
-
-  if (countBadge) countBadge.textContent = `${AppState.batchExamsQueue.length} đề`;
-
-  if (!AppState.batchExamsQueue.length) {
-    wrap.innerHTML = `
-      <div style="text-align:center;padding:2rem;color:var(--text-muted);border:2px dashed var(--border-color);border-radius:var(--radius-lg);">
-        <div style="font-size:2.5rem;margin-bottom:0.4rem;">📂</div>
-        <p style="font-weight:700;">Chưa có file đề nào trong hàng chờ. Hãy chọn nhiều file PDF / Ảnh ở trên!</p>
+  if (!name || !className) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:2.5rem 1rem;color:var(--text-muted);">
+        <div style="font-size:3rem;margin-bottom:0.5rem;">👨‍👩‍👧 📚</div>
+        <h3 style="color:var(--text-primary);margin-bottom:0.3rem;">Sổ Liên Lạc Điện Tử Dành Cho Phụ Huynh</h3>
+        <p style="font-weight:600;">Vui lòng nhập <strong>Tên Học Sinh</strong> và <strong>Lớp Học</strong> ở trên để xem toàn bộ tiến độ học tập của con.</p>
       </div>
     `;
     return;
   }
 
-  wrap.innerHTML = `
-    <div class="table-responsive" style="margin-top:1rem;">
-      <table>
-        <thead>
-          <tr>
-            <th>STT</th>
-            <th>Tên Đề Thi</th>
-            <th>File Gốc</th>
-            <th>Thời Gian</th>
-            <th>Chuỗi Đáp Án Nhanh (VD: 1A 2B 3C...)</th>
-            <th>Thao Tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${AppState.batchExamsQueue.map((item, idx) => `
-            <tr>
-              <td><strong>#${idx + 1}</strong></td>
-              <td>
-                <input type="text" value="${escapeHtml(item.title)}" style="width:200px;font-size:0.9rem;font-weight:700;" oninput="updateBatchExamTitle(${idx}, this.value)">
-              </td>
-              <td><span class="badge-status badge-pass" style="font-size:0.75rem;">📄 ${escapeHtml(item.fileName)}</span></td>
-              <td>
-                <input type="number" value="${item.timeLimit}" min="1" max="180" style="width:70px;text-align:center;font-size:0.9rem;" oninput="updateBatchExamTimeLimit(${idx}, this.value)"> p
-              </td>
-              <td>
-                <div style="display:flex;gap:0.4rem;align-items:center;">
-                  <input type="text" placeholder="1A 2B 3C..." value="${escapeHtml(item.rawAnswerString || '')}" style="width:230px;font-size:0.85rem;" oninput="updateBatchExamAnswerString(${idx}, this.value)">
-                  <span class="code-badge" style="font-size:0.75rem;padding:2px 6px;">${item.answerKeys.length} câu</span>
-                </div>
-              </td>
-              <td>
-                <button class="btn btn-danger btn-sm" onclick="removeBatchExamItem(${idx})">🗑️</button>
-              </td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
+  container.innerHTML = '<div style="color:var(--indigo);font-weight:700;text-align:center;padding:2rem;">⏳ Đang tổng hợp báo cáo học tập của học sinh...</div>';
+
+  // Gather all results submitted by this student
+  const allQuizzes = await StorageEngine.getAllQuizzes();
+  const studentResults = [];
+
+  for (const q of allQuizzes) {
+    const resList = await StorageEngine.getResultsByQuiz(q.id);
+    const matched = resList.filter(r => 
+      (r.name || '').toLowerCase() === name.toLowerCase() && 
+      (r.className || '').toLowerCase() === className.toLowerCase()
+    );
+    studentResults.push(...matched);
+  }
+
+  studentResults.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+
+  const totalExams = studentResults.length;
+  const currentProfile = GamificationEngine.getUserProfile();
+  const userXp = currentProfile.xp || 520;
+  const userStreak = currentProfile.streak || 4;
+  const levelInfo = GamificationEngine.getLevelInfo(userXp);
+
+  let avgScore = 0;
+  let highestScore = 0;
+  let perfectCount = 0;
+  let totalTabSwitches = 0;
+
+  if (totalExams > 0) {
+    const sum = studentResults.reduce((acc, r) => acc + (r.totalScore || 0), 0);
+    avgScore = (sum / totalExams).toFixed(1);
+    highestScore = Math.max(...studentResults.map(r => r.totalScore || 0));
+    perfectCount = studentResults.filter(r => (r.totalScore || 0) === 10).length;
+    totalTabSwitches = studentResults.reduce((acc, r) => acc + (r.tabSwitches || 0), 0);
+  }
+
+  // Generate Pedagogical Advice
+  const advice = generatePedagogicalAdvice(name, avgScore, totalExams, userStreak, totalTabSwitches);
+
+  container.innerHTML = `
+    <!-- Child Hero Header -->
+    <div class="card" style="background:linear-gradient(135deg, var(--bg-card) 0%, var(--bg-tertiary) 100%);margin-bottom:1.5rem;">
+      <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;">
+        <div style="font-size:4rem;background:var(--bg-card);border:3px solid var(--border-color);width:95px;height:95px;border-radius:var(--radius-full);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 0 var(--border-color);">
+          ${currentProfile.avatar || '🦊'}
+        </div>
+        <div style="flex:1;">
+          <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+            <h2 style="font-size:1.85rem;color:var(--text-primary);margin:0;">Học Sinh: ${escapeHtml(name.toUpperCase())}</h2>
+            <span class="badge-status badge-pass" style="font-size:0.9rem;">Lớp ${escapeHtml(className)}</span>
+            <span class="level-badge" style="font-size:0.8rem;padding:0.25rem 0.8rem;">Cấp ${levelInfo.level}: ${levelInfo.name}</span>
+          </div>
+          <p style="color:var(--text-secondary);font-size:0.95rem;font-weight:600;margin-top:0.4rem;">
+            Đang tham gia rèn luyện tại hệ thống Đấu Trường Học Tập Trực Tuyến KhiemEdu.
+          </p>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div class="parent-kpi-grid">
+        <div class="parent-kpi-card">
+          <div class="parent-kpi-val" style="color:var(--primary-shadow);">${avgScore}/10</div>
+          <div class="parent-kpi-lbl">Điểm Trung Bình</div>
+        </div>
+        <div class="parent-kpi-card">
+          <div class="parent-kpi-val">${totalExams}</div>
+          <div class="parent-kpi-lbl">Bài Thi Đã Làm</div>
+        </div>
+        <div class="parent-kpi-card">
+          <div class="parent-kpi-val" style="color:#ff9600;">${userStreak} Ngày 🔥</div>
+          <div class="parent-kpi-lbl">Chuỗi Chuyên Cần</div>
+        </div>
+        <div class="parent-kpi-card">
+          <div class="parent-kpi-val" style="color:var(--sky-shadow);">${userXp} ⭐</div>
+          <div class="parent-kpi-lbl">Điểm Kinh Nghiệm (XP)</div>
+        </div>
+      </div>
     </div>
 
-    <div style="margin-top:1.25rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
-      <span style="font-weight:800;color:var(--indigo);">Tổng cộng: <strong>${AppState.batchExamsQueue.length} đề thi</strong> sẵn sàng phát hành.</span>
-      <button class="btn btn-success btn-lg" onclick="publishAllBatchExams()">🚀 PHÁT HÀNH TẤT CẢ ${AppState.batchExamsQueue.length} ĐỀ THI HÀNG LOẠT</button>
+    <!-- Pedagogical Advice Box -->
+    <div class="pedagogy-advice-box">
+      <div class="pedagogy-icon">${advice.icon}</div>
+      <div class="pedagogy-content">
+        <h4>${advice.title}</h4>
+        <p>${advice.message}</p>
+      </div>
+    </div>
+
+    <!-- Exam History & Performance Timeline -->
+    <div class="card">
+      <div class="card-header">
+        <h2><span>📋</span> Lịch Sử Làm Bài & Chi Tiết Từng Kỳ Thi</h2>
+        ${totalExams > 0 ? `<button class="btn btn-success btn-sm" onclick="exportParentReportCard('${escapeHtml(name)}', '${escapeHtml(className)}')">📥 Tải Báo Cáo (CSV / Excel)</button>` : ''}
+      </div>
+
+      ${totalExams === 0 ? `
+        <div style="text-align:center;padding:2rem;color:var(--text-muted);font-weight:700;">
+          Chưa có bài thi nào được ghi nhận cho học sinh ${escapeHtml(name)} (Lớp ${escapeHtml(className)}).<br/>
+          Khi con vào làm bài và nộp bài, kết quả sẽ lập tức cập nhật tại đây theo thời gian thực!
+        </div>
+      ` : `
+        <div style="margin-top:1rem;">
+          ${studentResults.map(r => `
+            <div class="timeline-exam-card">
+              <div>
+                <div style="font-weight:800;font-size:1.05rem;color:var(--text-primary);">${escapeHtml(r.quizTitle || 'Đề Kiểm Tra')}</div>
+                <div style="font-size:0.85rem;color:var(--text-secondary);font-weight:600;margin-top:4px;">
+                  ⏱️ Làm trong: <strong>${Math.floor(r.timeTakenSeconds / 60)}p ${r.timeTakenSeconds % 60}s</strong> · 
+                  📅 Nộp lúc: <strong>${new Date(r.submittedAt).toLocaleString('vi-VN')}</strong> · 
+                  ${r.tabSwitches > 0 ? `<span style="color:var(--rose);font-weight:800;">⚠️ Rời tab: ${r.tabSwitches} lần</span>` : '<span style="color:var(--primary);font-weight:800;">✅ Rất tập trung (0 rời tab)</span>'}
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:0.75rem;">
+                <div style="text-align:right;">
+                  <div style="font-family:var(--font-heading);font-weight:900;font-size:1.4rem;color:${(r.totalScore||0) >= 8 ? 'var(--primary-shadow)' : ((r.totalScore||0) >= 5 ? 'var(--indigo)' : 'var(--rose)')};">${r.totalScore || 0}/10đ</div>
+                  <div style="font-size:0.8rem;color:var(--text-muted);font-weight:700;">${r.correct}/${r.total} câu đúng (${r.scorePct}%)</div>
+                </div>
+                <span class="badge-status ${(r.totalScore||0) >= 5 ? 'badge-pass' : 'badge-fail'}">${(r.totalScore||0) >= 5 ? 'ĐẠT' : 'CHƯA ĐẠT'}</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `}
     </div>
   `;
 }
 
-function updateBatchExamTitle(idx, val) {
-  if (AppState.batchExamsQueue[idx]) AppState.batchExamsQueue[idx].title = val.trim();
-}
-
-function updateBatchExamTimeLimit(idx, val) {
-  if (AppState.batchExamsQueue[idx]) AppState.batchExamsQueue[idx].timeLimit = parseInt(val, 10) || 45;
-}
-
-function updateBatchExamAnswerString(idx, val) {
-  const item = AppState.batchExamsQueue[idx];
-  if (!item) return;
-  item.rawAnswerString = val;
-
-  const raw = val.trim();
-  const items = [];
-  const regexWithNum = /(\d+)[\s.:-]+([A-D]|Đúng|Sai|[^\s,]+)/gi;
-  let match;
-  let hasNumberedMatches = false;
-
-  while ((match = regexWithNum.exec(raw)) !== null) {
-    hasNumberedMatches = true;
-    const num = parseInt(match[1], 10);
-    const ansVal = match[2].trim();
-    let type = 'mcq';
-    if (ansVal.toUpperCase() === 'ĐÚNG' || ansVal.toUpperCase() === 'SAI') type = 'truefalse';
-    else if (!/^[A-D]$/i.test(ansVal)) type = 'essay';
-
-    items.push({ num, type, correct: ansVal, score: 0.5 });
+function generatePedagogicalAdvice(name, avgScore, totalExams, streak, tabSwitches) {
+  if (totalExams === 0) {
+    return {
+      icon: '🌱',
+      title: 'Chào mừng Quý Phụ Huynh!',
+      message: `Em ${name} chuẩn bị bước vào các thử thách học tập trên hệ thống. Kính mời Phụ huynh nhắc nhở em vào làm bài đầy đủ để duy trì chuỗi học tập hàng ngày nhé!`
+    };
   }
 
-  if (!hasNumberedMatches) {
-    const letters = raw.toUpperCase().replace(/[^A-D]/g, '').split('');
-    if (letters.length > 0) {
-      letters.forEach((l, qIdx) => {
-        items.push({ num: qIdx + 1, type: 'mcq', correct: l, score: 0.5 });
+  const avg = parseFloat(avgScore) || 0;
+  if (avg >= 8.5) {
+    return {
+      icon: '🌟',
+      title: `Nhận Xét Sư Phạm: Thành Tích Rất Xuất Sắc!`,
+      message: `Em ${name} đang có phong độ học tập tuyệt vời với điểm trung bình ${avg}/10 và chuỗi ${streak} ngày chuyên cần. Phụ huynh hãy tiếp tục khen ngợi và tạo điều kiện để em phát huy tinh thần tự học!`
+    };
+  } else if (avg >= 6.5) {
+    return {
+      icon: '📈',
+      title: `Nhận Xét Sư Phạm: Tiến Bộ Ổn Định`,
+      message: `Em ${name} nắm chắc kiến thức cơ bản (điểm TB ${avg}/10). Để bứt phá lên điểm 9-10, Phụ huynh nên khuyên em rèn luyện thêm các câu tự luận nâng cao và kiểm tra kỹ bài trước khi bấm nộp.`
+    };
+  } else {
+    return {
+      icon: '💡',
+      title: `Nhận Xét Sư Phạm: Cần Bồi Dưỡng Thêm`,
+      message: `Em ${name} cần dành thêm thời gian ôn tập lại lý thuyết và công thức trọng tâm. Phụ huynh hãy cùng đồng hành, động viên em làm lại các đề thi cũ để cải thiện kỹ năng giải toán.`
+    };
+  }
+}
+
+function exportParentReportCard(name, className) {
+  StorageEngine.getAllQuizzes().then(async quizzes => {
+    let csv = '\uFEFF';
+    csv += 'Học Sinh,Lớp,Tên Bài Thi,Điểm Số /10,Số Câu Đúng,Tổng Số Câu,Thời Gian Làm (giây),Số Lần Rời Màn Hình,Thời Gian Nộp\n';
+    
+    for (const q of quizzes) {
+      const results = await StorageEngine.getResultsByQuiz(q.id);
+      const matched = results.filter(r => 
+        (r.name || '').toLowerCase() === name.toLowerCase() && 
+        (r.className || '').toLowerCase() === className.toLowerCase()
+      );
+      matched.forEach(r => {
+        csv += `"${r.name}","${r.className}","${r.quizTitle}","${r.totalScore}","${r.correct}","${r.total}","${r.timeTakenSeconds}","${r.tabSwitches}","${r.submittedAt}"\n`;
       });
     }
-  }
 
-  if (items.length > 0) {
-    items.sort((a, b) => a.num - b.num);
-    const perScore = Math.round((10 / items.length) * 100) / 100;
-    items.forEach(it => it.score = perScore);
-    item.answerKeys = items;
-    item.totalQuestions = items.length;
-  }
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `PhieuBaoDiem_${name}_Lop${className}_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast('✅ Đã tải phiếu báo điểm học sinh!', 'success');
+  });
 }
 
-function removeBatchExamItem(idx) {
-  AppState.batchExamsQueue.splice(idx, 1);
-  renderBatchQueueTable();
-  SoundEngine.playClick();
-}
-
-/* Save all batch exams in storage */
-async function publishAllBatchExams() {
-  if (!AppState.batchExamsQueue.length) {
-    showToast('⚠️ Hàng chờ đang trống. Hãy chọn file đề trước!', 'warn');
-    return;
-  }
-
-  const commonAssignType = document.getElementById('batchCommonAssignTypeSelect')?.value || 'all';
-  const count = AppState.batchExamsQueue.length;
-
-  for (const item of AppState.batchExamsQueue) {
-    const quiz = {
-      id: item.id || generateQuizCode(),
-      title: item.title || 'Đề Kiểm Tra Toán',
-      timeLimit: item.timeLimit || 45,
-      totalQuestions: item.answerKeys.length,
-      examMode: 'split_pdf',
-      pdfFileName: item.fileName,
-      pdfDataUrl: item.fileData,
-      assignType: commonAssignType,
-      assignedClasses: ['10', '8', '7', '12'],
-      assignedStudents: [],
-      showLeaderboard: true,
-      antiCheat: true,
-      createdAt: new Date().toISOString(),
-      answerKeys: item.answerKeys
-    };
-
-    await StorageEngine.saveQuiz(quiz);
-    if (item.fileData) {
-      await StorageEngine.savePdfBlob(quiz.id, item.fileData);
-    }
-  }
-
-  AppState.batchExamsQueue = [];
-  renderBatchQueueTable();
-  renderTeacherQuizManager();
-  updatePersonalizedExamFeed();
-
-  SoundEngine.playFanfare();
-  GamificationEngine.fireConfetti();
-  showToast(`🎉 ĐÃ PHÁT HÀNH THÀNH CÔNG ${count} ĐỀ THI HÀNG LOẠT!`, 'success');
-}
-
-/* ================= SEPARATED TEACHER ANSWER EDITORS: MCQ & MATH ESSAY ================= */
+/* ================= TEACHER PDF & SEPARATED KEY EDITORS ================= */
 function handleTeacherPdfSelect() {
   const fileInput = document.getElementById('teacherPdfFileInput');
   if (!fileInput.files[0]) return;
