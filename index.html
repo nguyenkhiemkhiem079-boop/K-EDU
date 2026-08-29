@@ -236,18 +236,66 @@
       <!-- Section 1: Manage & Delete Quizzes -->
       <div class="card" style="border-left: 6px solid var(--indigo);">
         <div class="card-header">
-          <h2><span>📂</span> Quản Lý & Xóa Đề Thi (Admin Desk)</h2>
+          <h2><span>📂</span> Quản Lý Đề Thi Hiện Có (Admin Desk)</h2>
         </div>
         <p class="card-subtitle">
-          Danh sách toàn bộ các đề thi trên hệ thống. Bạn có thể xem phạm vi giao đề, tra cứu bảng điểm hoặc xóa bỏ đề cũ.
+          Danh sách toàn bộ các đề thi trên hệ thống. Bạn có thể xem bảng điểm, thi thử hoặc xóa đề cũ:
         </p>
         <div id="teacherQuizManagerWrap"></div>
       </div>
 
-      <!-- Section 2: Create New Quiz -->
+      <!-- Section 2: BATCH EXAM PUBLISHING (PHÁT HÀNH HÀNG LOẠT NHIỀU ĐỀ) -->
+      <div class="card" style="border-left: 6px solid var(--sky);background: linear-gradient(180deg, var(--bg-card) 0%, rgba(224, 242, 254, 0.2) 100%);">
+        <div class="card-header">
+          <h2><span>⚡</span> Tải Lên & Phát Hành Hàng Loạt Nhiều Đề Thi (Batch Upload)</h2>
+          <span class="badge-status badge-pass" id="batchQueueCountBadge">0 đề</span>
+        </div>
+        <p class="card-subtitle">
+          Tải lên cùng lúc nhiều file đề (PDF / Ảnh), thiết lập cấu hình chung và phát hành hàng loạt chỉ trong 1 cú nhấp chuột!
+        </p>
+
+        <!-- Batch Settings -->
+        <div class="form-row" style="background:var(--bg-tertiary);padding:1rem 1.25rem;border-radius:var(--radius-lg);border:2px solid var(--border-color);margin-bottom:1.25rem;">
+          <div class="form-group">
+            <label>⏱️ Thời Gian Mặc Định Cho Mỗi Đề (Phút)</label>
+            <input type="number" id="batchCommonTimeLimitInput" value="45" min="1" max="180">
+          </div>
+          <div class="form-group">
+            <label>📝 Số Câu Hỏi Mặc Định</label>
+            <select id="batchCommonQuestionCountSelect" style="font-weight:700;">
+              <option value="10">10 Câu</option>
+              <option value="12" selected>12 Câu</option>
+              <option value="15">15 Câu</option>
+              <option value="20">20 Câu</option>
+              <option value="25">25 Câu</option>
+              <option value="30">30 Câu</option>
+              <option value="40">40 Câu</option>
+              <option value="50">50 Câu</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>🎯 Đối Tượng Giao Chung</label>
+            <select id="batchCommonAssignTypeSelect" style="font-weight:700;">
+              <option value="all" selected>🌍 Công khai toàn bộ</option>
+              <option value="classes">🏫 Giao theo Lớp</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- File Multiple Input -->
+        <div style="margin-bottom:1.25rem;">
+          <label style="font-weight:800;color:var(--text-primary);display:block;margin-bottom:0.4rem;">📁 Chọn nhiều file đề thi cùng lúc (Giữ phím Ctrl hoặc Shift để chọn nhiều file PDF / Ảnh):</label>
+          <input type="file" id="batchExamFilesInput" accept="application/pdf,image/*" multiple onchange="handleBatchFilesSelect()">
+        </div>
+
+        <!-- Batch Queue Table -->
+        <div id="batchQueueTableWrap"></div>
+      </div>
+
+      <!-- Section 3: Create Single Quiz -->
       <div class="card">
         <div class="card-header">
-          <h2><span>➕</span> Tạo & Phát Hành Đề Thi Mới</h2>
+          <h2><span>➕</span> Tạo & Tùy Chỉnh Chi Tiết 1 Đề Thi Riêng Biệt</h2>
         </div>
 
         <!-- Step 1: Upload File -->
