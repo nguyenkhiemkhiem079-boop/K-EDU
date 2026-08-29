@@ -320,6 +320,29 @@ const MATH_QUESTION_BANK = [
 
 const MathEngine = {
   /**
+   * Xáo trộn vị trí 4 đáp án A, B, C, D và tự động ánh xạ lại đáp án đúng
+   */
+  shuffleQuestionOptions(q) {
+    if (!q.options || q.options.length < 2) return q;
+    
+    const letters = ['A', 'B', 'C', 'D'];
+    const correctLetter = (q.correctAnswer || 'A').toUpperCase();
+    const correctIdx = letters.indexOf(correctLetter);
+    const correctContent = q.options[correctIdx >= 0 ? correctIdx : 0];
+
+    // Xáo trộn ngẫu nhiên 4 phương án
+    const shuffled = [...q.options].sort(() => 0.5 - Math.random());
+    const newCorrectIdx = shuffled.indexOf(correctContent);
+    const newCorrectLetter = letters[newCorrectIdx >= 0 ? newCorrectIdx : 0];
+
+    return {
+      ...q,
+      options: shuffled,
+      correctAnswer: newCorrectLetter
+    };
+  },
+
+  /**
    * Sinh câu hỏi ngẫu nhiên bằng thuật toán biến đổi tham số số học
    */
   generateRandomDynamicQuestion(grade = 10, index = 1) {
@@ -455,20 +478,17 @@ const MathEngine = {
       selectedEssay.push(dynE);
     }
 
-    // Build answer keys array & HTML document
-    const answerKeys = [];
-    const mcqScore = mcqCount ? Math.round(((10 - essayCount * 2) / mcqCount) * 100) / 100 : 0;
-    const essayScore = 2.0;
-
+    // Shuffle options of MCQ so correct answers are naturally distributed among A, B, C, D
     selectedMcq.forEach((q, idx) => {
+      const shuffledQ = MathEngine.shuffleQuestionOptions(q);
       answerKeys.push({
         num: idx + 1,
         type: 'mcq',
-        correct: q.correctAnswer || 'A',
+        correct: shuffledQ.correctAnswer,
         score: mcqScore,
-        content: q.question,
-        options: q.options,
-        explanation: q.explanation
+        content: shuffledQ.question,
+        options: shuffledQ.options,
+        explanation: shuffledQ.explanation
       });
     });
 
