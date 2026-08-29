@@ -228,77 +228,245 @@ const StorageEngine = {
   },
 
   seedSampleDataIfEmpty(force = false) {
-    if (!force && localStorage.getItem(STORAGE_PREFIX + 'sample_seeded')) {
-      return; // Already seeded once; never re-add deleted exams on page reload
+    if (!force && localStorage.getItem(STORAGE_PREFIX + 'sample_seeded_v3')) {
+      return;
     }
 
-    // Sample Quiz 1: Math 10 for Class 10 (SURI, MINH)
-    const sample10 = {
-      id: 'TOAN10_GK1',
-      title: 'Đề Kiểm Tra Toán Học — Lớp 10',
-      targetClass: '10',
-      timeLimit: 45,
-      totalQuestions: 12,
-      mcqCount: 10,
-      essayCount: 2,
-      examMode: 'split_pdf',
-      pdfFileName: 'De_Toan_10.pdf',
-      pdfDataUrl: null,
-      assignType: 'classes',
-      assignedClasses: ['10', '10A1', '10A2'],
-      assignedStudents: ['SURI (10)', 'MINH (10)'],
-      createdAt: new Date().toISOString(),
-      answerKeys: [
-        { num: 1, type: 'mcq', correct: 'A', score: 0.5 },
-        { num: 2, type: 'mcq', correct: 'C', score: 0.5 },
-        { num: 3, type: 'mcq', correct: 'B', score: 0.5 },
-        { num: 4, type: 'mcq', correct: 'D', score: 0.5 },
-        { num: 5, type: 'mcq', correct: 'A', score: 0.5 },
-        { num: 6, type: 'mcq', correct: 'B', score: 0.5 },
-        { num: 7, type: 'mcq', correct: 'C', score: 0.5 },
-        { num: 8, type: 'mcq', correct: 'A', score: 0.5 },
-        { num: 9, type: 'mcq', correct: 'D', score: 0.5 },
-        { num: 10, type: 'mcq', correct: 'B', score: 0.5 },
-        { num: 11, type: 'essay', correct: '12 | x=12', score: 2.5 },
-        { num: 12, type: 'essay', correct: '1/2 | 0.5', score: 2.5 }
-      ]
-    };
-    this.saveQuiz(sample10);
+    const defaultExams = [
+      {
+        id: 'TOAN6_GK1',
+        title: 'Đề Kiểm Tra Giữa Học Kỳ I — Toán 6',
+        targetClass: '6',
+        examTerm: 'GK1',
+        timeLimit: 45,
+        totalQuestions: 12,
+        mcqCount: 10,
+        essayCount: 2,
+        examMode: 'split_pdf',
+        pdfFileName: 'De_Toan_6_GK1.html',
+        assignType: 'all',
+        createdAt: new Date().toISOString(),
+        answerKeys: [
+          { num: 1, type: 'mcq', correct: 'A', score: 0.7 },
+          { num: 2, type: 'mcq', correct: 'B', score: 0.7 },
+          { num: 3, type: 'mcq', correct: 'A', score: 0.7 },
+          { num: 4, type: 'mcq', correct: 'C', score: 0.7 },
+          { num: 5, type: 'mcq', correct: 'D', score: 0.7 },
+          { num: 6, type: 'mcq', correct: 'A', score: 0.7 },
+          { num: 7, type: 'mcq', correct: 'B', score: 0.7 },
+          { num: 8, type: 'mcq', correct: 'C', score: 0.7 },
+          { num: 9, type: 'mcq', correct: 'A', score: 0.7 },
+          { num: 10, type: 'mcq', correct: 'D', score: 0.7 },
+          { num: 11, type: 'essay', correct: '4 | x=4', score: 1.5 },
+          { num: 12, type: 'essay', correct: '0 | n=0', score: 1.5 }
+        ]
+      },
+      {
+        id: 'TOAN7_GK1',
+        title: 'Đề Kiểm Tra Giữa Học Kỳ I — Toán 7',
+        targetClass: '7',
+        examTerm: 'GK1',
+        timeLimit: 45,
+        totalQuestions: 12,
+        mcqCount: 10,
+        essayCount: 2,
+        examMode: 'split_pdf',
+        pdfFileName: 'De_Toan_7_GK1.html',
+        assignType: 'all',
+        createdAt: new Date(Date.now() - 10000).toISOString(),
+        answerKeys: [
+          { num: 1, type: 'mcq', correct: 'A', score: 0.7 },
+          { num: 2, type: 'mcq', correct: 'A', score: 0.7 },
+          { num: 3, type: 'mcq', correct: 'B', score: 0.7 },
+          { num: 4, type: 'mcq', correct: 'C', score: 0.7 },
+          { num: 5, type: 'mcq', correct: 'D', score: 0.7 },
+          { num: 6, type: 'mcq', correct: 'A', score: 0.7 },
+          { num: 7, type: 'mcq', correct: 'B', score: 0.7 },
+          { num: 8, type: 'mcq', correct: 'C', score: 0.7 },
+          { num: 9, type: 'mcq', correct: 'A', score: 0.7 },
+          { num: 10, type: 'mcq', correct: 'D', score: 0.7 },
+          { num: 11, type: 'essay', correct: '12 | x=12', score: 1.5 },
+          { num: 12, type: 'essay', correct: '4 | min=4', score: 1.5 }
+        ]
+      },
+      {
+        id: 'TOAN8_GK1',
+        title: 'Đề Kiểm Tra Giữa Học Kỳ I — Toán 8',
+        targetClass: '8',
+        examTerm: 'GK1',
+        timeLimit: 45,
+        totalQuestions: 12,
+        mcqCount: 10,
+        essayCount: 2,
+        examMode: 'split_pdf',
+        pdfFileName: 'De_Toan_8_GK1.html',
+        assignType: 'all',
+        createdAt: new Date(Date.now() - 20000).toISOString(),
+        answerKeys: [
+          { num: 1, type: 'mcq', correct: 'A', score: 0.7 },
+          { num: 2, type: 'mcq', correct: 'B', score: 0.7 },
+          { num: 3, type: 'mcq', correct: 'C', score: 0.7 },
+          { num: 4, type: 'mcq', correct: 'D', score: 0.7 },
+          { num: 5, type: 'mcq', correct: 'A', score: 0.7 },
+          { num: 6, type: 'mcq', correct: 'B', score: 0.7 },
+          { num: 7, type: 'mcq', correct: 'C', score: 0.7 },
+          { num: 8, type: 'mcq', correct: 'A', score: 0.7 },
+          { num: 9, type: 'mcq', correct: 'D', score: 0.7 },
+          { num: 10, type: 'mcq', correct: 'B', score: 0.7 },
+          { num: 11, type: 'essay', correct: '3 | x=3', score: 1.5 },
+          { num: 12, type: 'essay', correct: '9 | max=9', score: 1.5 }
+        ]
+      },
+      {
+        id: 'TOAN9_GK1',
+        title: 'Đề Kiểm Tra Giữa Học Kỳ I — Toán 9',
+        targetClass: '9',
+        examTerm: 'GK1',
+        timeLimit: 45,
+        totalQuestions: 12,
+        mcqCount: 10,
+        essayCount: 2,
+        examMode: 'split_pdf',
+        pdfFileName: 'De_Toan_9_GK1.html',
+        assignType: 'all',
+        createdAt: new Date(Date.now() - 30000).toISOString(),
+        answerKeys: [
+          { num: 1, type: 'mcq', correct: 'A', score: 0.7 },
+          { num: 2, type: 'mcq', correct: 'A', score: 0.7 },
+          { num: 3, type: 'mcq', correct: 'B', score: 0.7 },
+          { num: 4, type: 'mcq', correct: 'C', score: 0.7 },
+          { num: 5, type: 'mcq', correct: 'D', score: 0.7 },
+          { num: 6, type: 'mcq', correct: 'A', score: 0.7 },
+          { num: 7, type: 'mcq', correct: 'B', score: 0.7 },
+          { num: 8, type: 'mcq', correct: 'C', score: 0.7 },
+          { num: 9, type: 'mcq', correct: 'A', score: 0.7 },
+          { num: 10, type: 'mcq', correct: 'D', score: 0.7 },
+          { num: 11, type: 'essay', correct: '2 | P=2', score: 1.5 },
+          { num: 12, type: 'essay', correct: '2.83 | 2*sqrt(2)', score: 1.5 }
+        ]
+      },
+      {
+        id: 'TOAN_TS10',
+        title: 'Đề Luyện Thi Tuyển Sinh Vào Lớp 10 — Môn Toán',
+        targetClass: 'TS10',
+        examTerm: 'TS10',
+        timeLimit: 90,
+        totalQuestions: 15,
+        mcqCount: 12,
+        essayCount: 3,
+        examMode: 'split_pdf',
+        pdfFileName: 'De_Toan_TS10.html',
+        assignType: 'all',
+        createdAt: new Date(Date.now() - 40000).toISOString(),
+        answerKeys: [
+          { num: 1, type: 'mcq', correct: 'A', score: 0.55 },
+          { num: 2, type: 'mcq', correct: 'B', score: 0.55 },
+          { num: 3, type: 'mcq', correct: 'C', score: 0.55 },
+          { num: 4, type: 'mcq', correct: 'A', score: 0.55 },
+          { num: 5, type: 'mcq', correct: 'D', score: 0.55 },
+          { num: 6, type: 'mcq', correct: 'B', score: 0.55 },
+          { num: 7, type: 'mcq', correct: 'C', score: 0.55 },
+          { num: 8, type: 'mcq', correct: 'A', score: 0.55 },
+          { num: 9, type: 'mcq', correct: 'D', score: 0.55 },
+          { num: 10, type: 'mcq', correct: 'B', score: 0.55 },
+          { num: 11, type: 'mcq', correct: 'C', score: 0.55 },
+          { num: 12, type: 'mcq', correct: 'A', score: 0.55 },
+          { num: 13, type: 'essay', correct: '40 | x=40', score: 1.1 },
+          { num: 14, type: 'essay', correct: '1.5 | 3/2', score: 1.1 },
+          { num: 15, type: 'essay', correct: '5.2 | 3*sqrt(3)', score: 1.1 }
+        ]
+      },
+      {
+        id: 'TOAN10_GK1',
+        title: 'Đề Kiểm Tra Giữa Học Kỳ I — Toán 10',
+        targetClass: '10',
+        examTerm: 'GK1',
+        timeLimit: 45,
+        totalQuestions: 12,
+        mcqCount: 10,
+        essayCount: 2,
+        examMode: 'split_pdf',
+        pdfFileName: 'De_Toan_10_GK1.html',
+        assignType: 'all',
+        createdAt: new Date(Date.now() - 50000).toISOString(),
+        answerKeys: [
+          { num: 1, type: 'mcq', correct: 'A', score: 0.7 },
+          { num: 2, type: 'mcq', correct: 'C', score: 0.7 },
+          { num: 3, type: 'mcq', correct: 'B', score: 0.7 },
+          { num: 4, type: 'mcq', correct: 'D', score: 0.7 },
+          { num: 5, type: 'mcq', correct: 'A', score: 0.7 },
+          { num: 6, type: 'mcq', correct: 'B', score: 0.7 },
+          { num: 7, type: 'mcq', correct: 'C', score: 0.7 },
+          { num: 8, type: 'mcq', correct: 'A', score: 0.7 },
+          { num: 9, type: 'mcq', correct: 'D', score: 0.7 },
+          { num: 10, type: 'mcq', correct: 'B', score: 0.7 },
+          { num: 11, type: 'essay', correct: '12 | F=12', score: 1.5 },
+          { num: 12, type: 'essay', correct: '4 | min=4', score: 1.5 }
+        ]
+      },
+      {
+        id: 'TOAN11_GK1',
+        title: 'Đề Kiểm Tra Giữa Học Kỳ I — Toán 11',
+        targetClass: '11',
+        examTerm: 'GK1',
+        timeLimit: 45,
+        totalQuestions: 12,
+        mcqCount: 10,
+        essayCount: 2,
+        examMode: 'split_pdf',
+        pdfFileName: 'De_Toan_11_GK1.html',
+        assignType: 'all',
+        createdAt: new Date(Date.now() - 60000).toISOString(),
+        answerKeys: [
+          { num: 1, type: 'mcq', correct: 'A', score: 0.7 },
+          { num: 2, type: 'mcq', correct: 'A', score: 0.7 },
+          { num: 3, type: 'mcq', correct: 'B', score: 0.7 },
+          { num: 4, type: 'mcq', correct: 'C', score: 0.7 },
+          { num: 5, type: 'mcq', correct: 'D', score: 0.7 },
+          { num: 6, type: 'mcq', correct: 'A', score: 0.7 },
+          { num: 7, type: 'mcq', correct: 'B', score: 0.7 },
+          { num: 8, type: 'mcq', correct: 'C', score: 0.7 },
+          { num: 9, type: 'mcq', correct: 'A', score: 0.7 },
+          { num: 10, type: 'mcq', correct: 'D', score: 0.7 },
+          { num: 11, type: 'essay', correct: '1.5 | 3/2', score: 1.5 },
+          { num: 12, type: 'essay', correct: '0 | x=0', score: 1.5 }
+        ]
+      },
+      {
+        id: 'TOAN12_GK1',
+        title: 'Đề Ôn Thi Tốt Nghiệp THPT — Môn Toán 12',
+        targetClass: '12',
+        examTerm: 'THPT',
+        timeLimit: 90,
+        totalQuestions: 15,
+        mcqCount: 13,
+        essayCount: 2,
+        examMode: 'split_pdf',
+        pdfFileName: 'De_Toan_12_THPT.html',
+        assignType: 'all',
+        createdAt: new Date(Date.now() - 70000).toISOString(),
+        answerKeys: [
+          { num: 1, type: 'mcq', correct: 'A', score: 0.55 },
+          { num: 2, type: 'mcq', correct: 'A', score: 0.55 },
+          { num: 3, type: 'mcq', correct: 'B', score: 0.55 },
+          { num: 4, type: 'mcq', correct: 'C', score: 0.55 },
+          { num: 5, type: 'mcq', correct: 'D', score: 0.55 },
+          { num: 6, type: 'mcq', correct: 'A', score: 0.55 },
+          { num: 7, type: 'mcq', correct: 'B', score: 0.55 },
+          { num: 8, type: 'mcq', correct: 'C', score: 0.55 },
+          { num: 9, type: 'mcq', correct: 'A', score: 0.55 },
+          { num: 10, type: 'mcq', correct: 'D', score: 0.55 },
+          { num: 11, type: 'mcq', correct: 'B', score: 0.55 },
+          { num: 12, type: 'mcq', correct: 'C', score: 0.55 },
+          { num: 13, type: 'mcq', correct: 'A', score: 0.55 },
+          { num: 14, type: 'essay', correct: '12 | m=12', score: 1.4 },
+          { num: 15, type: 'essay', correct: '1 | x=1', score: 1.4 }
+        ]
+      }
+    ];
 
-    // Sample Quiz 2: Math 8 for Class 8 (GIANG)
-    const sample8 = {
-      id: 'TOAN8_GK1',
-      title: 'Đề Kiểm Tra Giữa Học Kỳ I — Toán 8',
-      targetClass: '8',
-      timeLimit: 45,
-      totalQuestions: 12,
-      mcqCount: 10,
-      essayCount: 2,
-      examMode: 'split_pdf',
-      pdfFileName: 'De_Toan_8.pdf',
-      pdfDataUrl: null,
-      assignType: 'classes',
-      assignedClasses: ['8', '8A1', '8A2'],
-      assignedStudents: ['GIANG (8)'],
-      createdAt: new Date(Date.now() - 3600000).toISOString(),
-      answerKeys: [
-        { num: 1, type: 'mcq', correct: 'B', score: 0.5 },
-        { num: 2, type: 'mcq', correct: 'C', score: 0.5 },
-        { num: 3, type: 'mcq', correct: 'A', score: 0.5 },
-        { num: 4, type: 'mcq', correct: 'D', score: 0.5 },
-        { num: 5, type: 'mcq', correct: 'A', score: 0.5 },
-        { num: 6, type: 'mcq', correct: 'C', score: 0.5 },
-        { num: 7, type: 'mcq', correct: 'B', score: 0.5 },
-        { num: 8, type: 'mcq', correct: 'D', score: 0.5 },
-        { num: 9, type: 'mcq', correct: 'A', score: 0.5 },
-        { num: 10, type: 'mcq', correct: 'B', score: 0.5 },
-        { num: 11, type: 'essay', correct: '144 | x=12', score: 2.5 },
-        { num: 12, type: 'essay', correct: '0.25 | 1/4', score: 2.5 }
-      ]
-    };
-    this.saveQuiz(sample8);
-
-    localStorage.setItem(STORAGE_PREFIX + 'sample_seeded', '1');
+    defaultExams.forEach(exam => this.saveQuiz(exam));
+    localStorage.setItem(STORAGE_PREFIX + 'sample_seeded_v3', '1');
   }
 };
 
