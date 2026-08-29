@@ -1470,93 +1470,98 @@ function triggerAutoGenerateMathExam() {
     return;
   }
 
-  const grade = document.getElementById('mathGenGradeSelect')?.value || '10';
-  const term = document.getElementById('mathGenTermSelect')?.value || 'GK1';
-  const topic = document.getElementById('mathGenTopicSelect')?.value || 'all';
-  const mcqCount = parseInt(document.getElementById('mathGenMcqCountSelect')?.value || '12', 10);
+  try {
+    const grade = document.getElementById('mathGenGradeSelect')?.value || '10';
+    const term = document.getElementById('mathGenTermSelect')?.value || 'GK1';
+    const topic = document.getElementById('mathGenTopicSelect')?.value || 'all';
+    const mcqCount = parseInt(document.getElementById('mathGenMcqCountSelect')?.value || '12', 10);
 
-  const countTH = parseInt(document.getElementById('mathGenCountTHSelect')?.value || '1', 10);
-  const countVD = parseInt(document.getElementById('mathGenCountVDSelect')?.value || '1', 10);
-  const countVDC = parseInt(document.getElementById('mathGenCountVDCSelect')?.value || '1', 10);
+    const countTH = parseInt(document.getElementById('mathGenCountTHSelect')?.value || '1', 10);
+    const countVD = parseInt(document.getElementById('mathGenCountVDSelect')?.value || '1', 10);
+    const countVDC = parseInt(document.getElementById('mathGenCountVDCSelect')?.value || '1', 10);
 
-  const generated = MathEngine.generateExam({
-    grade,
-    term,
-    topic,
-    mcqCount,
-    essayMatrix: { TH: countTH, VD: countVD, VDC: countVDC },
-    timeLimit: 45
-  });
+    const generated = MathEngine.generateExam({
+      grade,
+      term,
+      topic,
+      mcqCount,
+      essayMatrix: { TH: countTH, VD: countVD, VDC: countVDC },
+      timeLimit: 45
+    });
 
-  // 1. Populate Creator form
-  const titleInput = document.getElementById('teacherExamTitleInput');
-  const termSelect = document.getElementById('teacherExamTermSelect');
-  const timeLimitInput = document.getElementById('teacherExamTimeLimitInput');
-  if (titleInput) titleInput.value = generated.title;
-  if (termSelect) termSelect.value = term;
-  if (timeLimitInput) timeLimitInput.value = generated.timeLimit;
+    // 1. Populate Creator form
+    const titleInput = document.getElementById('teacherExamTitleInput');
+    const termSelect = document.getElementById('teacherExamTermSelect');
+    const timeLimitInput = document.getElementById('teacherExamTimeLimitInput');
+    if (titleInput) titleInput.value = generated.title;
+    if (termSelect) termSelect.value = term;
+    if (timeLimitInput) timeLimitInput.value = generated.timeLimit;
 
-  // 2. Set MCQ & Essay keys
-  AppState.teacherMcqKeys = generated.answerKeys.filter(k => k.type === 'mcq').map(k => ({
-    num: k.num,
-    type: 'mcq',
-    correct: k.correct,
-    score: k.score
-  }));
+    // 2. Set MCQ & Essay keys
+    AppState.teacherMcqKeys = (generated.answerKeys || []).filter(k => k.type === 'mcq').map(k => ({
+      num: k.num,
+      type: 'mcq',
+      correct: k.correct,
+      score: k.score
+    }));
 
-  AppState.teacherEssayKeys = generated.answerKeys.filter(k => k.type === 'essay').map(k => ({
-    num: k.num,
-    type: 'essay',
-    correct: k.correct,
-    score: k.score,
-    testInput: ''
-  }));
+    AppState.teacherEssayKeys = (generated.answerKeys || []).filter(k => k.type === 'essay').map(k => ({
+      num: k.num,
+      type: 'essay',
+      correct: k.correct,
+      score: k.score,
+      testInput: ''
+    }));
 
-  // 3. Create preview HTML as standalone Data URL for PDF/iframe viewer
-  const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(generated.examHtml);
-  AppState.teacherPdfData = dataUrl;
-  AppState.teacherFileName = `${generated.title.replace(/\s+/g, '_')}.html`;
+    // 3. Create preview HTML as standalone Data URL for PDF/iframe viewer
+    const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(generated.examHtml || '');
+    AppState.teacherPdfData = dataUrl;
+    AppState.teacherFileName = `${(generated.title || 'De_Toan').replace(/\s+/g, '_')}.html`;
 
-  // Render preview frame
-  const previewWrap = document.getElementById('teacherPdfPreviewWrapper');
-  const previewFrame = document.getElementById('teacherPdfPreviewFrame');
-  const clearBtn = document.getElementById('clearPdfBtn');
-  const nameBadge = document.getElementById('teacherPdfFileNameBadge');
+    // Render preview frame
+    const previewWrap = document.getElementById('teacherPdfPreviewWrapper');
+    const previewFrame = document.getElementById('teacherPdfPreviewFrame');
+    const clearBtn = document.getElementById('clearPdfBtn');
+    const nameBadge = document.getElementById('teacherPdfFileNameBadge');
 
-  if (previewWrap) previewWrap.classList.remove('hidden');
-  if (previewFrame) previewFrame.src = dataUrl;
-  if (clearBtn) clearBtn.classList.remove('hidden');
-  if (nameBadge) {
-    nameBadge.classList.remove('hidden');
-    nameBadge.innerHTML = `📄 <strong>Tài liệu đề Toán đã sinh:</strong> ${escapeHtml(generated.title)}`;
-  }
+    if (previewWrap) previewWrap.classList.remove('hidden');
+    if (previewFrame) previewFrame.src = dataUrl;
+    if (clearBtn) clearBtn.classList.remove('hidden');
+    if (nameBadge) {
+      nameBadge.classList.remove('hidden');
+      nameBadge.innerHTML = `📄 <strong>Tài liệu đề Toán đã sinh:</strong> ${escapeHtml(generated.title || '')}`;
+    }
 
-  // 4. Update Grids
-  renderTeacherMcqGrid();
-  renderTeacherEssayGrid();
-  updateTotalExamPointsCalculation();
+    // 4. Update Grids
+    renderTeacherMcqGrid();
+    renderTeacherEssayGrid();
+    updateTotalExamPointsCalculation();
 
-  // 5. Show success result box
-  const resBox = document.getElementById('mathGenResultBox');
-  if (resBox) {
-    resBox.classList.remove('hidden');
-    resBox.innerHTML = `
-      <div style="background:var(--primary-light);border:2px solid var(--primary);border-radius:var(--radius-lg);padding:1rem 1.25rem;">
-        <h4 style="color:var(--primary-shadow);margin-bottom:0.35rem;font-size:1.05rem;">🎉 Đã Tự Động Sinh Xong Đề Toán!</h4>
-        <p style="color:var(--primary-shadow);font-size:0.9rem;font-weight:700;margin-bottom:0.75rem;">
-          Đã tạo <strong>${generated.mcqCount} câu trắc nghiệm</strong> + <strong>${generated.essayCount} câu tự luận</strong>, tự động nạp bảng đáp án và tài liệu đề bài có công thức Toán LaTeX.
-        </p>
-        <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
-          <button type="button" class="btn btn-primary" onclick="document.getElementById('singleExamCreatorSection').scrollIntoView({behavior:'smooth'})">📝 Xem & Biên Tập Đề Ở Dưới</button>
-          <button type="button" class="btn btn-success" onclick="publishTeacherQuiz()">💾 Lưu & Phát Hành Đề Này Ngay</button>
+    // 5. Show success result box
+    const resBox = document.getElementById('mathGenResultBox');
+    if (resBox) {
+      resBox.classList.remove('hidden');
+      resBox.innerHTML = `
+        <div style="background:var(--primary-light);border:2px solid var(--primary);border-radius:var(--radius-lg);padding:1rem 1.25rem;">
+          <h4 style="color:var(--primary-shadow);margin-bottom:0.35rem;font-size:1.05rem;">🎉 Đã Tự Động Sinh Xong Đề Toán!</h4>
+          <p style="color:var(--primary-shadow);font-size:0.9rem;font-weight:700;margin-bottom:0.75rem;">
+            Đã tạo <strong>${generated.mcqCount} câu trắc nghiệm</strong> + <strong>${generated.essayCount} câu tự luận</strong>, tự động nạp bảng đáp án và tài liệu đề bài có công thức Toán LaTeX.
+          </p>
+          <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+            <button type="button" class="btn btn-primary" onclick="document.getElementById('singleExamCreatorSection').scrollIntoView({behavior:'smooth'})">📝 Xem & Biên Tập Đề Ở Dưới</button>
+            <button type="button" class="btn btn-success" onclick="publishTeacherQuiz()">💾 Lưu & Phát Hành Đề Này Ngay</button>
+          </div>
         </div>
-      </div>
-    `;
-  }
+      `;
+    }
 
-  SoundEngine.playFanfare();
-  GamificationEngine.fireConfetti();
-  showToast(`⚡ Đã tự động sinh thành công: ${generated.title}!`, 'success');
+    if (typeof SoundEngine !== 'undefined' && SoundEngine.playFanfare) SoundEngine.playFanfare();
+    if (typeof GamificationEngine !== 'undefined' && GamificationEngine.fireConfetti) GamificationEngine.fireConfetti();
+    showToast(`⚡ Đã tự động sinh thành công: ${generated.title}!`, 'success');
+  } catch (err) {
+    console.error("Math Generator Error:", err);
+    showToast(`⚠️ Có lỗi khi sinh đề: ${err.message}`, 'error');
+  }
 }
 
 function previewGeneratedMathExamDocument() {

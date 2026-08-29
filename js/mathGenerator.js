@@ -6,6 +6,19 @@
  * Phân loại chuẩn 4 Kỳ: Giữa kỳ 1 (GK1), Cuối kỳ 1 (CK1), Giữa kỳ 2 (GK2), Cuối kỳ 2 (CK2), Tuyển sinh 10 & THPT
  */
 
+function escapeMathHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+if (typeof window !== 'undefined' && typeof window.escapeHtml === 'undefined') {
+  window.escapeHtml = escapeMathHtml;
+}
+
 /* ================= 📐 BỘ VẼ HÌNH MINH HỌA TOÁN HỌC CHUẨN SVG (VECTOR DIAGRAMS) ================= */
 const MathDiagrams = {
   // Tam giác vuông có đường cao và ký hiệu góc vuông
@@ -706,7 +719,8 @@ const MathEngine = {
 
     const gradeLabel = grade === 'TS10' ? 'Ôn Thi Vào 10' : (grade === 'all' ? 'Tổng Hợp' : `Lớp ${grade}`);
     const termLabel = termLabels[term] || 'Chuẩn Ma Trận';
-    const examTitle = title || `Đề Kiểm Tra ${termLabel} — Môn Toán ${gradeLabel} (${levelLabels[essayLevel] || 'Chuẩn'})`;
+    const essaySummaryStr = `${essayMatrix.TH || 0}TH + ${essayMatrix.VD || 0}VD + ${essayMatrix.VDC || 0}VDC`;
+    const examTitle = title || `Đề Kiểm Tra ${termLabel} — Môn Toán ${gradeLabel} (${essaySummaryStr})`;
 
     // Generate formatted HTML text representation of the exam
     const examHtml = this.renderExamToHtml(examTitle, answerKeys, timeLimit, termLabel);
@@ -714,7 +728,6 @@ const MathEngine = {
     return {
       title: examTitle,
       term,
-      essayLevel,
       timeLimit,
       totalQuestions: answerKeys.length,
       mcqCount: selectedMcq.length,
@@ -733,7 +746,7 @@ const MathEngine = {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${escapeHtml(title)}</title>
+  <title>${escapeMathHtml(title)}</title>
   
   <!-- Google Fonts: Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -872,8 +885,8 @@ const MathEngine = {
 </head>
 <body>
   <div class="header">
-    <div class="title">📐 ${escapeHtml(title)}</div>
-    <div class="meta">⏱️ Thời gian làm bài: <strong>${timeLimit} phút</strong> &nbsp;|&nbsp; Tổng số: <strong>${keys.length} câu hỏi</strong> &nbsp;|&nbsp; Định dạng: <strong>${escapeHtml(termLabel || 'Chuẩn TOANMATH')}</strong></div>
+    <div class="title">📐 ${escapeMathHtml(title)}</div>
+    <div class="meta">⏱️ Thời gian làm bài: <strong>${timeLimit} phút</strong> &nbsp;|&nbsp; Tổng số: <strong>${keys.length} câu hỏi</strong> &nbsp;|&nbsp; Định dạng: <strong>${escapeMathHtml(termLabel || 'Chuẩn TOANMATH')}</strong></div>
   </div>
 
   <div class="section-title">🔵 PHẦN I. TRẮC NGHIỆM KHÁCH QUAN (${mcqItems.length} CÂU)</div>
