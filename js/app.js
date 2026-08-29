@@ -1,5 +1,5 @@
 /**
- * KhiemEdu Main Application Controller - Dual Role Gatekeeper (Teacher & Parent Security)
+ * KhiemEdu Main Application Controller - Instant Parent Lookup & Teacher Security Gatekeeper
  */
 
 const AppState = {
@@ -47,28 +47,6 @@ const TeacherAuth = {
   logout() {
     sessionStorage.removeItem('khiemedu_teacher_session');
     showToast('🔒 Đã đăng xuất và khóa quyền Giáo Viên!', 'info');
-    SoundEngine.playClick();
-    switchTab('student');
-  }
-};
-
-/* ================= PARENT ROLE SECURITY & GATEKEEPER ================= */
-const ParentAuth = {
-  getPin() {
-    return localStorage.getItem('khiemedu_parent_pin') || '888888';
-  },
-  setPin(newPin) {
-    localStorage.setItem('khiemedu_parent_pin', newPin);
-  },
-  isLoggedIn() {
-    return sessionStorage.getItem('khiemedu_parent_session') === '1';
-  },
-  login() {
-    sessionStorage.setItem('khiemedu_parent_session', '1');
-  },
-  logout() {
-    sessionStorage.removeItem('khiemedu_parent_session');
-    showToast('🔒 Đã đăng xuất và khóa quyền Phụ Huynh!', 'info');
     SoundEngine.playClick();
     switchTab('student');
   }
@@ -132,18 +110,12 @@ function toggleSound() {
   if (!isMuted) SoundEngine.playClick();
 }
 
-/* ================= TAB NAVIGATION WITH SECURITY GATEKEEPERS ================= */
+/* ================= TAB NAVIGATION ================= */
 function switchTab(tabId) {
-  // 1. Teacher Gatekeeper
+  // Only Teacher/Results tabs require Admin PIN
   if ((tabId === 'teacher' || tabId === 'results') && !TeacherAuth.isLoggedIn()) {
     AppState.pendingTeacherTab = tabId;
     openTeacherAuthModal();
-    return;
-  }
-
-  // 2. Parent Gatekeeper
-  if (tabId === 'parent' && !ParentAuth.isLoggedIn()) {
-    openParentAuthModal();
     return;
   }
 
@@ -228,66 +200,6 @@ function promptChangeTeacherPin() {
 
   TeacherAuth.setPin(newPin.trim());
   showToast('🔑 Đã cập nhật mã PIN Giáo Viên thành công!', 'success');
-  SoundEngine.playCorrect();
-}
-
-/* --- Parent Modal Controls --- */
-function openParentAuthModal() {
-  const modal = document.getElementById('parentAuthModal');
-  const input = document.getElementById('parentPinInput');
-  const errorEl = document.getElementById('parentAuthError');
-  if (errorEl) errorEl.textContent = '';
-  if (input) {
-    input.value = '';
-    setTimeout(() => input.focus(), 150);
-  }
-  if (modal) modal.classList.remove('hidden');
-  SoundEngine.playWarning();
-}
-
-function closeParentAuthModal() {
-  const modal = document.getElementById('parentAuthModal');
-  if (modal) modal.classList.add('hidden');
-}
-
-function verifyParentAuth() {
-  const input = document.getElementById('parentPinInput');
-  const errorEl = document.getElementById('parentAuthError');
-  const enteredPin = (input ? input.value : '').trim();
-  const correctPin = ParentAuth.getPin();
-
-  if (enteredPin === correctPin) {
-    ParentAuth.login();
-    closeParentAuthModal();
-    showToast('🔓 Xác thực Phụ Huynh thành công! Kính chào Quý Phụ Huynh.', 'success');
-    SoundEngine.playFanfare();
-    switchTab('parent');
-  } else {
-    if (errorEl) errorEl.textContent = '❌ Mã PIN Phụ Huynh không chính xác!';
-    if (input) {
-      input.value = '';
-      input.focus();
-    }
-    SoundEngine.playWarning();
-  }
-}
-
-function promptChangeParentPin() {
-  const currentPin = prompt('Nhập mã PIN Phụ Huynh hiện tại của bạn:');
-  if (currentPin === null) return;
-  if (currentPin !== ParentAuth.getPin()) {
-    alert('❌ Mã PIN hiện tại không đúng!');
-    return;
-  }
-
-  const newPin = prompt('Nhập mã PIN Phụ Huynh mới (VD: 4 - 8 chữ số):');
-  if (!newPin || newPin.trim().length < 4) {
-    alert('⚠️ Mã PIN mới phải có ít nhất 4 ký tự!');
-    return;
-  }
-
-  ParentAuth.setPin(newPin.trim());
-  showToast('🔑 Đã cập nhật mã PIN Phụ Huynh thành công!', 'success');
   SoundEngine.playCorrect();
 }
 
@@ -443,7 +355,7 @@ function generateSvgScoreChart(results) {
   `;
 }
 
-/* ================= PARENT PORTAL - REAL METRICS DASHBOARD ================= */
+/* ================= PARENT PORTAL - DIRECT LOOKUP (NO PIN REQUIRED) ================= */
 async function renderParentTab() {
   const nameInput = document.getElementById('parentChildNameInput');
   const classInput = document.getElementById('parentChildClassInput');
@@ -474,8 +386,8 @@ async function lookupParentChildReport() {
     container.innerHTML = `
       <div style="text-align:center;padding:2.5rem 1rem;color:var(--text-muted);">
         <div style="font-size:3rem;margin-bottom:0.5rem;">👨‍👩‍👧 📊</div>
-        <h3 style="color:var(--text-primary);margin-bottom:0.3rem;">Báo Cáo Thống Kê & Phân Tích Học Lực Thực Tế</h3>
-        <p style="font-weight:600;">Vui lòng nhập <strong>Tên Học Sinh</strong> và <strong>Lớp Học</strong> ở trên để tải toàn bộ số liệu thống kê chi tiết của con.</p>
+        <h3 style="color:var(--text-primary);margin-bottom:0.3rem;">Báo Cáo Thống Kê & Phân Tích Học Lực Của Con</h3>
+        <p style="font-weight:600;">Vui lòng nhập <strong>Tên Học Sinh</strong> và <strong>Lớp Học</strong> ở trên để xem toàn bộ số liệu thực tế của con.</p>
       </div>
     `;
     return;
@@ -734,7 +646,7 @@ async function renderTeacherAnalyticsDashboard() {
 
     <!-- Accuracy Breakdown Progress Bar -->
     <div class="card" style="margin-bottom:1.5rem;background:var(--bg-tertiary);">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:gap;gap:0.5rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
         <h4 style="margin:0;font-size:1rem;color:var(--text-primary);">📊 Cơ Cấu Đúng / Sai Toàn Bộ Câu Hỏi Đã Chấm:</h4>
         <span style="font-weight:800;color:var(--indigo);font-size:0.85rem;">Tổng số: ${m.totalQuestions} câu hỏi</span>
       </div>

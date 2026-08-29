@@ -41,29 +41,6 @@
     </div>
   </div>
 
-  <!-- ================= PARENT SECURITY PIN MODAL ================= -->
-  <div id="parentAuthModal" class="auth-modal-backdrop hidden">
-    <div class="parent-auth-card">
-      <div style="font-size:3.5rem;margin-bottom:0.5rem;">👨‍👩‍👧 🔐</div>
-      <h2 style="font-size:1.6rem;color:var(--text-primary);margin-bottom:0.4rem;">Cổng Thông Tin Dành Cho Phụ Huynh</h2>
-      <p style="color:var(--text-secondary);font-size:0.9rem;font-weight:600;line-height:1.5;">
-        Vui lòng nhập <strong>Mã PIN Phụ Huynh</strong> để mở khóa sổ theo dõi học tập và tiến độ của con:
-      </p>
-      
-      <form onsubmit="verifyParentAuth(); return false;">
-        <input type="password" id="parentPinInput" class="parent-auth-pin-input" placeholder="••••••" maxlength="12" autocomplete="off" required>
-        
-        <div id="parentAuthError" style="color:var(--rose);font-weight:800;font-size:0.85rem;margin-bottom:1rem;min-height:20px;"></div>
-        
-        <div style="display:flex;gap:0.75rem;justify-content:center;">
-          <button type="button" class="btn btn-secondary" onclick="closeParentAuthModal()">Hủy Bỏ</button>
-          <button type="submit" class="btn btn-primary btn-lg" style="flex:1;">Mở Khóa 🔓</button>
-        </div>
-        <div style="margin-top:1rem;font-size:0.8rem;color:var(--text-muted);font-weight:700;">(Mã PIN Phụ Huynh mặc định ban đầu: <code>888888</code>)</div>
-      </form>
-    </div>
-  </div>
-
   <!-- ================= TOP NAVBAR ================= -->
   <header class="navbar">
     <div class="nav-container">
@@ -271,28 +248,13 @@
     <!-- ================= PARENT PORTAL VIEW ================= -->
     <section id="tabParent" class="view-section">
       
-      <!-- Parent Top Security Banner -->
-      <div class="card" style="background:linear-gradient(90deg, rgba(88, 204, 2, 0.15) 0%, var(--bg-card) 100%);border-left:6px solid var(--primary);padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
-        <div style="display:flex;align-items:center;gap:0.75rem;">
-          <span style="font-size:2rem;">👨‍👩‍👧</span>
-          <div>
-            <div style="font-weight:800;font-size:1.1rem;color:var(--primary-shadow);">Cổng Thông Tin Bảo Mật Dành Cho Phụ Huynh</div>
-            <div style="font-size:0.8rem;color:var(--text-secondary);font-weight:700;">Dữ liệu học tập và số liệu thực tế được bảo vệ bằng mã PIN riêng của gia đình.</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:0.6rem;align-items:center;">
-          <button type="button" class="btn btn-secondary btn-sm" onclick="promptChangeParentPin()">🔑 Đổi Mã PIN Phụ Huynh</button>
-          <button type="button" class="btn btn-danger btn-sm" onclick="ParentAuth.logout()">🔒 Khóa & Đăng Xuất</button>
-        </div>
-      </div>
-
       <!-- Lookup Card -->
       <div class="card" style="border-left: 6px solid var(--indigo);">
         <div class="card-header">
-          <h2><span>🔍</span> Tra Cứu Số Liệu Thực Tế Của Con Em</h2>
+          <h2><span>👨‍👩‍👧</span> Cổng Thông Tin Phụ Huynh — Theo Dõi Số Liệu Thực Tế Của Con</h2>
         </div>
         <p class="card-subtitle">
-          Vui lòng nhập Tên và Lớp học của con để xem toàn bộ số liệu thực tế, số câu không giải được và biểu đồ thống kê tiến độ:
+          Kính chào Quý Phụ Huynh! Vui lòng nhập Tên và Lớp học của con để xem toàn bộ số liệu thực tế, số câu không giải được và biểu đồ thống kê tiến độ:
         </p>
 
         <div class="form-row">
@@ -307,7 +269,7 @@
         </div>
 
         <div style="display:flex;gap:0.75rem;align-items:center;">
-          <button type="button" class="btn btn-primary" onclick="lookupParentChildReport()">🔍 Tải Lại Số Liệu</button>
+          <button type="button" class="btn btn-primary" onclick="lookupParentChildReport()">🔍 Xem Báo Cáo Thống Kê</button>
         </div>
       </div>
 
