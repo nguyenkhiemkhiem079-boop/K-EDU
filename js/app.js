@@ -1417,6 +1417,105 @@ function updateTotalExamPointsCalculation() {
   }
 }
 
+/* ================= SMART MATH AUTO-GENERATOR CONTROLLER ================= */
+function triggerAutoGenerateMathExam() {
+  if (typeof MathEngine === 'undefined') {
+    showToast('⚠️ Bộ sinh đề toán chưa sẵn sàng, vui lòng thử lại.', 'warn');
+    return;
+  }
+
+  const grade = document.getElementById('mathGenGradeSelect')?.value || '10';
+  const topic = document.getElementById('mathGenTopicSelect')?.value || 'all';
+  const mcqCount = parseInt(document.getElementById('mathGenMcqCountSelect')?.value || '10', 10);
+  const essayCount = parseInt(document.getElementById('mathGenEssayCountSelect')?.value || '2', 10);
+
+  const generated = MathEngine.generateExam({
+    grade,
+    topic,
+    mcqCount,
+    essayCount,
+    timeLimit: 45
+  });
+
+  // 1. Populate Creator form
+  const titleInput = document.getElementById('teacherExamTitleInput');
+  const timeLimitInput = document.getElementById('teacherExamTimeLimitInput');
+  if (titleInput) titleInput.value = generated.title;
+  if (timeLimitInput) timeLimitInput.value = generated.timeLimit;
+
+  // 2. Set MCQ & Essay keys
+  AppState.teacherMcqKeys = generated.answerKeys.filter(k => k.type === 'mcq').map(k => ({
+    num: k.num,
+    type: 'mcq',
+    correct: k.correct,
+    score: k.score
+  }));
+
+  AppState.teacherEssayKeys = generated.answerKeys.filter(k => k.type === 'essay').map(k => ({
+    num: k.num,
+    type: 'essay',
+    correct: k.correct,
+    score: k.score,
+    testInput: ''
+  }));
+
+  // 3. Create preview HTML as Data URL for the PDF viewer frame
+  const htmlBlob = new Blob([generated.examHtml], { type: 'text/html;charset=utf-8' });
+  const htmlUrl = URL.createObjectURL(htmlBlob);
+  AppState.teacherPdfData = htmlUrl;
+  AppState.teacherFileName = `${generated.title.replace(/\s+/g, '_')}.html`;
+
+  // Render preview frame
+  const previewWrap = document.getElementById('teacherPdfPreviewWrapper');
+  const previewFrame = document.getElementById('teacherPdfPreviewFrame');
+  const clearBtn = document.getElementById('clearPdfBtn');
+  const nameBadge = document.getElementById('teacherPdfFileNameBadge');
+
+  if (previewWrap) previewWrap.classList.remove('hidden');
+  if (previewFrame) previewFrame.src = htmlUrl;
+  if (clearBtn) clearBtn.classList.remove('hidden');
+  if (nameBadge) {
+    nameBadge.classList.remove('hidden');
+    nameBadge.innerHTML = `📄 <strong>Tài liệu đề Toán đã sinh:</strong> ${escapeHtml(generated.title)}`;
+  }
+
+  // 4. Update Grids
+  renderTeacherMcqGrid();
+  renderTeacherEssayGrid();
+  updateTotalExamPointsCalculation();
+
+  // 5. Show success result box
+  const resBox = document.getElementById('mathGenResultBox');
+  if (resBox) {
+    resBox.classList.remove('hidden');
+    resBox.innerHTML = `
+      <div style="background:var(--primary-light);border:2px solid var(--primary);border-radius:var(--radius-lg);padding:1rem 1.25rem;">
+        <h4 style="color:var(--primary-shadow);margin-bottom:0.35rem;font-size:1.05rem;">🎉 Đã Tự Động Sinh Xong Đề Toán!</h4>
+        <p style="color:var(--primary-shadow);font-size:0.9rem;font-weight:700;margin-bottom:0.75rem;">
+          Đã tạo <strong>${generated.mcqCount} câu trắc nghiệm</strong> + <strong>${generated.essayCount} câu tự luận</strong>, tự động nạp bảng đáp án và tài liệu đề bài có công thức Toán LaTeX.
+        </p>
+        <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+          <button type="button" class="btn btn-primary" onclick="document.getElementById('singleExamCreatorSection').scrollIntoView({behavior:'smooth'})">📝 Xem & Biên Tập Đề Ở Dưới</button>
+          <button type="button" class="btn btn-success" onclick="publishTeacherQuiz()">💾 Lưu & Phát Hành Đề Này Ngay</button>
+        </div>
+      </div>
+    `;
+  }
+
+  SoundEngine.playFanfare();
+  GamificationEngine.fireConfetti();
+  showToast(`⚡ Đã tự động sinh thành công: ${generated.title}!`, 'success');
+}
+
+function previewGeneratedMathExamDocument() {
+  const frame = document.getElementById('teacherPdfPreviewFrame');
+  if (frame && frame.src && frame.src !== 'about:blank') {
+    window.open(frame.src, '_blank');
+  } else {
+    triggerAutoGenerateMathExam();
+  }
+}
+
 /* ================= FILE UPLOAD & PREVIEW HANDLERS ================= */
 function handleTeacherPdfSelect() {
   const fileInput = document.getElementById('teacherPdfFileInput');
