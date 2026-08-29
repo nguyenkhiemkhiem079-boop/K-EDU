@@ -244,7 +244,7 @@
         <div id="teacherQuizManagerWrap"></div>
       </div>
 
-      <!-- Section 2: BATCH EXAM PUBLISHING (PHÁT HÀNH HÀNG LOẠT NHIỀU ĐỀ) -->
+      <!-- Section 2: BATCH EXAM PUBLISHING -->
       <div class="card" style="border-left: 6px solid var(--sky);background: linear-gradient(180deg, var(--bg-card) 0%, rgba(224, 242, 254, 0.2) 100%);">
         <div class="card-header">
           <h2><span>⚡</span> Tải Lên & Phát Hành Hàng Loạt Nhiều Đề Thi (Batch Upload)</h2>
@@ -254,7 +254,6 @@
           Tải lên cùng lúc nhiều file đề (PDF / Ảnh), thiết lập cấu hình chung và phát hành hàng loạt chỉ trong 1 cú nhấp chuột!
         </p>
 
-        <!-- Batch Settings -->
         <div class="form-row" style="background:var(--bg-tertiary);padding:1rem 1.25rem;border-radius:var(--radius-lg);border:2px solid var(--border-color);margin-bottom:1.25rem;">
           <div class="form-group">
             <label>⏱️ Thời Gian Mặc Định Cho Mỗi Đề (Phút)</label>
@@ -267,7 +266,6 @@
               <option value="12" selected>12 Câu</option>
               <option value="15">15 Câu</option>
               <option value="20">20 Câu</option>
-              <option value="25">25 Câu</option>
               <option value="30">30 Câu</option>
               <option value="40">40 Câu</option>
               <option value="50">50 Câu</option>
@@ -282,20 +280,19 @@
           </div>
         </div>
 
-        <!-- File Multiple Input -->
         <div style="margin-bottom:1.25rem;">
           <label style="font-weight:800;color:var(--text-primary);display:block;margin-bottom:0.4rem;">📁 Chọn nhiều file đề thi cùng lúc (Giữ phím Ctrl hoặc Shift để chọn nhiều file PDF / Ảnh):</label>
           <input type="file" id="batchExamFilesInput" accept="application/pdf,image/*" multiple onchange="handleBatchFilesSelect()">
         </div>
 
-        <!-- Batch Queue Table -->
         <div id="batchQueueTableWrap"></div>
       </div>
 
-      <!-- Section 3: Create Single Quiz -->
+      <!-- Section 3: SEPARATED SINGLE EXAM CREATOR (MCQ & ESSAY) -->
       <div class="card">
         <div class="card-header">
-          <h2><span>➕</span> Tạo & Tùy Chỉnh Chi Tiết 1 Đề Thi Riêng Biệt</h2>
+          <h2><span>➕</span> Tạo & Thiết Lập 1 Đề Thi Riêng Biệt</h2>
+          <span class="badge-status badge-pass" id="teacherTotalScoreCalculationBadge">Tổng: 12 câu (10/10đ)</span>
         </div>
 
         <!-- Step 1: Upload File -->
@@ -312,37 +309,51 @@
 
         <hr style="border:1px solid var(--border-color);margin:1.5rem 0;"/>
 
-        <!-- Step 2: Fast Answer Key Input -->
-        <div style="margin-bottom:1.5rem;">
+        <!-- Step 2A: PHẦN 1 - TRẮC NGHIỆM RIÊNG BIỆT -->
+        <div class="card" style="background:var(--bg-tertiary);border:2px solid var(--border-color);margin-bottom:1.5rem;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;flex-wrap:wrap;gap:0.5rem;">
-            <h3 style="font-size:1.1rem;color:var(--text-primary);margin:0;">Bước 2 — Nhập Bảng Đáp Án Nhanh</h3>
-            <span class="badge-status badge-pass" id="teacherTotalQuestionsCount">12 câu</span>
+            <h3 style="font-size:1.15rem;color:var(--indigo);margin:0;">🔵 PHẦN I: ĐÁP ÁN TRẮC NGHIỆM (A, B, C, D)</h3>
+            <span class="badge-status badge-pass" id="teacherMcqCountBadge">10 câu trắc nghiệm</span>
           </div>
+          <p style="font-size:0.875rem;color:var(--text-secondary);margin-bottom:0.75rem;">Nhập chuỗi nhanh hoặc chọn đáp án trực tiếp trên bảng phiếu tô bên dưới:</p>
 
-          <div class="quick-key-panel">
-            <label>Cách 1: Gõ chuỗi đáp án siêu tốc (Hỗ trợ cả trắc nghiệm A/B/C/D, Đúng/Sai và tự luận điền số):</label>
-            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:0.5rem;">
-              <input type="text" id="fastAnswerStringInput" placeholder="VD: 1A 2B 3C 4D 5:12 6:2.5 7:-3 8:1/2 9:Đúng 10:Sai" style="flex:1;">
-              <button type="button" class="btn btn-primary" onclick="parseFastAnswerString()">⚡ Nhận Diện Chuỗi Đáp Án</button>
+          <!-- Quick MCQ string -->
+          <div class="quick-key-panel" style="margin-bottom:1rem;">
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+              <input type="text" id="fastMcqStringInput" placeholder="VD: ABCDABCD... hoặc 1A 2B 3C 4D..." style="flex:1;">
+              <button type="button" class="btn btn-primary" onclick="parseFastMcqString()">⚡ Nhận Diện Chuỗi Trắc Nghiệm</button>
             </div>
           </div>
 
-          <div style="margin-bottom:1.25rem;display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
-            <span style="font-size:0.9rem;font-weight:700;color:var(--text-secondary);">Cách 2: Chọn nhanh số lượng câu:</span>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickQuestionCount(10)">10 Câu</button>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickQuestionCount(15)">15 Câu</button>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickQuestionCount(20)">20 Câu</button>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickQuestionCount(30)">30 Câu</button>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickQuestionCount(40)">40 Câu</button>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickQuestionCount(50)">50 Câu</button>
+          <div style="margin-bottom:1rem;display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+            <span style="font-size:0.85rem;font-weight:800;color:var(--text-secondary);">Chọn nhanh số lượng câu trắc nghiệm:</span>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickMcqCount(8)">8 Câu</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickMcqCount(10)">10 Câu</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickMcqCount(12)">12 Câu</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickMcqCount(20)">20 Câu</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickMcqCount(30)">30 Câu</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickMcqCount(40)">40 Câu</button>
           </div>
 
-          <div class="key-grid-table" id="teacherAnswerKeyGrid"></div>
+          <!-- MCQ Grid Table -->
+          <div class="key-grid-table" id="teacherMcqGridContainer"></div>
+        </div>
 
-          <div style="margin-top:1.25rem;display:flex;gap:0.75rem;">
-            <button type="button" class="btn btn-secondary btn-sm" onclick="addOneTeacherKeyQuestion()">+ Thêm 1 câu</button>
-            <button type="button" class="btn btn-danger btn-sm" onclick="removeOneTeacherKeyQuestion()">- Bớt 1 câu</button>
+        <!-- Step 2B: PHẦN 2 - TỰ LUẬN ĐIỀN SỐ TOÁN HỌC RIÊNG BIỆT -->
+        <div class="card" style="background:var(--bg-tertiary);border:2px solid var(--amber);margin-bottom:1.5rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;flex-wrap:wrap;gap:0.5rem;">
+            <h3 style="font-size:1.15rem;color:var(--amber-shadow);margin:0;">✍️ PHẦN II: ĐÁP ÁN TỰ LUẬN ĐIỀN ĐÁP SỐ (TOÁN HỌC)</h3>
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+              <span class="badge-status" style="background:var(--amber-light);color:var(--amber-shadow);font-weight:800;" id="teacherEssayCountBadge">2 câu tự luận</span>
+              <button type="button" class="btn btn-primary btn-sm" onclick="addOneTeacherEssayQuestion()">+ Thêm Câu Tự Luận</button>
+            </div>
           </div>
+          <p style="font-size:0.875rem;color:var(--text-secondary);margin-bottom:0.75rem;">
+            Nhập đáp số chuẩn (hỗ trợ phân số, số thập phân, biến số, nhiều cách viết ngăn cách bằng dấu <code style="background:var(--bg-card);padding:2px 6px;border-radius:4px;">|</code>) kèm công cụ chấm thử trực tiếp:
+          </p>
+
+          <!-- Essay Questions Container -->
+          <div id="teacherEssayGridContainer"></div>
         </div>
 
         <hr style="border:1px solid var(--border-color);margin:1.5rem 0;"/>
@@ -372,13 +383,11 @@
               <option value="students">👤 Giao đích danh từng Học sinh (Chỉ những học sinh được tick mới được làm)</option>
             </select>
 
-            <!-- Classes Checkboxes Container -->
             <div id="assignClassesBox" class="hidden" style="margin-top:0.85rem;">
               <span style="font-size:0.85rem;font-weight:800;color:var(--text-secondary);display:block;margin-bottom:0.4rem;">Tick chọn các Lớp được phép làm bài:</span>
               <div id="assignClassCheckboxes" style="display:flex;gap:0.5rem;flex-wrap:wrap;"></div>
             </div>
 
-            <!-- Students Checkboxes Container -->
             <div id="assignStudentsBox" class="hidden" style="margin-top:0.85rem;">
               <span style="font-size:0.85rem;font-weight:800;color:var(--text-secondary);display:block;margin-bottom:0.4rem;">Tick chọn danh sách Học sinh được giao đề:</span>
               <div id="assignStudentCheckboxes" style="display:flex;gap:0.5rem;flex-wrap:wrap;max-height:160px;overflow-y:auto;padding:0.4rem 0;"></div>
