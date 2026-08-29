@@ -28,11 +28,45 @@ const AppState = {
   studentRoster: [],
   editingQuizId: null,
   editingQuizCreatedAt: null,
-  // Analytics Filters
+  // Analytics & Semester Filters
   parentTimeFilter: 'all',
   teacherAnalyticsScope: 'all',
-  teacherTimeFilter: 'all'
+  teacherTimeFilter: 'all',
+  selectedTermFilter: 'all'
 };
+
+/* ================= TOANMATH SEMESTER BADGE HELPERS ================= */
+function detectTermFromTitle(title = '') {
+  if (/giữa\s*(học\s*)?kỳ\s*1|giữa\s*kì\s*1|gk1/i.test(title)) return 'GK1';
+  if (/cuối\s*(học\s*)?kỳ\s*1|cuối\s*kì\s*1|học\s*kỳ\s*1|ck1/i.test(title)) return 'CK1';
+  if (/giữa\s*(học\s*)?kỳ\s*2|giữa\s*kì\s*2|gk2/i.test(title)) return 'GK2';
+  if (/cuối\s*(học\s*)?kỳ\s*2|cuối\s*kì\s*2|học\s*kỳ\s*2|ck2/i.test(title)) return 'CK2';
+  if (/vào\s*10|tuyển\s*sinh/i.test(title)) return 'TS10';
+  if (/thpt|tốt\s*nghiệp/i.test(title)) return 'THPT';
+  return 'regular';
+}
+
+function getExamTermBadge(term = 'regular') {
+  switch (term) {
+    case 'GK1': return '<span class="badge-status" style="font-size:0.75rem;background:#e0f2fe;color:#0369a1;font-weight:800;">🍂 Giữa HK1</span>';
+    case 'CK1': return '<span class="badge-status" style="font-size:0.75rem;background:#dbeafe;color:#1d4ed8;font-weight:800;">❄️ Cuối HK1</span>';
+    case 'GK2': return '<span class="badge-status" style="font-size:0.75rem;background:#fce7f3;color:#be185d;font-weight:800;">🌸 Giữa HK2</span>';
+    case 'CK2': return '<span class="badge-status" style="font-size:0.75rem;background:#fef3c7;color:#b45309;font-weight:800;">☀️ Cuối HK2</span>';
+    case 'TS10': return '<span class="badge-status" style="font-size:0.75rem;background:#ede9fe;color:#6d28d9;font-weight:800;">🎓 Vào 10</span>';
+    case 'THPT': return '<span class="badge-status" style="font-size:0.75rem;background:#fee2e2;color:#b91c1c;font-weight:800;">🏛️ THPT QG</span>';
+    default: return '<span class="badge-status" style="font-size:0.75rem;background:#f1f5f9;color:#475569;font-weight:700;">📝 Thường xuyên</span>';
+  }
+}
+
+function filterExamFeedByTerm(term = 'all') {
+  AppState.selectedTermFilter = term;
+  document.querySelectorAll('.time-filter-bar button[id^="termBtn_"]').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  const activeBtn = document.getElementById(`termBtn_${term}`);
+  if (activeBtn) activeBtn.classList.add('active');
+  updatePersonalizedExamFeed();
+}
 
 /* ================= 32+ AVATARS LIBRARY DEFINITION ================= */
 const AVATARS_COLLECTION = [
@@ -1425,12 +1459,14 @@ function triggerAutoGenerateMathExam() {
   }
 
   const grade = document.getElementById('mathGenGradeSelect')?.value || '10';
+  const term = document.getElementById('mathGenTermSelect')?.value || 'GK1';
   const topic = document.getElementById('mathGenTopicSelect')?.value || 'all';
   const mcqCount = parseInt(document.getElementById('mathGenMcqCountSelect')?.value || '10', 10);
   const essayCount = parseInt(document.getElementById('mathGenEssayCountSelect')?.value || '2', 10);
 
   const generated = MathEngine.generateExam({
     grade,
+    term,
     topic,
     mcqCount,
     essayCount,
@@ -1439,8 +1475,10 @@ function triggerAutoGenerateMathExam() {
 
   // 1. Populate Creator form
   const titleInput = document.getElementById('teacherExamTitleInput');
+  const termSelect = document.getElementById('teacherExamTermSelect');
   const timeLimitInput = document.getElementById('teacherExamTimeLimitInput');
   if (titleInput) titleInput.value = generated.title;
+  if (termSelect) termSelect.value = term;
   if (timeLimitInput) timeLimitInput.value = generated.timeLimit;
 
   // 2. Set MCQ & Essay keys
@@ -1783,12 +1821,14 @@ async function editTeacherQuiz(quizId) {
 
   // Populate form fields
   const titleInput = document.getElementById('teacherExamTitleInput');
+  const termSelect = document.getElementById('teacherExamTermSelect');
   const timeLimitInput = document.getElementById('teacherExamTimeLimitInput');
   const assignSelect = document.getElementById('assignTypeSelect');
   const leaderboardToggle = document.getElementById('teacherShowLeaderboardToggle');
   const antiCheatToggle = document.getElementById('teacherAntiCheatToggle');
 
   if (titleInput) titleInput.value = quiz.title || '';
+  if (termSelect) termSelect.value = quiz.examTerm || detectTermFromTitle(quiz.title);
   if (timeLimitInput) timeLimitInput.value = quiz.timeLimit || 45;
   if (leaderboardToggle) leaderboardToggle.checked = quiz.showLeaderboard !== false;
   if (antiCheatToggle) antiCheatToggle.checked = quiz.antiCheat !== false;
@@ -1869,8 +1909,10 @@ function cancelTeacherQuizEdit() {
 
   // Reset form to defaults
   const titleInput = document.getElementById('teacherExamTitleInput');
+  const termSelect = document.getElementById('teacherExamTermSelect');
   const timeLimitInput = document.getElementById('teacherExamTimeLimitInput');
   if (titleInput) titleInput.value = 'Đề Kiểm Tra Giữa Kì I — Môn Toán';
+  if (termSelect) termSelect.value = 'GK1';
   if (timeLimitInput) timeLimitInput.value = '45';
 
   clearTeacherPdf();
@@ -1891,6 +1933,7 @@ async function publishTeacherQuiz() {
   const isEditing = !!AppState.editingQuizId;
   const id = isEditing ? AppState.editingQuizId : generateQuizCode();
   const title = document.getElementById('teacherExamTitleInput').value.trim() || 'Đề Kiểm Tra Toán Học';
+  const examTerm = document.getElementById('teacherExamTermSelect')?.value || detectTermFromTitle(title);
   const timeLimit = parseInt(document.getElementById('teacherExamTimeLimitInput').value || '45', 10);
   const showLeaderboard = document.getElementById('teacherShowLeaderboardToggle').checked;
   const antiCheat = document.getElementById('teacherAntiCheatToggle').checked;
@@ -1918,6 +1961,7 @@ async function publishTeacherQuiz() {
   const quiz = {
     id,
     title,
+    examTerm,
     timeLimit,
     totalQuestions: combinedKeys.length,
     mcqCount: AppState.teacherMcqKeys.length,
@@ -2038,11 +2082,15 @@ async function renderTeacherQuizManager() {
 
             const mcqCount = q.mcqCount || (q.answerKeys ? q.answerKeys.filter(k => k.type === 'mcq').length : 0);
             const essayCount = q.essayCount || (q.answerKeys ? q.answerKeys.filter(k => k.type === 'essay').length : 0);
+            const termBadge = getExamTermBadge(q.examTerm || detectTermFromTitle(q.title));
 
             return `
               <tr>
                 <td>
-                  <strong style="color:var(--text-primary);font-size:1rem;">${escapeHtml(q.title)}</strong>
+                  <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
+                    <strong style="color:var(--text-primary);font-size:1rem;">${escapeHtml(q.title)}</strong>
+                    ${termBadge}
+                  </div>
                   <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;">Mã đề: <code>${q.id}</code></div>
                 </td>
                 <td>${targetLabel}</td>
@@ -2125,8 +2173,19 @@ async function renderSampleQuizzes(filterName = '', filterClass = '') {
   }
 
   let displayedQuizzes = quizzes;
+
+  // Filter by Semester/Term if selected
+  if (AppState.selectedTermFilter && AppState.selectedTermFilter !== 'all') {
+    const targetTerm = AppState.selectedTermFilter;
+    displayedQuizzes = displayedQuizzes.filter(q => {
+      const qTerm = q.examTerm || detectTermFromTitle(q.title);
+      return qTerm === targetTerm;
+    });
+  }
+
+  // Filter by student name / class
   if (filterName || filterClass) {
-    displayedQuizzes = quizzes.filter(q => {
+    displayedQuizzes = displayedQuizzes.filter(q => {
       if (q.assignType === 'students' && Array.isArray(q.assignedStudents)) {
         const studentTag = `${filterName} (${filterClass})`.toLowerCase();
         return q.assignedStudents.some(s => s.toLowerCase() === studentTag || s.toLowerCase().includes(filterName.toLowerCase()));
@@ -2171,8 +2230,8 @@ async function renderSampleQuizzes(filterName = '', filterClass = '') {
     wrap.innerHTML = `
       <div style="text-align:center;padding:1.75rem 1rem;color:var(--text-muted);">
         <div style="font-size:2.5rem;margin-bottom:0.4rem;">📭</div>
-        <p style="font-weight:800;font-size:1.05rem;color:var(--amber-shadow);">Hiện tại chưa có đề thi nào phù hợp với Lớp ${escapeHtml(filterClass || 'đang chọn')}.</p>
-        <p style="font-size:0.875rem;margin-top:4px;">Khi giáo viên tạo đề và giao bài cho Lớp ${escapeHtml(filterClass || '')}, đề thi sẽ tự động xuất hiện ở đây.</p>
+        <p style="font-weight:800;font-size:1.05rem;color:var(--amber-shadow);">Hiện tại chưa có đề thi nào phù hợp với bộ lọc hiện tại.</p>
+        <p style="font-size:0.875rem;margin-top:4px;">Hãy thử chuyển sang tab <strong>"♾️ Tất Cả Kỳ"</strong> hoặc đổi khối lớp để xem thêm đề thi.</p>
       </div>
     `;
     return;
@@ -2181,11 +2240,12 @@ async function renderSampleQuizzes(filterName = '', filterClass = '') {
   wrap.innerHTML = displayedQuizzes.map(q => {
     let targetBadge = '<span class="badge-status badge-pass" style="font-size:0.75rem;">🌍 Đề công khai</span>';
     if (q.assignType === 'classes') {
-      targetBadge = `<span class="badge-status" style="font-size:0.75rem;background:var(--sky-light);color:var(--sky-shadow);">🏫 Đề riêng Lớp ${(q.assignedClasses||[]).join(', ')}</span>`;
+      targetBadge = `<span class="badge-status" style="font-size:0.75rem;background:var(--sky-light);color:var(--sky-shadow);">🏫 Lớp ${(q.assignedClasses||[]).join(', ')}</span>`;
     } else if (q.assignType === 'students') {
-      targetBadge = `<span class="badge-status" style="font-size:0.75rem;background:var(--amber-light);color:var(--amber-shadow);">👤 Đích danh cho bạn</span>`;
+      targetBadge = `<span class="badge-status" style="font-size:0.75rem;background:var(--amber-light);color:var(--amber-shadow);">👤 Đích danh bạn</span>`;
     }
 
+    const termBadge = getExamTermBadge(q.examTerm || detectTermFromTitle(q.title));
     const mcqCount = q.mcqCount || (q.answerKeys ? q.answerKeys.filter(k => k.type === 'mcq').length : 0);
     const essayCount = q.essayCount || (q.answerKeys ? q.answerKeys.filter(k => k.type === 'essay').length : 0);
 
@@ -2194,14 +2254,15 @@ async function renderSampleQuizzes(filterName = '', filterClass = '') {
         <div>
           <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
             <div style="font-weight:800;font-size:1.15rem;color:var(--text-primary);">${escapeHtml(q.title)}</div>
+            ${termBadge}
             ${targetBadge}
           </div>
           <div style="font-size:0.9rem;color:var(--text-secondary);margin-top:4px;font-weight:600;">
-            ⏳ <strong>${q.timeLimit} phút</strong> · 📝 <strong>${mcqCount} câu trắc nghiệm</strong> + <strong>${essayCount} câu tự luận</strong>
+            ⏳ <strong>${q.timeLimit} phút</strong> · 📝 <strong>${mcqCount} trắc nghiệm</strong> + <strong>${essayCount} tự luận</strong>
           </div>
         </div>
         <div style="display:flex;gap:0.5rem;align-items:center;">
-          <button class="btn btn-success btn-lg" onclick="loadAndJoinQuizDirectly('${q.id}')">Bắt Đầu Làm Bài 🚀</button>
+          <button class="btn btn-primary btn-sm" onclick="loadSampleToStudent('${q.id}')">🚀 Vào Thi Ngay</button>
         </div>
       </div>
     `;
