@@ -1,5 +1,5 @@
 /**
- * KhiemEdu Main Application Controller (Split-Screen & Smart Auto-Grading Engine)
+ * KhiemEdu Main Application Controller (Gamified EduTech Redesign)
  */
 
 const AppState = {
@@ -148,7 +148,7 @@ function initAvatars() {
   if (!wrap) return;
   const current = GamificationEngine.getUserProfile().avatar || '🦊';
   wrap.innerHTML = avatars.map(a => `
-    <button type="button" class="btn btn-secondary btn-sm ${a === current ? 'active' : ''}" style="font-size:1.3rem;padding:0.3rem 0.6rem;" onclick="selectAvatar('${a}')">${a}</button>
+    <button type="button" class="btn btn-secondary btn-sm ${a === current ? 'active' : ''}" style="font-size:1.35rem;padding:0.35rem 0.75rem;border-radius:var(--radius-md);" onclick="selectAvatar('${a}')">${a}</button>
   `).join('');
 }
 
@@ -214,7 +214,6 @@ function parseFastAnswerString() {
   }
 
   const items = [];
-  // Supports formats: "1A 2B 3C", "4:12", "5:2.5", "6:Đúng", "7:x=3"
   const regexWithNum = /(\d+)[\s.:-]+([A-D]|Đúng|Sai|[^\s,]+)/gi;
   let match;
   let hasNumberedMatches = false;
@@ -264,33 +263,33 @@ function renderTeacherAnswerKeyGrid() {
       bodyControls = `
         <div style="display:flex;gap:0.35rem;align-items:center;">
           ${['A','B','C','D'].map(opt => `
-            <button type="button" class="bubble-btn ${item.correct.toUpperCase() === opt ? 'selected' : ''}" style="width:30px;height:30px;font-size:0.75rem;" onclick="setTeacherKeyAnswer(${idx}, '${opt}')">${opt}</button>
+            <button type="button" class="bubble-btn ${item.correct.toUpperCase() === opt ? 'selected' : ''}" style="width:34px;height:34px;font-size:0.85rem;" onclick="setTeacherKeyAnswer(${idx}, '${opt}')">${opt}</button>
           `).join('')}
         </div>
       `;
     } else if (item.type === 'truefalse') {
       bodyControls = `
         <div style="display:flex;gap:0.35rem;align-items:center;">
-          <button type="button" class="bubble-btn ${item.correct === 'Đúng' ? 'selected' : ''}" style="width:auto;padding:0 8px;height:30px;font-size:0.75rem;" onclick="setTeacherKeyAnswer(${idx}, 'Đúng')">Đúng</button>
-          <button type="button" class="bubble-btn ${item.correct === 'Sai' ? 'selected' : ''}" style="width:auto;padding:0 8px;height:30px;font-size:0.75rem;" onclick="setTeacherKeyAnswer(${idx}, 'Sai')">Sai</button>
+          <button type="button" class="bubble-btn ${item.correct === 'Đúng' ? 'selected' : ''}" style="width:auto;padding:0 10px;height:34px;font-size:0.8rem;" onclick="setTeacherKeyAnswer(${idx}, 'Đúng')">Đúng</button>
+          <button type="button" class="bubble-btn ${item.correct === 'Sai' ? 'selected' : ''}" style="width:auto;padding:0 10px;height:34px;font-size:0.8rem;" onclick="setTeacherKeyAnswer(${idx}, 'Sai')">Sai</button>
         </div>
       `;
     } else {
       bodyControls = `
-        <input type="text" style="width:130px;padding:0.25rem 0.5rem;font-size:0.8rem;border:1px solid var(--primary);" placeholder="Đáp số (VD: 12 hoặc 2.5)" value="${escapeHtml(item.correct)}" oninput="setTeacherKeyAnswer(${idx}, this.value)" title="Hỗ trợ nhiều đáp án cách nhau bởi dấu | (VD: 12 | x=12)">
+        <input type="text" style="width:130px;padding:0.35rem 0.6rem;font-size:0.85rem;border:2px solid var(--border-color);border-radius:var(--radius-sm);" placeholder="Đáp số" value="${escapeHtml(item.correct)}" oninput="setTeacherKeyAnswer(${idx}, this.value)">
       `;
     }
 
     return `
       <div class="key-grid-item">
-        <span style="font-weight:700;color:var(--primary);min-width:55px;">Câu ${item.num}:</span>
+        <span style="font-weight:800;color:var(--indigo);min-width:60px;">Câu ${item.num}:</span>
         <div style="display:flex;gap:0.4rem;align-items:center;">
           ${bodyControls}
-          <input type="number" step="0.25" min="0.25" max="10" style="width:55px;padding:0.25rem 0.4rem;font-size:0.8rem;text-align:center;" value="${item.score}" title="Điểm của câu này" onchange="setTeacherKeyScore(${idx}, this.value)">
-          <select style="padding:0.2rem 0.35rem;font-size:0.75rem;width:105px;" onchange="changeTeacherKeyType(${idx}, this.value)">
+          <input type="number" step="0.25" min="0.25" max="10" style="width:60px;padding:0.35rem 0.4rem;font-size:0.85rem;text-align:center;font-weight:700;" value="${item.score}" title="Điểm của câu này" onchange="setTeacherKeyScore(${idx}, this.value)">
+          <select style="padding:0.3rem 0.4rem;font-size:0.8rem;width:110px;" onchange="changeTeacherKeyType(${idx}, this.value)">
             <option value="mcq" ${item.type === 'mcq' ? 'selected' : ''}>Trắc nghiệm</option>
             <option value="truefalse" ${item.type === 'truefalse' ? 'selected' : ''}>Đúng/Sai</option>
-            <option value="essay" ${item.type === 'essay' ? 'selected' : ''}>Điền đáp số (Tự chấm)</option>
+            <option value="essay" ${item.type === 'essay' ? 'selected' : ''}>Điền đáp số</option>
           </select>
         </div>
       </div>
@@ -379,13 +378,13 @@ async function publishTeacherQuiz() {
 
   const resDiv = document.getElementById('publishSuccessResult');
   resDiv.innerHTML = `
-    <div class="card" style="background:var(--emerald-light);border-color:var(--emerald);margin-top:1rem;">
-      <h3 style="color:var(--emerald-dark);margin-bottom:0.5rem;">🎉 Đã Phát Hành Đề Thi Thành Công!</h3>
-      <p style="color:var(--emerald-dark);font-size:0.95rem;">Cung cấp mã đề này cho học sinh để làm bài trực tiếp trên hệ thống:</p>
+    <div class="card" style="background:var(--primary-light);border-color:var(--primary);margin-top:1rem;">
+      <h3 style="color:var(--primary-shadow);margin-bottom:0.5rem;">🎉 Đã Phát Hành Đề Thi Thành Công!</h3>
+      <p style="color:var(--primary-shadow);font-size:1rem;font-weight:700;">Gửi mã đề này cho học sinh vào làm bài:</p>
       <div style="margin:1rem 0;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
-        <span class="code-badge" style="font-size:1.6rem;padding:0.5rem 1.2rem;">${id}</span>
-        <button class="btn btn-primary btn-sm" onclick="copyToClipboard('${id}')">📋 Sao Chép Mã</button>
-        <button class="btn btn-secondary btn-sm" onclick="loadSampleToStudent('${id}')">🚀 Vào Thi Thử Ngay</button>
+        <span class="code-badge" style="font-size:1.8rem;padding:0.6rem 1.4rem;">${id}</span>
+        <button class="btn btn-primary" onclick="copyToClipboard('${id}')">📋 Sao Chép Mã</button>
+        <button class="btn btn-secondary" onclick="loadSampleToStudent('${id}')">🚀 Vào Thi Thử Ngay</button>
       </div>
     </div>
   `;
@@ -411,7 +410,7 @@ async function joinStudentQuiz(customCode) {
     return;
   }
 
-  statusEl.innerHTML = '<span style="color:var(--primary);">Đang tải đề thi & file PDF gốc...</span>';
+  statusEl.innerHTML = '<span style="color:var(--indigo);">⏳ Đang nạp đề thi & file PDF...</span>';
   const quiz = await StorageEngine.getQuiz(code);
 
   if (!quiz) {
@@ -421,7 +420,7 @@ async function joinStudentQuiz(customCode) {
 
   const alreadySubmitted = await StorageEngine.hasSubmitted(code, className, name);
   if (alreadySubmitted) {
-    statusEl.innerHTML = '<span style="color:var(--amber-dark);">⚠️ Bạn đã hoàn thành và nộp bài cho đề thi này rồi!</span>';
+    statusEl.innerHTML = '<span style="color:var(--amber);">⚠️ Bạn đã hoàn thành và nộp bài cho đề thi này rồi!</span>';
     return;
   }
 
@@ -455,17 +454,18 @@ async function joinStudentQuiz(customCode) {
     frame.src = 'about:blank';
     setTimeout(() => {
       frame.contentDocument.body.innerHTML = `
-        <div style="font-family:sans-serif;padding:30px;color:#333;line-height:1.6;">
-          <h2 style="color:#4f46e5;">📄 ĐỀ KIỂM TRA GIỮA HỌC KỲ I — MÔN TOÁN 8</h2>
-          <hr/>
-          <h3>I. PHẦN TRẮC NGHIỆM (7.0 điểm)</h3>
-          <p><strong>Câu 1:</strong> Đơn thức nào sau đây đồng dạng với đơn thức $-3x^2y$?<br/>A. $2xy$ &nbsp;&nbsp; B. $5x^2y$ &nbsp;&nbsp; C. $-3xy^2$ &nbsp;&nbsp; D. $x^3y$</p>
-          <p><strong>Câu 2:</strong> Khai triển hằng đẳng thức $(x + 2)^2$ ta được:<br/>A. $x^2 + 4$ &nbsp;&nbsp; B. $x^2 + 2x + 4$ &nbsp;&nbsp; C. $x^2 + 4x + 4$ &nbsp;&nbsp; D. $x^2 - 4x + 4$</p>
+        <div style="font-family:sans-serif;padding:35px;color:#1e293b;line-height:1.7;">
+          <h2 style="color:#4f46e5;margin-bottom:8px;">📄 ĐỀ KIỂM TRA GIỮA HỌC KỲ I — MÔN TOÁN 8</h2>
+          <hr style="border:1px solid #cbd5e1;margin-bottom:20px;"/>
+          <h3 style="color:#0f172a;">I. PHẦN TRẮC NGHIỆM (7.0 điểm)</h3>
+          <p><strong>Câu 1:</strong> Đơn thức nào sau đây đồng dạng với đơn thức $-3x^2y$?<br/>A. $2xy$ &nbsp;&nbsp;&nbsp; B. $5x^2y$ &nbsp;&nbsp;&nbsp; C. $-3xy^2$ &nbsp;&nbsp;&nbsp; D. $x^3y$</p>
+          <p><strong>Câu 2:</strong> Khai triển hằng đẳng thức $(x + 2)^2$ ta được:<br/>A. $x^2 + 4$ &nbsp;&nbsp;&nbsp; B. $x^2 + 2x + 4$ &nbsp;&nbsp;&nbsp; C. $x^2 + 4x + 4$ &nbsp;&nbsp;&nbsp; D. $x^2 - 4x + 4$</p>
           <p><strong>Câu 3:</strong> Tứ giác có 4 góc bằng nhau là hình vuông. Đúng hay Sai?</p>
-          <hr/>
-          <h3>II. PHẦN TỰ LUẬN ĐIỀN ĐÁP SỐ (3.0 điểm)</h3>
-          <p><strong>Câu 11:</strong> Tìm $x$ dương biết $x^2 - 144 = 0$. <em>(Điền đáp số vào ô bên phải, ví dụ: 12 hoặc x = 12)</em></p>
-          <p><strong>Câu 12:</strong> Tính giá trị của biểu thức $P = \\frac{1}{4} + 0.25$. <em>(Điền số 0.5 hoặc 1/2)</em></p>
+          <p><strong>Câu 4:</strong> Tính giá trị của biểu thức $P = \\sqrt{16} + \\sqrt[3]{27} - 2^3$:<br/>A. -1 &nbsp;&nbsp;&nbsp; B. 1 &nbsp;&nbsp;&nbsp; C. 7 &nbsp;&nbsp;&nbsp; D. 15</p>
+          <hr style="border:1px solid #cbd5e1;margin:25px 0;"/>
+          <h3 style="color:#0f172a;">II. PHẦN TỰ LUẬN ĐIỀN ĐÁP SỐ (3.0 điểm)</h3>
+          <p><strong>Câu 11:</strong> Tìm $x$ dương biết $x^2 - 144 = 0$. <em>(Nhập số 12 hoặc x = 12 vào ô bên phải)</em></p>
+          <p><strong>Câu 12:</strong> Tính giá trị phân số $\\frac{1}{4} + 0.25$. <em>(Nhập số 0.5 hoặc 1/2)</em></p>
         </div>
       `;
     }, 200);
@@ -496,8 +496,8 @@ function renderStudentAnswerSheet(keys) {
     return `
       <div class="bubble-q-row" id="sheetRow_${k.num}">
         <div class="bubble-q-num">
-          <span>Câu ${k.num} (${k.score}đ)</span>
-          <button type="button" class="btn btn-secondary btn-sm" style="padding:1px 5px;font-size:0.7rem;${isFlagged ? 'background:var(--amber-light);color:var(--amber-dark);' : ''}" onclick="toggleFlagSheet(${k.num})">★</button>
+          <span>Câu ${k.num}</span>
+          <button type="button" class="flag-star-btn ${isFlagged ? 'flagged' : ''}" onclick="toggleFlagSheet(${k.num})" title="Đánh dấu phân vân">★</button>
         </div>
         ${renderSheetInputs(k)}
       </div>
@@ -521,16 +521,15 @@ function renderSheetInputs(k) {
     const current = AppState.studentAnswers[k.num];
     return `
       <div class="bubble-options-group">
-        <button type="button" class="bubble-btn ${current === 'Đúng' ? 'selected' : ''}" style="width:auto;padding:0 12px;font-size:0.8rem;" onclick="selectBubbleAnswer(${k.num}, 'Đúng')">Đúng</button>
-        <button type="button" class="bubble-btn ${current === 'Sai' ? 'selected' : ''}" style="width:auto;padding:0 12px;font-size:0.8rem;" onclick="selectBubbleAnswer(${k.num}, 'Sai')">Sai</button>
+        <button type="button" class="bubble-btn ${current === 'Đúng' ? 'selected' : ''}" style="width:auto;padding:0 14px;font-size:0.9rem;" onclick="selectBubbleAnswer(${k.num}, 'Đúng')">Đúng</button>
+        <button type="button" class="bubble-btn ${current === 'Sai' ? 'selected' : ''}" style="width:auto;padding:0 14px;font-size:0.9rem;" onclick="selectBubbleAnswer(${k.num}, 'Sai')">Sai</button>
       </div>
     `;
   } else {
-    // Short Essay fill-in input
     const current = AppState.studentAnswers[k.num] || '';
     return `
-      <div style="flex:1;max-width:200px;">
-        <input type="text" class="sheet-essay-input" style="width:100%;font-weight:600;" placeholder="Nhập đáp số (VD: 12)..." value="${escapeHtml(current)}" oninput="recordSheetEssay(${k.num}, this.value)">
+      <div style="flex:1;max-width:220px;">
+        <input type="text" class="sheet-essay-input" placeholder="Điền đáp số (VD: 12)..." value="${escapeHtml(current)}" oninput="recordSheetEssay(${k.num}, this.value)">
       </div>
     `;
   }
@@ -561,9 +560,15 @@ function updateSheetProgress() {
   if (!AppState.currentQuiz) return;
   const total = AppState.currentQuiz.answerKeys.length;
   const answered = Object.values(AppState.studentAnswers).filter(v => v !== undefined && v !== '').length;
+  const pct = total ? Math.round((answered / total) * 100) : 0;
+  
   const progressEl = document.getElementById('sheetProgressText');
   if (progressEl) {
-    progressEl.textContent = `Đã làm: ${answered}/${total} câu (${Math.round((answered / total) * 100)}%)`;
+    progressEl.textContent = `Đã làm: ${answered}/${total} câu (${pct}%)`;
+  }
+  const fillBar = document.getElementById('examProgressFillBar');
+  if (fillBar) {
+    fillBar.style.width = `${pct}%`;
   }
 }
 
@@ -621,7 +626,7 @@ function initAntiCheatListeners() {
   });
 }
 
-/* Smart Answer Matcher Engine */
+/* Smart Math Matcher */
 function checkAnswerMatch(given, correct) {
   if (!given || !correct) return false;
   
@@ -779,12 +784,12 @@ function renderExamResultHero(result, rewards) {
   if (rewards.newlyUnlocked && rewards.newlyUnlocked.length) {
     badgeBox.innerHTML = `
       <div class="card" style="background:var(--amber-light);border-color:var(--amber);margin:1rem 0;text-align:center;">
-        <h3 style="color:var(--amber-dark);">🎉 Mở Khóa Huy Hiệu Mới!</h3>
-        <div style="display:flex;justify-content:center;gap:1.5rem;margin-top:0.5rem;">
+        <h3 style="color:var(--amber-shadow);font-size:1.3rem;">🎉 Mở Khóa Huy Hiệu Mới!</h3>
+        <div style="display:flex;justify-content:center;gap:1.5rem;margin-top:0.75rem;">
           ${rewards.newlyUnlocked.map(b => `
             <div>
-              <div style="font-size:2.5rem;">${b.icon}</div>
-              <div style="font-weight:700;color:var(--amber-dark);">${escapeHtml(b.name)}</div>
+              <div style="font-size:2.8rem;">${b.icon}</div>
+              <div style="font-weight:800;color:var(--amber-shadow);">${escapeHtml(b.name)}</div>
             </div>
           `).join('')}
         </div>
@@ -801,13 +806,13 @@ function renderExamReviewList(reviewData) {
   if (!container) return;
 
   container.innerHTML = reviewData.map(r => `
-    <div class="bubble-q-row" style="padding:0.75rem 0.5rem;border-left:4px solid ${r.isCorrect ? 'var(--emerald)' : 'var(--rose)'};">
+    <div class="bubble-q-row" style="padding:0.85rem 0.75rem;border-left:5px solid ${r.isCorrect ? 'var(--primary)' : 'var(--rose)'};">
       <div class="bubble-q-num">
         <span>Câu ${r.num} (${r.maxScore}đ):</span>
       </div>
       <div>
-        Bạn điền: <strong style="color:${r.isCorrect ? 'var(--emerald)' : 'var(--rose)'};">${escapeHtml(r.given)} ${r.isCorrect ? '✅' : '❌'}</strong>
-        ${!r.isCorrect ? `&nbsp;—&nbsp; <span style="color:var(--emerald-dark);font-weight:700;">Đáp án đúng: ${escapeHtml(r.correctAnswer)}</span>` : ''}
+        Bạn điền: <strong style="color:${r.isCorrect ? 'var(--primary-shadow)' : 'var(--rose)'};font-size:1.05rem;">${escapeHtml(r.given)} ${r.isCorrect ? '✅' : '❌'}</strong>
+        ${!r.isCorrect ? `&nbsp;—&nbsp; <span style="color:var(--primary-shadow);font-weight:800;">Đáp án đúng: ${escapeHtml(r.correctAnswer)}</span>` : ''}
       </div>
     </div>
   `).join('');
@@ -832,9 +837,9 @@ async function refreshLiveLeaderboard(quizId, className) {
   }
 
   box.innerHTML = classResults.slice(0, 6).map((r, i) => `
-    <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed var(--border-color);font-size:0.85rem;">
+    <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed var(--border-color);font-size:0.85rem;font-weight:700;">
       <span><strong>#${i + 1}</strong> ${r.avatar || '👤'} ${escapeHtml(r.name)}</span>
-      <span style="font-weight:700;color:var(--primary);">${r.totalScore}đ</span>
+      <span style="font-weight:800;color:var(--indigo);">${r.totalScore}đ</span>
     </div>
   `).join('');
 }
@@ -850,11 +855,11 @@ async function loadTeacherResults() {
     return;
   }
 
-  wrap.innerHTML = '<div style="color:var(--primary);">Đang tải bảng điểm...</div>';
+  wrap.innerHTML = '<div style="color:var(--indigo);font-weight:700;">⏳ Đang tải bảng điểm lớp học...</div>';
   const results = await StorageEngine.getResultsByQuiz(code);
 
   if (!results.length) {
-    wrap.innerHTML = '<div class="card" style="text-align:center;color:var(--text-muted);">Chưa có học sinh nào nộp bài cho mã đề này.</div>';
+    wrap.innerHTML = '<div class="card" style="text-align:center;color:var(--text-muted);font-weight:700;">Chưa có học sinh nào nộp bài cho mã đề này.</div>';
     return;
   }
 
@@ -864,7 +869,7 @@ async function loadTeacherResults() {
   }
 
   if (!filtered.length) {
-    wrap.innerHTML = '<div class="card" style="text-align:center;color:var(--text-muted);">Không tìm thấy kết quả phù hợp với lớp đã lọc.</div>';
+    wrap.innerHTML = '<div class="card" style="text-align:center;color:var(--text-muted);font-weight:700;">Không tìm thấy kết quả phù hợp với lớp đã lọc.</div>';
     return;
   }
 
@@ -892,12 +897,12 @@ async function loadTeacherResults() {
     </div>
 
     <div style="margin-bottom:1.25rem;display:flex;justify-content:flex-end;">
-      <button class="btn btn-success btn-sm" onclick="exportResultsToCsv('${code}')">📥 Xuất Bảng Điểm (CSV / Excel)</button>
+      <button class="btn btn-success" onclick="exportResultsToCsv('${code}')">📥 Xuất Bảng Điểm (CSV / Excel)</button>
     </div>
 
     ${Object.keys(byClass).map(className => `
       <div class="card">
-        <h3 style="color:var(--primary);margin-bottom:1rem;">🏫 Bảng Điểm Lớp ${escapeHtml(className)} (${byClass[className].length} bài)</h3>
+        <h3 style="color:var(--indigo);margin-bottom:1rem;">🏫 Bảng Điểm Lớp ${escapeHtml(className)} (${byClass[className].length} bài)</h3>
         <div class="table-responsive">
           <table>
             <thead>
@@ -917,10 +922,10 @@ async function loadTeacherResults() {
                 <tr>
                   <td><strong>#${i + 1}</strong></td>
                   <td><strong>${r.avatar || '👤'} ${escapeHtml(r.name)}</strong></td>
-                  <td><strong style="color:${(r.totalScore || 0) >= 8 ? 'var(--emerald)' : ((r.totalScore || 0) >= 5 ? 'var(--primary)' : 'var(--rose)')};font-size:1.1rem;">${r.totalScore || 0}đ</strong></td>
+                  <td><strong style="color:${(r.totalScore || 0) >= 8 ? 'var(--primary-shadow)' : ((r.totalScore || 0) >= 5 ? 'var(--indigo)' : 'var(--rose)')};font-size:1.15rem;">${r.totalScore || 0}đ</strong></td>
                   <td>${r.correct}/${r.total}</td>
                   <td>${Math.floor(r.timeTakenSeconds / 60)}p ${r.timeTakenSeconds % 60}s</td>
-                  <td>${r.tabSwitches > 0 ? `<span style="color:var(--rose);font-weight:700;">⚠️ ${r.tabSwitches}</span>` : '<span style="color:var(--emerald);">0</span>'}</td>
+                  <td>${r.tabSwitches > 0 ? `<span style="color:var(--rose);font-weight:800;">⚠️ ${r.tabSwitches}</span>` : '<span style="color:var(--primary);">0</span>'}</td>
                   <td>${new Date(r.submittedAt).toLocaleTimeString('vi-VN')}</td>
                   <td><span class="badge-status ${(r.totalScore || 0) >= 5 ? 'badge-pass' : 'badge-fail'}">${(r.totalScore || 0) >= 5 ? 'ĐẠT' : 'CHƯA ĐẠT'}</span></td>
                 </tr>
@@ -965,14 +970,14 @@ async function renderSampleQuizzes() {
   }
 
   wrap.innerHTML = quizzes.map(q => `
-    <div class="card" style="padding:1rem;margin-bottom:0.75rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+    <div class="card" style="padding:1.15rem;margin-bottom:0.85rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
       <div>
-        <div style="font-weight:700;font-size:1rem;">${escapeHtml(q.title)}</div>
-        <div style="font-size:0.8rem;color:var(--text-muted);margin-top:2px;">
-          Mã Đề: <span class="code-badge" style="font-size:0.85rem;padding:2px 6px;">${q.id}</span> · ${q.totalQuestions || (q.answerKeys ? q.answerKeys.length : 12)} câu · ${q.timeLimit} phút
+        <div style="font-weight:800;font-size:1.1rem;color:var(--text-primary);">${escapeHtml(q.title)}</div>
+        <div style="font-size:0.85rem;color:var(--text-secondary);margin-top:4px;font-weight:600;">
+          Mã Đề: <span class="code-badge" style="font-size:0.9rem;padding:3px 8px;">${q.id}</span> · ${q.totalQuestions || (q.answerKeys ? q.answerKeys.length : 12)} câu · ${q.timeLimit} phút
         </div>
       </div>
-      <button class="btn btn-primary btn-sm" onclick="loadSampleToStudent('${q.id}')">Vào Thi Thử Ngay 🚀</button>
+      <button class="btn btn-success" onclick="loadSampleToStudent('${q.id}')">Vào Thi Thử Ngay 🚀</button>
     </div>
   `).join('');
 }
