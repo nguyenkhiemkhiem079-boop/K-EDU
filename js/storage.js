@@ -1,22 +1,78 @@
-﻿/**
- * KhiemEdu Storage Engine
- * Handles persistent storage, cross-tab synchronization, and export/import.
+/**
+ * KhiemEdu Storage Engine with IndexedDB & LocalStorage
+ * Stores quizzes, results, and large PDF attachments efficiently.
  */
 
 const STORAGE_PREFIX = 'khiemedu_';
+const DB_NAME = 'KhiemEdu_DB';
+const DB_VERSION = 1;
+const STORE_PDFS = 'pdf_store';
 
 const StorageEngine = {
+  db: null,
   channel: typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('khiemedu_sync') : null,
 
-  init() {
+  async init() {
+    await this.initIndexedDB();
     this.seedSampleDataIfEmpty();
+  },
+
+  initIndexedDB() {
+    return new Promise((resolve) => {
+      if (!window.indexedDB) {
+        console.warn('IndexedDB not supported, falling back to LocalStorage');
+        resolve(null);
+        return;
+      }
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(STORE_PDFS)) {
+          db.createObjectStore(STORE_PDFS);
+        }
+      };
+      req.onsuccess = (e) => {
+        this.db = e.target.result;
+        resolve(this.db);
+      };
+      req.onerror = (e) => {
+        console.error('IndexedDB open error:', e);
+        resolve(null);
+      };
+    });
+  },
+
+  async savePdfBlob(quizId, base64OrBlob) {
+    if (this.db) {
+      return new Promise((resolve) => {
+        const tx = this.db.transaction([STORE_PDFS], 'readwrite');
+        const store = tx.objectStore(STORE_PDFS);
+        store.put(base64OrBlob, 'pdf_' + quizId);
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => resolve(false);
+      });
+    }
+    return this.set('pdf_' + quizId, base64OrBlob);
+  },
+
+  async getPdfBlob(quizId) {
+    if (this.db) {
+      return new Promise((resolve) => {
+        const tx = this.db.transaction([STORE_PDFS], 'readonly');
+        const store = tx.objectStore(STORE_PDFS);
+        const req = store.get('pdf_' + quizId);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => resolve(null);
+      });
+    }
+    return this.get('pdf_' + quizId);
   },
 
   async set(key, value) {
     try {
       localStorage.setItem(STORAGE_PREFIX + key, typeof value === 'string' ? value : JSON.stringify(value));
       if (this.channel) {
-        this.channel.postMessage({ type: 'storage_update', key, value });
+        this.channel.postMessage({ type: 'storage_update', key });
       }
       return true;
     } catch (e) {
@@ -101,74 +157,35 @@ const StorageEngine = {
     return results;
   },
 
-  // Seed sample exam with LaTeX Math equations
+  // Seed sample exam
   seedSampleDataIfEmpty() {
-    const sampleKey = 'quiz:MATH01';
+    const sampleKey = 'quiz:AZOTA01';
     if (!localStorage.getItem(STORAGE_PREFIX + sampleKey)) {
       const sampleQuiz = {
-        id: 'MATH01',
-        title: 'Đề Thi Thử Toán Học — Đấu Trường Trí Tuệ',
-        timeLimit: 15,
-        shuffle: true,
+        id: 'AZOTA01',
+        title: 'Đề Kiểm Tra Giữa Học Kỳ I — Toán 8',
+        timeLimit: 45,
+        totalQuestions: 12,
+        examMode: 'split_pdf', // 'split_pdf' (Azota style) or 'interactive'
+        pdfFileName: 'De_Kiem_Tra_Toan_8.pdf',
+        pdfDataUrl: null, // Will use sample viewer
+        shuffle: false,
         showLeaderboard: true,
         antiCheat: true,
         createdAt: new Date().toISOString(),
-        questions: [
-          {
-            id: 1,
-            type: 'mcq',
-            question: 'Nghiệm của phương trình bậc hai $x^2 - 5x + 6 = 0$ là:',
-            options: [
-              'A. $x = 1$ hoặc $x = 6$',
-              'B. $x = 2$ hoặc $x = 3$',
-              'C. $x = -2$ hoặc $x = -3$',
-              'D. $x = 0$ hoặc $x = 5$'
-            ],
-            correctAnswer: 'B',
-            explanation: 'Phân tích đa thức thành nhân tử: $(x-2)(x-3) = 0 \\Rightarrow x=2$ hoặc $x=3$.'
-          },
-          {
-            id: 2,
-            type: 'mcq',
-            question: 'Tính giá trị của biểu thức $P = \\sqrt{16} + \\sqrt[3]{27} - 2^3$:',
-            options: [
-              'A. -1',
-              'B. 1',
-              'C. 7',
-              'D. 15'
-            ],
-            correctAnswer: 'A',
-            explanation: 'Ta có $P = 4 + 3 - 8 = -1$.'
-          },
-          {
-            id: 3,
-            type: 'truefalse',
-            question: 'Trong mặt phẳng tọa độ $Oxy$, đồ thị hàm số $y = 2x - 4$ đi qua điểm $A(2; 0)$ và $B(0; -4)$. Khẳng định này Đúng hay Sai?',
-            options: [],
-            correctAnswer: 'Đúng',
-            explanation: 'Thay $x=2 \\Rightarrow y=2(2)-4=0$ (thỏa mãn $A$). Thay $x=0 \\Rightarrow y=-4$ (thỏa mãn $B$).'
-          },
-          {
-            id: 4,
-            type: 'essay',
-            question: 'Một hình tròn có bán kính $r = 5\\text{ cm}$. Tính diện tích hình tròn theo $\\pi$ (chỉ điền số nguyên, ví dụ: 25):',
-            options: [],
-            correctAnswer: '25',
-            explanation: 'Diện tích $S = \\pi r^2 = \\pi (5)^2 = 25\\pi$. Số cần điền là 25.'
-          },
-          {
-            id: 5,
-            type: 'mcq',
-            question: 'Cho tam giác vuông có hai cạnh góc vuông là $3\\text{ cm}$ và $4\\text{ cm}$. Độ dài cạnh huyền là:',
-            options: [
-              'A. $5\\text{ cm}$',
-              'B. $6\\text{ cm}$',
-              'C. $7\\text{ cm}$',
-              'D. $\\sqrt{7}\\text{ cm}$'
-            ],
-            correctAnswer: 'A',
-            explanation: 'Áp dụng định lý Pythagoras: $c = \\sqrt{3^2 + 4^2} = \\sqrt{9 + 16} = 5\\text{ cm}$.'
-          }
+        answerKeys: [
+          { num: 1, type: 'mcq', correct: 'A', score: 0.5 },
+          { num: 2, type: 'mcq', correct: 'C', score: 0.5 },
+          { num: 3, type: 'mcq', correct: 'B', score: 0.5 },
+          { num: 4, type: 'mcq', correct: 'D', score: 0.5 },
+          { num: 5, type: 'mcq', correct: 'A', score: 0.5 },
+          { num: 6, type: 'mcq', correct: 'B', score: 0.5 },
+          { num: 7, type: 'mcq', correct: 'C', score: 0.5 },
+          { num: 8, type: 'mcq', correct: 'A', score: 0.5 },
+          { num: 9, type: 'truefalse', correct: 'Đúng', score: 1 },
+          { num: 10, type: 'truefalse', correct: 'Sai', score: 1 },
+          { num: 11, type: 'essay', correct: '12', score: 2 },
+          { num: 12, type: 'essay', correct: '25', score: 2 }
         ]
       };
       this.saveQuiz(sampleQuiz);
