@@ -1,5 +1,5 @@
 /**
- * KhiemEdu Storage Engine with Student/Class Roster & Targeted Assignment Control
+ * KhiemEdu Storage Engine with Secure Student PIN Protection
  */
 
 const STORAGE_PREFIX = 'khiemedu_';
@@ -132,7 +132,7 @@ const StorageEngine = {
     return keys;
   },
 
-  // Student Roster & Classes Management
+  // Student Roster Management with PIN Security
   async getStudentRoster() {
     const roster = await this.get('student_roster');
     return roster || [];
@@ -208,16 +208,15 @@ const StorageEngine = {
     return results;
   },
 
-  // Seed sample student roster (6 students in different classes)
+  // Seed sample student roster with PIN code for each student
   seedStudentRosterIfEmpty() {
     if (!localStorage.getItem(STORAGE_PREFIX + 'student_roster')) {
       const initialRoster = [
-        { id: 'STU01', name: 'Nguyễn Văn An', className: '8A1', avatar: '🦊' },
-        { id: 'STU02', name: 'Trần Thị Bình', className: '8A2', avatar: '🦉' },
-        { id: 'STU03', name: 'Lê Hoàng Cường', className: '9B1', avatar: '🦁' },
-        { id: 'STU04', name: 'Phạm Minh Đức', className: '9B2', avatar: '🐼' },
-        { id: 'STU05', name: 'Vũ Ngọc Hoa', className: '10C1', avatar: '🌟' },
-        { id: 'STU06', name: 'Đặng Tuấn Kiệt', className: '10C2', avatar: '🚀' }
+        { id: 'SURI10', name: 'SURI', className: '10', avatar: '🦊', pin: '1234' },
+        { id: 'NGHIA7', name: 'NGHĨA', className: '7', avatar: '🚀', pin: '1234' },
+        { id: 'GIANG8', name: 'GIANG', className: '8', avatar: '🦁', pin: '1234' },
+        { id: 'TIEN12', name: 'TIÊN', className: '12', avatar: '🦉', pin: '1234' },
+        { id: 'MINH10', name: 'MINH', className: '10', avatar: '⚡', pin: '1234' }
       ];
       this.saveStudentRoster(initialRoster);
     }
@@ -229,16 +228,15 @@ const StorageEngine = {
     if (!localStorage.getItem(STORAGE_PREFIX + sampleKey)) {
       const sampleQuiz = {
         id: 'AZOTA01',
-        title: 'Đề Kiểm Tra Giữa Học Kỳ I — Toán 8',
+        title: 'Đề Kiểm Tra Giữa Học Kỳ I — Môn Toán',
         timeLimit: 45,
         totalQuestions: 12,
         examMode: 'split_pdf',
-        pdfFileName: 'De_Kiem_Tra_Toan_8.pdf',
+        pdfFileName: 'De_Kiem_Tra_Toan.pdf',
         pdfDataUrl: null,
-        // Targeted Assignment Settings
-        assignType: 'all', // 'all', 'classes', 'students'
-        assignedClasses: ['8A1', '8A2'],
-        assignedStudents: ['Nguyễn Văn An (8A1)', 'Trần Thị Bình (8A2)'],
+        assignType: 'all',
+        assignedClasses: ['10', '8', '7', '12'],
+        assignedStudents: ['SURI (10)', 'GIANG (8)'],
         shuffle: false,
         showLeaderboard: true,
         antiCheat: true,

@@ -1,14 +1,15 @@
 /**
- * KhiemEdu Main Application Controller with Hall of Fame Podium Leaderboard
+ * KhiemEdu Main Application Controller with Secure Student Authentication & PIN Protection
  */
 
 const AppState = {
   activeTab: 'student',
   currentQuiz: null,
   currentQuizId: '',
-  studentName: 'Nguyễn Văn An',
-  studentClass: '8A1',
+  studentName: '',
+  studentClass: '',
   studentAvatar: '🦊',
+  isStudentAuthenticated: false,
   studentAnswers: {},
   flaggedQuestions: new Set(),
   timerInterval: null,
@@ -31,7 +32,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initAvatars();
   initTeacherAnswerGrid(12);
   await loadStudentRoster();
-  updatePersonalizedExamFeed();
+  initSavedStudentSession();
   renderTeacherQuizManager();
   renderTeacherRosterManager();
   renderAssignTargetsSelector();
@@ -39,6 +40,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   initAntiCheatListeners();
   checkUrlParamsForDirectExam();
 });
+
+/* Restore previous student login session if available */
+function initSavedStudentSession() {
+  const savedProfile = GamificationEngine.getUserProfile();
+  if (savedProfile && savedProfile.name) {
+    document.getElementById('studentJoinName').value = savedProfile.name;
+    document.getElementById('studentJoinClass').value = savedProfile.className || '10';
+    if (savedProfile.avatar) selectAvatar(savedProfile.avatar);
+    AppState.studentName = savedProfile.name;
+    AppState.studentClass = savedProfile.className || '10';
+  }
+  updatePersonalizedExamFeed();
+}
 
 /* Check URL for direct exam code (e.g. ?code=AZOTA01) */
 function checkUrlParamsForDirectExam() {
@@ -136,7 +150,7 @@ async function renderGamificationTab() {
   const userXpText = document.getElementById('gamifyXpText');
 
   if (userAvatar) userAvatar.textContent = profile.avatar;
-  if (userName) userName.textContent = `${profile.name} (${profile.className || '8A1'})`;
+  if (userName) userName.textContent = `${profile.name || 'Học Sinh'} (${profile.className || '10'})`;
   if (userLevel) userLevel.textContent = `Cấp ${levelInfo.level}: ${levelInfo.name}`;
   if (userXpProgress) userXpProgress.style.width = `${levelInfo.progress}%`;
   if (userXpText) userXpText.textContent = `${profile.xp} / ${levelInfo.nextXp} XP (${levelInfo.progress}%)`;
@@ -164,7 +178,6 @@ async function renderGamificationTab() {
     }).join('');
   }
 
-  // Render Hall of Fame Podium Leaderboard
   await renderHallOfFamePodium();
 }
 
@@ -174,55 +187,44 @@ async function renderHallOfFamePodium() {
   if (!podiumWrap || !listWrap) return;
 
   const currentProfile = GamificationEngine.getUserProfile();
-  
-  // Build Leaderboard from student roster with dynamic scores
   const roster = AppState.studentRoster || [];
   const baseScores = [
-    { name: 'Nguyễn Văn An', className: '8A1', avatar: '🦊', xp: currentProfile.xp || 420, streak: currentProfile.streak || 3, exams: currentProfile.examsCount || 4 },
-    { name: 'Trần Thị Bình', className: '8A2', avatar: '🦉', xp: 580, streak: 5, exams: 6 },
-    { name: 'Lê Hoàng Cường', className: '9B1', avatar: '🦁', xp: 720, streak: 7, exams: 8 },
-    { name: 'Phạm Minh Đức', className: '9B2', avatar: '🐼', xp: 390, streak: 2, exams: 3 },
-    { name: 'Vũ Ngọc Hoa', className: '10C1', avatar: '🌟', xp: 640, streak: 6, exams: 7 },
-    { name: 'Đặng Tuấn Kiệt', className: '10C2', avatar: '🚀', xp: 480, streak: 4, exams: 5 }
+    { name: 'SURI', className: '10', avatar: '🦊', xp: currentProfile.xp || 520, streak: currentProfile.streak || 4, exams: currentProfile.examsCount || 5 },
+    { name: 'TIÊN', className: '12', avatar: '🦉', xp: 680, streak: 6, exams: 7 },
+    { name: 'GIANG', className: '8', avatar: '🦁', xp: 750, streak: 7, exams: 8 },
+    { name: 'NGHĨA', className: '7', avatar: '🚀', xp: 420, streak: 3, exams: 4 },
+    { name: 'MINH', className: '10', avatar: '⚡', xp: 490, streak: 4, exams: 5 }
   ];
 
-  // Merge extra students
   roster.forEach(s => {
     if (!baseScores.some(b => b.name.toLowerCase() === s.name.toLowerCase())) {
       baseScores.push({
         name: s.name,
         className: s.className,
         avatar: s.avatar || '👤',
-        xp: 250 + Math.floor(Math.random() * 200),
+        xp: 300,
         streak: 2,
         exams: 2
       });
     }
   });
 
-  // Sort descending by XP
   baseScores.sort((a, b) => (b.xp || 0) - (a.xp || 0));
 
-  const top1 = baseScores[0] || { name: 'Quán Quân', className: '8A1', avatar: '👑', xp: 720, streak: 7 };
-  const top2 = baseScores[1] || { name: 'Á Quân', className: '8A2', avatar: '🥈', xp: 640, streak: 6 };
-  const top3 = baseScores[2] || { name: 'Quý Quân', className: '8A1', avatar: '🥉', xp: 580, streak: 5 };
+  const top1 = baseScores[0] || { name: 'Quán Quân', className: '8', avatar: '👑', xp: 750, streak: 7 };
+  const top2 = baseScores[1] || { name: 'Á Quân', className: '12', avatar: '🥈', xp: 680, streak: 6 };
+  const top3 = baseScores[2] || { name: 'Quý Quân', className: '10', avatar: '🥉', xp: 520, streak: 4 };
 
-  // Render Top 3 Podium (Rank 2 on Left, Rank 1 in Middle, Rank 3 on Right)
   podiumWrap.innerHTML = `
     <div class="podium-wrapper">
-      
-      <!-- Rank 2 (Silver) -->
       <div class="podium-col rank-2">
-        <div class="podium-avatar-wrap">
-          <div class="podium-avatar">${top2.avatar}</div>
-        </div>
+        <div class="podium-avatar-wrap"><div class="podium-avatar">${top2.avatar}</div></div>
         <div class="podium-name">${escapeHtml(top2.name)}</div>
         <div class="podium-class">Lớp ${escapeHtml(top2.className)}</div>
         <div class="podium-xp-tag">⭐ ${top2.xp} XP</div>
         <div class="podium-step">2</div>
       </div>
 
-      <!-- Rank 1 (Gold / Champion) -->
       <div class="podium-col rank-1">
         <div class="podium-avatar-wrap">
           <span class="podium-crown">👑</span>
@@ -234,21 +236,16 @@ async function renderHallOfFamePodium() {
         <div class="podium-step">1</div>
       </div>
 
-      <!-- Rank 3 (Bronze) -->
       <div class="podium-col rank-3">
-        <div class="podium-avatar-wrap">
-          <div class="podium-avatar">${top3.avatar}</div>
-        </div>
+        <div class="podium-avatar-wrap"><div class="podium-avatar">${top3.avatar}</div></div>
         <div class="podium-name">${escapeHtml(top3.name)}</div>
         <div class="podium-class">Lớp ${escapeHtml(top3.className)}</div>
         <div class="podium-xp-tag">⭐ ${top3.xp} XP</div>
         <div class="podium-step">3</div>
       </div>
-
     </div>
   `;
 
-  // Render Top 4+ List
   const rest = baseScores.slice(3);
   if (!rest.length) {
     listWrap.innerHTML = '';
@@ -306,40 +303,9 @@ function selectAvatar(a) {
   SoundEngine.playClick();
 }
 
-/* ================= ROSTER MANAGEMENT (DANH BẠ HỌC SINH & LỚP) ================= */
+/* ================= ROSTER MANAGEMENT WITH PIN PASSWORDS ================= */
 async function loadStudentRoster() {
   AppState.studentRoster = await StorageEngine.getStudentRoster();
-  renderStudentQuickChooser();
-}
-
-function renderStudentQuickChooser() {
-  const wrap = document.getElementById('quickStudentChooserWrap');
-  if (!wrap) return;
-
-  if (!AppState.studentRoster.length) {
-    wrap.innerHTML = '<span style="color:var(--text-muted);font-size:0.85rem;">Chưa có học sinh trong danh bạ.</span>';
-    return;
-  }
-
-  const currentSelected = (document.getElementById('studentJoinName')?.value || '').trim();
-
-  wrap.innerHTML = AppState.studentRoster.map(s => {
-    const isCurrent = s.name.toLowerCase() === currentSelected.toLowerCase();
-    return `
-      <button type="button" class="btn ${isCurrent ? 'btn-primary' : 'btn-secondary'} btn-sm" style="font-size:0.85rem;padding:0.35rem 0.8rem;border-radius:var(--radius-full);" onclick="selectQuickStudent('${escapeHtml(s.name)}', '${escapeHtml(s.className)}', '${s.avatar}')">
-        ${s.avatar} ${escapeHtml(s.name)} (${escapeHtml(s.className)})
-      </button>
-    `;
-  }).join('');
-}
-
-function selectQuickStudent(name, className, avatar) {
-  document.getElementById('studentJoinName').value = name;
-  document.getElementById('studentJoinClass').value = className;
-  if (avatar) selectAvatar(avatar);
-  renderStudentQuickChooser();
-  updatePersonalizedExamFeed();
-  SoundEngine.playClick();
 }
 
 function renderTeacherRosterManager() {
@@ -360,6 +326,7 @@ function renderTeacherRosterManager() {
             <th>Avatar</th>
             <th>Họ và Tên</th>
             <th>Lớp Học</th>
+            <th>Mã PIN Bảo Mật</th>
             <th>Thao Tác</th>
           </tr>
         </thead>
@@ -369,9 +336,17 @@ function renderTeacherRosterManager() {
               <td><span class="code-badge" style="font-size:0.8rem;padding:2px 6px;">${s.id || 'HS' + (idx + 1)}</span></td>
               <td style="font-size:1.5rem;">${s.avatar || '👤'}</td>
               <td><strong style="color:var(--text-primary);font-size:1rem;">${escapeHtml(s.name)}</strong></td>
-              <td><span class="badge-status badge-pass">${escapeHtml(s.className)}</span></td>
+              <td><span class="badge-status badge-pass">Lớp ${escapeHtml(s.className)}</span></td>
               <td>
-                <button class="btn btn-danger btn-sm" onclick="deleteRosterStudent(${idx})">🗑️ Xóa</button>
+                <span class="code-badge" style="font-size:0.85rem;padding:2px 8px;background:var(--amber-light);color:var(--amber-shadow);border-color:var(--amber);letter-spacing:1px;" title="Mã PIN riêng tư của học sinh này">
+                  🔑 ${escapeHtml(s.pin || '1234')}
+                </span>
+              </td>
+              <td>
+                <div style="display:flex;gap:0.4rem;align-items:center;">
+                  <button class="btn btn-secondary btn-sm" onclick="editStudentPin(${idx})" title="Đổi mã PIN cho học sinh">🔒 Đổi PIN</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteRosterStudent(${idx})">🗑️</button>
+                </div>
               </td>
             </tr>
           `).join('')}
@@ -382,28 +357,40 @@ function renderTeacherRosterManager() {
 }
 
 function showAddStudentModal() {
-  const name = prompt('Nhập Họ và Tên học sinh:');
+  const name = prompt('Nhập Tên học sinh (VD: SURI, NGHĨA, GIANG...):');
   if (!name || !name.trim()) return;
-  const className = prompt('Nhập Lớp học của học sinh (VD: 8A1, 9B2):', '8A1');
+  const className = prompt('Nhập Lớp học của học sinh (VD: 10, 8, 7, 12...):', '10');
   if (!className || !className.trim()) return;
+  const pin = prompt('Nhập Mã PIN bí mật cho học sinh (Mặc định 1234):', '1234') || '1234';
 
   const avatars = ['🦊', '🦉', '🦁', '🐼', '🚀', '⚡', '🌟'];
   const randomAvatar = avatars[Math.floor(Math.random() * avatars.length)];
 
   AppState.studentRoster.push({
-    id: 'STU' + String(AppState.studentRoster.length + 1).padStart(2, '0'),
-    name: name.trim(),
-    className: className.trim().toUpperCase(),
-    avatar: randomAvatar
+    id: name.trim().toUpperCase() + className.trim(),
+    name: name.trim().toUpperCase(),
+    className: className.trim(),
+    avatar: randomAvatar,
+    pin: pin.trim()
   });
 
   StorageEngine.saveStudentRoster(AppState.studentRoster);
   renderTeacherRosterManager();
-  renderStudentQuickChooser();
   renderAssignTargetsSelector();
   updatePersonalizedExamFeed();
-  showToast(`✅ Đã thêm học sinh: ${name.trim()} (${className.trim()})`, 'success');
+  showToast(`✅ Đã thêm học sinh: ${name.trim()} (Lớp ${className.trim()}) - PIN: ${pin.trim()}`, 'success');
   SoundEngine.playCorrect();
+}
+
+async function editStudentPin(idx) {
+  const stu = AppState.studentRoster[idx];
+  const newPin = prompt(`Nhập mã PIN mới cho học sinh [${stu.name}]:`, stu.pin || '1234');
+  if (newPin && newPin.trim()) {
+    stu.pin = newPin.trim();
+    await StorageEngine.saveStudentRoster(AppState.studentRoster);
+    renderTeacherRosterManager();
+    showToast(`🔑 Đã cập nhật mã PIN mới cho học sinh [${stu.name}]!`, 'success');
+  }
 }
 
 async function deleteRosterStudent(idx) {
@@ -412,7 +399,6 @@ async function deleteRosterStudent(idx) {
     AppState.studentRoster.splice(idx, 1);
     await StorageEngine.saveStudentRoster(AppState.studentRoster);
     renderTeacherRosterManager();
-    renderStudentQuickChooser();
     renderAssignTargetsSelector();
     updatePersonalizedExamFeed();
     showToast('🗑️ Đã xóa học sinh khỏi danh bạ.', 'success');
@@ -819,7 +805,7 @@ async function resetSampleQuiz() {
   SoundEngine.playCorrect();
 }
 
-/* ================= PERSONALIZED EXAM FEED & STUDENT SPLIT-SCREEN ARENA ================= */
+/* ================= PERSONALIZED EXAM FEED WITH PIN VALIDATION ================= */
 function updatePersonalizedExamFeed() {
   const currentName = (document.getElementById('studentJoinName')?.value || '').trim();
   const currentClass = (document.getElementById('studentJoinClass')?.value || '').trim();
@@ -853,7 +839,7 @@ async function renderSampleQuizzes(filterName = '', filterClass = '') {
 
   const titleHeader = document.getElementById('studentFeedHeaderTitle');
   if (titleHeader) {
-    titleHeader.textContent = filterName ? `📚 Đề Thi Dành Riêng Cho Bạn` : '📚 Thư Viện Đề Thi';
+    titleHeader.textContent = filterName ? `📚 Đề Thi Dành Riêng Cho ${filterName} (Lớp ${filterClass})` : '📚 Thư Viện Đề Thi';
   }
 
   if (!displayedQuizzes.length) {
@@ -900,19 +886,34 @@ function loadAndJoinQuizDirectly(quizId) {
   joinStudentQuiz(quizId);
 }
 
-/* Join Exam */
+/* Join Exam with PIN Authentication & Access Control */
 async function joinStudentQuiz(customCode) {
   const code = (customCode || document.getElementById('studentJoinCode').value).trim().toUpperCase();
   const className = document.getElementById('studentJoinClass').value.trim();
   const name = document.getElementById('studentJoinName').value.trim();
+  const pin = (document.getElementById('studentJoinPin')?.value || '').trim();
   const statusEl = document.getElementById('joinQuizStatus');
 
   if (!code || !className || !name) {
-    statusEl.innerHTML = '<span style="color:var(--rose);">⚠️ Vui lòng điền đầy đủ Mã Đề, Lớp và Họ Tên học sinh!</span>';
+    statusEl.innerHTML = '<span style="color:var(--rose);">⚠️ Vui lòng điền đầy đủ Mã Đề, Lớp và Tên học sinh!</span>';
     return;
   }
 
-  statusEl.innerHTML = '<span style="color:var(--indigo);">⏳ Đang kiểm tra quyền làm bài & tải đề...</span>';
+  // Verify PIN if student is in roster
+  const matchedStudent = AppState.studentRoster.find(s => s.name.toLowerCase() === name.toLowerCase() && s.className.toLowerCase() === className.toLowerCase());
+  if (matchedStudent && matchedStudent.pin) {
+    if (pin !== matchedStudent.pin) {
+      statusEl.innerHTML = `
+        <div style="color:var(--rose);background:var(--rose-light);padding:10px 14px;border-radius:12px;border:2px solid var(--rose);margin-top:8px;">
+          🔒 <strong>MÃ PIN BẢO MẬT KHÔNG ĐÚNG:</strong> Vui lòng nhập đúng mã PIN bí mật của bạn để vào làm bài (Mặc định: 1234)!
+        </div>
+      `;
+      SoundEngine.playWarning();
+      return;
+    }
+  }
+
+  statusEl.innerHTML = '<span style="color:var(--indigo);">⏳ Đang xác thực quyền & tải đề thi...</span>';
   const quiz = await StorageEngine.getQuiz(code);
 
   if (!quiz) {
@@ -969,6 +970,7 @@ async function joinStudentQuiz(customCode) {
   const profile = GamificationEngine.getUserProfile();
   profile.name = name;
   profile.className = className;
+  if (matchedStudent && matchedStudent.avatar) profile.avatar = matchedStudent.avatar;
   GamificationEngine.saveUserProfile(profile);
 
   document.getElementById('studentJoinSection').classList.add('hidden');
