@@ -15,6 +15,9 @@
   
   <!-- Main Stylesheet -->
   <link rel="stylesheet" href="css/style.css">
+  
+  <!-- KaTeX Math Formula Rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 </head>
 <body>
 
@@ -442,6 +445,78 @@ GIANG, 8"></textarea>
         <div id="batchQueueTableWrap"></div>
       </div>
 
+      <!-- Section 3.5: AI & SMART MATH AUTO-GENERATOR -->
+      <div class="card" style="border-left: 6px solid #8b5cf6;background: linear-gradient(180deg, var(--bg-card) 0%, rgba(243, 232, 255, 0.3) 100%);">
+        <div class="card-header">
+          <h2><span>📐</span> Tự Động Sinh Đề & Câu Hỏi Trắc Nghiệm Toán (Math Auto-Generator)</h2>
+          <span class="badge-status" style="background:#ede9fe;color:#6d28d9;font-weight:800;">LaTeX & KaTeX Chuẩn</span>
+        </div>
+        <p class="card-subtitle">
+          Tự động tạo ngay bộ đề Toán học hoàn chỉnh kèm công thức LaTeX, phương trình và ma trận đáp án chuẩn chỉ trong 1 cú nhấp chuột (Lớp 6 - 12 & Luyện Thi Vào 10):
+        </p>
+
+        <div class="form-row" style="background:var(--bg-tertiary);padding:1rem 1.25rem;border-radius:var(--radius-lg);border:2px solid var(--border-color);margin-bottom:1rem;">
+          <div class="form-group">
+            <label>🏫 Khối Lớp</label>
+            <select id="mathGenGradeSelect" style="font-weight:700;">
+              <option value="6">Toán 6 (Số học & Hình trực quan)</option>
+              <option value="7">Toán 7 (Số hữu tỉ & Tam giác)</option>
+              <option value="8">Toán 8 (Hằng đẳng thức & Phân thức)</option>
+              <option value="9">Toán 9 (Căn bậc hai & Hệ PT & Hình)</option>
+              <option value="10" selected>Toán 10 (Tập hợp, Parabol, Vectơ)</option>
+              <option value="11">Toán 11 (Cấp số cộng, Lượng giác)</option>
+              <option value="12">Toán 12 (Đạo hàm, Cực trị, Tích phân)</option>
+              <option value="all">Tổng Hợp Đa Dạng (Tất cả)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>📚 Chủ Đề Chuyên Sâu</label>
+            <select id="mathGenTopicSelect" style="font-weight:700;">
+              <option value="all" selected>Tất cả chủ đề</option>
+              <option value="Số học">Số học & Tập hợp</option>
+              <option value="Đại số">Đại số & Phương trình</option>
+              <option value="Hình học">Hình học & Đo lường</option>
+              <option value="Hàm số">Hàm số & Parabol</option>
+              <option value="Vectơ">Vectơ & Tọa độ Oxy</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>📝 Số Câu Trắc Nghiệm</label>
+            <select id="mathGenMcqCountSelect" style="font-weight:700;">
+              <option value="10" selected>10 Câu trắc nghiệm</option>
+              <option value="12">12 Câu trắc nghiệm</option>
+              <option value="15">15 Câu trắc nghiệm</option>
+              <option value="20">20 Câu trắc nghiệm</option>
+              <option value="30">30 Câu trắc nghiệm</option>
+              <option value="40">40 Câu trắc nghiệm</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>✍️ Số Câu Tự Luận Điền Số</label>
+            <select id="mathGenEssayCountSelect" style="font-weight:700;">
+              <option value="0">0 câu (100% trắc nghiệm)</option>
+              <option value="2" selected>2 câu tự luận điền số</option>
+              <option value="3">3 câu tự luận</option>
+              <option value="4">4 câu tự luận</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+          <button type="button" class="btn btn-primary btn-lg" onclick="triggerAutoGenerateMathExam()" style="background:linear-gradient(135deg, #6366f1, #8b5cf6);">
+            ⚡ TỰ ĐỘNG SINH ĐỀ TOÁN & NẠP VÀO PHIẾU ĐÁP ÁN 🚀
+          </button>
+          <button type="button" class="btn btn-secondary btn-lg" onclick="previewGeneratedMathExamDocument()">
+            👁️ Xem Trước Bản In Đề Toán (LaTeX)
+          </button>
+        </div>
+
+        <div id="mathGenResultBox" class="hidden" style="margin-top:1rem;"></div>
+      </div>
+
       <!-- Section 4: SEPARATED SINGLE EXAM CREATOR (MCQ & ESSAY) -->
       <div class="card" id="singleExamCreatorSection">
         <div class="card-header">
@@ -706,11 +781,16 @@ GIANG, 8"></textarea>
 
   </main>
 
+  <!-- KaTeX Math Rendering Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
   <!-- Main Scripts -->
   <script src="js/storage.js"></script>
   <script src="js/sound.js"></script>
   <script src="js/gamification.js"></script>
   <script src="js/pdfExtractor.js"></script>
+  <script src="js/mathGenerator.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
