@@ -1463,6 +1463,7 @@ function triggerAutoGenerateMathExam() {
   const topic = document.getElementById('mathGenTopicSelect')?.value || 'all';
   const mcqCount = parseInt(document.getElementById('mathGenMcqCountSelect')?.value || '10', 10);
   const essayCount = parseInt(document.getElementById('mathGenEssayCountSelect')?.value || '2', 10);
+  const essayLevel = document.getElementById('mathGenEssayLevelSelect')?.value || 'VD';
 
   const generated = MathEngine.generateExam({
     grade,
@@ -1470,6 +1471,7 @@ function triggerAutoGenerateMathExam() {
     topic,
     mcqCount,
     essayCount,
+    essayLevel,
     timeLimit: 45
   });
 
