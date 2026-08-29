@@ -589,7 +589,7 @@ const GradeEngines = {
             question: `Cho tam giác vuông có độ dài hai cạnh góc vuông lần lượt là $${trip.a}\\text{ cm}$ và $${trip.b}\\text{ cm}$. Độ dài cạnh huyền là:`,
             options: [`$${trip.c}\\text{ cm}$`, `$${trip.a + trip.b}\\text{ cm}$`, `$${trip.c + 2}\\text{ cm}$`, `$${trip.c - 1}\\text{ cm}$`],
             correctAnswer: "A",
-            explanation: `Theo định lý Pythagore, cạnh huyền bằng $\\sqrt{${trip.a}^2 + ${trip.b}^2} = \\sqrt{${trip.a*trip.a + trip.b*trip.b}} = ${trip.c}\\text{ cm}$.`
+            explanation: `Theo định lý Pythagore, cạnh huyền bằng $\sqrt{${trip.a}^2 + ${trip.b}^2} = \sqrt{${trip.a*trip.a} + ${trip.b*trip.b}} = ${trip.c}\text{ cm}$.`
           };
         },
         () => {
