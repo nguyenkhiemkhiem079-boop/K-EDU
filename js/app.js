@@ -1,5 +1,5 @@
 /**
- * KhiemEdu Main Application Controller with Secure Student Authentication & PIN Protection
+ * KhiemEdu Main Application Controller with Name & Class Based Authentication
  */
 
 const AppState = {
@@ -9,7 +9,6 @@ const AppState = {
   studentName: '',
   studentClass: '',
   studentAvatar: '🦊',
-  isStudentAuthenticated: false,
   studentAnswers: {},
   flaggedQuestions: new Set(),
   timerInterval: null,
@@ -303,7 +302,7 @@ function selectAvatar(a) {
   SoundEngine.playClick();
 }
 
-/* ================= ROSTER MANAGEMENT WITH PIN PASSWORDS ================= */
+/* ================= ROSTER MANAGEMENT ================= */
 async function loadStudentRoster() {
   AppState.studentRoster = await StorageEngine.getStudentRoster();
 }
@@ -324,9 +323,8 @@ function renderTeacherRosterManager() {
           <tr>
             <th>Mã HS</th>
             <th>Avatar</th>
-            <th>Họ và Tên</th>
+            <th>Tên Học Sinh</th>
             <th>Lớp Học</th>
-            <th>Mã PIN Bảo Mật</th>
             <th>Thao Tác</th>
           </tr>
         </thead>
@@ -338,15 +336,7 @@ function renderTeacherRosterManager() {
               <td><strong style="color:var(--text-primary);font-size:1rem;">${escapeHtml(s.name)}</strong></td>
               <td><span class="badge-status badge-pass">Lớp ${escapeHtml(s.className)}</span></td>
               <td>
-                <span class="code-badge" style="font-size:0.85rem;padding:2px 8px;background:var(--amber-light);color:var(--amber-shadow);border-color:var(--amber);letter-spacing:1px;" title="Mã PIN riêng tư của học sinh này">
-                  🔑 ${escapeHtml(s.pin || '1234')}
-                </span>
-              </td>
-              <td>
-                <div style="display:flex;gap:0.4rem;align-items:center;">
-                  <button class="btn btn-secondary btn-sm" onclick="editStudentPin(${idx})" title="Đổi mã PIN cho học sinh">🔒 Đổi PIN</button>
-                  <button class="btn btn-danger btn-sm" onclick="deleteRosterStudent(${idx})">🗑️</button>
-                </div>
+                <button class="btn btn-danger btn-sm" onclick="deleteRosterStudent(${idx})">🗑️ Xóa</button>
               </td>
             </tr>
           `).join('')}
@@ -361,7 +351,6 @@ function showAddStudentModal() {
   if (!name || !name.trim()) return;
   const className = prompt('Nhập Lớp học của học sinh (VD: 10, 8, 7, 12...):', '10');
   if (!className || !className.trim()) return;
-  const pin = prompt('Nhập Mã PIN bí mật cho học sinh (Mặc định 1234):', '1234') || '1234';
 
   const avatars = ['🦊', '🦉', '🦁', '🐼', '🚀', '⚡', '🌟'];
   const randomAvatar = avatars[Math.floor(Math.random() * avatars.length)];
@@ -370,27 +359,15 @@ function showAddStudentModal() {
     id: name.trim().toUpperCase() + className.trim(),
     name: name.trim().toUpperCase(),
     className: className.trim(),
-    avatar: randomAvatar,
-    pin: pin.trim()
+    avatar: randomAvatar
   });
 
   StorageEngine.saveStudentRoster(AppState.studentRoster);
   renderTeacherRosterManager();
   renderAssignTargetsSelector();
   updatePersonalizedExamFeed();
-  showToast(`✅ Đã thêm học sinh: ${name.trim()} (Lớp ${className.trim()}) - PIN: ${pin.trim()}`, 'success');
+  showToast(`✅ Đã thêm học sinh: ${name.trim()} (Lớp ${className.trim()})`, 'success');
   SoundEngine.playCorrect();
-}
-
-async function editStudentPin(idx) {
-  const stu = AppState.studentRoster[idx];
-  const newPin = prompt(`Nhập mã PIN mới cho học sinh [${stu.name}]:`, stu.pin || '1234');
-  if (newPin && newPin.trim()) {
-    stu.pin = newPin.trim();
-    await StorageEngine.saveStudentRoster(AppState.studentRoster);
-    renderTeacherRosterManager();
-    showToast(`🔑 Đã cập nhật mã PIN mới cho học sinh [${stu.name}]!`, 'success');
-  }
 }
 
 async function deleteRosterStudent(idx) {
@@ -441,7 +418,7 @@ function renderAssignTargetsSelector() {
       container.innerHTML = AppState.studentRoster.map(s => `
         <label style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.4rem 0.8rem;background:var(--bg-card);border:2px solid var(--border-color);border-radius:var(--radius-md);cursor:pointer;">
           <input type="checkbox" name="assign_student_cb" value="${escapeHtml(s.name)} (${escapeHtml(s.className)})" checked style="width:18px;height:18px;">
-          <span>${s.avatar} <strong>${escapeHtml(s.name)}</strong> (${escapeHtml(s.className)})</span>
+          <span>${s.avatar} <strong>${escapeHtml(s.name)}</strong> (Lớp ${escapeHtml(s.className)})</span>
         </label>
       `).join('');
     }
@@ -805,7 +782,7 @@ async function resetSampleQuiz() {
   SoundEngine.playCorrect();
 }
 
-/* ================= PERSONALIZED EXAM FEED WITH PIN VALIDATION ================= */
+/* ================= PERSONALIZED EXAM FEED ================= */
 function updatePersonalizedExamFeed() {
   const currentName = (document.getElementById('studentJoinName')?.value || '').trim();
   const currentClass = (document.getElementById('studentJoinClass')?.value || '').trim();
@@ -846,7 +823,7 @@ async function renderSampleQuizzes(filterName = '', filterClass = '') {
     wrap.innerHTML = `
       <div style="text-align:center;padding:1.75rem 1rem;color:var(--text-muted);">
         <div style="font-size:2.5rem;margin-bottom:0.4rem;">📭</div>
-        <p style="font-weight:800;font-size:1.05rem;color:var(--amber-shadow);">Hiện tại chưa có đề thi nào được phân công riêng cho bạn (${escapeHtml(filterName)} - Lớp ${escapeHtml(filterClass)}).</p>
+        <p style="font-weight:800;font-size:1.05rem;color:var(--amber-shadow);">Hiện tại chưa có đề thi nào được phân công cho ${escapeHtml(filterName)} (Lớp ${escapeHtml(filterClass)}).</p>
         <p style="font-size:0.875rem;margin-top:4px;">Khi giáo viên giao bài theo lớp hoặc giao đích danh cho bạn, đề thi sẽ tự động xuất hiện ở đây.</p>
       </div>
     `;
@@ -886,12 +863,11 @@ function loadAndJoinQuizDirectly(quizId) {
   joinStudentQuiz(quizId);
 }
 
-/* Join Exam with PIN Authentication & Access Control */
+/* Join Exam: Name and Class Verification */
 async function joinStudentQuiz(customCode) {
   const code = (customCode || document.getElementById('studentJoinCode').value).trim().toUpperCase();
   const className = document.getElementById('studentJoinClass').value.trim();
   const name = document.getElementById('studentJoinName').value.trim();
-  const pin = (document.getElementById('studentJoinPin')?.value || '').trim();
   const statusEl = document.getElementById('joinQuizStatus');
 
   if (!code || !className || !name) {
@@ -899,21 +875,7 @@ async function joinStudentQuiz(customCode) {
     return;
   }
 
-  // Verify PIN if student is in roster
-  const matchedStudent = AppState.studentRoster.find(s => s.name.toLowerCase() === name.toLowerCase() && s.className.toLowerCase() === className.toLowerCase());
-  if (matchedStudent && matchedStudent.pin) {
-    if (pin !== matchedStudent.pin) {
-      statusEl.innerHTML = `
-        <div style="color:var(--rose);background:var(--rose-light);padding:10px 14px;border-radius:12px;border:2px solid var(--rose);margin-top:8px;">
-          🔒 <strong>MÃ PIN BẢO MẬT KHÔNG ĐÚNG:</strong> Vui lòng nhập đúng mã PIN bí mật của bạn để vào làm bài (Mặc định: 1234)!
-        </div>
-      `;
-      SoundEngine.playWarning();
-      return;
-    }
-  }
-
-  statusEl.innerHTML = '<span style="color:var(--indigo);">⏳ Đang xác thực quyền & tải đề thi...</span>';
+  statusEl.innerHTML = '<span style="color:var(--indigo);">⏳ Đang kiểm tra quyền làm bài & tải đề thi...</span>';
   const quiz = await StorageEngine.getQuiz(code);
 
   if (!quiz) {
@@ -967,6 +929,7 @@ async function joinStudentQuiz(customCode) {
   AppState.flaggedQuestions.clear();
   AppState.tabSwitches = 0;
 
+  const matchedStudent = AppState.studentRoster.find(s => s.name.toLowerCase() === name.toLowerCase());
   const profile = GamificationEngine.getUserProfile();
   profile.name = name;
   profile.className = className;

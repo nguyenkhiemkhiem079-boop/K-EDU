@@ -74,14 +74,14 @@
           <div style="text-align:center;margin-bottom:1.5rem;">
             <div style="font-size:3rem;margin-bottom:0.25rem;">🦊 ⚡ 📚</div>
             <h2 style="font-size:1.85rem;color:var(--text-primary);margin-bottom:0.4rem;">Đấu Trường Luyện Thi Trực Tuyến</h2>
-            <p style="color:var(--text-secondary);font-size:0.95rem;font-weight:600;">Nhập thông tin và Mã PIN cá nhân của bạn để mở khóa phòng thi.</p>
+            <p style="color:var(--text-secondary);font-size:0.95rem;font-weight:600;">Nhập Tên & Lớp học của bạn để vào làm bài thi được giao.</p>
           </div>
 
           <form onsubmit="joinStudentQuiz(); return false;">
             <div class="form-row">
               <div class="form-group">
-                <label>👤 Tên Học Sinh (hoặc Mã HS)</label>
-                <input type="text" id="studentJoinName" placeholder="VD: SURI, NGHĨA, GIANG..." oninput="updatePersonalizedExamFeed()" required>
+                <label>👤 Họ và Tên Học Sinh</label>
+                <input type="text" id="studentJoinName" placeholder="VD: SURI, NGHĨA, GIANG, TIÊN..." oninput="updatePersonalizedExamFeed()" required>
               </div>
               <div class="form-group">
                 <label>🏫 Lớp Học</label>
@@ -89,15 +89,9 @@
               </div>
             </div>
 
-            <div class="form-row">
-              <div class="form-group">
-                <label>🔑 Mã Đề Thi (6 ký tự)</label>
-                <input type="text" id="studentJoinCode" placeholder="VD: AZOTA01" style="text-transform:uppercase;font-size:1.15rem;letter-spacing:1.5px;color:var(--indigo);" required>
-              </div>
-              <div class="form-group">
-                <label>🔒 Mã PIN Bảo Mật Cá Nhân</label>
-                <input type="password" id="studentJoinPin" placeholder="Mặc định: 1234" value="1234" style="font-size:1.15rem;letter-spacing:3px;" required title="Mã PIN riêng tư do giáo viên cấp">
-              </div>
+            <div class="form-group">
+              <label>🔑 Mã Đề Thi (6 ký tự)</label>
+              <input type="text" id="studentJoinCode" placeholder="VD: AZOTA01" style="text-transform:uppercase;font-size:1.15rem;letter-spacing:1.5px;color:var(--indigo);" required>
             </div>
 
             <div class="form-group">
@@ -106,7 +100,7 @@
             </div>
 
             <button type="submit" class="btn btn-success btn-lg" style="width:100%;margin-top:0.75rem;">
-              Mở Khóa & Vào Phòng Thi Ngay ⚡
+              Vào Phòng Thi Ngay ⚡
             </button>
           </form>
           <div id="joinQuizStatus" style="margin-top:1rem;font-size:0.95rem;text-align:center;font-weight:700;"></div>
@@ -240,10 +234,10 @@
       <!-- Section 0: Student & Class Roster Manager -->
       <div class="card" style="border-left: 6px solid var(--primary);">
         <div class="card-header">
-          <h2><span>👥</span> Quản Lý Danh Bạ & Mã PIN Bảo Mật Từng Học Sinh</h2>
+          <h2><span>👥</span> Quản Lý Danh Bạ Học Sinh & Lớp Học</h2>
         </div>
         <p class="card-subtitle">
-          Danh sách học sinh kèm <strong>Mã PIN bí mật</strong> riêng tư. Học sinh cần nhập đúng mã PIN này mới được mở khóa phòng thi và xem đề:
+          Danh sách học sinh được phân chia theo từng lớp. Dùng để phân quyền giao đề theo lớp hoặc giao đích danh cho từng bạn:
         </p>
         <div id="teacherRosterManagerWrap"></div>
       </div>
