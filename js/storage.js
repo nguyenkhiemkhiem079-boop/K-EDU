@@ -1,6 +1,6 @@
 /**
  * KhiemEdu Storage Engine with IndexedDB & LocalStorage
- * Stores quizzes, results, and student essay submission photos efficiently.
+ * Includes Delete Quiz and Admin Management methods.
  */
 
 const STORAGE_PREFIX = 'khiemedu_';
@@ -72,30 +72,17 @@ const StorageEngine = {
     return this.get('pdf_' + quizId);
   },
 
-  async saveSubmissionPhoto(photoKey, dataUrl) {
+  async removePdfBlob(quizId) {
     if (this.db) {
       return new Promise((resolve) => {
-        const tx = this.db.transaction([STORE_SUBMISSIONS], 'readwrite');
-        const store = tx.objectStore(STORE_SUBMISSIONS);
-        store.put(dataUrl, photoKey);
+        const tx = this.db.transaction([STORE_PDFS], 'readwrite');
+        const store = tx.objectStore(STORE_PDFS);
+        store.delete('pdf_' + quizId);
         tx.oncomplete = () => resolve(true);
         tx.onerror = () => resolve(false);
       });
     }
-    return this.set(photoKey, dataUrl);
-  },
-
-  async getSubmissionPhoto(photoKey) {
-    if (this.db) {
-      return new Promise((resolve) => {
-        const tx = this.db.transaction([STORE_SUBMISSIONS], 'readonly');
-        const store = tx.objectStore(STORE_SUBMISSIONS);
-        const req = store.get(photoKey);
-        req.onsuccess = () => resolve(req.result || null);
-        req.onerror = () => resolve(null);
-      });
-    }
-    return this.get(photoKey);
+    return this.remove('pdf_' + quizId);
   },
 
   async set(key, value) {
@@ -161,7 +148,26 @@ const StorageEngine = {
       const q = await this.get(key);
       if (q) list.push(q);
     }
+    // Sort newest first
+    list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     return list;
+  },
+
+  async deleteQuiz(quizId) {
+    // 1. Delete quiz data
+    await this.remove('quiz:' + quizId);
+    await this.removePdfBlob(quizId);
+
+    // 2. Delete all results and submission tokens associated with this quiz
+    const resultKeys = await this.list(`result:${quizId}:`);
+    for (const rKey of resultKeys) {
+      await this.remove(rKey);
+    }
+    const submittedKeys = await this.list(`submitted:${quizId}:`);
+    for (const sKey of submittedKeys) {
+      await this.remove(sKey);
+    }
+    return true;
   },
 
   // Results
@@ -195,7 +201,7 @@ const StorageEngine = {
     return results;
   },
 
-  // Seed sample exam with both MCQ, True/False, Short Essay & Photo Essay
+  // Seed sample exam
   seedSampleDataIfEmpty() {
     const sampleKey = 'quiz:AZOTA01';
     if (!localStorage.getItem(STORAGE_PREFIX + sampleKey)) {
@@ -222,8 +228,8 @@ const StorageEngine = {
           { num: 8, type: 'mcq', correct: 'A', score: 0.5 },
           { num: 9, type: 'truefalse', correct: 'Đúng', score: 1 },
           { num: 10, type: 'truefalse', correct: 'Sai', score: 1 },
-          { num: 11, type: 'essay', correct: '12', score: 1.5, note: 'Điền đáp số' },
-          { num: 12, type: 'essay_photo', correct: '', score: 2.5, note: 'Tự luận nộp ảnh bài làm chi tiết' }
+          { num: 11, type: 'essay', correct: '12', score: 1.5 },
+          { num: 12, type: 'essay', correct: '0.5', score: 1.5 }
         ]
       };
       this.saveQuiz(sampleQuiz);

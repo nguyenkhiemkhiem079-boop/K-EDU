@@ -1,5 +1,5 @@
 /**
- * KhiemEdu Main Application Controller (Gamified EduTech Redesign)
+ * KhiemEdu Main Application Controller with Admin Quiz Management & Delete
  */
 
 const AppState = {
@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initAvatars();
   initTeacherAnswerGrid(12);
   renderSampleQuizzes();
+  renderTeacherQuizManager();
   renderGamificationTab();
   initAntiCheatListeners();
 });
@@ -76,6 +77,8 @@ function switchTab(tabId) {
 
   if (tabId === 'gamification') {
     renderGamificationTab();
+  } else if (tabId === 'teacher') {
+    renderTeacherQuizManager();
   }
 }
 
@@ -376,6 +379,9 @@ async function publishTeacherQuiz() {
   SoundEngine.playFanfare();
   GamificationEngine.fireConfetti();
 
+  renderSampleQuizzes();
+  renderTeacherQuizManager();
+
   const resDiv = document.getElementById('publishSuccessResult');
   resDiv.innerHTML = `
     <div class="card" style="background:var(--primary-light);border-color:var(--primary);margin-top:1rem;">
@@ -396,6 +402,88 @@ function generateQuizCode() {
   let s = '';
   for (let i = 0; i < 6; i++) s += chars[Math.floor(Math.random() * chars.length)];
   return s;
+}
+
+/* ================= ADMIN / TEACHER QUIZ MANAGER (XÓA & QUẢN LÝ ĐỀ) ================= */
+async function renderTeacherQuizManager() {
+  const wrap = document.getElementById('teacherQuizManagerWrap');
+  if (!wrap) return;
+
+  const quizzes = await StorageEngine.getAllQuizzes();
+
+  if (!quizzes.length) {
+    wrap.innerHTML = `
+      <div style="text-align:center;padding:2rem;color:var(--text-muted);">
+        <p style="font-size:1.1rem;font-weight:700;">Chưa có đề thi nào trong hệ thống.</p>
+        <button class="btn btn-primary btn-sm" style="margin-top:0.75rem;" onclick="resetSampleQuiz()">🔄 Nạp lại đề thi mẫu chuẩn</button>
+      </div>
+    `;
+    return;
+  }
+
+  wrap.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+      <span style="font-weight:800;color:var(--text-secondary);">Tổng số đề thi: <strong>${quizzes.length}</strong></span>
+      <button class="btn btn-secondary btn-sm" onclick="resetSampleQuiz()">🔄 Nạp lại đề mẫu chuẩn</button>
+    </div>
+
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Mã Đề</th>
+            <th>Tên Đề Thi</th>
+            <th>Số Câu</th>
+            <th>Thời Gian</th>
+            <th>Ngày Tạo</th>
+            <th>Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${quizzes.map(q => `
+            <tr>
+              <td><span class="code-badge" style="font-size:0.85rem;padding:2px 8px;">${q.id}</span></td>
+              <td><strong style="color:var(--text-primary);font-size:1rem;">${escapeHtml(q.title)}</strong></td>
+              <td>${q.totalQuestions || (q.answerKeys ? q.answerKeys.length : 12)} câu</td>
+              <td>${q.timeLimit} phút</td>
+              <td>${q.createdAt ? new Date(q.createdAt).toLocaleDateString('vi-VN') : 'Đề mẫu'}</td>
+              <td>
+                <div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;">
+                  <button class="btn btn-secondary btn-sm" onclick="loadSampleToStudent('${q.id}')" title="Vào làm thử">🚀 Thi Thử</button>
+                  <button class="btn btn-sky btn-sm" onclick="quickViewResults('${q.id}')" title="Xem bảng điểm của đề này">📊 Bảng Điểm</button>
+                  <button class="btn btn-danger btn-sm" onclick="confirmDeleteQuiz('${q.id}', '${escapeHtml(q.title)}')" title="Xóa hoàn toàn đề này">🗑️ Xóa</button>
+                </div>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function quickViewResults(quizId) {
+  switchTab('results');
+  document.getElementById('lookupQuizCodeInput').value = quizId;
+  loadTeacherResults();
+}
+
+async function confirmDeleteQuiz(quizId, quizTitle) {
+  if (confirm(`⚠️ BẠN CÓ CHẮC CHẮN MUỐN XÓA ĐỀ THI NÀY?\n\n- Tên đề: ${quizTitle}\n- Mã đề: ${quizId}\n\nLưu ý: Toàn bộ bảng điểm và kết quả bài làm của học sinh cho đề này cũng sẽ bị xóa vĩnh viễn.`)) {
+    await StorageEngine.deleteQuiz(quizId);
+    showToast(`🗑️ Đã xóa thành công đề thi [${quizId}]!`, 'success');
+    SoundEngine.playClick();
+    renderSampleQuizzes();
+    renderTeacherQuizManager();
+  }
+}
+
+async function resetSampleQuiz() {
+  StorageEngine.seedSampleDataIfEmpty();
+  showToast('✅ Đã nạp lại đề thi mẫu thành công!', 'success');
+  renderSampleQuizzes();
+  renderTeacherQuizManager();
+  SoundEngine.playCorrect();
 }
 
 /* ================= STUDENT: SPLIT-SCREEN EXAM ARENA ================= */
@@ -958,14 +1046,14 @@ function exportResultsToCsv(quizCode) {
   });
 }
 
-/* Sample & Helpers */
+/* Sample Quizzes in Student View */
 async function renderSampleQuizzes() {
   const wrap = document.getElementById('sampleQuizzesList');
   if (!wrap) return;
   const quizzes = await StorageEngine.getAllQuizzes();
 
   if (!quizzes.length) {
-    wrap.innerHTML = '<div style="color:var(--text-muted);font-size:0.9rem;">Chưa có đề thi nào trong thư viện.</div>';
+    wrap.innerHTML = '<div style="color:var(--text-muted);font-size:0.95rem;text-align:center;padding:1rem;">Chưa có đề thi nào trong thư viện.</div>';
     return;
   }
 
@@ -977,7 +1065,10 @@ async function renderSampleQuizzes() {
           Mã Đề: <span class="code-badge" style="font-size:0.9rem;padding:3px 8px;">${q.id}</span> · ${q.totalQuestions || (q.answerKeys ? q.answerKeys.length : 12)} câu · ${q.timeLimit} phút
         </div>
       </div>
-      <button class="btn btn-success" onclick="loadSampleToStudent('${q.id}')">Vào Thi Thử Ngay 🚀</button>
+      <div style="display:flex;gap:0.5rem;align-items:center;">
+        <button class="btn btn-success" onclick="loadSampleToStudent('${q.id}')">Vào Thi Thử Ngay 🚀</button>
+        <button class="btn btn-danger btn-sm" onclick="confirmDeleteQuiz('${q.id}', '${escapeHtml(q.title)}')" title="Xóa đề này">🗑️</button>
+      </div>
     </div>
   `).join('');
 }

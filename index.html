@@ -31,7 +31,7 @@
           <span>🎒</span> Học Sinh
         </button>
         <button type="button" class="nav-tab-btn" data-tab="teacher" onclick="switchTab('teacher')">
-          <span>👨‍🏫</span> Giáo Viên
+          <span>👨‍🏫</span> Giáo Viên & Quản Trị
         </button>
         <button type="button" class="nav-tab-btn" data-tab="results" onclick="switchTab('results')">
           <span>📊</span> Bảng Điểm
@@ -228,100 +228,107 @@
 
     </section>
 
-    <!-- ================= TEACHER VIEW ================= -->
+    <!-- ================= TEACHER & ADMIN VIEW ================= -->
     <section id="tabTeacher" class="view-section">
       
-      <!-- Step 1: Upload File -->
-      <div class="card">
+      <!-- Section 1: Manage & Delete Quizzes -->
+      <div class="card" style="border-left: 6px solid var(--indigo);">
         <div class="card-header">
-          <h2><span>📄</span> Bước 1 — Tải Lên File Đề Thi (PDF / Ảnh Gốc)</h2>
+          <h2><span>📂</span> Quản Lý & Xóa Đề Thi (Admin Desk)</h2>
         </div>
         <p class="card-subtitle">
-          Giáo viên chỉ cần tải file đề gốc lên. Toàn bộ công thức Toán học và hình vẽ sẽ được giữ nguyên 100% độ sắc nét cho học sinh xem.
+          Danh sách toàn bộ các đề thi trên hệ thống. Bạn có thể xem thử, tra cứu bảng điểm hoặc <strong>xóa bỏ hoàn toàn</strong> những đề không cần dùng nữa.
         </p>
+        <div id="teacherQuizManagerWrap"></div>
+      </div>
 
-        <div class="form-group">
-          <label>Chọn file đề bài (.pdf / .png / .jpg):</label>
+      <!-- Section 2: Create New Quiz -->
+      <div class="card">
+        <div class="card-header">
+          <h2><span>➕</span> Tạo & Phát Hành Đề Thi Mới</h2>
+        </div>
+
+        <!-- Step 1: Upload File -->
+        <div style="margin-bottom:1.5rem;">
+          <h3 style="font-size:1.1rem;color:var(--text-primary);margin-bottom:0.4rem;">Bước 1 — Tải Lên File Đề Thi (PDF / Ảnh Gốc)</h3>
+          <p style="font-size:0.875rem;color:var(--text-secondary);margin-bottom:0.75rem;">Giáo viên chỉ cần tải file đề gốc lên. Toàn bộ công thức Toán học và hình vẽ sẽ được giữ nguyên 100% độ sắc nét.</p>
           <input type="file" id="teacherPdfFileInput" accept="application/pdf,image/*" onchange="handleTeacherPdfSelect()">
-        </div>
-
-        <div id="teacherPdfPreviewWrapper" class="hidden" style="margin-top:1rem;">
-          <label>Bản xem trước đề thi đã tải:</label>
-          <iframe id="teacherPdfPreviewFrame" style="width:100%;height:340px;border:2px solid var(--border-color);border-radius:var(--radius-md);background:#fff;" title="Xem trước đề"></iframe>
-        </div>
-      </div>
-
-      <!-- Step 2: Fast Answer Key Input -->
-      <div class="card">
-        <div class="card-header">
-          <h2><span>⚡</span> Bước 2 — Nhập Bảng Đáp Án Nhanh</h2>
-          <span class="badge-status badge-pass" id="teacherTotalQuestionsCount">12 câu</span>
-        </div>
-        <p class="card-subtitle">
-          Tạo bảng đáp án trong 10 giây bằng cách gõ chuỗi text nhanh hoặc click chọn trực tiếp:
-        </p>
-
-        <!-- Fast String Parser Bar -->
-        <div class="quick-key-panel">
-          <label>Cách 1: Gõ chuỗi đáp án siêu tốc (Hỗ trợ cả trắc nghiệm A/B/C/D, Đúng/Sai và tự luận điền số):</label>
-          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:0.5rem;">
-            <input type="text" id="fastAnswerStringInput" placeholder="VD: 1A 2B 3C 4D 5:12 6:2.5 7:-3 8:1/2 9:Đúng 10:Sai" style="flex:1;">
-            <button type="button" class="btn btn-primary" onclick="parseFastAnswerString()">⚡ Nhận Diện Chuỗi Đáp Án</button>
+          
+          <div id="teacherPdfPreviewWrapper" class="hidden" style="margin-top:1rem;">
+            <label>Bản xem trước đề thi đã tải:</label>
+            <iframe id="teacherPdfPreviewFrame" style="width:100%;height:340px;border:2px solid var(--border-color);border-radius:var(--radius-md);background:#fff;" title="Xem trước đề"></iframe>
           </div>
         </div>
 
-        <!-- Quick Count Buttons -->
-        <div style="margin-bottom:1.25rem;display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
-          <span style="font-size:0.9rem;font-weight:700;color:var(--text-secondary);">Cách 2: Chọn nhanh số lượng câu:</span>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickQuestionCount(10)">10 Câu</button>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickQuestionCount(15)">15 Câu</button>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickQuestionCount(20)">20 Câu</button>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickQuestionCount(30)">30 Câu</button>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickQuestionCount(40)">40 Câu</button>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickQuestionCount(50)">50 Câu</button>
+        <hr style="border:1px solid var(--border-color);margin:1.5rem 0;"/>
+
+        <!-- Step 2: Fast Answer Key Input -->
+        <div style="margin-bottom:1.5rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;flex-wrap:wrap;gap:0.5rem;">
+            <h3 style="font-size:1.1rem;color:var(--text-primary);margin:0;">Bước 2 — Nhập Bảng Đáp Án Nhanh</h3>
+            <span class="badge-status badge-pass" id="teacherTotalQuestionsCount">12 câu</span>
+          </div>
+
+          <div class="quick-key-panel">
+            <label>Cách 1: Gõ chuỗi đáp án siêu tốc (Hỗ trợ cả trắc nghiệm A/B/C/D, Đúng/Sai và tự luận điền số):</label>
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:0.5rem;">
+              <input type="text" id="fastAnswerStringInput" placeholder="VD: 1A 2B 3C 4D 5:12 6:2.5 7:-3 8:1/2 9:Đúng 10:Sai" style="flex:1;">
+              <button type="button" class="btn btn-primary" onclick="parseFastAnswerString()">⚡ Nhận Diện Chuỗi Đáp Án</button>
+            </div>
+          </div>
+
+          <div style="margin-bottom:1.25rem;display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+            <span style="font-size:0.9rem;font-weight:700;color:var(--text-secondary);">Cách 2: Chọn nhanh số lượng câu:</span>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickQuestionCount(10)">10 Câu</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickQuestionCount(15)">15 Câu</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickQuestionCount(20)">20 Câu</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickQuestionCount(30)">30 Câu</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickQuestionCount(40)">40 Câu</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickQuestionCount(50)">50 Câu</button>
+          </div>
+
+          <div class="key-grid-table" id="teacherAnswerKeyGrid"></div>
+
+          <div style="margin-top:1.25rem;display:flex;gap:0.75rem;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="addOneTeacherKeyQuestion()">+ Thêm 1 câu</button>
+            <button type="button" class="btn btn-danger btn-sm" onclick="removeOneTeacherKeyQuestion()">- Bớt 1 câu</button>
+          </div>
         </div>
 
-        <!-- Answer Keys Grid Table -->
-        <div class="key-grid-table" id="teacherAnswerKeyGrid"></div>
+        <hr style="border:1px solid var(--border-color);margin:1.5rem 0;"/>
 
-        <div style="margin-top:1.25rem;display:flex;gap:0.75rem;">
-          <button type="button" class="btn btn-secondary btn-sm" onclick="addOneTeacherKeyQuestion()">+ Thêm 1 câu</button>
-          <button type="button" class="btn btn-danger btn-sm" onclick="removeOneTeacherKeyQuestion()">- Bớt 1 câu</button>
-        </div>
-      </div>
+        <!-- Step 3: Publish Settings -->
+        <div>
+          <h3 style="font-size:1.1rem;color:var(--text-primary);margin-bottom:1rem;">Bước 3 — Cấu Hình & Phát Hành</h3>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>Tên Đề Thi</label>
+              <input type="text" id="teacherExamTitleInput" value="Đề Kiểm Tra Giữa Kì I — Môn Toán">
+            </div>
+            <div class="form-group">
+              <label>Thời Gian Làm Bài (Phút)</label>
+              <input type="number" id="teacherExamTimeLimitInput" value="45" min="1" max="180">
+            </div>
+          </div>
 
-      <!-- Step 3: Publish Settings -->
-      <div class="card">
-        <div class="card-header">
-          <h2><span>🚀</span> Bước 3 — Cấu Hình & Phát Hành Đề Thi</h2>
-        </div>
-
-        <div class="form-row">
           <div class="form-group">
-            <label>Tên Đề Thi</label>
-            <input type="text" id="teacherExamTitleInput" value="Đề Kiểm Tra Giữa Kì I — Môn Toán">
+            <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;font-weight:700;">
+              <input type="checkbox" id="teacherShowLeaderboardToggle" checked style="width:auto;width:20px;height:20px;">
+              <span>Hiển thị bảng xếp hạng trực tiếp cho học sinh đã nộp bài</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;font-weight:700;margin-top:0.6rem;">
+              <input type="checkbox" id="teacherAntiCheatToggle" checked style="width:auto;width:20px;height:20px;">
+              <span>Kích hoạt giám sát chống gian lận (đếm số lần rời trang & chặn copy)</span>
+            </label>
           </div>
-          <div class="form-group">
-            <label>Thời Gian Làm Bài (Phút)</label>
-            <input type="number" id="teacherExamTimeLimitInput" value="45" min="1" max="180">
-          </div>
+
+          <button type="button" class="btn btn-primary btn-lg" onclick="publishTeacherQuiz()">
+            Phát Hành Đề Thi Ngay 🎯
+          </button>
+          <div id="publishSuccessResult"></div>
         </div>
 
-        <div class="form-group">
-          <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;font-weight:700;">
-            <input type="checkbox" id="teacherShowLeaderboardToggle" checked style="width:auto;width:20px;height:20px;">
-            <span>Hiển thị bảng xếp hạng trực tiếp cho học sinh đã nộp bài</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;font-weight:700;margin-top:0.6rem;">
-            <input type="checkbox" id="teacherAntiCheatToggle" checked style="width:auto;width:20px;height:20px;">
-            <span>Kích hoạt giám sát chống gian lận (đếm số lần rời trang & chặn copy)</span>
-          </label>
-        </div>
-
-        <button type="button" class="btn btn-primary btn-lg" onclick="publishTeacherQuiz()">
-          Phát Hành Đề Thi Ngay 🎯
-        </button>
-        <div id="publishSuccessResult"></div>
       </div>
 
     </section>
