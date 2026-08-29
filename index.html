@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KhiemEdu — Nền Tảng Học Tập & Đấu Trường Luyện Thi Toán</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- KaTeX for Math Equations -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+  
+  <!-- PDF.js for PDF extraction -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  
+  <!-- Canvas Confetti for celebrations -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+  
+  <!-- Main Styles -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ================= NAVBAR ================= -->
+  <header class="navbar">
+    <div class="nav-container">
+      <a href="#" class="brand" onclick="switchTab('student'); return false;">
+        <div class="brand-icon">📐</div>
+        <div class="brand-title">KhiemEdu</div>
+      </a>
+
+      <nav class="nav-tabs">
+        <button type="button" class="nav-tab-btn active" data-tab="student" onclick="switchTab('student')">
+          <span>🎒</span> Học Sinh
+        </button>
+        <button type="button" class="nav-tab-btn" data-tab="teacher" onclick="switchTab('teacher')">
+          <span>👨‍🏫</span> Giáo Viên
+        </button>
+        <button type="button" class="nav-tab-btn" data-tab="results" onclick="switchTab('results')">
+          <span>📊</span> Bảng Điểm
+        </button>
+        <button type="button" class="nav-tab-btn" data-tab="gamification" onclick="switchTab('gamification')">
+          <span>🏆</span> Vinh Danh
+        </button>
+      </nav>
+
+      <div class="nav-actions">
+        <!-- Gamify Bar -->
+        <div class="user-gamify-bar" onclick="switchTab('gamification')" style="cursor:pointer;" title="Xem hồ sơ & huy hiệu">
+          <div class="streak-pill">
+            <span class="streak-fire">🔥</span>
+            <span id="topStreakVal">1</span>
+          </div>
+          <div class="xp-pill">
+            <span>⭐</span>
+            <span id="topXpVal">0</span> XP
+          </div>
+          <span class="level-badge" id="topLevelVal">Lv.1 Tân Binh</span>
+        </div>
+
+        <!-- Sound & Theme Toggle -->
+        <button type="button" class="icon-btn" id="soundToggleBtn" onclick="toggleSound()" title="Bật/Tắt âm thanh">🔊</button>
+        <button type="button" class="icon-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Đổi giao diện Sáng/Tối">🌙</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <main class="main-content">
+
+    <!-- ================= STUDENT VIEW ================= -->
+    <section id="tabStudent" class="view-section active">
+      
+      <!-- Join Quiz Box -->
+      <div id="studentJoinSection">
+        <div class="card" style="max-width:680px;margin:0 auto 1.5rem;">
+          <div class="card-header">
+            <h2><span>🚀</span> Vào Phòng Thi & Luyện Đề</h2>
+          </div>
+          <p class="card-subtitle">Nhập mã đề do giáo viên cung cấp hoặc chọn đề thi thử có sẵn bên dưới.</p>
+
+          <form onsubmit="joinStudentQuiz(); return false;">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Mã Đề Thi (6 ký tự)</label>
+                <input type="text" id="studentJoinCode" placeholder="VD: MATH01" style="text-transform:uppercase;font-weight:700;letter-spacing:1.5px;" required>
+              </div>
+              <div class="form-group">
+                <label>Lớp Học</label>
+                <input type="text" id="studentJoinClass" placeholder="VD: 10A1" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Họ và Tên Học Sinh</label>
+              <input type="text" id="studentJoinName" placeholder="Nguyễn Văn A" required>
+            </div>
+
+            <div class="form-group">
+              <label>Chọn Avatar Chiến Binh</label>
+              <div id="avatarSelector" style="display:flex;gap:0.5rem;flex-wrap:wrap;"></div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg" style="width:100%;margin-top:0.5rem;">
+              Bắt Đầu Làm Bài Ngay ⚡
+            </button>
+          </form>
+          <div id="joinQuizStatus" style="margin-top:0.75rem;font-size:0.9rem;text-align:center;"></div>
+        </div>
+
+        <!-- Sample Quizzes Quick Access -->
+        <div class="card" style="max-width:680px;margin:0 auto;">
+          <div class="card-header">
+            <h2><span>📚</span> Thư Viện Đề Thi Sẵn Có</h2>
+          </div>
+          <div id="sampleQuizzesList"></div>
+        </div>
+      </div>
+
+      <!-- Active Exam Box -->
+      <div id="studentExamSection" class="hidden">
+        
+        <!-- Sticky Top Control Bar -->
+        <div class="exam-sticky-bar">
+          <div>
+            <h3 id="examActiveTitle" style="font-size:1.15rem;color:var(--text-primary);margin:0;">Đang tải đề thi...</h3>
+            <div id="examStudentInfo" style="font-size:0.85rem;color:var(--text-secondary);"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.75rem;">
+            <div class="timer-box" id="examTimerBox">⏱️ 00:00</div>
+            <button type="button" class="btn btn-success" onclick="submitStudentExam()">Nộp Bài 🚀</button>
+          </div>
+        </div>
+
+        <!-- Anti Cheat Warning -->
+        <div class="cheat-banner hidden" id="examCheatWarningBanner">
+          ⚠️ CẢNH BÁO: Hệ thống phát hiện bạn vừa chuyển tab hoặc rời khỏi màn hình làm bài!
+        </div>
+
+        <!-- Live Class Leaderboard Mini Drawer -->
+        <div class="card hidden" id="examLiveLeaderboardBox" style="background:var(--bg-tertiary);">
+          <div class="card-header" style="margin-bottom:0.5rem;padding-bottom:0.4rem;">
+            <h3 style="font-size:0.95rem;color:var(--primary);">🏆 Bảng Xếp Hạng Trực Tiếp (Đã Nộp Bài)</h3>
+          </div>
+          <div id="examLiveLeaderboardList"></div>
+        </div>
+
+        <!-- Question Navigator Grid -->
+        <div class="card" style="padding:1rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
+            <span style="font-size:0.85rem;font-weight:700;color:var(--text-secondary);">BẢN ĐỒ CÂU HỎI:</span>
+            <div style="display:flex;gap:0.75rem;font-size:0.75rem;color:var(--text-muted);">
+              <span><span style="display:inline-block;width:10px;height:10px;background:var(--primary);border-radius:2px;"></span> Đã làm</span>
+              <span><span style="display:inline-block;width:10px;height:10px;background:var(--amber-light);border:1px solid var(--amber);border-radius:2px;"></span> Phân vân</span>
+              <span><span style="display:inline-block;width:10px;height:10px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:2px;"></span> Chưa làm</span>
+            </div>
+          </div>
+          <div id="examQuestionNavGrid" class="question-nav-grid"></div>
+        </div>
+
+        <!-- Exam Questions List -->
+        <div id="examQuestionsContainer"></div>
+
+        <!-- Bottom Submit -->
+        <div style="text-align:center;margin-top:2rem;">
+          <button type="button" class="btn btn-success btn-lg" style="min-width:240px;" onclick="submitStudentExam()">
+            Hoàn Thành & Nộp Bài Thi 🎯
+          </button>
+        </div>
+      </div>
+
+      <!-- Result & Review Box -->
+      <div id="studentResultSection" class="hidden">
+        <div class="card">
+          <div class="score-hero">
+            <div class="score-circle">
+              <div class="score-inner">
+                <div class="score-number" id="resultScoreVal">0/0</div>
+                <div class="score-pct" id="resultScorePct">0%</div>
+              </div>
+            </div>
+            <h2 style="font-size:1.75rem;color:var(--text-primary);margin-bottom:0.5rem;">Chúc Mừng Bạn Đã Hoàn Thành Bài Thi! 🎉</h2>
+            <p style="color:var(--text-secondary);font-size:0.95rem;">Bạn đã tích lũy thêm điểm kinh nghiệm và duy trì chuỗi học tập xuất sắc.</p>
+          </div>
+
+          <!-- Result Newly Unlocked Badges -->
+          <div id="resultNewlyUnlockedBadges" class="hidden"></div>
+
+          <!-- Stats Grid -->
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-val" style="color:var(--amber);" id="resultXpGained">+0 XP</div>
+              <div class="stat-lbl">Kinh nghiệm</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-val" style="color:#f97316;" id="resultStreakCount">1 Ngày 🔥</div>
+              <div class="stat-lbl">Chuỗi học tập</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-val" id="resultTimeTaken">0p 0s</div>
+              <div class="stat-lbl">Thời gian làm</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-val" style="color:var(--rose);" id="resultTabSwitches">0</div>
+              <div class="stat-lbl">Số lần rời tab</div>
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:center;gap:1rem;margin-top:1.5rem;flex-wrap:wrap;">
+            <button type="button" class="btn btn-primary" onclick="restartStudentJoin()">🔄 Làm Đề Khác</button>
+            <button type="button" class="btn btn-secondary" onclick="switchTab('gamification')">🏆 Xem Bảng Vinh Danh</button>
+          </div>
+        </div>
+
+        <!-- Detailed Review Card -->
+        <div class="card">
+          <div class="card-header">
+            <h2><span>📋</span> Chi Tiết Đáp Án & Lời Giải</h2>
+          </div>
+          <div id="examReviewContainer"></div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= TEACHER VIEW ================= -->
+    <section id="tabTeacher" class="view-section">
+      
+      <!-- Step 1: Upload PDF -->
+      <div class="card">
+        <div class="card-header">
+          <h2><span>📄</span> Bước 1 — Tải Lên File PDF Đề Thi (Kèm Đáp Án)</h2>
+        </div>
+        <p class="card-subtitle">
+          Hệ thống sẽ tự động đọc câu hỏi, các phương án A/B/C/D, câu Đúng/Sai, tự luận và các công thức Toán học chuẩn LaTeX.
+        </p>
+
+        <div class="form-row">
+          <div class="form-group" style="flex:2;">
+            <label>Chọn file PDF đề bài:</label>
+            <input type="file" id="pdfFileInput" accept="application/pdf">
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>Công cụ phân tích AI:</label>
+            <select id="aiProviderSelect" onchange="document.getElementById('apiKeyField').classList.toggle('hidden', this.value === 'offline')">
+              <option value="offline">Bộ Nhận Diện Tích Hợp (Offline - Miễn Phí)</option>
+              <option value="gemini">Google Gemini AI (Chính xác cao)</option>
+              <option value="claude">Anthropic Claude AI</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group hidden" id="apiKeyField">
+          <label>Nhập API Key AI (Gemini / Claude):</label>
+          <input type="password" id="aiApiKeyInput" placeholder="Nhập API Key để kích hoạt trích xuất AI nâng cao...">
+        </div>
+
+        <button type="button" class="btn btn-primary" id="startExtractBtn" onclick="handlePdfUpload()">
+          <span>⚡</span> Phân Tích & Bóc Tách Đề Thi
+        </button>
+        <div id="pdfExtractStatus" style="margin-top:0.75rem;font-size:0.9rem;"></div>
+      </div>
+
+      <!-- Step 2: Review & Edit -->
+      <div class="card hidden" id="teacherReviewCard">
+        <div class="card-header">
+          <h2><span>🔍</span> Bước 2 — Đối Chiếu Đề Gốc & Tinh Chỉnh Câu Hỏi</h2>
+        </div>
+        <p class="card-subtitle">Xem lại file gốc song song với bảng đáp án AI đã nhận diện. Bạn có thể sửa nội dung hoặc công thức Toán học bất kỳ lúc nào.</p>
+
+        <div class="review-grid">
+          <div>
+            <label>Bản xem trước file PDF gốc:</label>
+            <iframe id="pdfPreview" title="PDF Preview"></iframe>
+          </div>
+          <div>
+            <label>Bảng tóm tắt đáp án:</label>
+            <div class="table-responsive" style="max-height:480px;overflow-y:auto;border:1px solid var(--border-color);border-radius:var(--radius-md);">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Câu</th>
+                    <th>Dạng</th>
+                    <th>Đáp Án Đúng</th>
+                  </tr>
+                </thead>
+                <tbody id="answerKeyTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:2rem;">
+          <h3 style="color:var(--text-primary);margin-bottom:1rem;">Danh Sách Câu Hỏi Chi Tiết:</h3>
+          <div id="teacherQuestionsEditList"></div>
+          <button type="button" class="btn btn-secondary" onclick="addBlankQuestion()">+ Thêm Câu Hỏi Mới Thủ Công</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Publish Settings -->
+      <div class="card hidden" id="teacherPublishCard">
+        <div class="card-header">
+          <h2><span>🚀</span> Bước 3 — Thiết Lập & Phát Hành Đề Thi</h2>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tên Đề Thi</label>
+            <input type="text" id="examTitleInput" value="Kiểm Tra 15 Phút Toán Học">
+          </div>
+          <div class="form-group">
+            <label>Thời Gian Làm Bài (Phút)</label>
+            <input type="number" id="examTimeLimitInput" value="15" min="1" max="180">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+            <input type="checkbox" id="shuffleQuestionsToggle" checked style="width:auto;">
+            <span>Xáo trộn thứ tự câu hỏi cho mỗi học sinh</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;margin-top:0.5rem;">
+            <input type="checkbox" id="showLeaderboardToggle" checked style="width:auto;">
+            <span>Hiển thị bảng xếp hạng trực tiếp trong lúc học sinh làm bài</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;margin-top:0.5rem;">
+            <input type="checkbox" id="antiCheatToggle" checked style="width:auto;">
+            <span>Kích hoạt giám sát chống gian lận (đếm số lần rời trang & chống sao chép)</span>
+          </label>
+        </div>
+
+        <button type="button" class="btn btn-primary btn-lg" onclick="publishTeacherQuiz()">
+          Phát Hành Đề Thi Ngay 🎯
+        </button>
+        <div id="publishSuccessResult"></div>
+      </div>
+
+    </section>
+
+    <!-- ================= RESULTS VIEW ================= -->
+    <section id="tabResults" class="view-section">
+      <div class="card">
+        <div class="card-header">
+          <h2><span>📊</span> Tra Cứu Kết Quả & Bảng Điểm Lớp Học</h2>
+        </div>
+        <p class="card-subtitle">Nhập mã đề để xem bảng xếp hạng, điểm số chi tiết và thống kê độ khó của từng câu hỏi.</p>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Mã Đề Thi</label>
+            <input type="text" id="lookupQuizCodeInput" placeholder="VD: MATH01" style="text-transform:uppercase;font-weight:700;">
+          </div>
+          <div class="form-group">
+            <label>Lọc Theo Lớp (để trống = xem tất cả các lớp)</label>
+            <input type="text" id="lookupClassFilterInput" placeholder="VD: 10A1">
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-primary" onclick="loadTeacherResults()">
+          <span>🔍</span> Tải Bảng Điểm
+        </button>
+      </div>
+
+      <div id="teacherResultsTableWrap"></div>
+    </section>
+
+    <!-- ================= GAMIFICATION / LEADERBOARD VIEW ================= -->
+    <section id="tabGamification" class="view-section">
+      <!-- Profile Card -->
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;">
+          <div id="gamifyUserAvatar" style="font-size:3.5rem;background:var(--bg-tertiary);border:2px solid var(--border-color);width:90px;height:90px;border-radius:var(--radius-full);display:flex;align-items:center;justify-content:center;">
+            🦊
+          </div>
+          <div style="flex:1;">
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+              <h2 id="gamifyUserName" style="font-size:1.6rem;color:var(--text-primary);margin:0;">Học Sinh</h2>
+              <span class="badge-status badge-pass" id="gamifyLevelName">Cấp 1: Tân Binh</span>
+            </div>
+            <div style="margin-top:0.75rem;">
+              <div style="display:flex;justify-content:space-between;font-size:0.8rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.3rem;">
+                <span>TIẾN TRÌNH LÊN CẤP TIẾP THEO</span>
+                <span id="gamifyXpText">0 / 200 XP (0%)</span>
+              </div>
+              <div style="width:100%;height:10px;background:var(--bg-tertiary);border-radius:var(--radius-full);overflow:hidden;border:1px solid var(--border-color);">
+                <div id="gamifyXpProgress" style="width:0%;height:100%;background:linear-gradient(90deg, var(--primary), #ec4899);border-radius:var(--radius-full);transition:width 0.4s ease;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gamification Stats Counters -->
+        <div class="stats-grid" style="margin-top:1.5rem;">
+          <div class="stat-item">
+            <div class="stat-val" id="statTotalExams">0</div>
+            <div class="stat-lbl">Bài thi đã hoàn thành</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-val" style="color:var(--emerald);" id="statPerfectScores">0</div>
+            <div class="stat-lbl">Điểm 100% tuyệt đối</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-val" style="color:#f97316;" id="statCurrentStreak">1 Ngày 🔥</div>
+            <div class="stat-lbl">Chuỗi Streak liên tục</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Badges Showcase Card -->
+      <div class="card">
+        <div class="card-header">
+          <h2><span>🏅</span> Bộ Sưu Tập Huy Hiệu Danh Hiệu</h2>
+        </div>
+        <p class="card-subtitle">Luyện tập chăm chỉ và đạt thành tích cao để mở khóa tất cả các huy hiệu danh giá.</p>
+        <div class="badges-grid" id="badgesShowcaseGrid"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Main Scripts -->
+  <script src="js/storage.js"></script>
+  <script src="js/sound.js"></script>
+  <script src="js/gamification.js"></script>
+  <script src="js/pdfExtractor.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
