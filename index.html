@@ -392,6 +392,58 @@ GIANG, 8"></textarea>
         </div>
       </div>
 
+      <!-- Firebase Cloud Config Panel -->
+      <div class="card" style="border-left: 6px solid var(--rose); background: linear-gradient(180deg, var(--bg-card) 0%, rgba(254, 242, 242, 0.3) 100%);">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.4rem;">
+          <h2 style="margin:0;font-size:1.35rem;color:var(--rose);display:flex;align-items:center;gap:0.5rem;">
+            <span>☁️</span> Cấu Hình Đồng Bộ Đám Mây Cloud Sync (Firebase)
+          </h2>
+          <span class="badge-status badge-fail" id="firebaseConnectionBadge">Đang Chạy Offline 📴</span>
+        </div>
+        <p class="card-subtitle">
+          Đồng bộ danh sách học sinh, điểm số trực tuyến và lưu trữ file PDF đề thi không giới hạn thông qua Firebase. Nhấn để mở bảng cấu hình:
+        </p>
+
+        <div style="margin-top:0.75rem;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btnToggleFirebaseForm" onclick="toggleFirebaseConfigForm()">⚙️ Cấu Hình Firebase API Credentials</button>
+        </div>
+
+        <div id="firebaseConfigFormWrapper" class="hidden" style="margin-top:1.25rem;border-top:1px dashed var(--border-color);padding-top:1.25rem;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:0.75rem;margin-bottom:1rem;">
+            <div class="form-group">
+              <label>API Key</label>
+              <input type="password" id="fbApiKey" placeholder="AIzaSy...">
+            </div>
+            <div class="form-group">
+              <label>Project ID</label>
+              <input type="text" id="fbProjectId" placeholder="khiemedu-xxxx">
+            </div>
+            <div class="form-group">
+              <label>Storage Bucket</label>
+              <input type="text" id="fbStorageBucket" placeholder="khiemedu-xxxx.appspot.com">
+            </div>
+            <div class="form-group">
+              <label>Auth Domain</label>
+              <input type="text" id="fbAuthDomain" placeholder="khiemedu-xxxx.firebaseapp.com">
+            </div>
+            <div class="form-group">
+              <label>App ID</label>
+              <input type="text" id="fbAppId" placeholder="1:xxxxxx:web:xxxxxx">
+            </div>
+            <div class="form-group">
+              <label>Messaging Sender ID (Tùy chọn)</label>
+              <input type="text" id="fbSenderId" placeholder="xxxxxxxxx">
+            </div>
+          </div>
+
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
+            <button type="button" class="btn btn-primary" onclick="handleSaveFirebaseConfig()">💾 Lưu & Kết Nối Cloud ⚡</button>
+            <button type="button" class="btn btn-secondary" onclick="handleDisableFirebase()">📴 Chạy Offline (Tạm ngắt)</button>
+            <button type="button" class="btn btn-danger btn-sm" onclick="handleClearFirebaseConfig()">🗑️ Xóa Credentials</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Section 0: REAL METRICS & ANALYTICS DASHBOARD FOR TEACHERS -->
       <div class="card" style="border-left: 6px solid var(--indigo);background:linear-gradient(180deg, var(--bg-card) 0%, rgba(240, 244, 255, 0.4) 100%);">
         <div class="card-header">
@@ -889,7 +941,13 @@ GIANG, 8"></textarea>
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 
+  <!-- Firebase App & Services (Compat version for script tags) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+
   <!-- Main Scripts -->
+  <script src="js/firebase.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/sound.js"></script>
   <script src="js/gamification.js"></script>
