@@ -1,5 +1,5 @@
 /**
- * KhiemEdu Main Application Controller with Admin Quiz Management & Delete
+ * KhiemEdu Main Application Controller with Targeted Student & Class Assignments
  */
 
 const AppState = {
@@ -19,7 +19,8 @@ const AppState = {
   teacherPdfData: null,
   teacherFileName: '',
   teacherAnswerKeys: [],
-  leaderboardTimer: null
+  leaderboardTimer: null,
+  studentRoster: []
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -29,8 +30,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateGamifyBar();
   initAvatars();
   initTeacherAnswerGrid(12);
+  await loadStudentRoster();
   renderSampleQuizzes();
   renderTeacherQuizManager();
+  renderTeacherRosterManager();
+  renderAssignTargetsSelector();
   renderGamificationTab();
   initAntiCheatListeners();
 });
@@ -79,6 +83,8 @@ function switchTab(tabId) {
     renderGamificationTab();
   } else if (tabId === 'teacher') {
     renderTeacherQuizManager();
+    renderTeacherRosterManager();
+    renderAssignTargetsSelector();
   }
 }
 
@@ -163,6 +169,155 @@ function selectAvatar(a) {
   initAvatars();
   updateGamifyBar();
   SoundEngine.playClick();
+}
+
+/* ================= ROSTER MANAGEMENT (DANH BẠ HỌC SINH & LỚP) ================= */
+async function loadStudentRoster() {
+  AppState.studentRoster = await StorageEngine.getStudentRoster();
+  renderStudentQuickChooser();
+}
+
+function renderStudentQuickChooser() {
+  const wrap = document.getElementById('quickStudentChooserWrap');
+  if (!wrap) return;
+
+  if (!AppState.studentRoster.length) {
+    wrap.innerHTML = '<span style="color:var(--text-muted);font-size:0.85rem;">Chưa có học sinh trong danh bạ.</span>';
+    return;
+  }
+
+  wrap.innerHTML = AppState.studentRoster.map(s => `
+    <button type="button" class="btn btn-secondary btn-sm" style="font-size:0.8rem;padding:0.3rem 0.7rem;" onclick="selectQuickStudent('${escapeHtml(s.name)}', '${escapeHtml(s.className)}', '${s.avatar}')">
+      ${s.avatar} ${escapeHtml(s.name)} (${escapeHtml(s.className)})
+    </button>
+  `).join('');
+}
+
+function selectQuickStudent(name, className, avatar) {
+  document.getElementById('studentJoinName').value = name;
+  document.getElementById('studentJoinClass').value = className;
+  if (avatar) selectAvatar(avatar);
+  SoundEngine.playClick();
+}
+
+function renderTeacherRosterManager() {
+  const wrap = document.getElementById('teacherRosterManagerWrap');
+  if (!wrap) return;
+
+  wrap.innerHTML = `
+    <div style="margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;">
+      <span style="font-weight:800;color:var(--text-primary);">Tổng số học sinh quản lý: <strong>${AppState.studentRoster.length}</strong></span>
+      <button class="btn btn-primary btn-sm" onclick="showAddStudentModal()">+ Thêm Học Sinh Mới</button>
+    </div>
+
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Mã HS</th>
+            <th>Avatar</th>
+            <th>Họ và Tên</th>
+            <th>Lớp Học</th>
+            <th>Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${AppState.studentRoster.map((s, idx) => `
+            <tr>
+              <td><span class="code-badge" style="font-size:0.8rem;padding:2px 6px;">${s.id || 'HS' + (idx + 1)}</span></td>
+              <td style="font-size:1.5rem;">${s.avatar || '👤'}</td>
+              <td><strong style="color:var(--text-primary);font-size:1rem;">${escapeHtml(s.name)}</strong></td>
+              <td><span class="badge-status badge-pass">${escapeHtml(s.className)}</span></td>
+              <td>
+                <button class="btn btn-danger btn-sm" onclick="deleteRosterStudent(${idx})">🗑️ Xóa</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function showAddStudentModal() {
+  const name = prompt('Nhập Họ và Tên học sinh:');
+  if (!name || !name.trim()) return;
+  const className = prompt('Nhập Lớp học của học sinh (VD: 8A1, 9B2):', '8A1');
+  if (!className || !className.trim()) return;
+
+  const avatars = ['🦊', '🦉', '🦁', '🐼', '🚀', '⚡', '🌟'];
+  const randomAvatar = avatars[Math.floor(Math.random() * avatars.length)];
+
+  AppState.studentRoster.push({
+    id: 'STU' + String(AppState.studentRoster.length + 1).padStart(2, '0'),
+    name: name.trim(),
+    className: className.trim().toUpperCase(),
+    avatar: randomAvatar
+  });
+
+  StorageEngine.saveStudentRoster(AppState.studentRoster);
+  renderTeacherRosterManager();
+  renderStudentQuickChooser();
+  renderAssignTargetsSelector();
+  showToast(`✅ Đã thêm học sinh: ${name.trim()} (${className.trim()})`, 'success');
+  SoundEngine.playCorrect();
+}
+
+async function deleteRosterStudent(idx) {
+  const stu = AppState.studentRoster[idx];
+  if (confirm(`Bạn có chắc muốn xóa học sinh [${stu.name}] khỏi danh bạ?`)) {
+    AppState.studentRoster.splice(idx, 1);
+    await StorageEngine.saveStudentRoster(AppState.studentRoster);
+    renderTeacherRosterManager();
+    renderStudentQuickChooser();
+    renderAssignTargetsSelector();
+    showToast('🗑️ Đã xóa học sinh khỏi danh bạ.', 'success');
+    SoundEngine.playClick();
+  }
+}
+
+/* Render Targeted Assignment Options in Step 3 */
+function renderAssignTargetsSelector() {
+  const typeSelect = document.getElementById('assignTypeSelect');
+  if (!typeSelect) return;
+
+  const selectedType = typeSelect.value;
+  const classesWrap = document.getElementById('assignClassesBox');
+  const studentsWrap = document.getElementById('assignStudentsBox');
+
+  if (selectedType === 'all') {
+    classesWrap.classList.add('hidden');
+    studentsWrap.classList.add('hidden');
+  } else if (selectedType === 'classes') {
+    classesWrap.classList.remove('hidden');
+    studentsWrap.classList.add('hidden');
+    
+    // Extract unique classes from roster
+    const uniqueClasses = [...new Set(AppState.studentRoster.map(s => s.className))];
+    const container = document.getElementById('assignClassCheckboxes');
+    if (container) {
+      container.innerHTML = uniqueClasses.map(c => `
+        <label style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.4rem 0.8rem;background:var(--bg-card);border:2px solid var(--border-color);border-radius:var(--radius-md);cursor:pointer;">
+          <input type="checkbox" name="assign_class_cb" value="${escapeHtml(c)}" checked style="width:18px;height:18px;">
+          <strong>Lớp ${escapeHtml(c)}</strong>
+        </label>
+      `).join('');
+    }
+  } else {
+    // Specific Students
+    classesWrap.classList.add('hidden');
+    studentsWrap.classList.remove('hidden');
+
+    const container = document.getElementById('assignStudentCheckboxes');
+    if (container) {
+      container.innerHTML = AppState.studentRoster.map(s => `
+        <label style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.4rem 0.8rem;background:var(--bg-card);border:2px solid var(--border-color);border-radius:var(--radius-md);cursor:pointer;">
+          <input type="checkbox" name="assign_student_cb" value="${escapeHtml(s.name)} (${escapeHtml(s.className)})" checked style="width:18px;height:18px;">
+          <span>${s.avatar} <strong>${escapeHtml(s.name)}</strong> (${escapeHtml(s.className)})</span>
+        </label>
+      `).join('');
+    }
+  }
 }
 
 /* ================= TEACHER: PDF & QUICK ANSWER KEY GENERATION ================= */
@@ -344,7 +499,7 @@ function removeOneTeacherKeyQuestion() {
   SoundEngine.playClick();
 }
 
-/* Publish Quiz */
+/* Publish Quiz with Targeted Assignments */
 async function publishTeacherQuiz() {
   if (!AppState.teacherAnswerKeys.length) {
     showToast('⚠️ Vui lòng thiết lập ít nhất 1 câu hỏi trong bảng đáp án.', 'warn');
@@ -357,6 +512,26 @@ async function publishTeacherQuiz() {
   const showLeaderboard = document.getElementById('teacherShowLeaderboardToggle').checked;
   const antiCheat = document.getElementById('teacherAntiCheatToggle').checked;
 
+  const assignType = document.getElementById('assignTypeSelect').value;
+  let assignedClasses = [];
+  let assignedStudents = [];
+
+  if (assignType === 'classes') {
+    const checked = document.querySelectorAll('input[name="assign_class_cb"]:checked');
+    assignedClasses = Array.from(checked).map(c => c.value);
+    if (!assignedClasses.length) {
+      showToast('⚠️ Vui lòng chọn ít nhất 1 lớp được giao đề.', 'warn');
+      return;
+    }
+  } else if (assignType === 'students') {
+    const checked = document.querySelectorAll('input[name="assign_student_cb"]:checked');
+    assignedStudents = Array.from(checked).map(s => s.value);
+    if (!assignedStudents.length) {
+      showToast('⚠️ Vui lòng chọn ít nhất 1 học sinh được giao đề.', 'warn');
+      return;
+    }
+  }
+
   const quiz = {
     id,
     title,
@@ -365,6 +540,9 @@ async function publishTeacherQuiz() {
     examMode: 'split_pdf',
     pdfFileName: AppState.teacherFileName || 'De_Thi_Toan.pdf',
     pdfDataUrl: AppState.teacherPdfData || null,
+    assignType,
+    assignedClasses,
+    assignedStudents,
     showLeaderboard,
     antiCheat,
     createdAt: new Date().toISOString(),
@@ -382,11 +560,15 @@ async function publishTeacherQuiz() {
   renderSampleQuizzes();
   renderTeacherQuizManager();
 
+  const targetDesc = assignType === 'all' 
+    ? '🌍 Công khai toàn bộ' 
+    : (assignType === 'classes' ? `🏫 Giao cho lớp: ${assignedClasses.join(', ')}` : `👤 Giao đích danh: ${assignedStudents.length} học sinh`);
+
   const resDiv = document.getElementById('publishSuccessResult');
   resDiv.innerHTML = `
     <div class="card" style="background:var(--primary-light);border-color:var(--primary);margin-top:1rem;">
-      <h3 style="color:var(--primary-shadow);margin-bottom:0.5rem;">🎉 Đã Phát Hành Đề Thi Thành Công!</h3>
-      <p style="color:var(--primary-shadow);font-size:1rem;font-weight:700;">Gửi mã đề này cho học sinh vào làm bài:</p>
+      <h3 style="color:var(--primary-shadow);margin-bottom:0.4rem;">🎉 Đã Phát Hành Đề Thi Thành Công!</h3>
+      <p style="color:var(--primary-shadow);font-size:0.95rem;font-weight:700;">Phạm vi giao đề: <strong>${targetDesc}</strong></p>
       <div style="margin:1rem 0;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
         <span class="code-badge" style="font-size:1.8rem;padding:0.6rem 1.4rem;">${id}</span>
         <button class="btn btn-primary" onclick="copyToClipboard('${id}')">📋 Sao Chép Mã</button>
@@ -404,7 +586,7 @@ function generateQuizCode() {
   return s;
 }
 
-/* ================= ADMIN / TEACHER QUIZ MANAGER (XÓA & QUẢN LÝ ĐỀ) ================= */
+/* ================= ADMIN / TEACHER QUIZ MANAGER ================= */
 async function renderTeacherQuizManager() {
   const wrap = document.getElementById('teacherQuizManagerWrap');
   if (!wrap) return;
@@ -433,29 +615,38 @@ async function renderTeacherQuizManager() {
           <tr>
             <th>Mã Đề</th>
             <th>Tên Đề Thi</th>
+            <th>Đối Tượng Giao</th>
             <th>Số Câu</th>
             <th>Thời Gian</th>
-            <th>Ngày Tạo</th>
             <th>Thao Tác</th>
           </tr>
         </thead>
         <tbody>
-          ${quizzes.map(q => `
-            <tr>
-              <td><span class="code-badge" style="font-size:0.85rem;padding:2px 8px;">${q.id}</span></td>
-              <td><strong style="color:var(--text-primary);font-size:1rem;">${escapeHtml(q.title)}</strong></td>
-              <td>${q.totalQuestions || (q.answerKeys ? q.answerKeys.length : 12)} câu</td>
-              <td>${q.timeLimit} phút</td>
-              <td>${q.createdAt ? new Date(q.createdAt).toLocaleDateString('vi-VN') : 'Đề mẫu'}</td>
-              <td>
-                <div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;">
-                  <button class="btn btn-secondary btn-sm" onclick="loadSampleToStudent('${q.id}')" title="Vào làm thử">🚀 Thi Thử</button>
-                  <button class="btn btn-sky btn-sm" onclick="quickViewResults('${q.id}')" title="Xem bảng điểm của đề này">📊 Bảng Điểm</button>
-                  <button class="btn btn-danger btn-sm" onclick="confirmDeleteQuiz('${q.id}', '${escapeHtml(q.title)}')" title="Xóa hoàn toàn đề này">🗑️ Xóa</button>
-                </div>
-              </td>
-            </tr>
-          `).join('')}
+          ${quizzes.map(q => {
+            let targetLabel = '<span class="badge-status badge-pass">Công khai</span>';
+            if (q.assignType === 'classes') {
+              targetLabel = `<span class="badge-status" style="background:var(--sky-light);color:var(--sky-shadow);">Lớp: ${(q.assignedClasses||[]).join(', ')}</span>`;
+            } else if (q.assignType === 'students') {
+              targetLabel = `<span class="badge-status" style="background:var(--amber-light);color:var(--amber-shadow);">Đích danh ${(q.assignedStudents||[]).length} HS</span>`;
+            }
+
+            return `
+              <tr>
+                <td><span class="code-badge" style="font-size:0.85rem;padding:2px 8px;">${q.id}</span></td>
+                <td><strong style="color:var(--text-primary);font-size:1rem;">${escapeHtml(q.title)}</strong></td>
+                <td>${targetLabel}</td>
+                <td>${q.totalQuestions || (q.answerKeys ? q.answerKeys.length : 12)} câu</td>
+                <td>${q.timeLimit} phút</td>
+                <td>
+                  <div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;">
+                    <button class="btn btn-secondary btn-sm" onclick="loadSampleToStudent('${q.id}')" title="Vào làm thử">🚀 Thi Thử</button>
+                    <button class="btn btn-sky btn-sm" onclick="quickViewResults('${q.id}')" title="Xem bảng điểm của đề này">📊 Bảng Điểm</button>
+                    <button class="btn btn-danger btn-sm" onclick="confirmDeleteQuiz('${q.id}', '${escapeHtml(q.title)}')" title="Xóa hoàn toàn đề này">🗑️ Xóa</button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('')}
         </tbody>
       </table>
     </div>
@@ -486,7 +677,7 @@ async function resetSampleQuiz() {
   SoundEngine.playCorrect();
 }
 
-/* ================= STUDENT: SPLIT-SCREEN EXAM ARENA ================= */
+/* ================= STUDENT: SPLIT-SCREEN EXAM ARENA WITH PERMISSION VERIFICATION ================= */
 async function joinStudentQuiz(customCode) {
   const code = (customCode || document.getElementById('studentJoinCode').value).trim().toUpperCase();
   const className = document.getElementById('studentJoinClass').value.trim();
@@ -498,12 +689,38 @@ async function joinStudentQuiz(customCode) {
     return;
   }
 
-  statusEl.innerHTML = '<span style="color:var(--indigo);">⏳ Đang nạp đề thi & file PDF...</span>';
+  statusEl.innerHTML = '<span style="color:var(--indigo);">⏳ Đang kiểm tra quyền làm bài & tải đề...</span>';
   const quiz = await StorageEngine.getQuiz(code);
 
   if (!quiz) {
     statusEl.innerHTML = '<span style="color:var(--rose);">❌ Không tìm thấy đề thi với mã này. Hãy kiểm tra lại!</span>';
     return;
+  }
+
+  // Permission & Targeted Assignment Verification
+  if (quiz.assignType === 'classes' && Array.isArray(quiz.assignedClasses)) {
+    const isClassAllowed = quiz.assignedClasses.some(c => c.toLowerCase() === className.toLowerCase());
+    if (!isClassAllowed) {
+      statusEl.innerHTML = `
+        <div style="color:var(--rose);background:var(--rose-light);padding:10px 14px;border-radius:12px;border:2px solid var(--rose);margin-top:8px;">
+          ⛔ <strong>TRUY CẬP BỊ TỪ CHỐI:</strong> Đề thi này chỉ giao riêng cho học sinh thuộc lớp <strong>${quiz.assignedClasses.join(', ')}</strong>. Lớp của bạn (${className}) không thuộc phạm vi làm bài!
+        </div>
+      `;
+      SoundEngine.playWarning();
+      return;
+    }
+  } else if (quiz.assignType === 'students' && Array.isArray(quiz.assignedStudents)) {
+    const studentTag = `${name} (${className})`.toLowerCase();
+    const isStudentAllowed = quiz.assignedStudents.some(s => s.toLowerCase() === studentTag || s.toLowerCase().includes(name.toLowerCase()));
+    if (!isStudentAllowed) {
+      statusEl.innerHTML = `
+        <div style="color:var(--rose);background:var(--rose-light);padding:10px 14px;border-radius:12px;border:2px solid var(--rose);margin-top:8px;">
+          ⛔ <strong>TRUY CẬP BỊ TỪ CHỐI:</strong> Đề thi này được giáo viên giao đích danh cho học sinh khác. Bạn không có quyền làm đề này!
+        </div>
+      `;
+      SoundEngine.playWarning();
+      return;
+    }
   }
 
   const alreadySubmitted = await StorageEngine.hasSubmitted(code, className, name);
@@ -1057,20 +1274,32 @@ async function renderSampleQuizzes() {
     return;
   }
 
-  wrap.innerHTML = quizzes.map(q => `
-    <div class="card" style="padding:1.15rem;margin-bottom:0.85rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
-      <div>
-        <div style="font-weight:800;font-size:1.1rem;color:var(--text-primary);">${escapeHtml(q.title)}</div>
-        <div style="font-size:0.85rem;color:var(--text-secondary);margin-top:4px;font-weight:600;">
-          Mã Đề: <span class="code-badge" style="font-size:0.9rem;padding:3px 8px;">${q.id}</span> · ${q.totalQuestions || (q.answerKeys ? q.answerKeys.length : 12)} câu · ${q.timeLimit} phút
+  wrap.innerHTML = quizzes.map(q => {
+    let targetBadge = '<span class="badge-status badge-pass" style="font-size:0.75rem;">🌍 Công khai</span>';
+    if (q.assignType === 'classes') {
+      targetBadge = `<span class="badge-status" style="font-size:0.75rem;background:var(--sky-light);color:var(--sky-shadow);">🏫 Lớp ${(q.assignedClasses||[]).join(', ')}</span>`;
+    } else if (q.assignType === 'students') {
+      targetBadge = `<span class="badge-status" style="font-size:0.75rem;background:var(--amber-light);color:var(--amber-shadow);">👤 Đích danh ${(q.assignedStudents||[]).length} HS</span>`;
+    }
+
+    return `
+      <div class="card" style="padding:1.15rem;margin-bottom:0.85rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+        <div>
+          <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+            <div style="font-weight:800;font-size:1.1rem;color:var(--text-primary);">${escapeHtml(q.title)}</div>
+            ${targetBadge}
+          </div>
+          <div style="font-size:0.85rem;color:var(--text-secondary);margin-top:4px;font-weight:600;">
+            Mã Đề: <span class="code-badge" style="font-size:0.9rem;padding:3px 8px;">${q.id}</span> · ${q.totalQuestions || (q.answerKeys ? q.answerKeys.length : 12)} câu · ${q.timeLimit} phút
+          </div>
+        </div>
+        <div style="display:flex;gap:0.5rem;align-items:center;">
+          <button class="btn btn-success" onclick="loadSampleToStudent('${q.id}')">Vào Thi Ngay 🚀</button>
+          <button class="btn btn-danger btn-sm" onclick="confirmDeleteQuiz('${q.id}', '${escapeHtml(q.title)}')" title="Xóa đề này">🗑️</button>
         </div>
       </div>
-      <div style="display:flex;gap:0.5rem;align-items:center;">
-        <button class="btn btn-success" onclick="loadSampleToStudent('${q.id}')">Vào Thi Thử Ngay 🚀</button>
-        <button class="btn btn-danger btn-sm" onclick="confirmDeleteQuiz('${q.id}', '${escapeHtml(q.title)}')" title="Xóa đề này">🗑️</button>
-      </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 function loadSampleToStudent(quizId) {
@@ -1080,7 +1309,7 @@ function loadSampleToStudent(quizId) {
     document.getElementById('studentJoinClass').value = '8A1';
   }
   if (!document.getElementById('studentJoinName').value) {
-    document.getElementById('studentJoinName').value = 'Học Sinh Trải Nghiệm';
+    document.getElementById('studentJoinName').value = 'Nguyễn Văn An';
   }
 }
 
