@@ -1,5 +1,5 @@
 /**
- * KhiemEdu Main Application Controller - Direct Student Assignment Flow (No Exam Code Required)
+ * KhiemEdu Main Application Controller with Batch Exam Publishing Engine
  */
 
 const AppState = {
@@ -19,6 +19,7 @@ const AppState = {
   teacherPdfData: null,
   teacherFileName: '',
   teacherAnswerKeys: [],
+  batchExamsQueue: [], // Array of { id, title, timeLimit, fileName, fileData, answerKeys, assignType, assignedClasses, assignedStudents }
   leaderboardTimer: null,
   studentRoster: []
 };
@@ -414,7 +415,218 @@ function renderAssignTargetsSelector() {
   }
 }
 
-/* ================= TEACHER: PDF & QUICK ANSWER KEY GENERATION ================= */
+/* ================= BATCH EXAM PUBLISHING ENGINE (PHÁT HÀNH NHIỀU ĐỀ HÀNG LOẠT) ================= */
+function handleBatchFilesSelect() {
+  const fileInput = document.getElementById('batchExamFilesInput');
+  if (!fileInput.files || !fileInput.files.length) return;
+
+  const files = Array.from(fileInput.files);
+  AppState.batchExamsQueue = [];
+
+  const defaultTimeLimit = parseInt(document.getElementById('batchCommonTimeLimitInput')?.value || '45', 10);
+  const defaultNumQuestions = parseInt(document.getElementById('batchCommonQuestionCountSelect')?.value || '12', 10);
+  const defaultAssignType = document.getElementById('batchCommonAssignTypeSelect')?.value || 'all';
+
+  let loadedCount = 0;
+
+  files.forEach((file, idx) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const fileData = e.target.result;
+      const cleanTitle = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
+
+      // Generate default answer keys for this exam
+      const keys = [];
+      const defaultScore = Math.round((10 / defaultNumQuestions) * 100) / 100;
+      for (let q = 1; q <= defaultNumQuestions; q++) {
+        keys.push({ num: q, type: 'mcq', correct: 'A', score: defaultScore });
+      }
+
+      AppState.batchExamsQueue.push({
+        id: generateQuizCode(),
+        title: cleanTitle,
+        timeLimit: defaultTimeLimit,
+        totalQuestions: defaultNumQuestions,
+        fileName: file.name,
+        fileData: fileData,
+        answerKeys: keys,
+        rawAnswerString: '1A 2B 3C 4D 5A 6B 7C 8D 9A 10B 11:12 12:0.5',
+        assignType: defaultAssignType
+      });
+
+      loadedCount++;
+      if (loadedCount === files.length) {
+        renderBatchQueueTable();
+        showToast(`📁 Đã nạp thành công ${files.length} đề thi vào hàng chờ phát hành!`, 'success');
+        SoundEngine.playCorrect();
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderBatchQueueTable() {
+  const wrap = document.getElementById('batchQueueTableWrap');
+  const countBadge = document.getElementById('batchQueueCountBadge');
+  if (!wrap) return;
+
+  if (countBadge) countBadge.textContent = `${AppState.batchExamsQueue.length} đề`;
+
+  if (!AppState.batchExamsQueue.length) {
+    wrap.innerHTML = `
+      <div style="text-align:center;padding:2rem;color:var(--text-muted);border:2px dashed var(--border-color);border-radius:var(--radius-lg);">
+        <div style="font-size:2.5rem;margin-bottom:0.4rem;">📂</div>
+        <p style="font-weight:700;">Chưa có file đề nào trong hàng chờ. Hãy chọn nhiều file PDF / Ảnh ở trên!</p>
+      </div>
+    `;
+    return;
+  }
+
+  wrap.innerHTML = `
+    <div class="table-responsive" style="margin-top:1rem;">
+      <table>
+        <thead>
+          <tr>
+            <th>STT</th>
+            <th>Tên Đề Thi</th>
+            <th>File Gốc</th>
+            <th>Thời Gian</th>
+            <th>Chuỗi Đáp Án Nhanh (VD: 1A 2B 3C...)</th>
+            <th>Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${AppState.batchExamsQueue.map((item, idx) => `
+            <tr>
+              <td><strong>#${idx + 1}</strong></td>
+              <td>
+                <input type="text" value="${escapeHtml(item.title)}" style="width:200px;font-size:0.9rem;font-weight:700;" oninput="updateBatchExamTitle(${idx}, this.value)">
+              </td>
+              <td><span class="badge-status badge-pass" style="font-size:0.75rem;">📄 ${escapeHtml(item.fileName)}</span></td>
+              <td>
+                <input type="number" value="${item.timeLimit}" min="1" max="180" style="width:70px;text-align:center;font-size:0.9rem;" oninput="updateBatchExamTimeLimit(${idx}, this.value)"> p
+              </td>
+              <td>
+                <div style="display:flex;gap:0.4rem;align-items:center;">
+                  <input type="text" placeholder="1A 2B 3C..." value="${escapeHtml(item.rawAnswerString || '')}" style="width:230px;font-size:0.85rem;" oninput="updateBatchExamAnswerString(${idx}, this.value)">
+                  <span class="code-badge" style="font-size:0.75rem;padding:2px 6px;">${item.answerKeys.length} câu</span>
+                </div>
+              </td>
+              <td>
+                <button class="btn btn-danger btn-sm" onclick="removeBatchExamItem(${idx})">🗑️</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:1.25rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+      <span style="font-weight:800;color:var(--indigo);">Tổng cộng: <strong>${AppState.batchExamsQueue.length} đề thi</strong> sẵn sàng phát hành.</span>
+      <button class="btn btn-success btn-lg" onclick="publishAllBatchExams()">🚀 PHÁT HÀNH TẤT CẢ ${AppState.batchExamsQueue.length} ĐỀ THI HÀNG LOẠT</button>
+    </div>
+  `;
+}
+
+function updateBatchExamTitle(idx, val) {
+  if (AppState.batchExamsQueue[idx]) AppState.batchExamsQueue[idx].title = val.trim();
+}
+
+function updateBatchExamTimeLimit(idx, val) {
+  if (AppState.batchExamsQueue[idx]) AppState.batchExamsQueue[idx].timeLimit = parseInt(val, 10) || 45;
+}
+
+function updateBatchExamAnswerString(idx, val) {
+  const item = AppState.batchExamsQueue[idx];
+  if (!item) return;
+  item.rawAnswerString = val;
+
+  const raw = val.trim();
+  const items = [];
+  const regexWithNum = /(\d+)[\s.:-]+([A-D]|Đúng|Sai|[^\s,]+)/gi;
+  let match;
+  let hasNumberedMatches = false;
+
+  while ((match = regexWithNum.exec(raw)) !== null) {
+    hasNumberedMatches = true;
+    const num = parseInt(match[1], 10);
+    const ansVal = match[2].trim();
+    let type = 'mcq';
+    if (ansVal.toUpperCase() === 'ĐÚNG' || ansVal.toUpperCase() === 'SAI') type = 'truefalse';
+    else if (!/^[A-D]$/i.test(ansVal)) type = 'essay';
+
+    items.push({ num, type, correct: ansVal, score: 0.5 });
+  }
+
+  if (!hasNumberedMatches) {
+    const letters = raw.toUpperCase().replace(/[^A-D]/g, '').split('');
+    if (letters.length > 0) {
+      letters.forEach((l, qIdx) => {
+        items.push({ num: qIdx + 1, type: 'mcq', correct: l, score: 0.5 });
+      });
+    }
+  }
+
+  if (items.length > 0) {
+    items.sort((a, b) => a.num - b.num);
+    const perScore = Math.round((10 / items.length) * 100) / 100;
+    items.forEach(it => it.score = perScore);
+    item.answerKeys = items;
+    item.totalQuestions = items.length;
+  }
+}
+
+function removeBatchExamItem(idx) {
+  AppState.batchExamsQueue.splice(idx, 1);
+  renderBatchQueueTable();
+  SoundEngine.playClick();
+}
+
+/* Save all batch exams in storage */
+async function publishAllBatchExams() {
+  if (!AppState.batchExamsQueue.length) {
+    showToast('⚠️ Hàng chờ đang trống. Hãy chọn file đề trước!', 'warn');
+    return;
+  }
+
+  const commonAssignType = document.getElementById('batchCommonAssignTypeSelect')?.value || 'all';
+  const count = AppState.batchExamsQueue.length;
+
+  for (const item of AppState.batchExamsQueue) {
+    const quiz = {
+      id: item.id || generateQuizCode(),
+      title: item.title || 'Đề Kiểm Tra Toán',
+      timeLimit: item.timeLimit || 45,
+      totalQuestions: item.answerKeys.length,
+      examMode: 'split_pdf',
+      pdfFileName: item.fileName,
+      pdfDataUrl: item.fileData,
+      assignType: commonAssignType,
+      assignedClasses: ['10', '8', '7', '12'],
+      assignedStudents: [],
+      showLeaderboard: true,
+      antiCheat: true,
+      createdAt: new Date().toISOString(),
+      answerKeys: item.answerKeys
+    };
+
+    await StorageEngine.saveQuiz(quiz);
+    if (item.fileData) {
+      await StorageEngine.savePdfBlob(quiz.id, item.fileData);
+    }
+  }
+
+  AppState.batchExamsQueue = [];
+  renderBatchQueueTable();
+  renderTeacherQuizManager();
+  updatePersonalizedExamFeed();
+
+  SoundEngine.playFanfare();
+  GamificationEngine.fireConfetti();
+  showToast(`🎉 ĐÃ PHÁT HÀNH THÀNH CÔNG ${count} ĐỀ THI HÀNG LOẠT!`, 'success');
+}
+
+/* ================= TEACHER: SINGLE PDF & QUICK ANSWER KEY GENERATION ================= */
 function handleTeacherPdfSelect() {
   const fileInput = document.getElementById('teacherPdfFileInput');
   if (!fileInput.files[0]) return;
@@ -593,7 +805,7 @@ function removeOneTeacherKeyQuestion() {
   SoundEngine.playClick();
 }
 
-/* Publish Quiz with Targeted Assignments */
+/* Publish Single Quiz */
 async function publishTeacherQuiz() {
   if (!AppState.teacherAnswerKeys.length) {
     showToast('⚠️ Vui lòng thiết lập ít nhất 1 câu hỏi trong bảng đáp án.', 'warn');
@@ -699,7 +911,10 @@ async function renderTeacherQuizManager() {
   wrap.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
       <span style="font-weight:800;color:var(--text-secondary);">Tổng số đề thi: <strong>${quizzes.length}</strong></span>
-      <button class="btn btn-secondary btn-sm" onclick="resetSampleQuiz()">🔄 Nạp lại đề mẫu chuẩn</button>
+      <div style="display:flex;gap:0.5rem;">
+        <button class="btn btn-primary btn-sm" onclick="bulkSetAllQuizzesPublic()">🌍 Công Khai Tất Cả Đề</button>
+        <button class="btn btn-secondary btn-sm" onclick="resetSampleQuiz()">🔄 Nạp đề mẫu</button>
+      </div>
     </div>
 
     <div class="table-responsive">
@@ -742,6 +957,19 @@ async function renderTeacherQuizManager() {
       </table>
     </div>
   `;
+}
+
+async function bulkSetAllQuizzesPublic() {
+  const quizzes = await StorageEngine.getAllQuizzes();
+  if (!quizzes.length) return;
+  for (const q of quizzes) {
+    q.assignType = 'all';
+    await StorageEngine.saveQuiz(q);
+  }
+  showToast('🌍 Đã chuyển toàn bộ đề thi sang trạng thái Công Khai!', 'success');
+  renderTeacherQuizManager();
+  updatePersonalizedExamFeed();
+  SoundEngine.playCorrect();
 }
 
 function quickViewResults(quizId) {
