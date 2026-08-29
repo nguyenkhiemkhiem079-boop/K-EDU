@@ -3,22 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KhiemEdu — Đấu Trường Thi Trực Tuyến Chuẩn Azota</title>
+  <title>KhiemEdu — Đấu Trường Học Tập & Thi Trực Tuyến</title>
   
-  <!-- Google Fonts -->
+  <!-- Google Fonts: Plus Jakarta Sans & Outfit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   
-  <!-- Canvas Confetti for celebrations -->
+  <!-- Canvas Confetti -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
   
-  <!-- Main Styles -->
+  <!-- Main Stylesheet -->
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-  <!-- ================= NAVBAR ================= -->
+  <!-- ================= TOP NAVBAR ================= -->
   <header class="navbar">
     <div class="nav-container">
       <a href="#" class="brand" onclick="switchTab('student'); return false;">
@@ -42,8 +42,8 @@
       </nav>
 
       <div class="nav-actions">
-        <!-- Gamify Bar -->
-        <div class="user-gamify-bar" onclick="switchTab('gamification')" style="cursor:pointer;" title="Xem hồ sơ & thành tích">
+        <!-- Gamification Status Pill -->
+        <div class="user-gamify-bar" onclick="switchTab('gamification')" title="Xem thành tích & chuỗi ngày học">
           <div class="streak-pill">
             <span class="streak-fire">🔥</span>
             <span id="topStreakVal">1</span>
@@ -55,7 +55,7 @@
           <span class="level-badge" id="topLevelVal">Lv.1 Tân Binh</span>
         </div>
 
-        <!-- Sound & Theme Toggle -->
+        <!-- Controls -->
         <button type="button" class="icon-btn" id="soundToggleBtn" onclick="toggleSound()" title="Bật/Tắt âm thanh">🔊</button>
         <button type="button" class="icon-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Đổi giao diện Sáng/Tối">🌙</button>
       </div>
@@ -68,45 +68,46 @@
     <!-- ================= STUDENT VIEW ================= -->
     <section id="tabStudent" class="view-section active">
       
-      <!-- Student Join Box -->
+      <!-- Student Join Arena -->
       <div id="studentJoinSection">
-        <div class="card" style="max-width:680px;margin:0 auto 1.5rem;">
-          <div class="card-header">
-            <h2><span>🚀</span> Vào Phòng Thi Trực Tuyến</h2>
+        <div class="card" style="max-width:720px;margin:0 auto 1.5rem;background:linear-gradient(180deg, var(--bg-card) 0%, var(--bg-primary) 100%);">
+          <div style="text-align:center;margin-bottom:1.5rem;">
+            <div style="font-size:3rem;margin-bottom:0.25rem;">🦊 ⚡ 📚</div>
+            <h2 style="font-size:1.85rem;color:var(--text-primary);margin-bottom:0.4rem;">Đấu Trường Luyện Thi Toán</h2>
+            <p style="color:var(--text-secondary);font-size:1rem;font-weight:600;">Xem đề PDF gốc siêu nét bên trái và bấm chọn đáp án 3D bên phải.</p>
           </div>
-          <p class="card-subtitle">Học sinh xem đề PDF gốc sắc nét bên trái và chọn đáp án trên phiếu trả lời bên phải.</p>
 
           <form onsubmit="joinStudentQuiz(); return false;">
             <div class="form-row">
               <div class="form-group">
-                <label>Mã Đề Thi (6 ký tự)</label>
-                <input type="text" id="studentJoinCode" placeholder="VD: AZOTA01" style="text-transform:uppercase;font-weight:700;letter-spacing:1.5px;" required>
+                <label>🔑 Mã Đề Thi (6 ký tự)</label>
+                <input type="text" id="studentJoinCode" placeholder="VD: AZOTA01" style="text-transform:uppercase;font-size:1.2rem;letter-spacing:2px;color:var(--indigo);" required>
               </div>
               <div class="form-group">
-                <label>Lớp Học</label>
+                <label>🏫 Lớp Học</label>
                 <input type="text" id="studentJoinClass" placeholder="VD: 8A1" required>
               </div>
             </div>
 
             <div class="form-group">
-              <label>Họ và Tên Học Sinh</label>
+              <label>👤 Họ và Tên Học Sinh</label>
               <input type="text" id="studentJoinName" placeholder="Nguyễn Văn A" required>
             </div>
 
             <div class="form-group">
-              <label>Chọn Avatar Chiến Binh</label>
-              <div id="avatarSelector" style="display:flex;gap:0.5rem;flex-wrap:wrap;"></div>
+              <label>✨ Chọn Avatar Chiến Binh</label>
+              <div id="avatarSelector" style="display:flex;gap:0.6rem;flex-wrap:wrap;margin-top:0.3rem;"></div>
             </div>
 
-            <button type="submit" class="btn btn-primary btn-lg" style="width:100%;margin-top:0.5rem;">
-              Bắt Đầu Làm Bài Ngay ⚡
+            <button type="submit" class="btn btn-success btn-lg" style="width:100%;margin-top:0.75rem;">
+              Vào Phòng Thi Ngay ⚡
             </button>
           </form>
-          <div id="joinQuizStatus" style="margin-top:0.75rem;font-size:0.9rem;text-align:center;"></div>
+          <div id="joinQuizStatus" style="margin-top:1rem;font-size:0.95rem;text-align:center;font-weight:700;"></div>
         </div>
 
-        <!-- Sample Quizzes Quick Access -->
-        <div class="card" style="max-width:680px;margin:0 auto;">
+        <!-- Sample Quizzes List -->
+        <div class="card" style="max-width:720px;margin:0 auto;">
           <div class="card-header">
             <h2><span>📚</span> Thư Viện Đề Thi Sẵn Có</h2>
           </div>
@@ -114,51 +115,57 @@
         </div>
       </div>
 
-      <!-- Split-Screen Exam Layout (Azota Model) -->
+      <!-- Split-Screen Exam Layout (Azota + Duolingo Redesign) -->
       <div id="studentExamSection" class="hidden">
         
-        <!-- Anti Cheat Warning -->
+        <!-- Cheat Warning Banner -->
         <div class="cheat-banner hidden" id="splitExamCheatBanner">
-          ⚠️ CẢNH BÁO: Hệ thống phát hiện bạn vừa rời khỏi màn hình làm bài!
+          ⚠️ CẢNH BÁO: Hệ thống phát hiện bạn vừa rời khỏi màn hình làm bài! Số lần vi phạm sẽ lưu vào bảng điểm.
         </div>
 
         <div class="split-exam-layout">
           
-          <!-- LEFT PANE: Original PDF / Test Sheet Viewer -->
+          <!-- LEFT PANE: Original PDF Document -->
           <div class="pdf-viewer-pane">
             <div class="pdf-toolbar">
-              <div style="font-weight:700;font-size:0.95rem;color:var(--text-primary);display:flex;align-items:center;gap:0.5rem;">
+              <div style="font-weight:800;font-size:1rem;color:var(--text-primary);display:flex;align-items:center;gap:0.5rem;">
                 <span>📄</span> <span id="splitExamExamTitle">Đề Thi Gốc</span>
               </div>
-              <div style="font-size:0.8rem;color:var(--text-muted);">
-                (Giữ nguyên 100% công thức & hình vẽ)
+              <div style="display:flex;align-items:center;gap:0.5rem;">
+                <span class="badge-status badge-pass" style="font-size:0.75rem;">Chuẩn 100% Gốc</span>
               </div>
             </div>
             <iframe id="studentPdfViewerFrame" class="pdf-render-frame" title="Đề thi gốc"></iframe>
           </div>
 
-          <!-- RIGHT PANE: OMR Bubble Answer Sheet -->
+          <!-- RIGHT PANE: OMR 3D Bubble Answer Sheet -->
           <div class="answer-sheet-pane">
             <div class="sheet-header">
-              <div>
-                <div style="font-weight:700;font-size:0.95rem;" id="splitExamStudentInfo">Học Sinh</div>
-                <div style="font-size:0.8rem;color:var(--primary);font-weight:600;" id="sheetProgressText">Đã làm: 0/12 câu</div>
+              <div style="flex:1;">
+                <div style="font-weight:800;font-size:1rem;color:var(--text-primary);" id="splitExamStudentInfo">Học Sinh</div>
+                <!-- Animated Progress Bar -->
+                <div class="exam-progress-bar-wrap">
+                  <div class="exam-progress-fill" id="examProgressFillBar"></div>
+                </div>
+                <div style="font-size:0.8rem;color:var(--primary-shadow);font-weight:800;margin-top:0.25rem;" id="sheetProgressText">
+                  Đã làm: 0/12 câu (0%)
+                </div>
               </div>
               <div class="timer-box" id="splitExamTimerBox">⏱️ 00:00</div>
             </div>
 
-            <!-- Mini Live Leaderboard Inside Exam -->
-            <div id="splitLiveLeaderboardBox" class="hidden" style="padding:0.5rem 1rem;background:var(--bg-tertiary);border-bottom:1px solid var(--border-color);">
-              <div style="font-size:0.75rem;font-weight:700;color:var(--primary);margin-bottom:0.25rem;">🏆 XẾP HẠNG ĐÃ NỘP:</div>
+            <!-- Live Leaderboard Drawer -->
+            <div id="splitLiveLeaderboardBox" class="hidden" style="padding:0.6rem 1.2rem;background:var(--bg-tertiary);border-bottom:2px solid var(--border-color);">
+              <div style="font-size:0.8rem;font-weight:800;color:var(--indigo);margin-bottom:0.3rem;">🏆 BẢNG XẾP HẠNG ĐÃ NỘP:</div>
               <div id="splitLiveLeaderboardList"></div>
             </div>
 
-            <!-- Scrollable Bubble Questions -->
+            <!-- Scrollable 3D Bubble Question Rows -->
             <div class="sheet-scroll-body" id="studentAnswerSheetBody"></div>
 
             <div class="sheet-footer">
-              <span style="font-size:0.8rem;color:var(--text-muted);">★ = Đánh dấu xem lại</span>
-              <button type="button" class="btn btn-success" onclick="submitStudentExam()">
+              <span style="font-size:0.85rem;font-weight:700;color:var(--text-muted);">★ = Đánh dấu xem lại</span>
+              <button type="button" class="btn btn-success btn-lg" onclick="submitStudentExam()">
                 Nộp Bài 🚀
               </button>
             </div>
@@ -177,8 +184,8 @@
                 <div class="score-pct" id="resultScorePct">0%</div>
               </div>
             </div>
-            <h2 style="font-size:1.75rem;color:var(--text-primary);margin-bottom:0.5rem;">Chúc Mừng Bạn Đã Hoàn Thành Bài Thi! 🎉</h2>
-            <p style="color:var(--text-secondary);font-size:0.95rem;">Điểm số đã được ghi nhận vào bảng điểm lớp học.</p>
+            <h2 style="font-size:2rem;color:var(--text-primary);margin-bottom:0.5rem;">🎉 Hoàn Thành Bài Thi Xuất Sắc!</h2>
+            <p style="color:var(--text-secondary);font-size:1.05rem;font-weight:600;">Bạn đã tích lũy thêm XP và ghi danh vào bảng vàng lớp học.</p>
           </div>
 
           <!-- New Badges Notification -->
@@ -187,11 +194,11 @@
           <!-- Stats Grid -->
           <div class="stats-grid">
             <div class="stat-item">
-              <div class="stat-val" style="color:var(--amber);" id="resultXpGained">+0 XP</div>
+              <div class="stat-val" style="color:var(--sky-shadow);" id="resultXpGained">+0 XP</div>
               <div class="stat-lbl">Kinh nghiệm</div>
             </div>
             <div class="stat-item">
-              <div class="stat-val" style="color:#f97316;" id="resultStreakCount">1 Ngày 🔥</div>
+              <div class="stat-val" style="color:#ff9600;" id="resultStreakCount">1 Ngày 🔥</div>
               <div class="stat-lbl">Chuỗi học tập</div>
             </div>
             <div class="stat-item">
@@ -213,7 +220,7 @@
         <!-- Detailed Review Card -->
         <div class="card">
           <div class="card-header">
-            <h2><span>📋</span> Chi Tiết Đáp Án Đúng & Bài Làm Của Bạn</h2>
+            <h2><span>📋</span> Chi Tiết Đáp Án & Điểm Số Từng Câu</h2>
           </div>
           <div id="examReviewContainer"></div>
         </div>
@@ -221,16 +228,16 @@
 
     </section>
 
-    <!-- ================= TEACHER VIEW (AZOTA CREATOR) ================= -->
+    <!-- ================= TEACHER VIEW ================= -->
     <section id="tabTeacher" class="view-section">
       
-      <!-- Step 1: Upload Test File -->
+      <!-- Step 1: Upload File -->
       <div class="card">
         <div class="card-header">
-          <h2><span>📄</span> Bước 1 — Tải Lên File Đề Thi (PDF hoặc File Ảnh)</h2>
+          <h2><span>📄</span> Bước 1 — Tải Lên File Đề Thi (PDF / Ảnh Gốc)</h2>
         </div>
         <p class="card-subtitle">
-          Giáo viên chỉ cần tải file đề gốc lên. Toàn bộ công thức Toán học và hình vẽ sẽ được giữ nguyên 100% độ sắc nét cho học sinh xem khi làm bài.
+          Giáo viên chỉ cần tải file đề gốc lên. Toàn bộ công thức Toán học và hình vẽ sẽ được giữ nguyên 100% độ sắc nét cho học sinh xem.
         </p>
 
         <div class="form-group">
@@ -240,7 +247,7 @@
 
         <div id="teacherPdfPreviewWrapper" class="hidden" style="margin-top:1rem;">
           <label>Bản xem trước đề thi đã tải:</label>
-          <iframe id="teacherPdfPreviewFrame" style="width:100%;height:320px;border:1px solid var(--border-color);border-radius:var(--radius-md);background:#fff;" title="Xem trước đề"></iframe>
+          <iframe id="teacherPdfPreviewFrame" style="width:100%;height:340px;border:2px solid var(--border-color);border-radius:var(--radius-md);background:#fff;" title="Xem trước đề"></iframe>
         </div>
       </div>
 
@@ -256,16 +263,16 @@
 
         <!-- Fast String Parser Bar -->
         <div class="quick-key-panel">
-          <label>Cách 1: Gõ chuỗi đáp án siêu tốc (VD: <code>1A 2B 3C 4D 5A 6B 7C 8D...</code> hoặc <code>ABCDABCD...</code>)</label>
-          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.35rem;">
-            <input type="text" id="fastAnswerStringInput" placeholder="VD: 1A 2B 3C 4D 5A 6B 7C 8D 9Đ 10S 11:15" style="flex:1;">
+          <label>Cách 1: Gõ chuỗi đáp án siêu tốc (Hỗ trợ cả trắc nghiệm A/B/C/D, Đúng/Sai và tự luận điền số):</label>
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:0.5rem;">
+            <input type="text" id="fastAnswerStringInput" placeholder="VD: 1A 2B 3C 4D 5:12 6:2.5 7:-3 8:1/2 9:Đúng 10:Sai" style="flex:1;">
             <button type="button" class="btn btn-primary" onclick="parseFastAnswerString()">⚡ Nhận Diện Chuỗi Đáp Án</button>
           </div>
         </div>
 
         <!-- Quick Count Buttons -->
-        <div style="margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
-          <span style="font-size:0.85rem;font-weight:600;color:var(--text-secondary);">Cách 2: Chọn nhanh số lượng câu:</span>
+        <div style="margin-bottom:1.25rem;display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+          <span style="font-size:0.9rem;font-weight:700;color:var(--text-secondary);">Cách 2: Chọn nhanh số lượng câu:</span>
           <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickQuestionCount(10)">10 Câu</button>
           <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickQuestionCount(15)">15 Câu</button>
           <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickQuestionCount(20)">20 Câu</button>
@@ -277,7 +284,7 @@
         <!-- Answer Keys Grid Table -->
         <div class="key-grid-table" id="teacherAnswerKeyGrid"></div>
 
-        <div style="margin-top:1rem;display:flex;gap:0.5rem;">
+        <div style="margin-top:1.25rem;display:flex;gap:0.75rem;">
           <button type="button" class="btn btn-secondary btn-sm" onclick="addOneTeacherKeyQuestion()">+ Thêm 1 câu</button>
           <button type="button" class="btn btn-danger btn-sm" onclick="removeOneTeacherKeyQuestion()">- Bớt 1 câu</button>
         </div>
@@ -301,12 +308,12 @@
         </div>
 
         <div class="form-group">
-          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
-            <input type="checkbox" id="teacherShowLeaderboardToggle" checked style="width:auto;">
+          <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;font-weight:700;">
+            <input type="checkbox" id="teacherShowLeaderboardToggle" checked style="width:auto;width:20px;height:20px;">
             <span>Hiển thị bảng xếp hạng trực tiếp cho học sinh đã nộp bài</span>
           </label>
-          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;margin-top:0.5rem;">
-            <input type="checkbox" id="teacherAntiCheatToggle" checked style="width:auto;">
+          <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;font-weight:700;margin-top:0.6rem;">
+            <input type="checkbox" id="teacherAntiCheatToggle" checked style="width:auto;width:20px;height:20px;">
             <span>Kích hoạt giám sát chống gian lận (đếm số lần rời trang & chặn copy)</span>
           </label>
         </div>
@@ -330,7 +337,7 @@
         <div class="form-row">
           <div class="form-group">
             <label>Mã Đề Thi</label>
-            <input type="text" id="lookupQuizCodeInput" placeholder="VD: AZOTA01" style="text-transform:uppercase;font-weight:700;">
+            <input type="text" id="lookupQuizCodeInput" placeholder="VD: AZOTA01" style="text-transform:uppercase;font-weight:800;letter-spacing:1.5px;color:var(--indigo);">
           </div>
           <div class="form-group">
             <label>Lọc Theo Lớp (để trống = xem tất cả các lớp)</label>
@@ -349,38 +356,38 @@
     <!-- ================= GAMIFICATION / LEADERBOARD VIEW ================= -->
     <section id="tabGamification" class="view-section">
       <div class="card">
-        <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;">
-          <div id="gamifyUserAvatar" style="font-size:3.5rem;background:var(--bg-tertiary);border:2px solid var(--border-color);width:90px;height:90px;border-radius:var(--radius-full);display:flex;align-items:center;justify-content:center;">
+        <div style="display:flex;align-items:center;gap:1.75rem;flex-wrap:wrap;">
+          <div id="gamifyUserAvatar" style="font-size:4rem;background:var(--bg-tertiary);border:3px solid var(--border-color);width:100px;height:100px;border-radius:var(--radius-full);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 0 var(--border-color);">
             🦊
           </div>
           <div style="flex:1;">
-            <div style="display:flex;align-items:center;gap:0.75rem;">
-              <h2 id="gamifyUserName" style="font-size:1.6rem;color:var(--text-primary);margin:0;">Học Sinh</h2>
-              <span class="badge-status badge-pass" id="gamifyLevelName">Cấp 1: Tân Binh</span>
+            <div style="display:flex;align-items:center;gap:0.85rem;flex-wrap:wrap;">
+              <h2 id="gamifyUserName" style="font-size:1.85rem;color:var(--text-primary);margin:0;">Học Sinh</h2>
+              <span class="level-badge" id="gamifyLevelName" style="font-size:0.85rem;padding:0.25rem 0.8rem;">Cấp 1: Tân Binh</span>
             </div>
-            <div style="margin-top:0.75rem;">
-              <div style="display:flex;justify-content:space-between;font-size:0.8rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.3rem;">
+            <div style="margin-top:1rem;">
+              <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:800;color:var(--text-secondary);margin-bottom:0.4rem;">
                 <span>TIẾN TRÌNH LÊN CẤP TIẾP THEO</span>
                 <span id="gamifyXpText">0 / 200 XP (0%)</span>
               </div>
-              <div style="width:100%;height:10px;background:var(--bg-tertiary);border-radius:var(--radius-full);overflow:hidden;border:1px solid var(--border-color);">
-                <div id="gamifyXpProgress" style="width:0%;height:100%;background:linear-gradient(90deg, var(--primary), #ec4899);border-radius:var(--radius-full);transition:width 0.4s ease;"></div>
+              <div style="width:100%;height:14px;background:var(--bg-tertiary);border-radius:var(--radius-full);overflow:hidden;border:2px solid var(--border-color);">
+                <div id="gamifyXpProgress" style="width:0%;height:100%;background:linear-gradient(90deg, var(--sky), var(--primary));border-radius:var(--radius-full);transition:width 0.4s ease;"></div>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="stats-grid" style="margin-top:1.5rem;">
+        <div class="stats-grid" style="margin-top:1.75rem;">
           <div class="stat-item">
             <div class="stat-val" id="statTotalExams">0</div>
             <div class="stat-lbl">Bài thi đã làm</div>
           </div>
           <div class="stat-item">
-            <div class="stat-val" style="color:var(--emerald);" id="statPerfectScores">0</div>
+            <div class="stat-val" style="color:var(--primary);" id="statPerfectScores">0</div>
             <div class="stat-lbl">Điểm 10 tuyệt đối</div>
           </div>
           <div class="stat-item">
-            <div class="stat-val" style="color:#f97316;" id="statCurrentStreak">1 Ngày 🔥</div>
+            <div class="stat-val" style="color:#ff9600;" id="statCurrentStreak">1 Ngày 🔥</div>
             <div class="stat-lbl">Chuỗi Streak liên tục</div>
           </div>
         </div>
