@@ -554,6 +554,42 @@ const StorageEngine = {
 
     defaultExams.forEach(exam => this.saveQuiz(exam));
     localStorage.setItem(STORAGE_PREFIX + 'sample_seeded_v3', '1');
+  },
+
+  async syncLocalToCloud() {
+    if (!window.FirebaseEngine || !window.FirebaseEngine.isActive) return;
+    try {
+      console.log('☁️ [Sync] Bắt đầu đồng bộ dữ liệu local lên Cloud...');
+      
+      // 1. Đồng bộ Quizzes
+      const quizKeys = await this.list('quiz:');
+      for (const key of quizKeys) {
+        const q = await this.get(key);
+        if (q) {
+          await window.FirebaseEngine.saveQuiz(q);
+        }
+      }
+      
+      // 2. Đồng bộ Student Roster
+      const roster = await this.get('student_roster');
+      if (roster && roster.length > 0) {
+        await window.FirebaseEngine.saveStudentRoster(roster);
+      }
+
+      // 3. Đồng bộ Results
+      const resultKeys = await this.list('result:');
+      for (const key of resultKeys) {
+        const r = await this.get(key);
+        if (r) {
+          await window.FirebaseEngine.saveResult(r);
+        }
+      }
+
+      console.log('☁️ [Sync] Đồng bộ dữ liệu local lên Cloud HOÀN TẤT!');
+    } catch (e) {
+      console.error('☁️ [Sync] Lỗi khi đồng bộ lên Cloud:', e);
+      throw e;
+    }
   }
 };
 

@@ -9,19 +9,45 @@ const FirebaseEngine = {
   db: null,
   storage: null,
 
+  defaultConfig: {
+    apiKey: "AIzaSyDOXRbpqTVn64gtGh7A5ybBLg7kHi2wtg8",
+    authDomain: "k-edu-d2051.firebaseapp.com",
+    projectId: "k-edu-d2051",
+    storageBucket: "k-edu-d2051.firebasestorage.app",
+    messagingSenderId: "1090573699843",
+    appId: "1:1090573699843:web:d3a24004641a5ddfdd7736",
+    measurementId: "G-WCYHEF2QTE"
+  },
+
   init() {
     try {
       const configStr = localStorage.getItem('khiemedu_firebase_config');
-      const isEnabled = localStorage.getItem('khiemedu_firebase_enabled') === '1';
+      const isEnabledStr = localStorage.getItem('khiemedu_firebase_enabled');
 
-      if (!configStr || !isEnabled) {
+      let config = this.defaultConfig;
+      let isEnabled = true;
+
+      if (configStr) {
+        try {
+          config = JSON.parse(configStr);
+        } catch (e) {
+          console.error("Error parsing localstorage config, using default:", e);
+        }
+      }
+
+      if (isEnabledStr !== null) {
+        isEnabled = isEnabledStr === '1';
+      } else {
+        localStorage.setItem('khiemedu_firebase_enabled', '1');
+      }
+
+      if (!isEnabled) {
         this.isActive = false;
-        console.log('☁️ Firebase is disabled or not configured. Running in Local Mode.');
+        console.log('☁️ Firebase is disabled. Running in Local Mode.');
         return false;
       }
 
-      const config = JSON.parse(configStr);
-      if (!config.apiKey || !config.projectId || !config.storageBucket) {
+      if (!config || !config.apiKey || !config.projectId || !config.storageBucket) {
         throw new Error('Cấu hình Firebase thiếu tham số bắt buộc.');
       }
 

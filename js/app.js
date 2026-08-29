@@ -3127,20 +3127,25 @@ function updateFirebaseUI() {
   const appIdInput = document.getElementById('fbAppId');
   const senderIdInput = document.getElementById('fbSenderId');
 
+  let config = window.FirebaseEngine ? window.FirebaseEngine.defaultConfig : null;
+
   // Fill in inputs from storage if exists
   const configStr = localStorage.getItem('khiemedu_firebase_config');
   if (configStr) {
     try {
-      const config = JSON.parse(configStr);
-      if (apiInput) apiInput.value = config.apiKey || '';
-      if (projectInput) projectInput.value = config.projectId || '';
-      if (bucketInput) bucketInput.value = config.storageBucket || '';
-      if (authInput) authInput.value = config.authDomain || '';
-      if (appIdInput) appIdInput.value = config.appId || '';
-      if (senderIdInput) senderIdInput.value = config.messagingSenderId || '';
+      config = JSON.parse(configStr);
     } catch (e) {
       console.error('Error parsing stored Firebase config:', e);
     }
+  }
+
+  if (config) {
+    if (apiInput) apiInput.value = config.apiKey || '';
+    if (projectInput) projectInput.value = config.projectId || '';
+    if (bucketInput) bucketInput.value = config.storageBucket || '';
+    if (authInput) authInput.value = config.authDomain || '';
+    if (appIdInput) appIdInput.value = config.appId || '';
+    if (senderIdInput) senderIdInput.value = config.messagingSenderId || '';
   }
 
   if (badge) {
@@ -3224,5 +3229,33 @@ function handleClearFirebaseConfig() {
     updateFirebaseUI();
     showToast('🗑️ Đã xóa sạch credentials và chuyển về chạy offline.', 'info');
     SoundEngine.playClick();
+  }
+}
+
+async function handleSyncLocalToFirebase() {
+  if (!window.FirebaseEngine || !window.FirebaseEngine.isActive) {
+    showToast('⚠️ Vui lòng kết nối Firebase Cloud thành công trước khi đồng bộ!', 'warn');
+    SoundEngine.playWarning();
+    return;
+  }
+  
+  if (confirm('🔄 Bạn có muốn đồng bộ toàn bộ đề thi, học sinh và bảng điểm từ máy này lên Firebase Cloud không?\n(Dữ liệu trên Cloud sẽ được cập nhật/bổ sung từ dữ liệu máy này)')) {
+    showToast('⚡ Đang đồng bộ dữ liệu lên Cloud...', 'info');
+    try {
+      await StorageEngine.syncLocalToCloud();
+      showToast('🎉 Đồng bộ dữ liệu lên Cloud thành công!', 'success');
+      SoundEngine.playFanfare();
+      
+      // Reload manager elements to sync with cloud
+      await loadStudentRoster();
+      renderTeacherQuizManager();
+      renderTeacherRosterManager();
+      renderTeacherAnalyticsDashboard();
+      updatePersonalizedExamFeed();
+    } catch (e) {
+      console.error(e);
+      showToast('❌ Lỗi khi đồng bộ dữ liệu. Chi tiết ở Console.', 'error');
+      SoundEngine.playWarning();
+    }
   }
 }
