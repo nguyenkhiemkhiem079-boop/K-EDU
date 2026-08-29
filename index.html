@@ -466,6 +466,7 @@ GIANG, 8"></textarea>
           Tự động tạo ngay bộ đề Toán học hoàn chỉnh kèm công thức LaTeX, phương trình và ma trận đáp án chuẩn chỉ trong 1 cú nhấp chuột (Lớp 6 - 12 & Luyện Thi Vào 10):
         </p>
 
+        <!-- General Configuration Row -->
         <div class="form-row" style="background:var(--bg-tertiary);padding:1rem 1.25rem;border-radius:var(--radius-lg);border:2px solid var(--border-color);margin-bottom:1rem;">
           <div class="form-group">
             <label>🏫 Khối Lớp</label>
@@ -496,7 +497,7 @@ GIANG, 8"></textarea>
           </div>
 
           <div class="form-group">
-            <label>📚 Chủ Đề Chuyên Sâu</label>
+            <label>📚 Chủ Đề Trắc Nghiệm</label>
             <select id="mathGenTopicSelect" style="font-weight:700;">
               <option value="all" selected>Tất cả chủ đề</option>
               <option value="Số học">Số học & Tập hợp</option>
@@ -510,33 +511,76 @@ GIANG, 8"></textarea>
           <div class="form-group">
             <label>📝 Số Câu Trắc Nghiệm</label>
             <select id="mathGenMcqCountSelect" style="font-weight:700;">
-              <option value="10" selected>10 Câu trắc nghiệm</option>
-              <option value="12">12 Câu trắc nghiệm</option>
+              <option value="10">10 Câu trắc nghiệm</option>
+              <option value="12" selected>12 Câu trắc nghiệm</option>
               <option value="15">15 Câu trắc nghiệm</option>
               <option value="20">20 Câu trắc nghiệm</option>
               <option value="30">30 Câu trắc nghiệm</option>
               <option value="40">40 Câu trắc nghiệm</option>
             </select>
           </div>
+        </div>
 
-          <div class="form-group">
-            <label>✍️ Số Câu Tự Luận</label>
-            <select id="mathGenEssayCountSelect" style="font-weight:700;">
-              <option value="0">0 câu (100% trắc nghiệm)</option>
-              <option value="2" selected>2 câu tự luận điền số</option>
-              <option value="3">3 câu tự luận</option>
-              <option value="4">4 câu tự luận</option>
-            </select>
+        <!-- DETAILED ESSAY MATRIX SPECIFICATION WIDGET -->
+        <div class="card" style="background:#ffffff;border:2px solid #8b5cf6;padding:1.1rem 1.25rem;margin-bottom:1.25rem;border-radius:var(--radius-lg);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem;">
+            <h4 style="margin:0;font-size:1.05rem;color:#6d28d9;display:flex;align-items:center;gap:0.4rem;">
+              <span>✍️</span> <strong>Quy Định Số Lượng & Mức Độ Chi Tiết Các Câu Tự Luận (Essay Matrix)</strong>
+            </h4>
+            <span class="badge-status" id="mathGenTotalEssaySummaryBadge" style="background:#ede9fe;color:#6d28d9;font-weight:800;">
+              Tổng: 3 câu tự luận (TH: 1 · VD: 1 · VDC: 1)
+            </span>
           </div>
 
-          <div class="form-group">
-            <label>🎯 Dạng & Mức Độ Tự Luận</label>
-            <select id="mathGenEssayLevelSelect" style="font-weight:700;">
-              <option value="all">♾️ Đa Dạng (TH + VD + VDC)</option>
-              <option value="VD" selected>🧠 Vận Dụng (VD — Giải PT, Hình học, Toán thực tế)</option>
-              <option value="VDC">🔥 Vận Dụng Cao (VDC — Cực trị, Bất đẳng thức, Tham số m)</option>
-              <option value="TH">💡 Thông Hiểu (TH — Rút gọn, Tính giá trị biểu thức)</option>
-            </select>
+          <div class="form-row" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:0.75rem;margin-bottom:0;">
+            <!-- Level 1: TH (Thông hiểu) -->
+            <div style="background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:8px;padding:0.75rem 0.85rem;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;">
+                <span style="font-weight:800;color:#0369a1;font-size:0.88rem;">💡 Thông Hiểu (TH)</span>
+                <select id="mathGenCountTHSelect" onchange="updateMathGenEssaySummary()" style="width:70px;padding:2px 6px;font-weight:800;border:1.5px solid #0284c7;border-radius:6px;">
+                  <option value="0">0 câu</option>
+                  <option value="1" selected>1 câu</option>
+                  <option value="2">2 câu</option>
+                  <option value="3">3 câu</option>
+                </select>
+              </div>
+              <div style="font-size:0.75rem;color:#0284c7;line-height:1.35;">
+                Rút gọn biểu thức, tính giá trị phân số, giải PT cơ bản.
+              </div>
+            </div>
+
+            <!-- Level 2: VD (Vận dụng) -->
+            <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:8px;padding:0.75rem 0.85rem;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;">
+                <span style="font-weight:800;color:#b45309;font-size:0.88rem;">🧠 Vận Dụng (VD)</span>
+                <select id="mathGenCountVDSelect" onchange="updateMathGenEssaySummary()" style="width:70px;padding:2px 6px;font-weight:800;border:1.5px solid #d97706;border-radius:6px;">
+                  <option value="0">0 câu</option>
+                  <option value="1" selected>1 câu</option>
+                  <option value="2">2 câu</option>
+                  <option value="3">3 câu</option>
+                  <option value="4">4 câu</option>
+                </select>
+              </div>
+              <div style="font-size:0.75rem;color:#b45309;line-height:1.35;">
+                Hệ thức Vi-ét, toán thực tế lập PT, hình học phẳng & không gian.
+              </div>
+            </div>
+
+            <!-- Level 3: VDC (Vận dụng cao) -->
+            <div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:8px;padding:0.75rem 0.85rem;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;">
+                <span style="font-weight:800;color:#b91c1c;font-size:0.88rem;">🔥 Vận Dụng Cao (VDC)</span>
+                <select id="mathGenCountVDCSelect" onchange="updateMathGenEssaySummary()" style="width:70px;padding:2px 6px;font-weight:800;border:1.5px solid #dc2626;border-radius:6px;">
+                  <option value="0">0 câu</option>
+                  <option value="1" selected>1 câu</option>
+                  <option value="2">2 câu</option>
+                  <option value="3">3 câu</option>
+                </select>
+              </div>
+              <div style="font-size:0.75rem;color:#b91c1c;line-height:1.35;">
+                Bất đẳng thức Cauchy, cực trị hình học, tham số m (Câu điểm 10).
+              </div>
+            </div>
           </div>
         </div>
 

@@ -528,7 +528,7 @@ const MathEngine = {
   },
 
   /**
-   * Sinh câu hỏi tự luận ngẫu nhiên theo mức độ nhận thức (VD, VDC, TH)
+   * Sinh câu hỏi tự luận ngẫu nhiên theo mức độ nhận thức (TH, VD, VDC)
    */
   generateRandomDynamicEssay(grade = 10, term = 'GK1', essayLevel = 'VD', index = 1) {
     if (essayLevel === 'VDC') {
@@ -545,6 +545,22 @@ const MathEngine = {
         options: [],
         correctAnswer: `${2 * p} | min=${2 * p} | P=${2 * p}`,
         explanation: `Áp dụng bất đẳng thức Cauchy cho hai số dương $x$ và $\\dfrac{${pSq}}{x}$: $P \\ge 2\\sqrt{x \\cdot \\dfrac{${pSq}}{x}} = 2 \\cdot ${p} = ${2 * p}$. Dấu bằng xảy ra khi $x = ${p}$.`
+      };
+    } else if (essayLevel === 'TH') {
+      const a = Math.floor(Math.random() * 5) + 2;
+      const b = Math.floor(Math.random() * 6) + 1;
+      const res = a * b;
+      return {
+        id: `DYN_TH_E_${Date.now()}_${index}`,
+        grade,
+        term,
+        topic: "Biến đổi đại số & Tính giá trị biểu thức",
+        level: "TH",
+        type: "essay",
+        question: `[Thông Hiểu 💡] Tìm giá trị của $x$ thỏa mãn phương trình bậc nhất: $${a}x - ${b} = ${res - b}$:`,
+        options: [],
+        correctAnswer: `${b} | x=${b}`,
+        explanation: `$${a}x = ${res} \\implies x = ${b}$.`
       };
     } else {
       const r1 = Math.floor(Math.random() * 4) + 1;
@@ -567,16 +583,15 @@ const MathEngine = {
   },
 
   /**
-   * Sinh bộ đề thi hoàn chỉnh theo cấu hình ma trận, Kỳ thi, Mức độ tự luận & Hình vẽ
+   * Sinh bộ đề thi hoàn chỉnh theo cấu hình ma trận: Số lượng & Mức độ chi tiết từng phần tự luận
    */
   generateExam(config = {}) {
     const {
       grade = '10',
       term = 'GK1',
       topic = 'all',
-      mcqCount = 10,
-      essayCount = 2,
-      essayLevel = 'VD',
+      mcqCount = 12,
+      essayMatrix = { TH: 1, VD: 1, VDC: 1 },
       timeLimit = 45,
       title = ''
     } = config;
@@ -588,55 +603,63 @@ const MathEngine = {
       return matchGrade && matchTerm && matchTopic;
     });
 
-    if (pool.length < (mcqCount + essayCount)) {
+    if (pool.length < (mcqCount + 3)) {
       pool = MATH_QUESTION_BANK.filter(q => grade === 'all' || q.grade.toString() === grade.toString());
     }
-
-    if (pool.length < (mcqCount + essayCount)) {
+    if (pool.length < (mcqCount + 3)) {
       pool = [...MATH_QUESTION_BANK];
     }
 
     const mcqPool = pool.filter(q => q.type === 'mcq');
-    
-    // Filter Essay pool by Cognitive Level (VDC, VD, TH, all)
-    let essayPool = pool.filter(q => {
-      if (q.type !== 'essay') return false;
-      if (essayLevel === 'all') return true;
-      return q.level === essayLevel;
-    });
 
-    if (!essayPool.length) {
-      essayPool = MATH_QUESTION_BANK.filter(q => q.type === 'essay' && (essayLevel === 'all' || q.level === essayLevel));
-    }
-    if (!essayPool.length) {
-      essayPool = pool.filter(q => q.type === 'essay');
-    }
-
-    // Shuffle & Pick MCQ
+    // 1. Shuffle & Pick MCQ
     const shuffledMcq = [...mcqPool].sort(() => 0.5 - Math.random());
     const selectedMcq = shuffledMcq.slice(0, mcqCount);
 
-    // If still missing MCQ, dynamically generate
     while (selectedMcq.length < mcqCount) {
       const dynQ = this.generateRandomDynamicQuestion(grade === 'all' ? 10 : (grade === 'TS10' ? 'TS10' : parseInt(grade, 10)), term, selectedMcq.length + 1);
       selectedMcq.push(dynQ);
     }
 
-    // Shuffle & Pick Essay
-    const shuffledEssay = [...essayPool].sort(() => 0.5 - Math.random());
-    const selectedEssay = shuffledEssay.slice(0, essayCount);
+    // 2. Pick Essay Questions according to the exact requested matrix { TH, VD, VDC }
+    const selectedEssay = [];
+    const targetLevels = [
+      { level: 'TH', count: essayMatrix.TH || 0 },
+      { level: 'VD', count: essayMatrix.VD || 0 },
+      { level: 'VDC', count: essayMatrix.VDC || 0 }
+    ];
 
-    while (selectedEssay.length < essayCount) {
-      const dynE = this.generateRandomDynamicEssay(grade === 'all' ? 10 : (grade === 'TS10' ? 'TS10' : parseInt(grade, 10)), term, essayLevel, selectedEssay.length + 1);
-      selectedEssay.push(dynE);
-    }
+    targetLevels.forEach(({ level, count }) => {
+      if (count <= 0) return;
+      let levelPool = pool.filter(q => q.type === 'essay' && q.level === level);
+      if (!levelPool.length) {
+        levelPool = MATH_QUESTION_BANK.filter(q => q.type === 'essay' && q.level === level);
+      }
+
+      const shuffledLevel = [...levelPool].sort(() => 0.5 - Math.random());
+      const picked = shuffledLevel.slice(0, count);
+      selectedEssay.push(...picked);
+
+      // If still missing, dynamically generate for this specific level
+      while (picked.length < count) {
+        const dyn = this.generateRandomDynamicEssay(grade === 'all' ? 10 : (grade === 'TS10' ? 'TS10' : parseInt(grade, 10)), term, level, selectedEssay.length + 1);
+        selectedEssay.push(dyn);
+        picked.push(dyn);
+      }
+    });
+
+    const totalEssays = selectedEssay.length;
+    const totalQuestions = selectedMcq.length + totalEssays;
+
+    // Calculate balanced scores
+    const essayTotalScore = totalEssays > 0 ? 3.0 : 0; // 3 points for essays
+    const mcqTotalScore = 10.0 - essayTotalScore;
+    const mcqScore = mcqCount ? Math.round((mcqTotalScore / mcqCount) * 100) / 100 : 0;
+    const essayScore = totalEssays ? Math.round((essayTotalScore / totalEssays) * 100) / 100 : 0;
 
     // Build answer keys array & HTML document
     const answerKeys = [];
-    const mcqScore = mcqCount ? Math.round(((10 - essayCount * 2) / mcqCount) * 100) / 100 : 0;
-    const essayScore = 2.0;
 
-    // Shuffle options of MCQ so correct answers are naturally distributed among A, B, C, D
     selectedMcq.forEach((q, idx) => {
       const shuffledQ = MathEngine.shuffleQuestionOptions(q);
       answerKeys.push({
@@ -656,7 +679,7 @@ const MathEngine = {
       answerKeys.push({
         num: selectedMcq.length + idx + 1,
         type: 'essay',
-        level: q.level || essayLevel || 'VD',
+        level: q.level || 'VD',
         correct: q.correctAnswer || '12 | x=12',
         score: essayScore,
         content: q.question,
