@@ -1452,6 +1452,18 @@ function updateTotalExamPointsCalculation() {
 }
 
 /* ================= SMART MATH AUTO-GENERATOR CONTROLLER ================= */
+function updateMathGenEssaySummary() {
+  const cTH = parseInt(document.getElementById('mathGenCountTHSelect')?.value || '1', 10);
+  const cVD = parseInt(document.getElementById('mathGenCountVDSelect')?.value || '1', 10);
+  const cVDC = parseInt(document.getElementById('mathGenCountVDCSelect')?.value || '1', 10);
+  const total = cTH + cVD + cVDC;
+
+  const badge = document.getElementById('mathGenTotalEssaySummaryBadge');
+  if (badge) {
+    badge.innerHTML = `Tổng: <strong>${total} câu tự luận</strong> (TH: ${cTH} · VD: ${cVD} · VDC: ${cVDC})`;
+  }
+}
+
 function triggerAutoGenerateMathExam() {
   if (typeof MathEngine === 'undefined') {
     showToast('⚠️ Bộ sinh đề toán chưa sẵn sàng, vui lòng thử lại.', 'warn');
@@ -1461,17 +1473,18 @@ function triggerAutoGenerateMathExam() {
   const grade = document.getElementById('mathGenGradeSelect')?.value || '10';
   const term = document.getElementById('mathGenTermSelect')?.value || 'GK1';
   const topic = document.getElementById('mathGenTopicSelect')?.value || 'all';
-  const mcqCount = parseInt(document.getElementById('mathGenMcqCountSelect')?.value || '10', 10);
-  const essayCount = parseInt(document.getElementById('mathGenEssayCountSelect')?.value || '2', 10);
-  const essayLevel = document.getElementById('mathGenEssayLevelSelect')?.value || 'VD';
+  const mcqCount = parseInt(document.getElementById('mathGenMcqCountSelect')?.value || '12', 10);
+
+  const countTH = parseInt(document.getElementById('mathGenCountTHSelect')?.value || '1', 10);
+  const countVD = parseInt(document.getElementById('mathGenCountVDSelect')?.value || '1', 10);
+  const countVDC = parseInt(document.getElementById('mathGenCountVDCSelect')?.value || '1', 10);
 
   const generated = MathEngine.generateExam({
     grade,
     term,
     topic,
     mcqCount,
-    essayCount,
-    essayLevel,
+    essayMatrix: { TH: countTH, VD: countVD, VDC: countVDC },
     timeLimit: 45
   });
 
