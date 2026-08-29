@@ -1,5 +1,5 @@
 /**
- * KhiemEdu Main Application Controller with Name & Class Based Authentication
+ * KhiemEdu Main Application Controller - Direct Student Assignment Flow (No Exam Code Required)
  */
 
 const AppState = {
@@ -37,7 +37,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderAssignTargetsSelector();
   renderGamificationTab();
   initAntiCheatListeners();
-  checkUrlParamsForDirectExam();
 });
 
 /* Restore previous student login session if available */
@@ -51,16 +50,6 @@ function initSavedStudentSession() {
     AppState.studentClass = savedProfile.className || '10';
   }
   updatePersonalizedExamFeed();
-}
-
-/* Check URL for direct exam code (e.g. ?code=AZOTA01) */
-function checkUrlParamsForDirectExam() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const code = urlParams.get('code');
-  if (code) {
-    const codeInput = document.getElementById('studentJoinCode');
-    if (codeInput) codeInput.value = code.toUpperCase();
-  }
 }
 
 /* ================= THEME & SOUND ================= */
@@ -676,7 +665,6 @@ async function publishTeacherQuiz() {
       <p style="color:var(--primary-shadow);font-size:0.95rem;font-weight:700;">Phạm vi giao đề: <strong>${targetDesc}</strong></p>
       <div style="margin:1rem 0;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
         <span class="code-badge" style="font-size:1.8rem;padding:0.6rem 1.4rem;">${id}</span>
-        <button class="btn btn-primary" onclick="copyToClipboard('${id}')">📋 Sao Chép Mã</button>
         <button class="btn btn-secondary" onclick="loadSampleToStudent('${id}')">🚀 Vào Thi Thử Ngay</button>
       </div>
     </div>
@@ -718,7 +706,6 @@ async function renderTeacherQuizManager() {
       <table>
         <thead>
           <tr>
-            <th>Mã Đề</th>
             <th>Tên Đề Thi</th>
             <th>Đối Tượng Giao</th>
             <th>Số Câu</th>
@@ -737,7 +724,6 @@ async function renderTeacherQuizManager() {
 
             return `
               <tr>
-                <td><span class="code-badge" style="font-size:0.85rem;padding:2px 8px;">${q.id}</span></td>
                 <td><strong style="color:var(--text-primary);font-size:1rem;">${escapeHtml(q.title)}</strong></td>
                 <td>${targetLabel}</td>
                 <td>${q.totalQuestions || (q.answerKeys ? q.answerKeys.length : 12)} câu</td>
@@ -765,9 +751,9 @@ function quickViewResults(quizId) {
 }
 
 async function confirmDeleteQuiz(quizId, quizTitle) {
-  if (confirm(`⚠️ BẠN CÓ CHẮC CHẮN MUỐN XÓA ĐỀ THI NÀY?\n\n- Tên đề: ${quizTitle}\n- Mã đề: ${quizId}\n\nLưu ý: Toàn bộ bảng điểm và kết quả bài làm của học sinh cho đề này cũng sẽ bị xóa vĩnh viễn.`)) {
+  if (confirm(`⚠️ BẠN CÓ CHẮC CHẮN MUỐN XÓA ĐỀ THI NÀY?\n\n- Tên đề: ${quizTitle}\n\nLưu ý: Toàn bộ bảng điểm và kết quả bài làm của học sinh cho đề này cũng sẽ bị xóa vĩnh viễn.`)) {
     await StorageEngine.deleteQuiz(quizId);
-    showToast(`🗑️ Đã xóa thành công đề thi [${quizId}]!`, 'success');
+    showToast(`🗑️ Đã xóa thành công đề thi!`, 'success');
     SoundEngine.playClick();
     updatePersonalizedExamFeed();
     renderTeacherQuizManager();
@@ -816,7 +802,7 @@ async function renderSampleQuizzes(filterName = '', filterClass = '') {
 
   const titleHeader = document.getElementById('studentFeedHeaderTitle');
   if (titleHeader) {
-    titleHeader.textContent = filterName ? `📚 Đề Thi Dành Riêng Cho ${filterName} (Lớp ${filterClass})` : '📚 Thư Viện Đề Thi';
+    titleHeader.textContent = filterName ? `📚 Đề Thi Dành Riêng Cho ${filterName} (Lớp ${filterClass})` : '📚 Danh Sách Đề Thi Của Bạn';
   }
 
   if (!displayedQuizzes.length) {
@@ -839,19 +825,18 @@ async function renderSampleQuizzes(filterName = '', filterClass = '') {
     }
 
     return `
-      <div class="card" style="padding:1.15rem;margin-bottom:0.85rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;border-left:6px solid ${q.assignType === 'students' ? 'var(--amber)' : (q.assignType === 'classes' ? 'var(--sky)' : 'var(--primary)')};">
+      <div class="card" style="padding:1.25rem;margin-bottom:0.85rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;border-left:6px solid ${q.assignType === 'students' ? 'var(--amber)' : (q.assignType === 'classes' ? 'var(--sky)' : 'var(--primary)')};">
         <div>
           <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
-            <div style="font-weight:800;font-size:1.1rem;color:var(--text-primary);">${escapeHtml(q.title)}</div>
+            <div style="font-weight:800;font-size:1.15rem;color:var(--text-primary);">${escapeHtml(q.title)}</div>
             ${targetBadge}
           </div>
-          <div style="font-size:0.85rem;color:var(--text-secondary);margin-top:4px;font-weight:600;">
-            Mã Đề: <span class="code-badge" style="font-size:0.9rem;padding:3px 8px;">${q.id}</span> · ${q.totalQuestions || (q.answerKeys ? q.answerKeys.length : 12)} câu · ${q.timeLimit} phút
+          <div style="font-size:0.9rem;color:var(--text-secondary);margin-top:4px;font-weight:600;">
+            ⏳ Thời gian: <strong>${q.timeLimit} phút</strong> · 📝 Quy mô: <strong>${q.totalQuestions || (q.answerKeys ? q.answerKeys.length : 12)} câu hỏi</strong>
           </div>
         </div>
         <div style="display:flex;gap:0.5rem;align-items:center;">
-          <button class="btn btn-success" onclick="loadAndJoinQuizDirectly('${q.id}')">Vào Thi Ngay 🚀</button>
-          <button class="btn btn-danger btn-sm" onclick="confirmDeleteQuiz('${q.id}', '${escapeHtml(q.title)}')" title="Xóa đề này">🗑️</button>
+          <button class="btn btn-success btn-lg" onclick="loadAndJoinQuizDirectly('${q.id}')">Bắt Đầu Làm Bài 🚀</button>
         </div>
       </div>
     `;
@@ -859,57 +844,41 @@ async function renderSampleQuizzes(filterName = '', filterClass = '') {
 }
 
 function loadAndJoinQuizDirectly(quizId) {
-  document.getElementById('studentJoinCode').value = quizId;
-  joinStudentQuiz(quizId);
+  startExamWithQuizId(quizId);
 }
 
-/* Join Exam: Name and Class Verification */
-async function joinStudentQuiz(customCode) {
-  const code = (customCode || document.getElementById('studentJoinCode').value).trim().toUpperCase();
+function handleStudentFormSubmit() {
+  const currentName = (document.getElementById('studentJoinName')?.value || '').trim();
+  const currentClass = (document.getElementById('studentJoinClass')?.value || '').trim();
+  if (!currentName || !currentClass) {
+    showToast('⚠️ Vui lòng nhập Tên và Lớp học của bạn!', 'warn');
+    return;
+  }
+  updatePersonalizedExamFeed();
+  document.getElementById('sampleQuizzesList')?.scrollIntoView({ behavior: 'smooth' });
+}
+
+/* Join Exam Directly by Quiz ID */
+async function startExamWithQuizId(quizId) {
   const className = document.getElementById('studentJoinClass').value.trim();
   const name = document.getElementById('studentJoinName').value.trim();
   const statusEl = document.getElementById('joinQuizStatus');
 
-  if (!code || !className || !name) {
-    statusEl.innerHTML = '<span style="color:var(--rose);">⚠️ Vui lòng điền đầy đủ Mã Đề, Lớp và Tên học sinh!</span>';
+  if (!className || !name) {
+    statusEl.innerHTML = '<span style="color:var(--rose);">⚠️ Vui lòng điền Tên và Lớp học của bạn ở ô bên trên!</span>';
+    document.getElementById('studentJoinName').focus();
     return;
   }
 
-  statusEl.innerHTML = '<span style="color:var(--indigo);">⏳ Đang kiểm tra quyền làm bài & tải đề thi...</span>';
-  const quiz = await StorageEngine.getQuiz(code);
+  statusEl.innerHTML = '<span style="color:var(--indigo);">⏳ Đang tải đề thi...</span>';
+  const quiz = await StorageEngine.getQuiz(quizId);
 
   if (!quiz) {
-    statusEl.innerHTML = '<span style="color:var(--rose);">❌ Không tìm thấy đề thi với mã này. Hãy kiểm tra lại!</span>';
+    statusEl.innerHTML = '<span style="color:var(--rose);">❌ Không tìm thấy đề thi. Hãy thử lại!</span>';
     return;
   }
 
-  // Permission & Targeted Assignment Verification
-  if (quiz.assignType === 'classes' && Array.isArray(quiz.assignedClasses)) {
-    const isClassAllowed = quiz.assignedClasses.some(c => c.toLowerCase() === className.toLowerCase());
-    if (!isClassAllowed) {
-      statusEl.innerHTML = `
-        <div style="color:var(--rose);background:var(--rose-light);padding:10px 14px;border-radius:12px;border:2px solid var(--rose);margin-top:8px;">
-          ⛔ <strong>TRUY CẬP BỊ TỪ CHỐI:</strong> Đề thi này chỉ giao riêng cho học sinh thuộc lớp <strong>${quiz.assignedClasses.join(', ')}</strong>. Lớp của bạn (${className}) không thuộc phạm vi làm bài!
-        </div>
-      `;
-      SoundEngine.playWarning();
-      return;
-    }
-  } else if (quiz.assignType === 'students' && Array.isArray(quiz.assignedStudents)) {
-    const studentTag = `${name} (${className})`.toLowerCase();
-    const isStudentAllowed = quiz.assignedStudents.some(s => s.toLowerCase() === studentTag || s.toLowerCase().includes(name.toLowerCase()));
-    if (!isStudentAllowed) {
-      statusEl.innerHTML = `
-        <div style="color:var(--rose);background:var(--rose-light);padding:10px 14px;border-radius:12px;border:2px solid var(--rose);margin-top:8px;">
-          ⛔ <strong>TRUY CẬP BỊ TỪ CHỐI:</strong> Đề thi này được giáo viên giao đích danh cho học sinh khác. Bạn không có quyền làm đề này!
-        </div>
-      `;
-      SoundEngine.playWarning();
-      return;
-    }
-  }
-
-  const alreadySubmitted = await StorageEngine.hasSubmitted(code, className, name);
+  const alreadySubmitted = await StorageEngine.hasSubmitted(quizId, className, name);
   if (alreadySubmitted) {
     statusEl.innerHTML = '<span style="color:var(--amber);">⚠️ Bạn đã hoàn thành và nộp bài cho đề thi này rồi!</span>';
     return;
@@ -917,12 +886,12 @@ async function joinStudentQuiz(customCode) {
 
   let pdfUrl = quiz.pdfDataUrl;
   if (!pdfUrl) {
-    const blobData = await StorageEngine.getPdfBlob(code);
+    const blobData = await StorageEngine.getPdfBlob(quizId);
     if (blobData) pdfUrl = blobData;
   }
 
   AppState.currentQuiz = quiz;
-  AppState.currentQuizId = code;
+  AppState.currentQuizId = quizId;
   AppState.studentName = name;
   AppState.studentClass = className;
   AppState.studentAnswers = {};
@@ -972,7 +941,7 @@ async function joinStudentQuiz(customCode) {
 
   if (quiz.showLeaderboard) {
     document.getElementById('splitLiveLeaderboardBox').classList.remove('hidden');
-    startLiveLeaderboardPolling(code, className);
+    startLiveLeaderboardPolling(quizId, className);
   } else {
     document.getElementById('splitLiveLeaderboardBox').classList.add('hidden');
   }
@@ -1454,13 +1423,7 @@ function exportResultsToCsv(quizCode) {
 
 function loadSampleToStudent(quizId) {
   switchTab('student');
-  document.getElementById('studentJoinCode').value = quizId;
-}
-
-function copyToClipboard(text) {
-  navigator.clipboard.writeText(text).then(() => {
-    showToast(`📋 Đã sao chép mã đề: ${text}`, 'success');
-  });
+  startExamWithQuizId(quizId);
 }
 
 function showToast(msg, type = 'info') {

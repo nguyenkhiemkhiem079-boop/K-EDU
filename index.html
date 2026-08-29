@@ -68,19 +68,19 @@
     <!-- ================= STUDENT VIEW ================= -->
     <section id="tabStudent" class="view-section active">
       
-      <!-- Student Join Arena -->
+      <!-- Student Profile & Exam Feed Arena -->
       <div id="studentJoinSection">
-        <div class="card" style="max-width:680px;margin:0 auto 1.5rem;background:linear-gradient(180deg, var(--bg-card) 0%, var(--bg-primary) 100%);">
-          <div style="text-align:center;margin-bottom:1.5rem;">
+        <div class="card" style="max-width:720px;margin:0 auto 1.5rem;background:linear-gradient(180deg, var(--bg-card) 0%, var(--bg-primary) 100%);">
+          <div style="text-align:center;margin-bottom:1.25rem;">
             <div style="font-size:3rem;margin-bottom:0.25rem;">🦊 ⚡ 📚</div>
-            <h2 style="font-size:1.85rem;color:var(--text-primary);margin-bottom:0.4rem;">Đấu Trường Luyện Thi Trực Tuyến</h2>
-            <p style="color:var(--text-secondary);font-size:0.95rem;font-weight:600;">Nhập Tên & Lớp học của bạn để vào làm bài thi được giao.</p>
+            <h2 style="font-size:1.85rem;color:var(--text-primary);margin-bottom:0.4rem;">Phòng Học & Luyện Thi Trực Tuyến</h2>
+            <p style="color:var(--text-secondary);font-size:0.95rem;font-weight:600;">Nhập Tên và Lớp học của bạn để xem danh sách bài thi được giao:</p>
           </div>
 
-          <form onsubmit="joinStudentQuiz(); return false;">
+          <form onsubmit="handleStudentFormSubmit(); return false;">
             <div class="form-row">
               <div class="form-group">
-                <label>👤 Họ và Tên Học Sinh</label>
+                <label>👤 Tên Học Sinh</label>
                 <input type="text" id="studentJoinName" placeholder="VD: SURI, NGHĨA, GIANG, TIÊN..." oninput="updatePersonalizedExamFeed()" required>
               </div>
               <div class="form-group">
@@ -90,26 +90,17 @@
             </div>
 
             <div class="form-group">
-              <label>🔑 Mã Đề Thi (6 ký tự)</label>
-              <input type="text" id="studentJoinCode" placeholder="VD: AZOTA01" style="text-transform:uppercase;font-size:1.15rem;letter-spacing:1.5px;color:var(--indigo);" required>
-            </div>
-
-            <div class="form-group">
-              <label>✨ Chọn Avatar Linh Vật</label>
+              <label>✨ Chọn Avatar Yêu Thích</label>
               <div id="avatarSelector" style="display:flex;gap:0.6rem;flex-wrap:wrap;margin-top:0.3rem;"></div>
             </div>
-
-            <button type="submit" class="btn btn-success btn-lg" style="width:100%;margin-top:0.75rem;">
-              Vào Phòng Thi Ngay ⚡
-            </button>
           </form>
-          <div id="joinQuizStatus" style="margin-top:1rem;font-size:0.95rem;text-align:center;font-weight:700;"></div>
+          <div id="joinQuizStatus" style="margin-top:0.5rem;font-size:0.95rem;text-align:center;font-weight:700;"></div>
         </div>
 
-        <!-- Sample Quizzes List (Personalized Feed) -->
-        <div class="card" style="max-width:680px;margin:0 auto;">
+        <!-- Direct Exam Feed List -->
+        <div class="card" style="max-width:720px;margin:0 auto;">
           <div class="card-header">
-            <h2><span id="studentFeedHeaderTitle">📚 Đề Thi Dành Riêng Cho Bạn</span></h2>
+            <h2><span id="studentFeedHeaderTitle">📚 Danh Sách Đề Thi Của Bạn</span></h2>
           </div>
           <div id="sampleQuizzesList"></div>
         </div>
@@ -328,7 +319,7 @@
             <label style="color:var(--indigo);font-size:1rem;">🎯 PHÂN QUYỀN ĐỐI TƯỢNG GIAO ĐỀ (Ai được làm đề này?):</label>
             
             <select id="assignTypeSelect" style="margin-top:0.4rem;font-weight:700;" onchange="renderAssignTargetsSelector()">
-              <option value="all">🌍 Công khai toàn bộ (Mọi học sinh có mã đều làm được)</option>
+              <option value="all">🌍 Công khai toàn bộ (Mọi học sinh đều làm được)</option>
               <option value="classes">🏫 Giao theo Lớp học cụ thể (Chỉ lớp được chọn mới được làm)</option>
               <option value="students">👤 Giao đích danh từng Học sinh (Chỉ những học sinh được tick mới được làm)</option>
             </select>
@@ -373,7 +364,7 @@
         <div class="card-header">
           <h2><span>📊</span> Tra Cứu Bảng Điểm & Kết Quả Lớp Học</h2>
         </div>
-        <p class="card-subtitle">Nhập mã đề để xem bảng điểm chi tiết, phân loại theo lớp và xuất file Excel.</p>
+        <p class="card-subtitle">Xem bảng điểm chi tiết, phân loại theo lớp và xuất file Excel.</p>
 
         <div class="form-row">
           <div class="form-group">
