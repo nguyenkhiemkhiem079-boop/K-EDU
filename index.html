@@ -200,6 +200,17 @@ GIANG, 8"></textarea>
           <div class="card-header">
             <h2><span id="studentFeedHeaderTitle">📚 Danh Sách Đề Thi Của Bạn</span></h2>
           </div>
+
+          <!-- ToanMath Semester / Term Filter Bar -->
+          <div class="time-filter-bar" style="margin:0.25rem 0 1rem;justify-content:center;flex-wrap:wrap;gap:0.35rem;">
+            <button type="button" class="time-filter-btn active" id="termBtn_all" onclick="filterExamFeedByTerm('all')">♾️ Tất Cả Kỳ</button>
+            <button type="button" class="time-filter-btn" id="termBtn_GK1" onclick="filterExamFeedByTerm('GK1')">🍂 Giữa HK1</button>
+            <button type="button" class="time-filter-btn" id="termBtn_CK1" onclick="filterExamFeedByTerm('CK1')">❄️ Cuối HK1</button>
+            <button type="button" class="time-filter-btn" id="termBtn_GK2" onclick="filterExamFeedByTerm('GK2')">🌸 Giữa HK2</button>
+            <button type="button" class="time-filter-btn" id="termBtn_CK2" onclick="filterExamFeedByTerm('CK2')">☀️ Cuối HK2</button>
+            <button type="button" class="time-filter-btn" id="termBtn_TS10" onclick="filterExamFeedByTerm('TS10')">🎓 Vào 10</button>
+          </div>
+
           <div id="sampleQuizzesList"></div>
         </div>
       </div>
@@ -459,14 +470,28 @@ GIANG, 8"></textarea>
           <div class="form-group">
             <label>🏫 Khối Lớp</label>
             <select id="mathGenGradeSelect" style="font-weight:700;">
-              <option value="6">Toán 6 (Số học & Hình trực quan)</option>
-              <option value="7">Toán 7 (Số hữu tỉ & Tam giác)</option>
-              <option value="8">Toán 8 (Hằng đẳng thức & Phân thức)</option>
-              <option value="9">Toán 9 (Căn bậc hai & Hệ PT & Hình)</option>
-              <option value="10" selected>Toán 10 (Tập hợp, Parabol, Vectơ)</option>
-              <option value="11">Toán 11 (Cấp số cộng, Lượng giác)</option>
-              <option value="12">Toán 12 (Đạo hàm, Cực trị, Tích phân)</option>
+              <option value="6">Toán 6</option>
+              <option value="7">Toán 7</option>
+              <option value="8">Toán 8</option>
+              <option value="9">Toán 9</option>
+              <option value="10" selected>Toán 10</option>
+              <option value="11">Toán 11</option>
+              <option value="12">Toán 12</option>
+              <option value="TS10">Luyện Thi Vào 10</option>
               <option value="all">Tổng Hợp Đa Dạng (Tất cả)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>📅 Kỳ Thi / Định Dạng (ToanMath)</label>
+            <select id="mathGenTermSelect" style="font-weight:700;">
+              <option value="GK1" selected>🍂 Giữa Học Kỳ 1 (GK1)</option>
+              <option value="CK1">❄️ Cuối Học Kỳ 1 (CK1)</option>
+              <option value="GK2">🌸 Giữa Học Kỳ 2 (GK2)</option>
+              <option value="CK2">☀️ Cuối Học Kỳ 2 (CK2)</option>
+              <option value="TS10">🎓 Tuyển Sinh Vào 10</option>
+              <option value="THPT">🏛️ Thi Tốt Nghiệp THPT</option>
+              <option value="all">Tổng Hợp Cả Năm</option>
             </select>
           </div>
 
@@ -495,7 +520,7 @@ GIANG, 8"></textarea>
           </div>
 
           <div class="form-group">
-            <label>✍️ Số Câu Tự Luận Điền Số</label>
+            <label>✍️ Số Câu Tự Luận</label>
             <select id="mathGenEssayCountSelect" style="font-weight:700;">
               <option value="0">0 câu (100% trắc nghiệm)</option>
               <option value="2" selected>2 câu tự luận điền số</option>
@@ -632,6 +657,18 @@ GIANG, 8"></textarea>
             <div class="form-group">
               <label>Tên Đề Thi</label>
               <input type="text" id="teacherExamTitleInput" value="Đề Kiểm Tra Giữa Kì I — Môn Toán">
+            </div>
+            <div class="form-group">
+              <label>📅 Kỳ Thi / Phân Loại (ToanMath)</label>
+              <select id="teacherExamTermSelect" style="font-weight:700;">
+                <option value="GK1" selected>🍂 Giữa Học Kỳ 1 (GK1)</option>
+                <option value="CK1">❄️ Cuối Học Kỳ 1 (CK1)</option>
+                <option value="GK2">🌸 Giữa Học Kỳ 2 (GK2)</option>
+                <option value="CK2">☀️ Cuối Học Kỳ 2 (CK2)</option>
+                <option value="TS10">🎓 Tuyển Sinh Vào 10</option>
+                <option value="THPT">🏛️ Thi Tốt Nghiệp THPT</option>
+                <option value="regular">📝 Kiểm Tra Thường Xuyên</option>
+              </select>
             </div>
             <div class="form-group">
               <label>Thời Gian Làm Bài (Phút)</label>
