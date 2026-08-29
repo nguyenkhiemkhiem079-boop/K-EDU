@@ -394,32 +394,60 @@
 
         <hr style="border:1px solid var(--border-color);margin:1.5rem 0;"/>
 
-        <!-- Step 2A: PHẦN 1 - TRẮC NGHIỆM RIÊNG BIỆT -->
-        <div class="card" style="background:var(--bg-tertiary);border:2px solid var(--border-color);margin-bottom:1.5rem;">
+        <!-- Step 2A: PHẦN 1 - TRẮC NGHIỆM SIÊU TỐC 200 CÂU -->
+        <div class="card" style="background:var(--bg-tertiary);border:2px solid var(--indigo);margin-bottom:1.5rem;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;flex-wrap:wrap;gap:0.5rem;">
-            <h3 style="font-size:1.15rem;color:var(--indigo);margin:0;">🔵 PHẦN I: ĐÁP ÁN TRẮC NGHIỆM (A, B, C, D)</h3>
+            <h3 style="font-size:1.15rem;color:var(--indigo);margin:0;">🔵 PHẦN I: ĐÁP ÁN TRẮC NGHIỆM (HỖ TRỢ 10 ĐẾN 200+ CÂU)</h3>
             <span class="badge-status badge-pass" id="teacherMcqCountBadge">10 câu trắc nghiệm</span>
           </div>
-          <p style="font-size:0.875rem;color:var(--text-secondary);margin-bottom:0.75rem;">Nhập chuỗi nhanh hoặc chọn đáp án trực tiếp trên bảng phiếu tô bên dưới:</p>
+          <p style="font-size:0.875rem;color:var(--text-secondary);margin-bottom:0.75rem;">
+            💡 <strong>Không cần điền từng câu:</strong> Bạn chỉ cần Copy & Paste toàn bộ đáp án từ Word/Excel/PDF vào ô bên dưới, hoặc chọn file đáp án. Hệ thống sẽ tự nhận diện 100% trong 0.1 giây!
+          </p>
 
-          <div class="quick-key-panel" style="margin-bottom:1rem;">
-            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
-              <input type="text" id="fastMcqStringInput" placeholder="VD: ABCDABCD... hoặc 1A 2B 3C 4D..." style="flex:1;">
-              <button type="button" class="btn btn-primary" onclick="parseFastMcqString()">⚡ Nhận Diện Chuỗi Trắc Nghiệm</button>
+          <!-- Ultra Smart Key Import Box -->
+          <div class="bulk-import-area">
+            <label style="font-weight:800;color:var(--indigo);display:block;margin-bottom:0.4rem;">
+              ⚡ Dán chuỗi đáp án (Chấp nhận mọi định dạng: <code>1A 2B 3C...</code> hoặc <code>1.A 2.B 3.C... 200.D</code> hoặc <code>ABCDABCD...</code> hoặc Bảng Excel):
+            </label>
+            <textarea id="massiveKeyTextarea" class="bulk-textarea" placeholder="Dán chuỗi đáp án vào đây... VD: 1A 2B 3C 4D 5A 6B 7C 8D 9A 10B ... 200A hoặc ABCDABCD..."></textarea>
+            
+            <div style="display:flex;gap:0.6rem;margin-top:0.6rem;flex-wrap:wrap;align-items:center;justify-content:space-between;">
+              <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+                <button type="button" class="btn btn-primary" onclick="parseMassiveKeyString()">⚡ TỰ ĐỘNG NHẬN DIỆN ĐÁP ÁN</button>
+                <label class="btn btn-secondary" style="cursor:pointer;margin:0;">
+                  📁 Nhập Từ File (.txt / .csv)
+                  <input type="file" accept=".txt,.csv" style="display:none;" onchange="handleKeyFileUpload(event)">
+                </label>
+                <button type="button" class="btn btn-sky btn-sm" onclick="autoBalance10Points()" title="Chia đều thang điểm 10">⚖️ Chia Đều Thang 10đ</button>
+              </div>
+
+              <div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;">
+                <span style="font-size:0.8rem;font-weight:800;color:var(--text-muted);">Điền mẫu nhanh:</span>
+                <button type="button" class="btn btn-sm" style="padding:2px 8px;font-size:0.75rem;" onclick="quickFillAllKeys('A')">All A</button>
+                <button type="button" class="btn btn-sm" style="padding:2px 8px;font-size:0.75rem;" onclick="quickFillAllKeys('B')">All B</button>
+                <button type="button" class="btn btn-sm" style="padding:2px 8px;font-size:0.75rem;" onclick="quickRandomizeKeys()">🎲 Random</button>
+              </div>
             </div>
           </div>
 
-          <div style="margin-bottom:1rem;display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
-            <span style="font-size:0.85rem;font-weight:800;color:var(--text-secondary);">Chọn nhanh số lượng câu trắc nghiệm:</span>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickMcqCount(8)">8 Câu</button>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickMcqCount(10)">10 Câu</button>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickMcqCount(12)">12 Câu</button>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickMcqCount(20)">20 Câu</button>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickMcqCount(30)">30 Câu</button>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickMcqCount(40)">40 Câu</button>
+          <!-- Quick presets for question count -->
+          <div style="margin-bottom:0.85rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+            <span style="font-size:0.85rem;font-weight:800;color:var(--text-secondary);">Tạo nhanh số lượng câu:</span>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="setCustomQuestionCount(20)">20 Câu</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="setCustomQuestionCount(40)">40 Câu</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="setCustomQuestionCount(50)">50 Câu</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="setCustomQuestionCount(100)">100 Câu</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="setCustomQuestionCount(200)">200 Câu 🚀</button>
+            
+            <div style="display:inline-flex;align-items:center;gap:0.3rem;margin-left:auto;">
+              <span style="font-size:0.8rem;font-weight:700;color:var(--text-muted);">Tùy chỉnh:</span>
+              <input type="number" id="customCountInput" style="width:75px;padding:0.25rem 0.4rem;font-size:0.85rem;text-align:center;font-weight:800;" placeholder="Số câu" min="1" max="500">
+              <button type="button" class="btn btn-primary btn-sm" onclick="setCustomQuestionCount(document.getElementById('customCountInput').value)">Tạo</button>
+            </div>
           </div>
 
-          <div class="key-grid-table" id="teacherMcqGridContainer"></div>
+          <!-- Compact Ma Trận Grid -->
+          <div id="teacherMcqGridContainer"></div>
         </div>
 
         <!-- Step 2B: PHẦN 2 - TỰ LUẬN ĐIỀN SỐ TOÁN HỌC RIÊNG BIỆT -->
