@@ -70,50 +70,50 @@
       
       <!-- Student Join Arena -->
       <div id="studentJoinSection">
-        <div class="card" style="max-width:760px;margin:0 auto 1.5rem;background:linear-gradient(180deg, var(--bg-card) 0%, var(--bg-primary) 100%);">
+        <div class="card" style="max-width:680px;margin:0 auto 1.5rem;background:linear-gradient(180deg, var(--bg-card) 0%, var(--bg-primary) 100%);">
           <div style="text-align:center;margin-bottom:1.5rem;">
             <div style="font-size:3rem;margin-bottom:0.25rem;">🦊 ⚡ 📚</div>
-            <h2 style="font-size:1.85rem;color:var(--text-primary);margin-bottom:0.4rem;">Đấu Trường Luyện Thi Toán</h2>
-            <p style="color:var(--text-secondary);font-size:1rem;font-weight:600;">Xem đề PDF gốc siêu nét bên trái và bấm chọn đáp án 3D bên phải.</p>
-          </div>
-
-          <!-- Quick Student Chooser -->
-          <div style="margin-bottom:1.25rem;padding:0.75rem 1rem;background:var(--bg-tertiary);border-radius:var(--radius-md);border:2px dashed var(--border-color);">
-            <span style="font-size:0.85rem;font-weight:800;color:var(--indigo);display:block;margin-bottom:0.4rem;">⚡ Chọn nhanh học sinh từ danh bạ lớp học:</span>
-            <div id="quickStudentChooserWrap" style="display:flex;gap:0.4rem;flex-wrap:wrap;"></div>
+            <h2 style="font-size:1.85rem;color:var(--text-primary);margin-bottom:0.4rem;">Đấu Trường Luyện Thi Trực Tuyến</h2>
+            <p style="color:var(--text-secondary);font-size:0.95rem;font-weight:600;">Nhập thông tin và Mã PIN cá nhân của bạn để mở khóa phòng thi.</p>
           </div>
 
           <form onsubmit="joinStudentQuiz(); return false;">
             <div class="form-row">
               <div class="form-group">
-                <label>🔑 Mã Đề Thi (6 ký tự)</label>
-                <input type="text" id="studentJoinCode" placeholder="VD: AZOTA01" style="text-transform:uppercase;font-size:1.2rem;letter-spacing:2px;color:var(--indigo);" required>
+                <label>👤 Tên Học Sinh (hoặc Mã HS)</label>
+                <input type="text" id="studentJoinName" placeholder="VD: SURI, NGHĨA, GIANG..." oninput="updatePersonalizedExamFeed()" required>
               </div>
               <div class="form-group">
                 <label>🏫 Lớp Học</label>
-                <input type="text" id="studentJoinClass" value="8A1" placeholder="VD: 8A1" oninput="updatePersonalizedExamFeed()" required>
+                <input type="text" id="studentJoinClass" placeholder="VD: 10, 8, 7, 12..." oninput="updatePersonalizedExamFeed()" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>🔑 Mã Đề Thi (6 ký tự)</label>
+                <input type="text" id="studentJoinCode" placeholder="VD: AZOTA01" style="text-transform:uppercase;font-size:1.15rem;letter-spacing:1.5px;color:var(--indigo);" required>
+              </div>
+              <div class="form-group">
+                <label>🔒 Mã PIN Bảo Mật Cá Nhân</label>
+                <input type="password" id="studentJoinPin" placeholder="Mặc định: 1234" value="1234" style="font-size:1.15rem;letter-spacing:3px;" required title="Mã PIN riêng tư do giáo viên cấp">
               </div>
             </div>
 
             <div class="form-group">
-              <label>👤 Họ và Tên Học Sinh</label>
-              <input type="text" id="studentJoinName" value="Nguyễn Văn An" placeholder="Nguyễn Văn An" oninput="updatePersonalizedExamFeed()" required>
-            </div>
-
-            <div class="form-group">
-              <label>✨ Chọn Avatar Chiến Binh</label>
+              <label>✨ Chọn Avatar Linh Vật</label>
               <div id="avatarSelector" style="display:flex;gap:0.6rem;flex-wrap:wrap;margin-top:0.3rem;"></div>
             </div>
 
             <button type="submit" class="btn btn-success btn-lg" style="width:100%;margin-top:0.75rem;">
-              Vào Phòng Thi Ngay ⚡
+              Mở Khóa & Vào Phòng Thi Ngay ⚡
             </button>
           </form>
           <div id="joinQuizStatus" style="margin-top:1rem;font-size:0.95rem;text-align:center;font-weight:700;"></div>
         </div>
 
         <!-- Sample Quizzes List (Personalized Feed) -->
-        <div class="card" style="max-width:760px;margin:0 auto;">
+        <div class="card" style="max-width:680px;margin:0 auto;">
           <div class="card-header">
             <h2><span id="studentFeedHeaderTitle">📚 Đề Thi Dành Riêng Cho Bạn</span></h2>
           </div>
@@ -240,10 +240,10 @@
       <!-- Section 0: Student & Class Roster Manager -->
       <div class="card" style="border-left: 6px solid var(--primary);">
         <div class="card-header">
-          <h2><span>👥</span> Quản Lý Danh Bạ Học Sinh & Lớp Học</h2>
+          <h2><span>👥</span> Quản Lý Danh Bạ & Mã PIN Bảo Mật Từng Học Sinh</h2>
         </div>
         <p class="card-subtitle">
-          Danh sách học sinh được phân chia theo từng lớp. Dùng để phân quyền giao đề theo lớp hoặc giao đích danh cho từng bạn:
+          Danh sách học sinh kèm <strong>Mã PIN bí mật</strong> riêng tư. Học sinh cần nhập đúng mã PIN này mới được mở khóa phòng thi và xem đề:
         </p>
         <div id="teacherRosterManagerWrap"></div>
       </div>
@@ -388,7 +388,7 @@
           </div>
           <div class="form-group">
             <label>Lọc Theo Lớp (để trống = xem tất cả các lớp)</label>
-            <input type="text" id="lookupClassFilterInput" placeholder="VD: 8A1">
+            <input type="text" id="lookupClassFilterInput" placeholder="VD: 10">
           </div>
         </div>
 
@@ -411,10 +411,7 @@
         </div>
         <p class="card-subtitle">Vinh danh những học sinh có điểm kinh nghiệm (XP) và chuỗi ngày học tập xuất sắc nhất:</p>
         
-        <!-- Podium Element -->
         <div id="hallOfFamePodiumWrap"></div>
-
-        <!-- Top 4+ List Element -->
         <div id="hallOfFameListWrap"></div>
       </div>
 
