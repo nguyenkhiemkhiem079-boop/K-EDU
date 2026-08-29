@@ -1,13 +1,13 @@
 /**
- * KhiemEdu Main Application Controller with Targeted Student & Class Assignments
+ * KhiemEdu Main Application Controller with Personalized Exam Feed & Targeted Access
  */
 
 const AppState = {
   activeTab: 'student',
   currentQuiz: null,
   currentQuizId: '',
-  studentName: '',
-  studentClass: '',
+  studentName: 'Nguyễn Văn An',
+  studentClass: '8A1',
   studentAvatar: '🦊',
   studentAnswers: {},
   flaggedQuestions: new Set(),
@@ -31,13 +31,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   initAvatars();
   initTeacherAnswerGrid(12);
   await loadStudentRoster();
-  renderSampleQuizzes();
+  updatePersonalizedExamFeed();
   renderTeacherQuizManager();
   renderTeacherRosterManager();
   renderAssignTargetsSelector();
   renderGamificationTab();
   initAntiCheatListeners();
+  checkUrlParamsForDirectExam();
 });
+
+/* Check URL for direct exam code (e.g. ?code=AZOTA01) */
+function checkUrlParamsForDirectExam() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const code = urlParams.get('code');
+  if (code) {
+    const codeInput = document.getElementById('studentJoinCode');
+    if (codeInput) codeInput.value = code.toUpperCase();
+  }
+}
 
 /* ================= THEME & SOUND ================= */
 function initTheme() {
@@ -85,6 +96,8 @@ function switchTab(tabId) {
     renderTeacherQuizManager();
     renderTeacherRosterManager();
     renderAssignTargetsSelector();
+  } else if (tabId === 'student') {
+    updatePersonalizedExamFeed();
   }
 }
 
@@ -186,17 +199,24 @@ function renderStudentQuickChooser() {
     return;
   }
 
-  wrap.innerHTML = AppState.studentRoster.map(s => `
-    <button type="button" class="btn btn-secondary btn-sm" style="font-size:0.8rem;padding:0.3rem 0.7rem;" onclick="selectQuickStudent('${escapeHtml(s.name)}', '${escapeHtml(s.className)}', '${s.avatar}')">
-      ${s.avatar} ${escapeHtml(s.name)} (${escapeHtml(s.className)})
-    </button>
-  `).join('');
+  const currentSelected = (document.getElementById('studentJoinName')?.value || '').trim();
+
+  wrap.innerHTML = AppState.studentRoster.map(s => {
+    const isCurrent = s.name.toLowerCase() === currentSelected.toLowerCase();
+    return `
+      <button type="button" class="btn ${isCurrent ? 'btn-primary' : 'btn-secondary'} btn-sm" style="font-size:0.85rem;padding:0.35rem 0.8rem;border-radius:var(--radius-full);" onclick="selectQuickStudent('${escapeHtml(s.name)}', '${escapeHtml(s.className)}', '${s.avatar}')">
+        ${s.avatar} ${escapeHtml(s.name)} (${escapeHtml(s.className)})
+      </button>
+    `;
+  }).join('');
 }
 
 function selectQuickStudent(name, className, avatar) {
   document.getElementById('studentJoinName').value = name;
   document.getElementById('studentJoinClass').value = className;
   if (avatar) selectAvatar(avatar);
+  renderStudentQuickChooser();
+  updatePersonalizedExamFeed();
   SoundEngine.playClick();
 }
 
@@ -259,6 +279,7 @@ function showAddStudentModal() {
   renderTeacherRosterManager();
   renderStudentQuickChooser();
   renderAssignTargetsSelector();
+  updatePersonalizedExamFeed();
   showToast(`✅ Đã thêm học sinh: ${name.trim()} (${className.trim()})`, 'success');
   SoundEngine.playCorrect();
 }
@@ -271,6 +292,7 @@ async function deleteRosterStudent(idx) {
     renderTeacherRosterManager();
     renderStudentQuickChooser();
     renderAssignTargetsSelector();
+    updatePersonalizedExamFeed();
     showToast('🗑️ Đã xóa học sinh khỏi danh bạ.', 'success');
     SoundEngine.playClick();
   }
@@ -292,7 +314,6 @@ function renderAssignTargetsSelector() {
     classesWrap.classList.remove('hidden');
     studentsWrap.classList.add('hidden');
     
-    // Extract unique classes from roster
     const uniqueClasses = [...new Set(AppState.studentRoster.map(s => s.className))];
     const container = document.getElementById('assignClassCheckboxes');
     if (container) {
@@ -304,7 +325,6 @@ function renderAssignTargetsSelector() {
       `).join('');
     }
   } else {
-    // Specific Students
     classesWrap.classList.add('hidden');
     studentsWrap.classList.remove('hidden');
 
@@ -557,7 +577,7 @@ async function publishTeacherQuiz() {
   SoundEngine.playFanfare();
   GamificationEngine.fireConfetti();
 
-  renderSampleQuizzes();
+  updatePersonalizedExamFeed();
   renderTeacherQuizManager();
 
   const targetDesc = assignType === 'all' 
@@ -664,7 +684,7 @@ async function confirmDeleteQuiz(quizId, quizTitle) {
     await StorageEngine.deleteQuiz(quizId);
     showToast(`🗑️ Đã xóa thành công đề thi [${quizId}]!`, 'success');
     SoundEngine.playClick();
-    renderSampleQuizzes();
+    updatePersonalizedExamFeed();
     renderTeacherQuizManager();
   }
 }
@@ -672,12 +692,93 @@ async function confirmDeleteQuiz(quizId, quizTitle) {
 async function resetSampleQuiz() {
   StorageEngine.seedSampleDataIfEmpty();
   showToast('✅ Đã nạp lại đề thi mẫu thành công!', 'success');
-  renderSampleQuizzes();
+  updatePersonalizedExamFeed();
   renderTeacherQuizManager();
   SoundEngine.playCorrect();
 }
 
-/* ================= STUDENT: SPLIT-SCREEN EXAM ARENA WITH PERMISSION VERIFICATION ================= */
+/* ================= PERSONALIZED EXAM FEED & STUDENT SPLIT-SCREEN ARENA ================= */
+function updatePersonalizedExamFeed() {
+  const currentName = (document.getElementById('studentJoinName')?.value || '').trim();
+  const currentClass = (document.getElementById('studentJoinClass')?.value || '').trim();
+  renderSampleQuizzes(currentName, currentClass);
+}
+
+async function renderSampleQuizzes(filterName = '', filterClass = '') {
+  const wrap = document.getElementById('sampleQuizzesList');
+  if (!wrap) return;
+  const quizzes = await StorageEngine.getAllQuizzes();
+
+  if (!quizzes.length) {
+    wrap.innerHTML = '<div style="color:var(--text-muted);font-size:0.95rem;text-align:center;padding:1.5rem;">Chưa có đề thi nào trong hệ thống.</div>';
+    return;
+  }
+
+  let displayedQuizzes = quizzes;
+  if (filterName || filterClass) {
+    displayedQuizzes = quizzes.filter(q => {
+      if (q.assignType === 'all' || !q.assignType) return true;
+      if (q.assignType === 'classes' && Array.isArray(q.assignedClasses)) {
+        return q.assignedClasses.some(c => c.toLowerCase() === filterClass.toLowerCase());
+      }
+      if (q.assignType === 'students' && Array.isArray(q.assignedStudents)) {
+        const studentTag = `${filterName} (${filterClass})`.toLowerCase();
+        return q.assignedStudents.some(s => s.toLowerCase() === studentTag || s.toLowerCase().includes(filterName.toLowerCase()));
+      }
+      return true;
+    });
+  }
+
+  const titleHeader = document.getElementById('studentFeedHeaderTitle');
+  if (titleHeader) {
+    titleHeader.textContent = filterName ? `📚 Đề Thi Phù Hợp Cho ${filterName} (Lớp ${filterClass})` : '📚 Thư Viện Đề Thi';
+  }
+
+  if (!displayedQuizzes.length) {
+    wrap.innerHTML = `
+      <div style="text-align:center;padding:1.75rem 1rem;color:var(--text-muted);">
+        <div style="font-size:2.5rem;margin-bottom:0.4rem;">📭</div>
+        <p style="font-weight:800;font-size:1.05rem;color:var(--amber-shadow);">Hiện tại chưa có đề thi nào được phân công riêng cho bạn (${escapeHtml(filterName)} - Lớp ${escapeHtml(filterClass)}).</p>
+        <p style="font-size:0.875rem;margin-top:4px;">Khi giáo viên giao bài theo lớp hoặc giao đích danh cho bạn, đề thi sẽ tự động xuất hiện ở đây.</p>
+      </div>
+    `;
+    return;
+  }
+
+  wrap.innerHTML = displayedQuizzes.map(q => {
+    let targetBadge = '<span class="badge-status badge-pass" style="font-size:0.75rem;">🌍 Đề công khai</span>';
+    if (q.assignType === 'classes') {
+      targetBadge = `<span class="badge-status" style="font-size:0.75rem;background:var(--sky-light);color:var(--sky-shadow);">🏫 Đề riêng Lớp ${(q.assignedClasses||[]).join(', ')}</span>`;
+    } else if (q.assignType === 'students') {
+      targetBadge = `<span class="badge-status" style="font-size:0.75rem;background:var(--amber-light);color:var(--amber-shadow);">👤 Đích danh cho bạn</span>`;
+    }
+
+    return `
+      <div class="card" style="padding:1.15rem;margin-bottom:0.85rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;border-left:6px solid ${q.assignType === 'students' ? 'var(--amber)' : (q.assignType === 'classes' ? 'var(--sky)' : 'var(--primary)')};">
+        <div>
+          <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+            <div style="font-weight:800;font-size:1.1rem;color:var(--text-primary);">${escapeHtml(q.title)}</div>
+            ${targetBadge}
+          </div>
+          <div style="font-size:0.85rem;color:var(--text-secondary);margin-top:4px;font-weight:600;">
+            Mã Đề: <span class="code-badge" style="font-size:0.9rem;padding:3px 8px;">${q.id}</span> · ${q.totalQuestions || (q.answerKeys ? q.answerKeys.length : 12)} câu · ${q.timeLimit} phút
+          </div>
+        </div>
+        <div style="display:flex;gap:0.5rem;align-items:center;">
+          <button class="btn btn-success" onclick="loadAndJoinQuizDirectly('${q.id}')">Vào Thi Ngay 🚀</button>
+          <button class="btn btn-danger btn-sm" onclick="confirmDeleteQuiz('${q.id}', '${escapeHtml(q.title)}')" title="Xóa đề này">🗑️</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function loadAndJoinQuizDirectly(quizId) {
+  document.getElementById('studentJoinCode').value = quizId;
+  joinStudentQuiz(quizId);
+}
+
+/* Join Exam */
 async function joinStudentQuiz(customCode) {
   const code = (customCode || document.getElementById('studentJoinCode').value).trim().toUpperCase();
   const className = document.getElementById('studentJoinClass').value.trim();
@@ -1263,54 +1364,9 @@ function exportResultsToCsv(quizCode) {
   });
 }
 
-/* Sample Quizzes in Student View */
-async function renderSampleQuizzes() {
-  const wrap = document.getElementById('sampleQuizzesList');
-  if (!wrap) return;
-  const quizzes = await StorageEngine.getAllQuizzes();
-
-  if (!quizzes.length) {
-    wrap.innerHTML = '<div style="color:var(--text-muted);font-size:0.95rem;text-align:center;padding:1rem;">Chưa có đề thi nào trong thư viện.</div>';
-    return;
-  }
-
-  wrap.innerHTML = quizzes.map(q => {
-    let targetBadge = '<span class="badge-status badge-pass" style="font-size:0.75rem;">🌍 Công khai</span>';
-    if (q.assignType === 'classes') {
-      targetBadge = `<span class="badge-status" style="font-size:0.75rem;background:var(--sky-light);color:var(--sky-shadow);">🏫 Lớp ${(q.assignedClasses||[]).join(', ')}</span>`;
-    } else if (q.assignType === 'students') {
-      targetBadge = `<span class="badge-status" style="font-size:0.75rem;background:var(--amber-light);color:var(--amber-shadow);">👤 Đích danh ${(q.assignedStudents||[]).length} HS</span>`;
-    }
-
-    return `
-      <div class="card" style="padding:1.15rem;margin-bottom:0.85rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
-        <div>
-          <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
-            <div style="font-weight:800;font-size:1.1rem;color:var(--text-primary);">${escapeHtml(q.title)}</div>
-            ${targetBadge}
-          </div>
-          <div style="font-size:0.85rem;color:var(--text-secondary);margin-top:4px;font-weight:600;">
-            Mã Đề: <span class="code-badge" style="font-size:0.9rem;padding:3px 8px;">${q.id}</span> · ${q.totalQuestions || (q.answerKeys ? q.answerKeys.length : 12)} câu · ${q.timeLimit} phút
-          </div>
-        </div>
-        <div style="display:flex;gap:0.5rem;align-items:center;">
-          <button class="btn btn-success" onclick="loadSampleToStudent('${q.id}')">Vào Thi Ngay 🚀</button>
-          <button class="btn btn-danger btn-sm" onclick="confirmDeleteQuiz('${q.id}', '${escapeHtml(q.title)}')" title="Xóa đề này">🗑️</button>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
 function loadSampleToStudent(quizId) {
   switchTab('student');
   document.getElementById('studentJoinCode').value = quizId;
-  if (!document.getElementById('studentJoinClass').value) {
-    document.getElementById('studentJoinClass').value = '8A1';
-  }
-  if (!document.getElementById('studentJoinName').value) {
-    document.getElementById('studentJoinName').value = 'Nguyễn Văn An';
-  }
 }
 
 function copyToClipboard(text) {
@@ -1342,6 +1398,6 @@ function restartStudentJoin() {
   document.getElementById('studentResultSection').classList.add('hidden');
   document.getElementById('studentExamSection').classList.add('hidden');
   document.getElementById('studentJoinSection').classList.remove('hidden');
-  renderSampleQuizzes();
+  updatePersonalizedExamFeed();
   SoundEngine.playClick();
 }
