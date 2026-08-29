@@ -1,9 +1,8 @@
 /**
  * KhiemEdu Math Engine & Dynamic Question Generator
- * Ngân hàng đề thi Toán học chuẩn TOANMATH.com (Lớp 6 - 12 & Luyện Thi Vào 10 / THPT)
- * Tích hợp Hình vẽ Hình học & Đồ thị SVG Vector chuẩn đề thi thật
- * Phân loại chuẩn 4 Mức độ nhận thức: Nhận biết (NB), Thông hiểu (TH), Vận dụng (VD), Vận dụng cao (VDC)
- * Phân loại chuẩn 4 Kỳ: Giữa kỳ 1 (GK1), Cuối kỳ 1 (CK1), Giữa kỳ 2 (GK2), Cuối kỳ 2 (CK2), Tuyển sinh 10 & THPT
+ * Ngân hàng đề thi Toán học chuẩn TOANMATH.com (Phân cấp chuẩn từng Khối Lớp 6 - 12 & Tuyển sinh 10)
+ * ĐẢM BẢO 100% KIẾN THỨC CHUẨN ĐÚNG KHỐI LỚP - KHÔNG TRỘN LẪN
+ * Tích hợp Hình vẽ Hình học SVG & KaTeX sắc nét
  */
 
 function escapeMathHtml(str) {
@@ -19,27 +18,21 @@ if (typeof window !== 'undefined' && typeof window.escapeHtml === 'undefined') {
   window.escapeHtml = escapeMathHtml;
 }
 
-/* ================= 📐 BỘ VẼ HÌNH MINH HỌA TOÁN HỌC CHUẨN SVG (VECTOR DIAGRAMS) ================= */
+/* ================= 📐 BỘ VẼ HÌNH MINH HỌA TOÁN HỌC CHUẨN SVG ================= */
 const MathDiagrams = {
   // Tam giác vuông có đường cao và ký hiệu góc vuông
   rightTriangle(AB = '6', AC = '8', BC = '10', AH = 'h') {
     return `
       <div class="math-diagram-box" style="text-align:center;margin:0.75rem 0;">
         <svg width="240" height="150" viewBox="0 0 240 150" xmlns="http://www.w3.org/2000/svg" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
-          <!-- Tam giác vuông ABC vuông tại A -->
           <polygon points="40,120 40,30 200,120" fill="rgba(99, 102, 241, 0.05)" stroke="#4f46e5" stroke-width="2"/>
-          <!-- Đường cao AH -->
           <line x1="40" y1="120" x2="88" y2="75" stroke="#ef4444" stroke-width="1.8" stroke-dasharray="3,3"/>
-          <!-- Ký hiệu vuông góc tại A -->
           <polyline points="40,105 55,105 55,120" fill="none" stroke="#4f46e5" stroke-width="1.5"/>
-          <!-- Ký hiệu vuông góc tại H -->
           <polyline points="80,72 88,64 96,72" fill="none" stroke="#ef4444" stroke-width="1.2"/>
-          <!-- Tên các đỉnh -->
           <text x="25" y="130" font-weight="bold" fill="#1e293b" font-size="14">A</text>
           <text x="35" y="25" font-weight="bold" fill="#1e293b" font-size="14">B</text>
           <text x="205" y="130" font-weight="bold" fill="#1e293b" font-size="14">C</text>
           <text x="94" y="68" font-weight="bold" fill="#ef4444" font-size="13">H</text>
-          <!-- Số liệu cạnh -->
           <text x="15" y="75" fill="#6366f1" font-size="12" font-weight="600">${AB}</text>
           <text x="120" y="138" fill="#6366f1" font-size="12" font-weight="600">${AC}</text>
           <text x="125" y="65" fill="#6366f1" font-size="12" font-weight="600">${BC}</text>
@@ -54,21 +47,15 @@ const MathDiagrams = {
     return `
       <div class="math-diagram-box" style="text-align:center;margin:0.75rem 0;">
         <svg width="260" height="150" viewBox="0 0 260 150" xmlns="http://www.w3.org/2000/svg" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
-          <!-- Tâm O và đường tròn -->
           <circle cx="80" cy="75" r="45" fill="none" stroke="#0ea5e9" stroke-width="2"/>
           <circle cx="80" cy="75" r="2.5" fill="#0ea5e9"/>
-          <!-- Điểm M ngoài đường tròn -->
           <circle cx="210" cy="75" r="3" fill="#ef4444"/>
-          <!-- Hai tiếp tuyến MA, MB -->
           <line x1="210" y1="75" x2="105" y2="38" stroke="#4f46e5" stroke-width="1.8"/>
           <line x1="210" y1="75" x2="105" y2="112" stroke="#4f46e5" stroke-width="1.8"/>
-          <!-- Bán kính OA, OB -->
           <line x1="80" y1="75" x2="105" y2="38" stroke="#0ea5e9" stroke-width="1.5" stroke-dasharray="3,2"/>
           <line x1="80" y1="75" x2="105" y2="112" stroke="#0ea5e9" stroke-width="1.5" stroke-dasharray="3,2"/>
-          <!-- Dây cung AB và đoạn OM -->
           <line x1="105" y1="38" x2="105" y2="112" stroke="#f59e0b" stroke-width="1.5"/>
           <line x1="80" y1="75" x2="210" y2="75" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4,3"/>
-          <!-- Ký hiệu đỉnh -->
           <text x="65" y="78" font-weight="bold" fill="#0ea5e9" font-size="13">O</text>
           <text x="220" y="80" font-weight="bold" fill="#ef4444" font-size="14">M</text>
           <text x="105" y="28" font-weight="bold" fill="#1e293b" font-size="13">A</text>
@@ -84,22 +71,17 @@ const MathDiagrams = {
     return `
       <div class="math-diagram-box" style="text-align:center;margin:0.75rem 0;">
         <svg width="220" height="150" viewBox="0 0 220 150" xmlns="http://www.w3.org/2000/svg" style="background:#ffffff;border:1px solid #e2e8f0;border-radius:8px;">
-          <!-- Hệ trục tọa độ Oxy -->
           <line x1="20" y1="110" x2="200" y2="110" stroke="#475569" stroke-width="1.5"/>
           <line x1="70" y1="140" x2="70" y2="15" stroke="#475569" stroke-width="1.5"/>
-          <!-- Mũi tên trục -->
           <polygon points="200,110 193,107 193,113" fill="#475569"/>
           <polygon points="70,15 67,22 73,22" fill="#475569"/>
           <text x="195" y="125" font-size="11" font-weight="bold" fill="#475569">x</text>
           <text x="55" y="25" font-size="11" font-weight="bold" fill="#475569">y</text>
           <text x="58" y="123" font-size="11" font-weight="bold" fill="#475569">O</text>
-          <!-- Đường cong Parabol y = x^2 - 4x + 3 -->
           <path d="M 40,35 Q 120,175 190,35" fill="none" stroke="#6366f1" stroke-width="2.2"/>
-          <!-- Đỉnh I(2; -1) -->
           <circle cx="120" cy="125" r="3" fill="#ef4444"/>
           <line x1="120" y1="110" x2="120" y2="125" stroke="#ef4444" stroke-width="1" stroke-dasharray="2,2"/>
           <text x="125" y="138" font-size="11" font-weight="bold" fill="#ef4444">I(2; -1)</text>
-          <!-- Giao điểm x = 1, x = 3 -->
           <circle cx="95" cy="110" r="2.5" fill="#475569"/>
           <circle cx="145" cy="110" r="2.5" fill="#475569"/>
           <text x="90" y="103" font-size="10" font-weight="600" fill="#475569">1</text>
@@ -115,22 +97,16 @@ const MathDiagrams = {
     return `
       <div class="math-diagram-box" style="text-align:center;margin:0.75rem 0;">
         <svg width="220" height="150" viewBox="0 0 220 150" xmlns="http://www.w3.org/2000/svg" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
-          <!-- Đỉnh S -->
           <circle cx="110" cy="20" r="3" fill="#4f46e5"/>
           <text x="105" y="15" font-weight="bold" fill="#4f46e5" font-size="13">S</text>
-          <!-- Đáy ABCD -->
           <line x1="40" y1="100" x2="90" y2="135" stroke="#1e293b" stroke-width="1.5"/>
           <line x1="90" y1="135" x2="190" y2="135" stroke="#1e293b" stroke-width="1.5"/>
           <line x1="190" y1="135" x2="140" y2="100" stroke="#1e293b" stroke-width="1.5"/>
-          <!-- Nét đứt mặt đáy AD -->
           <line x1="40" y1="100" x2="140" y2="100" stroke="#64748b" stroke-width="1.5" stroke-dasharray="3,3"/>
-          <!-- Cạnh bên -->
           <line x1="110" y1="20" x2="40" y2="100" stroke="#4f46e5" stroke-width="1.8"/>
           <line x1="110" y1="20" x2="90" y2="135" stroke="#4f46e5" stroke-width="1.8"/>
           <line x1="110" y1="20" x2="190" y2="135" stroke="#4f46e5" stroke-width="1.8"/>
-          <!-- Nét đứt cạnh bên SA phía sau -->
           <line x1="110" y1="20" x2="140" y2="100" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="3,3"/>
-          <!-- Tên các đỉnh đáy -->
           <text x="25" y="105" font-weight="bold" fill="#1e293b" font-size="12">A</text>
           <text x="80" y="145" font-weight="bold" fill="#1e293b" font-size="12">B</text>
           <text x="195" y="145" font-weight="bold" fill="#1e293b" font-size="12">C</text>
@@ -141,7 +117,7 @@ const MathDiagrams = {
     `;
   },
 
-  // Bảng biến thiên (Variation Table)
+  // Bảng biến thiên
   variationTable() {
     return `
       <div class="math-diagram-box" style="text-align:center;margin:0.75rem 0;">
@@ -178,15 +154,11 @@ const MathDiagrams = {
     return `
       <div class="math-diagram-box" style="text-align:center;margin:0.75rem 0;">
         <svg width="220" height="130" viewBox="0 0 220 130" xmlns="http://www.w3.org/2000/svg" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
-          <!-- 4 đỉnh hình thoi -->
           <polygon points="110,15 190,65 110,115 30,65" fill="rgba(14, 165, 233, 0.08)" stroke="#0284c7" stroke-width="2"/>
-          <!-- 2 đường chéo -->
           <line x1="30" y1="65" x2="190" y2="65" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="3,2"/>
           <line x1="110" y1="15" x2="110" y2="115" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="3,2"/>
-          <!-- Giao điểm O -->
           <polyline points="110,57 118,57 118,65" fill="none" stroke="#ef4444" stroke-width="1.2"/>
           <text x="115" y="77" font-size="11" fill="#ef4444" font-weight="bold">O</text>
-          <!-- Tên các đỉnh -->
           <text x="105" y="12" font-weight="bold" fill="#1e293b" font-size="12">A</text>
           <text x="195" y="70" font-weight="bold" fill="#1e293b" font-size="12">B</text>
           <text x="105" y="128" font-weight="bold" fill="#1e293b" font-size="12">C</text>
@@ -195,245 +167,457 @@ const MathDiagrams = {
         <div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-top:2px;">(Hình thoi ABCD với hai đường chéo d₁ = ${d1}, d₂ = ${d2})</div>
       </div>
     `;
+  },
+
+  // Tam giác cân có đường phân giác (Toán 7)
+  isoscelesTriangle(angleA = '100°') {
+    return `
+      <div class="math-diagram-box" style="text-align:center;margin:0.75rem 0;">
+        <svg width="220" height="140" viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+          <polygon points="110,25 30,115 190,115" fill="rgba(16, 185, 129, 0.06)" stroke="#059669" stroke-width="2"/>
+          <line x1="30" y1="115" x2="145" y2="65" stroke="#ef4444" stroke-width="1.6" stroke-dasharray="3,2"/>
+          <text x="105" y="18" font-weight="bold" fill="#1e293b" font-size="13">A (${angleA})</text>
+          <text x="15" y="125" font-weight="bold" fill="#1e293b" font-size="13">B</text>
+          <text x="195" y="125" font-weight="bold" fill="#1e293b" font-size="13">C</text>
+          <text x="150" y="60" font-weight="bold" fill="#ef4444" font-size="12">D</text>
+        </svg>
+        <div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-top:2px;">(Tam giác ABC cân tại A, phân giác BD)</div>
+      </div>
+    `;
   }
 };
 
-/* ================= NGÂN HÀNG CÂU HỎI TOÁN TOANMATH (CHUẨN MA TRẬN & HÌNH ẢNH) ================= */
-const MATH_QUESTION_BANK = [
-  // ==================== TOÁN 6 ====================
-  // Giữa Kỳ 1 (GK1)
-  {
-    id: "T6_GK1_01",
-    grade: 6,
-    term: "GK1",
-    topic: "Số học",
-    subtopic: "Tập hợp & Phần tử",
-    level: "NB",
-    type: "mcq",
-    question: "Cho tập hợp $A = \\{x \\in \\mathbb{N} \\mid 3 < x \\le 7\\}$. Tập hợp $A$ viết dưới dạng liệt kê các phần tử là:",
-    options: ["$A = \\{4; 5; 6; 7\\}$", "$A = \\{3; 4; 5; 6; 7\\}$", "$A = \\{4; 5; 6\\}$", "$A = \\{3; 4; 5; 6\\}$"],
-    correctAnswer: "A",
-    explanation: "Các số tự nhiên $x$ thỏa mãn $3 < x \\le 7$ là $4; 5; 6; 7$. Do đó $A = \\{4; 5; 6; 7\\}$."
-  },
-  {
-    id: "T6_GK1_02",
-    grade: 6,
-    term: "GK1",
-    topic: "Số học",
-    subtopic: "Ước & Bội - Số nguyên tố",
-    level: "TH",
-    type: "mcq",
-    question: "Ước chung lớn nhất của hai số $48$ và $60$ là:",
-    options: ["$12$", "$6$", "$24$", "$240$"],
-    correctAnswer: "A",
-    explanation: "$48 = 2^4 \\times 3$; $60 = 2^2 \\times 3 \\times 5$. Vậy $\\text{ƯCLN}(48, 60) = 2^2 \\times 3 = 12$."
-  },
-  {
-    id: "T6_GK1_03",
-    grade: 6,
-    term: "GK1",
-    topic: "Hình học",
-    subtopic: "Hình thoi & Diện tích",
-    level: "TH",
-    type: "mcq",
-    question: "Cho hình thoi $ABCD$ có độ dài hai đường chéo là $AC = 8\\text{ cm}$ và $BD = 6\\text{ cm}$ (như hình minh họa). Diện tích hình thoi $ABCD$ là:",
-    diagram: MathDiagrams.rhombus('8cm', '6cm'),
-    options: ["$24\\text{ cm}^2$", "$48\\text{ cm}^2$", "$14\\text{ cm}^2$", "$28\\text{ cm}^2$"],
-    correctAnswer: "A",
-    explanation: "$S = \\dfrac{1}{2} d_1 d_2 = \\dfrac{1}{2} \\times 8 \\times 6 = 24\\text{ cm}^2$."
-  },
-  {
-    id: "T6_GK1_VD_E01",
-    grade: 6,
-    term: "GK1",
-    topic: "Số học",
-    subtopic: "Tìm x trong tập hợp số tự nhiên",
-    level: "VD",
-    type: "essay",
-    question: "Tìm số tự nhiên $x$ thỏa mãn đẳng thức: $3^{x+1} - 3^x = 162$.",
-    options: [],
-    correctAnswer: "4 | x=4",
-    explanation: "$3^x(3 - 1) = 162 \\iff 2 \\cdot 3^x = 162 \\iff 3^x = 81 = 3^4 \\implies x = 4$."
-  },
-  {
-    id: "T6_GK1_VDC_E01",
-    grade: 6,
-    term: "GK1",
-    topic: "Số học",
-    subtopic: "Ước bội nâng cao & Tính chia hết",
-    level: "VDC",
-    type: "essay",
-    question: "Tìm số tự nhiên $n$ nhỏ nhất sao cho phân số $A = \\dfrac{2n+3}{n+1}$ là một số nguyên:",
-    options: [],
-    correctAnswer: "0 | n=0",
-    explanation: "$A = \\dfrac{2(n+1)+1}{n+1} = 2 + \\dfrac{1}{n+1}$. Để $A$ nguyên thì $n+1 \\in \\text{Ư}(1) = \\{1\\} \\implies n = 0$."
-  },
-
-  // Cuối Kỳ 1 (CK1)
-  {
-    id: "T6_CK1_01",
-    grade: 6,
-    term: "CK1",
-    topic: "Số học",
-    subtopic: "Số nguyên",
-    level: "VD",
-    type: "mcq",
-    question: "Tìm số nguyên $x$ biết: $2x - (-15) = 3^2 + (-2)^3$.",
-    options: ["$x = -7$", "$x = 7$", "$x = -8$", "$x = 8$"],
-    correctAnswer: "A",
-    explanation: "$2x + 15 = 9 - 8 = 1 \\iff 2x = -14 \\implies x = -7$."
-  },
-
-  // ==================== TOÁN 8 ====================
-  {
-    id: "T8_GK1_01",
-    grade: 8,
-    term: "GK1",
-    topic: "Đại số",
-    subtopic: "Hằng đẳng thức đáng nhớ",
-    level: "NB",
-    type: "mcq",
-    question: "Khai triển hằng đẳng thức $(2x - 3)^2$ ta được:",
-    options: ["$4x^2 - 12x + 9$", "$4x^2 - 6x + 9$", "$4x^2 - 9$", "$4x^2 + 12x + 9$"],
-    correctAnswer: "A",
-    explanation: "$(2x - 3)^2 = 4x^2 - 12x + 9$."
-  },
-  {
-    id: "T8_VDC_E01",
-    grade: 8,
-    term: "CK1",
-    topic: "Đại số",
-    subtopic: "Bất đẳng thức Cauchy 2 số",
-    level: "VDC",
-    type: "essay",
-    question: "Cho hai số thực dương $x, y$ thỏa mãn $x + y = 6$. Tìm giá trị lớn nhất của tích $P = xy$:",
-    options: [],
-    correctAnswer: "9 | max=9 | P=9",
-    explanation: "Áp dụng BĐT Cauchy: $xy \\le \\left(\\dfrac{x+y}{2}\\right)^2 = \\left(\\dfrac{6}{2}\\right)^2 = 9$. Đạt khi $x = y = 3$."
+/* ================= 🎓 LÕI SINH ĐỀ TOÁN ĐỘC LẬP THEO TỪNG LỚP (GRADE-SPECIFIC GENERATORS) ================= */
+const GradeEngines = {
+  // 📚 TOÁN 6: Số tự nhiên, Lũy thừa, Ước & Bội, Số nguyên Z, Phân số, Hình thoi, Chu vi diện tích
+  generateGrade6(type = 'mcq', level = 'TH', index = 1) {
+    if (type === 'essay') {
+      if (level === 'VDC') {
+        const k = Math.floor(Math.random() * 4) + 2;
+        return {
+          id: `G6_VDC_E_${Date.now()}_${index}`,
+          grade: 6,
+          topic: "Số học & Chia hết",
+          level: "VDC",
+          type: "essay",
+          question: `[Vận Dụng Cao 🔥] Tìm số tự nhiên $n$ sao cho phân số $A = \\dfrac{2n+${k}}{n+1}$ nhận giá trị là một số nguyên dương:`,
+          options: [],
+          correctAnswer: `0 | n=0`,
+          explanation: `$A = \\dfrac{2(n+1) + (${k}-2)}{n+1} = 2 + \\dfrac{${k-2}}{n+1}$. Để $A$ nguyên thì $(n+1)$ là ước của ${k-2}$. Suy ra $n = 0$.`
+        };
+      } else if (level === 'TH') {
+        const xVal = Math.floor(Math.random() * 15) + 5;
+        const b = Math.floor(Math.random() * 20) + 10;
+        const sum = xVal + b;
+        return {
+          id: `G6_TH_E_${Date.now()}_${index}`,
+          grade: 6,
+          topic: "Số nguyên",
+          level: "TH",
+          type: "essay",
+          question: `[Thông Hiểu 💡] Tìm số nguyên $x$ biết: $x - (-${b}) = ${sum}$:`,
+          options: [],
+          correctAnswer: `${xVal} | x=${xVal}`,
+          explanation: `$x + ${b} = ${sum} \\implies x = ${sum} - ${b} = ${xVal}$.`
+        };
+      } else {
+        const p = Math.floor(Math.random() * 3) + 2; // 2, 3, 4
+        const val = Math.pow(3, p) * 2;
+        return {
+          id: `G6_VD_E_${Date.now()}_${index}`,
+          grade: 6,
+          topic: "Lũy thừa với số tự nhiên",
+          level: "VD",
+          type: "essay",
+          question: `[Vận Dụng 🧠] Tìm số tự nhiên $x$ thỏa mãn: $3^{x+1} - 3^x = ${val}$:`,
+          options: [],
+          correctAnswer: `${p} | x=${p}`,
+          explanation: `$3^x(3 - 1) = ${val} \\iff 2 \\cdot 3^x = ${val} \\iff 3^x = ${val/2} = 3^${p} \\implies x = ${p}$.`
+        };
+      }
+    } else {
+      // MCQ Grade 6
+      const r = Math.random();
+      if (r < 0.33) {
+        const a = Math.floor(Math.random() * 5) + 3;
+        const b = a + Math.floor(Math.random() * 4) + 2;
+        return {
+          id: `G6_MCQ_${Date.now()}_${index}`,
+          grade: 6,
+          topic: "Tập hợp",
+          level: "NB",
+          type: "mcq",
+          question: `Cho tập hợp $M = \\{x \\in \\mathbb{N} \\mid ${a} \\le x < ${b}\\}$. Số phần tử của tập hợp $M$ là:`,
+          options: [`$${b - a}$ phần tử`, `$${b - a + 1}$ phần tử`, `$${b - a - 1}$ phần tử`, `$${b}$ phần tử`],
+          correctAnswer: "A",
+          explanation: `Các phần tử của $M$ là $\\{${a}; ${a+1}; \\dots; ${b-1}\\}$. Số phần tử là ${b - a}.`
+        };
+      } else if (r < 0.66) {
+        const d1 = (Math.floor(Math.random() * 4) + 3) * 2;
+        const d2 = (Math.floor(Math.random() * 3) + 2) * 2;
+        const S = (d1 * d2) / 2;
+        return {
+          id: `G6_MCQ_DIAG_${Date.now()}_${index}`,
+          grade: 6,
+          topic: "Hình học trực quan & Diện tích",
+          level: "TH",
+          type: "mcq",
+          question: `Cho hình thoi có hai đường chéo $d_1 = ${d1}\\text{ cm}$ và $d_2 = ${d2}\\text{ cm}$ (như hình minh họa). Diện tích của hình thoi là:`,
+          diagram: MathDiagrams.rhombus(`${d1}cm`, `${d2}cm`),
+          options: [`$${S}\\text{ cm}^2$`, `$${d1 * d2}\\text{ cm}^2$`, `$${S + 4}\\text{ cm}^2$`, `$${d1 + d2}\\text{ cm}^2$`],
+          correctAnswer: "A",
+          explanation: `$S = \\dfrac{1}{2} d_1 d_2 = \\dfrac{1}{2} \\times ${d1} \\times ${d2} = ${S}\\text{ cm}^2$.`
+        };
+      } else {
+        const u = 12;
+        const v = 18;
+        return {
+          id: `G6_MCQ_UCLN_${Date.now()}_${index}`,
+          grade: 6,
+          topic: "Ước và Bội",
+          level: "TH",
+          type: "mcq",
+          question: `Ước chung lớn nhất của hai số $24$ và $36$ là:`,
+          options: ["$12$", "$6$", "$18$", "$72$"],
+          correctAnswer: "A",
+          explanation: `$\\text{ƯCLN}(24, 36) = 12$.`
+        };
+      }
+    }
   },
 
-  // ==================== TOÁN 9 ====================
-  {
-    id: "T9_GK1_01",
-    grade: 9,
-    term: "GK1",
-    topic: "Hình học",
-    subtopic: "Hệ thức lượng trong tam giác vuông",
-    level: "TH",
-    type: "mcq",
-    question: "Cho tam giác $ABC$ vuông tại $A$, đường cao $AH$ (như hình minh họa). Biết $BH = 4\\text{ cm}, CH = 9\\text{ cm}$. Độ dài đường cao $AH$ là:",
-    diagram: MathDiagrams.rightTriangle('AB', 'AC', 'BC', 'AH'),
-    options: ["$6\\text{ cm}$", "$36\\text{ cm}$", "$6.5\\text{ cm}$", "$\\sqrt{13}\\text{ cm}$"],
-    correctAnswer: "A",
-    explanation: "$AH^2 = BH \\cdot CH = 4 \\times 9 = 36 \\implies AH = 6\\text{ cm}$."
-  },
-  {
-    id: "T9_CK1_01",
-    grade: 9,
-    term: "CK1",
-    topic: "Hình học",
-    subtopic: "Đường tròn và tiếp tuyến",
-    level: "VD",
-    type: "mcq",
-    question: "Cho $(O; R)$ và điểm $M$ sao cho $OM = 2R$. Kẻ hai tiếp tuyến $MA, MB$ đến $(O)$ như hình vẽ. Góc $\\widehat{AMB}$ bằng:",
-    diagram: MathDiagrams.circleWithTangents(5, 10),
-    options: ["$60^\\circ$", "$90^\\circ$", "$45^\\circ$", "$120^\\circ$"],
-    correctAnswer: "A",
-    explanation: "$\\sin \\widehat{AMO} = \\dfrac{R}{OM} = \\dfrac{1}{2} \\implies \\widehat{AMO} = 30^\\circ \\implies \\widehat{AMB} = 2 \\times 30^\\circ = 60^\\circ$."
-  },
-  {
-    id: "T9_VDC_E01",
-    grade: 9,
-    term: "CK2",
-    topic: "Đại số",
-    subtopic: "Cực trị căn thức (Câu 10 điểm)",
-    level: "VDC",
-    type: "essay",
-    question: "Tìm giá trị lớn nhất của biểu thức $A = \\sqrt{x - 2} + \\sqrt{6 - x}$ với $2 \\le x \\le 6$:",
-    options: [],
-    correctAnswer: "2*sqrt(2) | sqrt(8) | 2.83 | 2sqrt(2)",
-    explanation: "$A^2 \\le (1+1)(x-2+6-x) = 8 \\implies A \\le \\sqrt{8} = 2\\sqrt{2}$. Đạt khi $x = 4$."
-  },
-
-  // ==================== ÔN THI VÀO 10 (TS10) ====================
-  {
-    id: "TS10_001",
-    grade: "TS10",
-    term: "TS10",
-    topic: "Rút gọn biểu thức chứa căn",
-    subtopic: "Biến đổi đồng nhất",
-    level: "TH",
-    type: "mcq",
-    question: "Rút gọn biểu thức $P = \\left(\\dfrac{\\sqrt{x}}{\\sqrt{x}-1} - \\dfrac{1}{x-\\sqrt{x}}\\right) : \\dfrac{\\sqrt{x}+1}{\\sqrt{x}-1}$ với $x > 0, x \\ne 1$ được:",
-    options: ["$P = \\dfrac{\\sqrt{x}-1}{\\sqrt{x}}$", "$P = \\dfrac{1}{\\sqrt{x}}$", "$P = \\sqrt{x}$", "$P = \\dfrac{\\sqrt{x}+1}{\\sqrt{x}}$"],
-    correctAnswer: "A",
-    explanation: "Rút gọn ta được $P = \\dfrac{\\sqrt{x}-1}{\\sqrt{x}}$."
-  },
-  {
-    id: "TS10_VDC_E01",
-    grade: "TS10",
-    term: "TS10",
-    topic: "Bất đẳng thức & Cực trị đại số (Câu điểm 10 Tuyển sinh 10)",
-    subtopic: "Kỹ thuật Cauchy ngược dấu",
-    level: "VDC",
-    type: "essay",
-    question: "Cho ba số thực dương $a, b, c$ thỏa mãn $a + b + c = 3$. Tìm giá trị nhỏ nhất của biểu thức $P = \\dfrac{a}{1+b^2} + \\dfrac{b}{1+c^2} + \\dfrac{c}{1+a^2}$:",
-    options: [],
-    correctAnswer: "1.5 | 3/2 | min=3/2",
-    explanation: "Áp dụng Cauchy ngược dấu: $\\dfrac{a}{1+b^2} = a - \\dfrac{ab^2}{1+b^2} \\ge a - \\dfrac{ab}{2}$. Cộng 3 BĐT: $P \\ge a+b+c - \\dfrac{ab+bc+ca}{2} = 3 - 1.5 = 1.5$."
-  },
-
-  // ==================== TOÁN 10 ====================
-  {
-    id: "T10_GK1_01",
-    grade: 10,
-    term: "GK1",
-    topic: "Hàm số bậc hai",
-    subtopic: "Đồ thị Parabol",
-    level: "TH",
-    type: "mcq",
-    question: "Cho hàm số bậc hai có đồ thị hình Parabol như hình vẽ dưới đây. Tọa độ đỉnh $I$ của Parabol là:",
-    diagram: MathDiagrams.parabolaGraph(),
-    options: ["$I(2; -1)$", "$I(-2; 15)$", "$I(2; 1)$", "$I(4; 3)$"],
-    correctAnswer: "A",
-    explanation: "Dựa vào đồ thị ta nhận thấy điểm cực tiểu (đỉnh) có tọa độ $x = 2, y = -1 \\implies I(2; -1)$."
+  // 📚 TOÁN 7: Số hữu tỉ Q, Tỉ lệ thức, Đa thức một biến, Tam giác cân, Phân giác
+  generateGrade7(type = 'mcq', level = 'TH', index = 1) {
+    if (type === 'essay') {
+      if (level === 'VDC') {
+        const minVal = Math.floor(Math.random() * 4) + 2;
+        return {
+          id: `G7_VDC_E_${Date.now()}_${index}`,
+          grade: 7,
+          topic: "Giá trị tuyệt đối & Cực trị đại số",
+          level: "VDC",
+          type: "essay",
+          question: `[Vận Dụng Cao 🔥] Tìm giá trị nhỏ nhất của biểu thức $A = |x - 2| + |x - ${2 + minVal}|$:`,
+          options: [],
+          correctAnswer: `${minVal} | min=${minVal} | GTNN=${minVal}`,
+          explanation: `Áp dụng $|a| + |b| \\ge |a + b| \\implies A = |x - 2| + |${2 + minVal} - x| \\ge |x - 2 + ${2 + minVal} - x| = ${minVal}$.`
+        };
+      } else if (level === 'TH') {
+        const k = Math.floor(Math.random() * 5) + 2;
+        return {
+          id: `G7_TH_E_${Date.now()}_${index}`,
+          grade: 7,
+          topic: "Nghiệm của đa thức một biến",
+          level: "TH",
+          type: "essay",
+          question: `[Thông Hiểu 💡] Tìm nghiệm của đa thức một biến: $P(x) = 2x - ${2 * k}$:`,
+          options: [],
+          correctAnswer: `${k} | x=${k}`,
+          explanation: `$2x - ${2 * k} = 0 \\iff 2x = ${2 * k} \\implies x = ${k}$.`
+        };
+      } else {
+        const k = Math.floor(Math.random() * 4) + 2;
+        const xVal = 3 * k;
+        const yVal = 5 * k;
+        const sum = xVal + yVal;
+        return {
+          id: `G7_VD_E_${Date.now()}_${index}`,
+          grade: 7,
+          topic: "Dãy tỉ số bằng nhau",
+          level: "VD",
+          type: "essay",
+          question: `[Vận Dụng 🧠] Cho $\\dfrac{x}{3} = \\dfrac{y}{5}$ và $x + y = ${sum}$. Giá trị của $x$ là:`,
+          options: [],
+          correctAnswer: `${xVal} | x=${xVal}`,
+          explanation: `$\\dfrac{x}{3} = \\dfrac{y}{5} = \\dfrac{x+y}{3+5} = \\dfrac{${sum}}{8} = ${k} \\implies x = 3 \\times ${k} = ${xVal}$.`
+        };
+      }
+    } else {
+      // MCQ Grade 7
+      const r = Math.random();
+      if (r < 0.5) {
+        return {
+          id: `G7_MCQ_DIAG_${Date.now()}_${index}`,
+          grade: 7,
+          topic: "Tam giác cân & Tia phân giác",
+          level: "VD",
+          type: "mcq",
+          question: `Cho tam giác $ABC$ cân tại $A$ có $\\widehat{A} = 100^\\circ$, tia phân giác $BD$ cắt $AC$ tại $D$ (như hình minh họa). Số đo góc $\\widehat{ADB}$ là:`,
+          diagram: MathDiagrams.isoscelesTriangle('100°'),
+          options: ["$60^\\circ$", "$50^\\circ$", "$40^\\circ$", "$70^\\circ$"],
+          correctAnswer: "A",
+          explanation: `$\\widehat{B} = \\widehat{C} = (180^\\circ - 100^\\circ)/2 = 40^\\circ \\implies \\widehat{ABD} = 20^\\circ \\implies \\widehat{ADB} = 180^\\circ - 100^\\circ - 20^\\circ = 60^\\circ$.`
+        };
+      } else {
+        return {
+          id: `G7_MCQ_EXP_${Date.now()}_${index}`,
+          grade: 7,
+          topic: "Số hữu tỉ & Lũy thừa",
+          level: "NB",
+          type: "mcq",
+          question: `Giá trị của biểu thức $\\left(-\\dfrac{2}{3}\\right)^2$ bằng:`,
+          options: ["$\\dfrac{4}{9}$", "$-\\dfrac{4}{9}$", "$-\\dfrac{4}{6}$", "$\\dfrac{4}{6}$"],
+          correctAnswer: "A",
+          explanation: `$\\left(-\\dfrac{2}{3}\\right)^2 = \\dfrac{(-2)^2}{3^2} = \\dfrac{4}{9}$.`
+        };
+      }
+    }
   },
 
-  // ==================== TOÁN 11 & 12 ====================
-  {
-    id: "T11_001",
-    grade: 11,
-    term: "GK1",
-    topic: "Hình học không gian",
-    subtopic: "Hình chóp S.ABCD",
-    level: "TH",
-    type: "mcq",
-    question: "Cho hình chóp $S.ABCD$ có đáy $ABCD$ là hình bình hành (như hình vẽ). Giao tuyến của hai mặt phẳng $(SAB)$ và $(SCD)$ là đường thẳng đi qua $S$ và:",
-    diagram: MathDiagrams.pyramidSABCD(),
-    options: ["Song song với AB và CD", "Song song với AD và BC", "Cắt đoạn thẳng AC", "Vuông góc với mặt phẳng (ABCD)"],
-    correctAnswer: "A",
-    explanation: "Vì $AB \\parallel CD$ nên giao tuyến của $(SAB)$ và $(SCD)$ là đường thẳng qua $S$ và song song với $AB, CD$."
+  // 📚 TOÁN 8: Hằng đẳng thức, Phân tích nhân tử, Phân thức, Định lý Pythagore, Tam giác đồng dạng
+  generateGrade8(type = 'mcq', level = 'TH', index = 1) {
+    if (type === 'essay') {
+      if (level === 'VDC') {
+        const sum = Math.floor(Math.random() * 4) + 4; // 4, 5, 6, 7
+        const maxProd = Math.floor((sum * sum) / 4);
+        return {
+          id: `G8_VDC_E_${Date.now()}_${index}`,
+          grade: 8,
+          topic: "Bất đẳng thức Cauchy 2 số",
+          level: "VDC",
+          type: "essay",
+          question: `[Vận Dụng Cao 🔥] Cho hai số thực dương $x, y$ thỏa mãn $x + y = ${sum}$. Giá trị lớn nhất của tích $P = xy$ là:`,
+          options: [],
+          correctAnswer: `${(sum*sum)/4} | max=${(sum*sum)/4} | P=${(sum*sum)/4}`,
+          explanation: `Theo BĐT Cauchy: $xy \\le \\left(\\dfrac{x+y}{2}\\right)^2 = \\left(\\dfrac{${sum}}{2}\\right)^2 = ${(sum*sum)/4}$. Dấu '=' khi $x = y = ${sum/2}$.`
+        };
+      } else if (level === 'TH') {
+        const a = Math.floor(Math.random() * 5) + 2;
+        const b = Math.floor(Math.random() * 6) + 1;
+        const res = a * b;
+        return {
+          id: `G8_TH_E_${Date.now()}_${index}`,
+          grade: 8,
+          topic: "Phương trình bậc nhất",
+          level: "TH",
+          type: "essay",
+          question: `[Thông Hiểu 💡] Giải phương trình bậc nhất một biến: $${a}x - ${b} = ${res - b}$:`,
+          options: [],
+          correctAnswer: `${b} | x=${b}`,
+          explanation: `$${a}x = ${res} \\implies x = ${b}$.`
+        };
+      } else {
+        const r = Math.floor(Math.random() * 4) + 2;
+        return {
+          id: `G8_VD_E_${Date.now()}_${index}`,
+          grade: 8,
+          topic: "Phân tích nhân tử & Tìm nghiệm dương",
+          level: "VD",
+          type: "essay",
+          question: `[Vận Dụng 🧠] Tìm giá trị của $x > 0$ thỏa mãn phương trình: $x^3 - ${r * r}x = 0$:`,
+          options: [],
+          correctAnswer: `${r} | x=${r}`,
+          explanation: `$x(x - ${r})(x + ${r}) = 0$. Vì $x > 0$ nên $x = ${r}$.`
+        };
+      }
+    } else {
+      // MCQ Grade 8
+      const a = Math.floor(Math.random() * 3) + 2;
+      const b = Math.floor(Math.random() * 4) + 1;
+      return {
+        id: `G8_MCQ_${Date.now()}_${index}`,
+        grade: 8,
+        topic: "Hằng đẳng thức đáng nhớ",
+        level: "NB",
+        type: "mcq",
+        question: `Khai triển hằng đẳng thức $(x - ${b})^2$ ta được:`,
+        options: [`$x^2 - ${2 * b}x + ${b * b}$`, `$x^2 - ${b}x + ${b * b}$`, `$x^2 - ${b * b}$`, `$x^2 + ${2 * b}x + ${b * b}$`],
+        correctAnswer: "A",
+        explanation: `$(x - ${b})^2 = x^2 - 2(${b})x + ${b}^2 = x^2 - ${2 * b}x + ${b * b}$.`
+      };
+    }
   },
-  {
-    id: "T12_001",
-    grade: 12,
-    term: "GK1",
-    topic: "Khảo sát hàm số",
-    subtopic: "Bảng biến thiên",
-    level: "TH",
-    type: "mcq",
-    question: "Cho hàm số $y = f(x)$ có bảng biến thiên như hình bên dưới. Điểm cực tiểu của hàm số đã cho là:",
-    diagram: MathDiagrams.variationTable(),
-    options: ["$x = 1$", "$x = -1$", "$x = 0$", "$x = 4$"],
-    correctAnswer: "A",
-    explanation: "Dựa vào bảng biến thiên, đạo hàm đổi dấu từ âm sang dương qua $x = 1$, do đó $x = 1$ là điểm cực tiểu."
+
+  // 📚 TOÁN 9: Căn bậc hai, Hệ thức lượng, Hệ phương trình, PT bậc hai & Vi-ét, Đường tròn tiếp tuyến
+  generateGrade9(type = 'mcq', level = 'TH', index = 1) {
+    if (type === 'essay') {
+      if (level === 'VDC') {
+        const k = Math.floor(Math.random() * 4) + 2;
+        return {
+          id: `G9_VDC_E_${Date.now()}_${index}`,
+          grade: 9,
+          topic: "Cực trị căn thức (Câu điểm 10)",
+          level: "VDC",
+          type: "essay",
+          question: `[Vận Dụng Cao 🔥] Tìm giá trị lớn nhất của biểu thức $A = \\sqrt{x - 2} + \\sqrt{${2 + 2 * k} - x}$ với $2 \\le x \\le ${2 + 2 * k}$:`,
+          options: [],
+          correctAnswer: `${Math.round(Math.sqrt(4 * k) * 100) / 100} | 2*sqrt(${k}) | 2sqrt(${k})`,
+          explanation: `Áp dụng BĐT Cauchy-Schwarz: $A^2 \\le (1+1)(x - 2 + ${2 + 2 * k} - x) = 2 \\times ${2 * k} = ${4 * k} \\implies A \\le \\sqrt{${4 * k}}$.`
+        };
+      } else if (level === 'TH') {
+        const a = Math.floor(Math.random() * 5) + 2;
+        return {
+          id: `G9_TH_E_${Date.now()}_${index}`,
+          grade: 9,
+          topic: "Căn bậc hai số học",
+          level: "TH",
+          type: "essay",
+          question: `[Thông Hiểu 💡] Tính giá trị của biểu thức: $P = \\sqrt{(${a} - \\sqrt{${a * a + 1}})^2} + \\sqrt{${a * a + 1}}$:`,
+          options: [],
+          correctAnswer: `${a} | P=${a}`,
+          explanation: `$P = |${a} - \\sqrt{${a * a + 1}}| + \\sqrt{${a * a + 1}} = \\sqrt{${a * a + 1}} - ${a} + \\sqrt{${a * a + 1}}$... Suy ra giá trị $P = ${a}$.`
+        };
+      } else {
+        const r1 = Math.floor(Math.random() * 4) + 1;
+        const r2 = r1 + Math.floor(Math.random() * 3) + 1;
+        const sum = r1 + r2;
+        const prod = r1 * r2;
+        return {
+          id: `G9_VD_E_${Date.now()}_${index}`,
+          grade: 9,
+          topic: "Định lý Viète bậc hai",
+          level: "VD",
+          type: "essay",
+          question: `[Vận Dụng 🧠] Gọi $x_1, x_2$ là hai nghiệm của phương trình $x^2 - ${sum}x + ${prod} = 0$. Tính giá trị $S = x_1 + x_2$:`,
+          options: [],
+          correctAnswer: `${sum} | S=${sum}`,
+          explanation: `Theo định lý Vi-ét: $x_1 + x_2 = -(-${sum})/1 = ${sum}$.`
+        };
+      }
+    } else {
+      // MCQ Grade 9
+      const r = Math.random();
+      if (r < 0.5) {
+        const a = (Math.floor(Math.random() * 3) + 2) * 3; // 6, 9
+        const b = (a / 3) * 4; // 8, 12
+        const c = (a / 3) * 5; // 10, 15
+        const h = (a * b) / c;
+        return {
+          id: `G9_MCQ_DIAG_${Date.now()}_${index}`,
+          grade: 9,
+          topic: "Hệ thức lượng trong tam giác vuông",
+          level: "TH",
+          type: "mcq",
+          question: `Cho tam giác $ABC$ vuông tại $A$ có $AB = ${a}\\text{ cm}, AC = ${b}\\text{ cm}$ (như hình vẽ). Độ dài đường cao $AH$ là:`,
+          diagram: MathDiagrams.rightTriangle(`${a}cm`, `${b}cm`, `${c}cm`, 'AH'),
+          options: [`$AH = ${h}\\text{ cm}$`, `$AH = ${h + 1}\\text{ cm}$`, `$AH = ${h - 0.5}\\text{ cm}$`, `$AH = ${c/2}\\text{ cm}$`],
+          correctAnswer: "A",
+          explanation: `$AH = \\dfrac{AB \\cdot AC}{BC} = \\dfrac{${a} \\times ${b}}{${c}} = ${h}\\text{ cm}$.`
+        };
+      } else {
+        return {
+          id: `G9_MCQ_CIRCLE_${Date.now()}_${index}`,
+          grade: 9,
+          topic: "Đường tròn và tiếp tuyến",
+          level: "VD",
+          type: "mcq",
+          question: `Cho $(O; R)$ và điểm $M$ sao cho $OM = 2R$. Kẻ hai tiếp tuyến $MA, MB$ (như hình minh họa). Góc $\\widehat{AMB}$ bằng:`,
+          diagram: MathDiagrams.circleWithTangents(5, 10),
+          options: ["$60^\\circ$", "$90^\\circ$", "$45^\\circ$", "$120^\\circ$"],
+          correctAnswer: "A",
+          explanation: `$\\sin \\widehat{AMO} = \\dfrac{R}{2R} = \\dfrac{1}{2} \\implies \\widehat{AMO} = 30^\\circ \\implies \\widehat{AMB} = 60^\\circ$.`
+        };
+      }
+    }
+  },
+
+  // 📚 TOÁN 10: Tập hợp, Parabol, Vectơ, Bất phương trình bậc hai
+  generateGrade10(type = 'mcq', level = 'TH', index = 1) {
+    if (type === 'essay') {
+      if (level === 'VDC') {
+        const p = Math.floor(Math.random() * 4) + 2;
+        return {
+          id: `G10_VDC_E_${Date.now()}_${index}`,
+          grade: 10,
+          topic: "Cực trị & Bất đẳng thức Cauchy",
+          level: "VDC",
+          type: "essay",
+          question: `[Vận Dụng Cao 🔥] Tìm giá trị nhỏ nhất của biểu thức $P = x + \\dfrac{${p * p}}{x}$ với mọi số thực dương $x > 0$:`,
+          options: [],
+          correctAnswer: `${2 * p} | min=${2 * p} | P=${2 * p}`,
+          explanation: `Áp dụng BĐT Cauchy: $P \\ge 2\\sqrt{x \\cdot \\dfrac{${p * p}}{x}} = 2 \\cdot ${p} = ${2 * p}$. Dấu '=' khi $x = ${p}$.`
+        };
+      } else {
+        return {
+          id: `G10_VD_E_${Date.now()}_${index}`,
+          grade: 10,
+          topic: "Quy hoạch tuyến tính & Bất phương trình",
+          level: "VD",
+          type: "essay",
+          question: `[Vận Dụng 🧠] Tìm giá trị lớn nhất của biểu thức $F(x; y) = 2x + 3y$ trên miền nghiệm của hệ $\\begin{cases} x \\ge 0 \\\\ y \\ge 0 \\\\ x + y \\le 4 \\end{cases}$:`,
+          options: [],
+          correctAnswer: "12 | F=12 | max=12",
+          explanation: `Các đỉnh của miền nghiệm là $(0; 0), (4; 0), (0; 4)$. Ta có $F(0; 4) = 2(0) + 3(4) = 12$ là giá trị lớn nhất.`
+        };
+      }
+    } else {
+      return {
+        id: `G10_MCQ_PARABOL_${Date.now()}_${index}`,
+        grade: 10,
+        topic: "Hàm số bậc hai & Parabol",
+        level: "TH",
+        type: "mcq",
+        question: `Cho hàm số bậc hai có đồ thị Parabol như hình vẽ dưới đây. Tọa độ đỉnh $I$ của Parabol là:`,
+        diagram: MathDiagrams.parabolaGraph(),
+        options: ["$I(2; -1)$", "$I(-2; 15)$", "$I(2; 1)$", "$I(4; 3)$"],
+        correctAnswer: "A",
+        explanation: `Đỉnh Parabol có hoành độ $x = 2$ và tung độ $y = -1 \\implies I(2; -1)$.`
+      };
+    }
+  },
+
+  // 📚 TOÁN 11: Lượng giác, Hình chóp S.ABCD, Cấp số cộng / Cấp số nhân
+  generateGrade11(type = 'mcq', level = 'TH', index = 1) {
+    if (type === 'essay') {
+      return {
+        id: `G11_VDC_E_${Date.now()}_${index}`,
+        grade: 11,
+        topic: "Cấp số nhân lùi vô hạn",
+        level: "VDC",
+        type: "essay",
+        question: `[Vận Dụng Cao 🔥] Tính tổng của cấp số nhân lùi vô hạn $S = 1 + \\dfrac{1}{3} + \\dfrac{1}{9} + \\dots + \\dfrac{1}{3^n} + \\dots$:`,
+        options: [],
+        correctAnswer: "1.5 | 3/2 | S=3/2",
+        explanation: `$S = \\dfrac{u_1}{1 - q} = \\dfrac{1}{1 - 1/3} = 1.5$.`
+      };
+    } else {
+      return {
+        id: `G11_MCQ_PYRAMID_${Date.now()}_${index}`,
+        grade: 11,
+        topic: "Hình học không gian",
+        level: "TH",
+        type: "mcq",
+        question: `Cho hình chóp $S.ABCD$ có đáy $ABCD$ là hình bình hành (như hình minh họa). Giao tuyến của hai mặt phẳng $(SAB)$ và $(SCD)$ là đường thẳng đi qua $S$ và:`,
+        diagram: MathDiagrams.pyramidSABCD(),
+        options: ["Song song với AB và CD", "Song song với AD và BC", "Cắt đoạn thẳng AC", "Vuông góc với đáy"],
+        correctAnswer: "A",
+        explanation: `Vì $AB \\parallel CD$ nên giao tuyến của $(SAB)$ và $(SCD)$ qua $S$ và song song với $AB, CD$.`
+      };
+    }
+  },
+
+  // 📚 TOÁN 12: Đạo hàm, Khảo sát hàm số, Bảng biến thiên, Tích phân
+  generateGrade12(type = 'mcq', level = 'TH', index = 1) {
+    if (type === 'essay') {
+      return {
+        id: `G12_VDC_E_${Date.now()}_${index}`,
+        grade: 12,
+        topic: "Hàm số chứa tham số m (Câu 9+)",
+        level: "VDC",
+        type: "essay",
+        question: `[Vận Dụng Cao 🔥] Tìm số giá trị nguyên của $m \\in [-10; 10]$ để hàm số $y = \\dfrac{x+m}{x+2}$ đồng biến trên từng khoảng xác định:`,
+        options: [],
+        correctAnswer: "12 | 12 gia tri",
+        explanation: `$y' = \\dfrac{2-m}{(x+2)^2} > 0 \\iff m < 2$. Vì $m \\in [-10; 10] \\implies m \\in \\{-10, -9, \\dots, 1\\}$, có 12 giá trị nguyên.`
+      };
+    } else {
+      return {
+        id: `G12_MCQ_VAR_${Date.now()}_${index}`,
+        grade: 12,
+        topic: "Khảo sát hàm số & Bảng biến thiên",
+        level: "TH",
+        type: "mcq",
+        question: `Cho hàm số $y = f(x)$ có bảng biến thiên như hình bên dưới. Điểm cực tiểu của hàm số đã cho là:`,
+        diagram: MathDiagrams.variationTable(),
+        options: ["$x = 1$", "$x = -1$", "$x = 0$", "$x = 4$"],
+        correctAnswer: "A",
+        explanation: `Đạo hàm $y'$ đổi dấu từ âm sang dương qua $x = 1$, do đó $x = 1$ là điểm cực tiểu.`
+      };
+    }
   }
-];
+};
 
 const MathEngine = {
-  /**
-   * Xáo trộn vị trí 4 đáp án A, B, C, D và tự động ánh xạ lại đáp án đúng
-   */
   shuffleQuestionOptions(q) {
     if (!q.options || q.options.length < 2) return q;
     
@@ -442,7 +626,6 @@ const MathEngine = {
     const correctIdx = letters.indexOf(correctLetter);
     const correctContent = q.options[correctIdx >= 0 ? correctIdx : 0];
 
-    // Xáo trộn ngẫu nhiên 4 phương án
     const shuffled = [...q.options].sort(() => 0.5 - Math.random());
     const newCorrectIdx = shuffled.indexOf(correctContent);
     const newCorrectLetter = letters[newCorrectIdx >= 0 ? newCorrectIdx : 0];
@@ -455,148 +638,7 @@ const MathEngine = {
   },
 
   /**
-   * Sinh câu hỏi ngẫu nhiên bằng thuật toán biến đổi tham số số học
-   */
-  generateRandomDynamicQuestion(grade = 10, term = 'GK1', index = 1) {
-    const types = ['right_triangle_diagram', 'quadratic_roots', 'linear_system', 'pythagorean_geometry'];
-    const chosenType = types[Math.floor(Math.random() * types.length)];
-
-    if (chosenType === 'right_triangle_diagram') {
-      const a = (Math.floor(Math.random() * 3) + 2) * 3; // 6, 9, 12
-      const b = (a / 3) * 4; // 8, 12, 16
-      const c = (a / 3) * 5; // 10, 15, 20
-      const h = (a * b) / c;
-
-      return {
-        id: `DYN_TRI_${Date.now()}_${index}`,
-        grade,
-        term,
-        topic: "Hình học & Hệ thức lượng",
-        level: "TH",
-        type: "mcq",
-        question: `Cho tam giác vuông có hai cạnh góc vuông $AB = ${a}\\text{ cm}, AC = ${b}\\text{ cm}$ (như hình minh họa). Độ dài đường cao $AH$ là:`,
-        diagram: MathDiagrams.rightTriangle(`${a}cm`, `${b}cm`, `${c}cm`, 'AH'),
-        options: [
-          `$AH = ${h}\\text{ cm}$`,
-          `$AH = ${h + 1}\\text{ cm}$`,
-          `$AH = ${h - 0.5}\\text{ cm}$`,
-          `$AH = ${Math.round(c / 2)}\\text{ cm}$`
-        ],
-        correctAnswer: "A",
-        explanation: `$AH = \\dfrac{AB \\cdot AC}{BC} = \\dfrac{${a} \\times ${b}}{${c}} = ${h}\\text{ cm}$.`
-      };
-    } else if (chosenType === 'quadratic_roots') {
-      const r1 = Math.floor(Math.random() * 7) - 3;
-      const r2 = Math.floor(Math.random() * 7) + 1;
-      const b = -(r1 + r2);
-      const c = r1 * r2;
-      const bSign = b >= 0 ? `+ ${b}x` : `- ${Math.abs(b)}x`;
-      const cSign = c >= 0 ? `+ ${c}` : `- ${Math.abs(c)}`;
-
-      const options = [
-        `$x_1 = ${r1};\\; x_2 = ${r2}$`,
-        `$x_1 = ${-r1};\\; x_2 = ${-r2}$`,
-        `$x_1 = ${r1 + 1};\\; x_2 = ${r2 - 1}$`,
-        `$x_1 = ${r1 - 1};\\; x_2 = ${r2 + 2}$`
-      ];
-
-      return {
-        id: `DYN_Q_${Date.now()}_${index}`,
-        grade,
-        term,
-        topic: "Phương trình bậc hai",
-        level: "TH",
-        type: "mcq",
-        question: `Tìm nghiệm của phương trình bậc hai: $x^2 ${bSign} ${cSign} = 0$.`,
-        options,
-        correctAnswer: "A",
-        explanation: `Phương trình tương đương $(x - ${r1})(x - ${r2}) = 0 \\implies x_1 = ${r1}; x_2 = ${r2}$.`
-      };
-    } else {
-      const x = Math.floor(Math.random() * 5) + 1;
-      const y = Math.floor(Math.random() * 5) + 1;
-      const eq1 = 2 * x + y;
-      const eq2 = x - 2 * y;
-
-      const options = [
-        `$(${x}; ${y})$`,
-        `$(${y}; ${x})$`,
-        `$(${x + 1}; ${y - 1})$`,
-        `$(${x - 1}; ${y + 2})$`
-      ];
-
-      return {
-        id: `DYN_SYS_${Date.now()}_${index}`,
-        grade,
-        term,
-        topic: "Hệ phương trình bậc nhất",
-        level: "TH",
-        type: "mcq",
-        question: `Nghiệm $(x; y)$ của hệ phương trình $\\begin{cases} 2x + y = ${eq1} \\\\ x - 2y = ${eq2} \\end{cases}$ là:`,
-        options,
-        correctAnswer: "A",
-        explanation: `Giải hệ phương trình ta nhận được nghiệm duy nhất $(x; y) = (${x}; ${y})$.`
-      };
-    }
-  },
-
-  /**
-   * Sinh câu hỏi tự luận ngẫu nhiên theo mức độ nhận thức (TH, VD, VDC)
-   */
-  generateRandomDynamicEssay(grade = 10, term = 'GK1', essayLevel = 'VD', index = 1) {
-    if (essayLevel === 'VDC') {
-      const p = Math.floor(Math.random() * 4) + 2;
-      const pSq = p * p;
-      return {
-        id: `DYN_VDC_E_${Date.now()}_${index}`,
-        grade,
-        term,
-        topic: "Cực trị & Bất đẳng thức tham số (Câu 10 điểm)",
-        level: "VDC",
-        type: "essay",
-        question: `[Vận Dụng Cao 🔥] Tìm giá trị nhỏ nhất của biểu thức $P = x + \\dfrac{${pSq}}{x}$ với mọi số thực dương $x > 0$:`,
-        options: [],
-        correctAnswer: `${2 * p} | min=${2 * p} | P=${2 * p}`,
-        explanation: `Áp dụng bất đẳng thức Cauchy cho hai số dương $x$ và $\\dfrac{${pSq}}{x}$: $P \\ge 2\\sqrt{x \\cdot \\dfrac{${pSq}}{x}} = 2 \\cdot ${p} = ${2 * p}$. Dấu bằng xảy ra khi $x = ${p}$.`
-      };
-    } else if (essayLevel === 'TH') {
-      const a = Math.floor(Math.random() * 5) + 2;
-      const b = Math.floor(Math.random() * 6) + 1;
-      const res = a * b;
-      return {
-        id: `DYN_TH_E_${Date.now()}_${index}`,
-        grade,
-        term,
-        topic: "Biến đổi đại số & Tính giá trị biểu thức",
-        level: "TH",
-        type: "essay",
-        question: `[Thông Hiểu 💡] Tìm giá trị của $x$ thỏa mãn phương trình bậc nhất: $${a}x - ${b} = ${res - b}$:`,
-        options: [],
-        correctAnswer: `${b} | x=${b}`,
-        explanation: `$${a}x = ${res} \\implies x = ${b}$.`
-      };
-    } else {
-      const r1 = Math.floor(Math.random() * 4) + 1;
-      const r2 = r1 + Math.floor(Math.random() * 3) + 1;
-      const sum = r1 + r2;
-      const prod = r1 * r2;
-      return {
-        id: `DYN_VD_E_${Date.now()}_${index}`,
-        grade,
-        term,
-        topic: "Phương trình & Hệ thức Viète",
-        level: "VD",
-        type: "essay",
-        question: `[Vận Dụng 🧠] Tìm tổng các nghiệm nguyên của phương trình: $x^2 - ${sum}x + ${prod} = 0$:`,
-        options: [],
-        correctAnswer: `${sum} | x=${sum}`,
-        explanation: `Phương trình có hai nghiệm phân biệt là $x_1 = ${r1}, x_2 = ${r2}$. Tổng các nghiệm là $x_1 + x_2 = ${sum}$.`
-      };
-    }
-  },
-
-  /**
-   * Sinh bộ đề thi hoàn chỉnh theo cấu hình ma trận: Số lượng & Mức độ chi tiết từng phần tự luận
+   * Sinh bộ đề thi chuẩn 100% theo đúng kiến thức của khối lớp được chọn
    */
   generateExam(config = {}) {
     const {
@@ -609,32 +651,27 @@ const MathEngine = {
       title = ''
     } = config;
 
-    let pool = MATH_QUESTION_BANK.filter(q => {
-      const matchGrade = grade === 'all' || q.grade.toString() === grade.toString();
-      const matchTerm = term === 'all' || q.term === term;
-      const matchTopic = topic === 'all' || q.topic.toLowerCase().includes(topic.toLowerCase());
-      return matchGrade && matchTerm && matchTopic;
-    });
+    const gStr = grade.toString();
+    const getGradeEngine = () => {
+      if (gStr === '6') return GradeEngines.generateGrade6;
+      if (gStr === '7') return GradeEngines.generateGrade7;
+      if (gStr === '8') return GradeEngines.generateGrade8;
+      if (gStr === '9' || gStr === 'TS10') return GradeEngines.generateGrade9;
+      if (gStr === '11') return GradeEngines.generateGrade11;
+      if (gStr === '12' || gStr === 'THPT') return GradeEngines.generateGrade12;
+      return GradeEngines.generateGrade10;
+    };
 
-    if (pool.length < (mcqCount + 3)) {
-      pool = MATH_QUESTION_BANK.filter(q => grade === 'all' || q.grade.toString() === grade.toString());
-    }
-    if (pool.length < (mcqCount + 3)) {
-      pool = [...MATH_QUESTION_BANK];
-    }
+    const engineFunc = getGradeEngine();
 
-    const mcqPool = pool.filter(q => q.type === 'mcq');
-
-    // 1. Shuffle & Pick MCQ
-    const shuffledMcq = [...mcqPool].sort(() => 0.5 - Math.random());
-    const selectedMcq = shuffledMcq.slice(0, mcqCount);
-
-    while (selectedMcq.length < mcqCount) {
-      const dynQ = this.generateRandomDynamicQuestion(grade === 'all' ? 10 : (grade === 'TS10' ? 'TS10' : parseInt(grade, 10)), term, selectedMcq.length + 1);
-      selectedMcq.push(dynQ);
+    // 1. Generate MCQ strictly for this grade
+    const selectedMcq = [];
+    for (let i = 1; i <= mcqCount; i++) {
+      const q = engineFunc('mcq', 'TH', i);
+      selectedMcq.push(q);
     }
 
-    // 2. Pick Essay Questions according to the exact requested matrix { TH, VD, VDC }
+    // 2. Generate Essay strictly for this grade based on matrix { TH, VD, VDC }
     const selectedEssay = [];
     const targetLevels = [
       { level: 'TH', count: essayMatrix.TH || 0 },
@@ -642,37 +679,23 @@ const MathEngine = {
       { level: 'VDC', count: essayMatrix.VDC || 0 }
     ];
 
+    let essayIndex = 1;
     targetLevels.forEach(({ level, count }) => {
-      if (count <= 0) return;
-      let levelPool = pool.filter(q => q.type === 'essay' && q.level === level);
-      if (!levelPool.length) {
-        levelPool = MATH_QUESTION_BANK.filter(q => q.type === 'essay' && q.level === level);
-      }
-
-      const shuffledLevel = [...levelPool].sort(() => 0.5 - Math.random());
-      const picked = shuffledLevel.slice(0, count);
-      selectedEssay.push(...picked);
-
-      // If still missing, dynamically generate for this specific level
-      while (picked.length < count) {
-        const dyn = this.generateRandomDynamicEssay(grade === 'all' ? 10 : (grade === 'TS10' ? 'TS10' : parseInt(grade, 10)), term, level, selectedEssay.length + 1);
-        selectedEssay.push(dyn);
-        picked.push(dyn);
+      for (let i = 0; i < count; i++) {
+        const eq = engineFunc('essay', level, essayIndex++);
+        selectedEssay.push(eq);
       }
     });
 
     const totalEssays = selectedEssay.length;
-    const totalQuestions = selectedMcq.length + totalEssays;
-
-    // Calculate balanced scores
-    const essayTotalScore = totalEssays > 0 ? 3.0 : 0; // 3 points for essays
+    const essayTotalScore = totalEssays > 0 ? 3.0 : 0;
     const mcqTotalScore = 10.0 - essayTotalScore;
     const mcqScore = mcqCount ? Math.round((mcqTotalScore / mcqCount) * 100) / 100 : 0;
     const essayScore = totalEssays ? Math.round((essayTotalScore / totalEssays) * 100) / 100 : 0;
 
-    // Build answer keys array & HTML document
     const answerKeys = [];
 
+    // Shuffle options of MCQ
     selectedMcq.forEach((q, idx) => {
       const shuffledQ = MathEngine.shuffleQuestionOptions(q);
       answerKeys.push({
@@ -710,19 +733,11 @@ const MathEngine = {
       THPT: "Thi Thử Tốt Nghiệp THPT"
     };
 
-    const levelLabels = {
-      VDC: "Vận Dụng Cao 🔥",
-      VD: "Vận Dụng 🧠",
-      TH: "Thông Hiểu 💡",
-      all: "Đa Dạng Chuẩn Ma Trận"
-    };
-
-    const gradeLabel = grade === 'TS10' ? 'Ôn Thi Vào 10' : (grade === 'all' ? 'Tổng Hợp' : `Lớp ${grade}`);
+    const gradeLabel = gStr === 'TS10' ? 'Ôn Thi Vào 10' : (gStr === 'all' ? 'Tổng Hợp' : `Lớp ${gStr}`);
     const termLabel = termLabels[term] || 'Chuẩn Ma Trận';
     const essaySummaryStr = `${essayMatrix.TH || 0}TH + ${essayMatrix.VD || 0}VD + ${essayMatrix.VDC || 0}VDC`;
     const examTitle = title || `Đề Kiểm Tra ${termLabel} — Môn Toán ${gradeLabel} (${essaySummaryStr})`;
 
-    // Generate formatted HTML text representation of the exam
     const examHtml = this.renderExamToHtml(examTitle, answerKeys, timeLimit, termLabel);
 
     return {
@@ -748,12 +763,10 @@ const MathEngine = {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeMathHtml(title)}</title>
   
-  <!-- Google Fonts: Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   
-  <!-- KaTeX Math Rendering -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
@@ -805,11 +818,6 @@ const MathEngine = {
       padding: 1.1rem 1.35rem;
       border-radius: 10px;
       border: 1.5px solid #e2e8f0;
-      transition: all 0.2s ease;
-    }
-    .q-card:hover {
-      border-color: #cbd5e1;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
     }
     .q-header {
       font-size: 1rem;
@@ -854,12 +862,7 @@ const MathEngine = {
       font-weight: 800;
       color: #4f46e5;
     }
-    .katex {
-      font-size: 1.1em !important;
-    }
-    .katex-display {
-      margin: 0.6em 0 !important;
-    }
+    .katex { font-size: 1.1em !important; }
   </style>
 
   <script>
@@ -932,3 +935,4 @@ const MathEngine = {
 
 window.MathEngine = MathEngine;
 window.MathDiagrams = MathDiagrams;
+window.GradeEngines = GradeEngines;
