@@ -201,6 +201,19 @@ GIANG, 8"></textarea>
             <h2><span id="studentFeedHeaderTitle">📚 Danh Sách Đề Thi Của Bạn</span></h2>
           </div>
 
+          <!-- Grade / Class Filter Bar -->
+          <div class="time-filter-bar" style="margin:0.25rem 0 0.5rem;justify-content:center;flex-wrap:wrap;gap:0.35rem;">
+            <button type="button" class="time-filter-btn active" id="gradeBtn_all" onclick="filterExamFeedByGrade('all')">🌐 Tất Cả Khối Lớp</button>
+            <button type="button" class="time-filter-btn" id="gradeBtn_6" onclick="filterExamFeedByGrade('6')">🎒 Lớp 6</button>
+            <button type="button" class="time-filter-btn" id="gradeBtn_7" onclick="filterExamFeedByGrade('7')">📘 Lớp 7</button>
+            <button type="button" class="time-filter-btn" id="gradeBtn_8" onclick="filterExamFeedByGrade('8')">📙 Lớp 8</button>
+            <button type="button" class="time-filter-btn" id="gradeBtn_9" onclick="filterExamFeedByGrade('9')">📗 Lớp 9</button>
+            <button type="button" class="time-filter-btn" id="gradeBtn_TS10" onclick="filterExamFeedByGrade('TS10')">🎓 Tuyển Sinh 10</button>
+            <button type="button" class="time-filter-btn" id="gradeBtn_10" onclick="filterExamFeedByGrade('10')">🏛️ Lớp 10</button>
+            <button type="button" class="time-filter-btn" id="gradeBtn_11" onclick="filterExamFeedByGrade('11')">✨ Lớp 11</button>
+            <button type="button" class="time-filter-btn" id="gradeBtn_12" onclick="filterExamFeedByGrade('12')">🏆 Lớp 12</button>
+          </div>
+
           <!-- ToanMath Semester / Term Filter Bar -->
           <div class="time-filter-bar" style="margin:0.25rem 0 1rem;justify-content:center;flex-wrap:wrap;gap:0.35rem;">
             <button type="button" class="time-filter-btn active" id="termBtn_all" onclick="filterExamFeedByTerm('all')">♾️ Tất Cả Kỳ</button>

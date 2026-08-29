@@ -2176,6 +2176,16 @@ async function resetSampleQuiz() {
 }
 
 /* ================= PERSONALIZED EXAM FEED ================= */
+function filterExamFeedByGrade(grade) {
+  AppState.selectedGradeFilter = grade;
+  const gradeBtns = ['all', '6', '7', '8', '9', 'TS10', '10', '11', '12'];
+  gradeBtns.forEach(g => {
+    const btn = document.getElementById(`gradeBtn_${g}`);
+    if (btn) btn.classList.toggle('active', g === grade);
+  });
+  updatePersonalizedExamFeed();
+}
+
 function updatePersonalizedExamFeed() {
   const currentName = (document.getElementById('studentJoinName')?.value || '').trim();
   const currentClass = (document.getElementById('studentJoinClass')?.value || '').trim();
@@ -2194,7 +2204,20 @@ async function renderSampleQuizzes(filterName = '', filterClass = '') {
 
   let displayedQuizzes = quizzes;
 
-  // Filter by Semester/Term if selected
+  // 1. Filter by Grade if selected in Grade Filter Bar
+  if (AppState.selectedGradeFilter && AppState.selectedGradeFilter !== 'all') {
+    const targetGrade = AppState.selectedGradeFilter;
+    displayedQuizzes = displayedQuizzes.filter(q => {
+      if (q.targetClass && q.targetClass.toString() === targetGrade) return true;
+      const gradeMatch = q.title.match(/(?:Toán|Lớp)\s*(\d+|TS10)/i);
+      if (gradeMatch && gradeMatch[1]) {
+        return gradeMatch[1].toString() === targetGrade;
+      }
+      return false;
+    });
+  }
+
+  // 2. Filter by Semester/Term if selected
   if (AppState.selectedTermFilter && AppState.selectedTermFilter !== 'all') {
     const targetTerm = AppState.selectedTermFilter;
     displayedQuizzes = displayedQuizzes.filter(q => {
@@ -2203,46 +2226,25 @@ async function renderSampleQuizzes(filterName = '', filterClass = '') {
     });
   }
 
-  // Filter by student name / class
-  if (filterName || filterClass) {
+  // 3. Filter by student specific assignment if assigned to specific students
+  if (filterName) {
     displayedQuizzes = displayedQuizzes.filter(q => {
       if (q.assignType === 'students' && Array.isArray(q.assignedStudents)) {
         const studentTag = `${filterName} (${filterClass})`.toLowerCase();
         return q.assignedStudents.some(s => s.toLowerCase() === studentTag || s.toLowerCase().includes(filterName.toLowerCase()));
       }
-
-      if (q.assignType === 'classes' && Array.isArray(q.assignedClasses)) {
-        if (!filterClass) return false;
-        return q.assignedClasses.some(c => c.toLowerCase() === filterClass.toLowerCase());
-      }
-
-      if (filterClass) {
-        if (q.assignedClasses && q.assignedClasses.length > 0) {
-          const matchClass = q.assignedClasses.some(c => c.toLowerCase() === filterClass.toLowerCase());
-          if (!matchClass) return false;
-        }
-
-        const gradeMatch = q.title.match(/(?:Toán|Lớp)\s*(\d+)/i);
-        if (gradeMatch && gradeMatch[1]) {
-          const gradeNum = gradeMatch[1];
-          if (gradeNum !== filterClass && !filterClass.startsWith(gradeNum)) {
-            return false;
-          }
-        }
-      }
-
       return true;
     });
   }
 
   const titleHeader = document.getElementById('studentFeedHeaderTitle');
   if (titleHeader) {
-    if (filterName && filterClass) {
-      titleHeader.textContent = `📚 Đề Thi Dành Riêng Cho: ${filterName} (Lớp ${filterClass})`;
-    } else if (filterClass) {
-      titleHeader.textContent = `📚 Danh Sách Đề Thi Lớp ${filterClass}`;
+    if (AppState.selectedGradeFilter && AppState.selectedGradeFilter !== 'all') {
+      titleHeader.textContent = `📚 Danh Sách Đề Thi Lớp ${AppState.selectedGradeFilter === 'TS10' ? 'Luyện Thi Vào 10' : AppState.selectedGradeFilter}`;
+    } else if (filterName && filterClass) {
+      titleHeader.textContent = `📚 Đề Thi Dành Cho: ${filterName} (Lớp ${filterClass})`;
     } else {
-      titleHeader.textContent = '📚 Danh Sách Đề Thi';
+      titleHeader.textContent = '📚 Danh Sách Tất Cả Đề Thi (Lớp 6 - 12)';
     }
   }
 
