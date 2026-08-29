@@ -1,9 +1,10 @@
 /**
- * KhiemEdu Main Application Controller - Strict Class Isolation and Separated Answer Editors
+ * KhiemEdu Main Application Controller - Teacher Role Gatekeeper & Security Lock
  */
 
 const AppState = {
   activeTab: 'student',
+  pendingTeacherTab: 'teacher',
   currentQuiz: null,
   currentQuizId: '',
   studentName: '',
@@ -23,6 +24,32 @@ const AppState = {
   batchExamsQueue: [],
   leaderboardTimer: null,
   studentRoster: []
+};
+
+/* ================= TEACHER ROLE SECURITY & GATEKEEPER ================= */
+const TeacherAuth = {
+  getPin() {
+    return localStorage.getItem('khiemedu_teacher_pin') || '123456';
+  },
+
+  setPin(newPin) {
+    localStorage.setItem('khiemedu_teacher_pin', newPin);
+  },
+
+  isLoggedIn() {
+    return sessionStorage.getItem('khiemedu_teacher_session') === '1';
+  },
+
+  login() {
+    sessionStorage.setItem('khiemedu_teacher_session', '1');
+  },
+
+  logout() {
+    sessionStorage.removeItem('khiemedu_teacher_session');
+    showToast('🔒 Đã đăng xuất và khóa quyền Giáo Viên!', 'info');
+    SoundEngine.playClick();
+    switchTab('student');
+  }
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -82,8 +109,15 @@ function toggleSound() {
   if (!isMuted) SoundEngine.playClick();
 }
 
-/* ================= TAB NAVIGATION ================= */
+/* ================= TAB NAVIGATION WITH TEACHER GATEKEEPER ================= */
 function switchTab(tabId) {
+  // Gatekeeper: Protect Teacher & Results views from students
+  if ((tabId === 'teacher' || tabId === 'results') && !TeacherAuth.isLoggedIn()) {
+    AppState.pendingTeacherTab = tabId;
+    openTeacherAuthModal();
+    return;
+  }
+
   AppState.activeTab = tabId;
   document.querySelectorAll('.nav-tab-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tab === tabId);
@@ -103,6 +137,65 @@ function switchTab(tabId) {
   } else if (tabId === 'student') {
     updatePersonalizedExamFeed();
   }
+}
+
+function openTeacherAuthModal() {
+  const modal = document.getElementById('teacherAuthModal');
+  const input = document.getElementById('teacherPinInput');
+  const errorEl = document.getElementById('teacherAuthError');
+  if (errorEl) errorEl.textContent = '';
+  if (input) {
+    input.value = '';
+    setTimeout(() => input.focus(), 150);
+  }
+  if (modal) modal.classList.remove('hidden');
+  SoundEngine.playWarning();
+}
+
+function closeTeacherAuthModal() {
+  const modal = document.getElementById('teacherAuthModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function verifyTeacherAuth() {
+  const input = document.getElementById('teacherPinInput');
+  const errorEl = document.getElementById('teacherAuthError');
+  const enteredPin = (input ? input.value : '').trim();
+  const correctPin = TeacherAuth.getPin();
+
+  if (enteredPin === correctPin) {
+    TeacherAuth.login();
+    closeTeacherAuthModal();
+    showToast('🔓 Xác thực Giáo Viên thành công! Chào mừng Thầy/Cô.', 'success');
+    SoundEngine.playFanfare();
+    switchTab(AppState.pendingTeacherTab || 'teacher');
+  } else {
+    if (errorEl) errorEl.textContent = '❌ Mã PIN không chính xác. Vui lòng thử lại!';
+    if (input) {
+      input.value = '';
+      input.focus();
+    }
+    SoundEngine.playWarning();
+  }
+}
+
+function promptChangeTeacherPin() {
+  const currentPin = prompt('Nhập mã PIN hiện tại của bạn:');
+  if (currentPin === null) return;
+  if (currentPin !== TeacherAuth.getPin()) {
+    alert('❌ Mã PIN hiện tại không đúng!');
+    return;
+  }
+
+  const newPin = prompt('Nhập mã PIN mới (VD: 4 - 8 chữ số):');
+  if (!newPin || newPin.trim().length < 4) {
+    alert('⚠️ Mã PIN mới phải có ít nhất 4 ký tự!');
+    return;
+  }
+
+  TeacherAuth.setPin(newPin.trim());
+  showToast('🔑 Đã cập nhật mã PIN Giáo Viên thành công!', 'success');
+  SoundEngine.playCorrect();
 }
 
 function capitalize(s) {
@@ -1127,31 +1220,25 @@ async function renderSampleQuizzes(filterName = '', filterClass = '') {
   let displayedQuizzes = quizzes;
   if (filterName || filterClass) {
     displayedQuizzes = quizzes.filter(q => {
-      // 1. If assigned to specific students, only show if student name/tag matches
       if (q.assignType === 'students' && Array.isArray(q.assignedStudents)) {
         const studentTag = `${filterName} (${filterClass})`.toLowerCase();
         return q.assignedStudents.some(s => s.toLowerCase() === studentTag || s.toLowerCase().includes(filterName.toLowerCase()));
       }
 
-      // 2. If assigned to specific classes, only show if student's class matches
       if (q.assignType === 'classes' && Array.isArray(q.assignedClasses)) {
         if (!filterClass) return false;
         return q.assignedClasses.some(c => c.toLowerCase() === filterClass.toLowerCase());
       }
 
-      // 3. For public exams: Strictly check if exam targetClass or title matches the student's class
       if (filterClass) {
-        // If the quiz specifies assignedClasses or targetClass
         if (q.assignedClasses && q.assignedClasses.length > 0) {
           const matchClass = q.assignedClasses.some(c => c.toLowerCase() === filterClass.toLowerCase());
           if (!matchClass) return false;
         }
 
-        // Check if title specifically mentions a grade (e.g. "Toán 8", "Lớp 8" vs Class 10)
         const gradeMatch = q.title.match(/(?:Toán|Lớp)\s*(\d+)/i);
         if (gradeMatch && gradeMatch[1]) {
           const gradeNum = gradeMatch[1];
-          // If title says "Toán 8" but student is in "10", strictly exclude!
           if (gradeNum !== filterClass && !filterClass.startsWith(gradeNum)) {
             return false;
           }
@@ -1162,7 +1249,6 @@ async function renderSampleQuizzes(filterName = '', filterClass = '') {
     });
   }
 
-  // Nicely formatted header title
   const titleHeader = document.getElementById('studentFeedHeaderTitle');
   if (titleHeader) {
     if (filterName && filterClass) {

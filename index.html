@@ -18,6 +18,29 @@
 </head>
 <body>
 
+  <!-- ================= TEACHER SECURITY PIN MODAL ================= -->
+  <div id="teacherAuthModal" class="auth-modal-backdrop hidden">
+    <div class="auth-card">
+      <div style="font-size:3.5rem;margin-bottom:0.5rem;">🔒</div>
+      <h2 style="font-size:1.6rem;color:var(--text-primary);margin-bottom:0.4rem;">Khu Vực Dành Riêng Cho Giáo Viên</h2>
+      <p style="color:var(--text-secondary);font-size:0.9rem;font-weight:600;line-height:1.5;">
+        Vui lòng nhập <strong>Mã PIN Quản Trị</strong> để mở khóa bàn làm việc, quản lý đề thi và bảng điểm lớp học:
+      </p>
+      
+      <form onsubmit="verifyTeacherAuth(); return false;">
+        <input type="password" id="teacherPinInput" class="auth-pin-input" placeholder="••••••" maxlength="12" autocomplete="off" required>
+        
+        <div id="teacherAuthError" style="color:var(--rose);font-weight:800;font-size:0.85rem;margin-bottom:1rem;min-height:20px;"></div>
+        
+        <div style="display:flex;gap:0.75rem;justify-content:center;">
+          <button type="button" class="btn btn-secondary" onclick="closeTeacherAuthModal()">Hủy Bỏ</button>
+          <button type="submit" class="btn btn-primary btn-lg" style="flex:1;">Mở Khóa 🔓</button>
+        </div>
+        <div style="margin-top:1rem;font-size:0.8rem;color:var(--text-muted);font-weight:700;">(Mã PIN mặc định ban đầu: <code>123456</code>)</div>
+      </form>
+    </div>
+  </div>
+
   <!-- ================= TOP NAVBAR ================= -->
   <header class="navbar">
     <div class="nav-container">
@@ -222,6 +245,21 @@
     <!-- ================= TEACHER & ADMIN VIEW ================= -->
     <section id="tabTeacher" class="view-section">
       
+      <!-- Teacher Top Security Banner -->
+      <div class="card" style="background:linear-gradient(90deg, var(--indigo-light) 0%, var(--bg-card) 100%);border-left:6px solid var(--indigo);padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <span style="font-size:2rem;">👨‍🏫</span>
+          <div>
+            <div style="font-weight:800;font-size:1.1rem;color:var(--indigo);">Bàn Quản Trị & Bàn Làm Việc Giáo Viên</div>
+            <div style="font-size:0.8rem;color:var(--text-secondary);font-weight:700;">Học sinh không thể truy cập vào khu vực này nếu không có mã PIN.</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:0.6rem;align-items:center;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="promptChangeTeacherPin()">🔑 Đổi Mã PIN</button>
+          <button type="button" class="btn btn-danger btn-sm" onclick="TeacherAuth.logout()">🔒 Khóa & Đăng Xuất</button>
+        </div>
+      </div>
+
       <!-- Section 0: Student & Class Roster Manager -->
       <div class="card" style="border-left: 6px solid var(--primary);">
         <div class="card-header">
@@ -317,7 +355,6 @@
           </div>
           <p style="font-size:0.875rem;color:var(--text-secondary);margin-bottom:0.75rem;">Nhập chuỗi nhanh hoặc chọn đáp án trực tiếp trên bảng phiếu tô bên dưới:</p>
 
-          <!-- Quick MCQ string -->
           <div class="quick-key-panel" style="margin-bottom:1rem;">
             <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
               <input type="text" id="fastMcqStringInput" placeholder="VD: ABCDABCD... hoặc 1A 2B 3C 4D..." style="flex:1;">
@@ -335,7 +372,6 @@
             <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickMcqCount(40)">40 Câu</button>
           </div>
 
-          <!-- MCQ Grid Table -->
           <div class="key-grid-table" id="teacherMcqGridContainer"></div>
         </div>
 
@@ -352,7 +388,6 @@
             Nhập đáp số chuẩn (hỗ trợ phân số, số thập phân, biến số, nhiều cách viết ngăn cách bằng dấu <code style="background:var(--bg-card);padding:2px 6px;border-radius:4px;">|</code>) kèm công cụ chấm thử trực tiếp:
           </p>
 
-          <!-- Essay Questions Container -->
           <div id="teacherEssayGridContainer"></div>
         </div>
 
@@ -373,7 +408,6 @@
             </div>
           </div>
 
-          <!-- Targeted Assignment Control (Phân quyền giao đề) -->
           <div class="form-group" style="background:var(--bg-tertiary);padding:1.1rem 1.25rem;border-radius:var(--radius-lg);border:2px solid var(--border-color);">
             <label style="color:var(--indigo);font-size:1rem;">🎯 PHÂN QUYỀN ĐỐI TƯỢNG GIAO ĐỀ (Ai được làm đề này?):</label>
             
