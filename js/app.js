@@ -1459,10 +1459,9 @@ function triggerAutoGenerateMathExam() {
     testInput: ''
   }));
 
-  // 3. Create preview HTML as Data URL for the PDF viewer frame
-  const htmlBlob = new Blob([generated.examHtml], { type: 'text/html;charset=utf-8' });
-  const htmlUrl = URL.createObjectURL(htmlBlob);
-  AppState.teacherPdfData = htmlUrl;
+  // 3. Create preview HTML as standalone Data URL for PDF/iframe viewer
+  const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(generated.examHtml);
+  AppState.teacherPdfData = dataUrl;
   AppState.teacherFileName = `${generated.title.replace(/\s+/g, '_')}.html`;
 
   // Render preview frame
@@ -1472,7 +1471,7 @@ function triggerAutoGenerateMathExam() {
   const nameBadge = document.getElementById('teacherPdfFileNameBadge');
 
   if (previewWrap) previewWrap.classList.remove('hidden');
-  if (previewFrame) previewFrame.src = htmlUrl;
+  if (previewFrame) previewFrame.src = dataUrl;
   if (clearBtn) clearBtn.classList.remove('hidden');
   if (nameBadge) {
     nameBadge.classList.remove('hidden');
