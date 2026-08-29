@@ -503,58 +503,166 @@ const MathEngine = {
     const mcqItems = keys.filter(k => k.type === 'mcq');
     const essayItems = keys.filter(k => k.type === 'essay');
 
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <title>${title}</title>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
-        <style>
-          body { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; padding: 2.5rem; color: #1e293b; line-height: 1.65; max-width: 860px; margin: 0 auto; background: #fff; }
-          .header { text-align: center; border-bottom: 2px solid #6366f1; padding-bottom: 1.25rem; margin-bottom: 2rem; }
-          .title { font-size: 1.5rem; font-weight: 800; color: #4338ca; margin-bottom: 0.35rem; }
-          .meta { font-size: 0.95rem; font-weight: 700; color: #64748b; }
-          .section-title { font-size: 1.15rem; font-weight: 800; color: #3730a3; margin: 1.5rem 0 1rem; border-left: 4px solid #6366f1; padding-left: 0.5rem; }
-          .q-card { margin-bottom: 1.25rem; background: #f8fafc; padding: 1rem 1.25rem; border-radius: 8px; border: 1px solid #e2e8f0; }
-          .q-num { font-weight: 800; color: #4f46e5; margin-right: 0.4rem; }
-          .opts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.5rem; margin-top: 0.6rem; }
-          .opt-item { background: #ffffff; padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: 600; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <div class="title">📐 ${escapeHtml(title)}</div>
-          <div class="meta">⏱️ Thời gian làm bài: <strong>${timeLimit} phút</strong> | Tổng số: <strong>${keys.length} câu</strong></div>
-        </div>
+    return `<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(title)}</title>
+  
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- KaTeX Math Rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 
-        <div class="section-title">🔵 PHẦN I. TRẮC NGHIỆM KHÁCH QUAN (${mcqItems.length} CÂU)</div>
-        ${mcqItems.map(q => `
-          <div class="q-card">
-            <div><span class="q-num">Câu ${q.num}:</span> ${q.content || 'Đọc kỹ câu hỏi và chọn đáp án đúng.'}</div>
-            ${q.options && q.options.length ? `
-              <div class="opts-grid">
-                ${q.options.map((opt, i) => `
-                  <div class="opt-item"><strong>${['A', 'B', 'C', 'D'][i]}.</strong> ${opt}</div>
-                `).join('')}
-              </div>
-            ` : ''}
-          </div>
-        `).join('')}
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 2.25rem 2rem;
+      color: #1e293b;
+      line-height: 1.7;
+      max-width: 860px;
+      margin: 0 auto;
+      background: #ffffff;
+      font-size: 15px;
+    }
+    .header {
+      text-align: center;
+      border-bottom: 2px dashed #cbd5e1;
+      padding-bottom: 1.25rem;
+      margin-bottom: 2rem;
+    }
+    .title {
+      font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+      font-size: 1.55rem;
+      font-weight: 800;
+      color: #4338ca;
+      margin-bottom: 0.4rem;
+    }
+    .meta {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #64748b;
+    }
+    .section-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #3730a3;
+      margin: 1.75rem 0 1rem;
+      padding: 0.4rem 0.8rem;
+      background: #eef2ff;
+      border-left: 4px solid #6366f1;
+      border-radius: 4px;
+    }
+    .q-card {
+      margin-bottom: 1.25rem;
+      background: #f8fafc;
+      padding: 1.1rem 1.35rem;
+      border-radius: 10px;
+      border: 1.5px solid #e2e8f0;
+      transition: all 0.2s ease;
+    }
+    .q-card:hover {
+      border-color: #cbd5e1;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+    .q-header {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #1e293b;
+    }
+    .q-num {
+      font-weight: 800;
+      color: #4f46e5;
+      margin-right: 0.35rem;
+    }
+    .opts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.65rem;
+      margin-top: 0.85rem;
+    }
+    .opt-item {
+      background: #ffffff;
+      padding: 0.6rem 0.85rem;
+      border-radius: 8px;
+      border: 1.5px solid #cbd5e1;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: #334155;
+    }
+    .opt-lbl {
+      font-weight: 800;
+      color: #4f46e5;
+    }
+    .katex {
+      font-size: 1.1em !important;
+    }
+    .katex-display {
+      margin: 0.6em 0 !important;
+    }
+  </style>
 
-        ${essayItems.length ? `
-          <div class="section-title">✍️ PHẦN II. TỰ LUẬN ĐIỀN ĐÁP SỐ TOÁN HỌC (${essayItems.length} CÂU)</div>
-          ${essayItems.map(q => `
-            <div class="q-card" style="border-left: 4px solid #f59e0b; background: #fffbeb;">
-              <div><span class="q-num" style="color:#d97706;">Câu ${q.num}:</span> ${q.content || 'Giải và điền đáp số chuẩn vào phiếu trả lời.'}</div>
-            </div>
+  <script>
+    function triggerKatexRender() {
+      if (typeof renderMathInElement !== 'undefined') {
+        renderMathInElement(document.body, {
+          delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '$', right: '$', display: false},
+            {left: '\\(', right: '\\)', display: false},
+            {left: '\\[', right: '\\]', display: true}
+          ],
+          throwOnError: false,
+          ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"]
+        });
+      }
+    }
+    document.addEventListener("DOMContentLoaded", triggerKatexRender);
+    window.addEventListener("load", triggerKatexRender);
+    setTimeout(triggerKatexRender, 150);
+    setTimeout(triggerKatexRender, 600);
+  </script>
+</head>
+<body>
+  <div class="header">
+    <div class="title">📐 ${escapeHtml(title)}</div>
+    <div class="meta">⏱️ Thời gian làm bài: <strong>${timeLimit} phút</strong> &nbsp;|&nbsp; Tổng số: <strong>${keys.length} câu hỏi</strong></div>
+  </div>
+
+  <div class="section-title">🔵 PHẦN I. TRẮC NGHIỆM KHÁCH QUAN (${mcqItems.length} CÂU)</div>
+  ${mcqItems.map(q => `
+    <div class="q-card">
+      <div class="q-header"><span class="q-num">Câu ${q.num}:</span> ${q.content || 'Đọc kỹ câu hỏi và chọn phương án đúng:'}</div>
+      ${q.options && q.options.length ? `
+        <div class="opts-grid">
+          ${q.options.map((opt, i) => `
+            <div class="opt-item"><span class="opt-lbl">${['A', 'B', 'C', 'D'][i]}.</span> <span>${opt}</span></div>
           `).join('')}
-        ` : ''}
-      </body>
-      </html>
-    `;
+        </div>
+      ` : ''}
+    </div>
+  `).join('')}
+
+  ${essayItems.length ? `
+    <div class="section-title" style="background:#fffbeb;border-color:#f59e0b;color:#b45309;">✍️ PHẦN II. TỰ LUẬN ĐIỀN ĐÁP SỐ TOÁN HỌC (${essayItems.length} CÂU)</div>
+    ${essayItems.map(q => `
+      <div class="q-card" style="border-left: 4px solid #f59e0b; background: #fffbeb;">
+        <div class="q-header"><span class="q-num" style="color:#d97706;">Câu ${q.num}:</span> ${q.content || 'Giải và điền đáp số chuẩn vào phiếu:'}</div>
+      </div>
+    `).join('')}
+  ` : ''}
+</body>
+</html>`;
   }
 };
 
