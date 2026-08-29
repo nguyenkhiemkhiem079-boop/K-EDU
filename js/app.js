@@ -1,5 +1,5 @@
 /**
- * KhiemEdu Main Application Controller - Enhanced Math Essay Key Editor & Smart Matcher
+ * KhiemEdu Main Application Controller - Strict Class Isolation and Separated Answer Editors
  */
 
 const AppState = {
@@ -18,7 +18,8 @@ const AppState = {
   teacherPdfUrl: null,
   teacherPdfData: null,
   teacherFileName: '',
-  teacherAnswerKeys: [],
+  teacherMcqKeys: [],
+  teacherEssayKeys: [],
   batchExamsQueue: [],
   leaderboardTimer: null,
   studentRoster: []
@@ -30,7 +31,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initTheme();
   updateGamifyBar();
   initAvatars();
-  initTeacherAnswerGrid(12);
+  initSeparatedTeacherGrids(10, 2);
   await loadStudentRoster();
   initSavedStudentSession();
   renderTeacherQuizManager();
@@ -438,7 +439,7 @@ function handleBatchFilesSelect() {
       const keys = [];
       const defaultScore = Math.round((10 / defaultNumQuestions) * 100) / 100;
       for (let q = 1; q <= defaultNumQuestions; q++) {
-        keys.push({ num: q, type: 'mcq', correct: 'A', score: defaultScore });
+        keys.push({ num: q, type: q > 10 ? 'essay' : 'mcq', correct: q > 10 ? '12' : 'A', score: defaultScore });
       }
 
       AppState.batchExamsQueue.push({
@@ -625,7 +626,7 @@ async function publishAllBatchExams() {
   showToast(`🎉 ĐÃ PHÁT HÀNH THÀNH CÔNG ${count} ĐỀ THI HÀNG LOẠT!`, 'success');
 }
 
-/* ================= TEACHER: SINGLE PDF & MATH ESSAY ENHANCED KEY GENERATION ================= */
+/* ================= SEPARATED TEACHER ANSWER EDITORS: MCQ & MATH ESSAY ================= */
 function handleTeacherPdfSelect() {
   const fileInput = document.getElementById('teacherPdfFileInput');
   if (!fileInput.files[0]) return;
@@ -648,154 +649,205 @@ function handleTeacherPdfSelect() {
   SoundEngine.playCorrect();
 }
 
-function setQuickQuestionCount(count) {
-  initTeacherAnswerGrid(count);
-  SoundEngine.playClick();
-}
-
-function initTeacherAnswerGrid(count) {
-  const num = parseInt(count, 10) || 12;
-  const defaultScore = Math.round((10 / num) * 100) / 100;
-  
-  AppState.teacherAnswerKeys = [];
-  for (let i = 1; i <= num; i++) {
-    AppState.teacherAnswerKeys.push({
+function initSeparatedTeacherGrids(mcqCount = 10, essayCount = 2) {
+  AppState.teacherMcqKeys = [];
+  const mcqScore = 0.5;
+  for (let i = 1; i <= mcqCount; i++) {
+    AppState.teacherMcqKeys.push({
       num: i,
-      type: i > 10 ? 'essay' : 'mcq',
-      correct: i > 10 ? (i === 11 ? '12 | x=12' : '1/2 | 0.5') : 'A',
-      score: defaultScore,
+      type: 'mcq',
+      correct: 'A',
+      score: mcqScore
+    });
+  }
+
+  AppState.teacherEssayKeys = [];
+  const essayScore = 2.5;
+  for (let i = 1; i <= essayCount; i++) {
+    const qNum = mcqCount + i;
+    AppState.teacherEssayKeys.push({
+      num: qNum,
+      type: 'essay',
+      correct: i === 1 ? '12 | x=12' : '1/2 | 0.5',
+      score: essayScore,
       testInput: ''
     });
   }
-  renderTeacherAnswerKeyGrid();
+
+  renderTeacherMcqGrid();
+  renderTeacherEssayGrid();
+  updateTotalExamPointsCalculation();
 }
 
-function parseFastAnswerString() {
-  const raw = document.getElementById('fastAnswerStringInput').value.trim();
+/* SECTION 1: Render MCQ Grid */
+function renderTeacherMcqGrid() {
+  const container = document.getElementById('teacherMcqGridContainer');
+  const countBadge = document.getElementById('teacherMcqCountBadge');
+  if (!container) return;
+
+  if (countBadge) countBadge.textContent = `${AppState.teacherMcqKeys.length} câu trắc nghiệm`;
+
+  container.innerHTML = AppState.teacherMcqKeys.map((item, idx) => `
+    <div class="key-grid-item" style="padding:0.6rem 0.8rem;align-items:center;">
+      <span style="font-weight:900;color:var(--indigo);min-width:65px;font-size:0.95rem;">Câu ${item.num}:</span>
+      <div style="display:flex;gap:0.35rem;align-items:center;">
+        ${['A','B','C','D'].map(opt => `
+          <button type="button" class="bubble-btn ${item.correct.toUpperCase() === opt ? 'selected' : ''}" style="width:36px;height:36px;font-size:0.9rem;" onclick="setTeacherMcqAnswer(${idx}, '${opt}')">${opt}</button>
+        `).join('')}
+      </div>
+      <div style="display:flex;align-items:center;gap:0.3rem;margin-left:auto;">
+        <input type="number" step="0.25" min="0.1" max="10" style="width:65px;padding:0.3rem 0.4rem;font-size:0.85rem;text-align:center;font-weight:800;" value="${item.score}" title="Điểm câu này" onchange="setTeacherMcqScore(${idx}, this.value)">
+        <span style="font-size:0.8rem;font-weight:700;color:var(--text-muted);">đ</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function setTeacherMcqAnswer(idx, opt) {
+  AppState.teacherMcqKeys[idx].correct = opt;
+  renderTeacherMcqGrid();
+  SoundEngine.playClick();
+}
+
+function setTeacherMcqScore(idx, val) {
+  AppState.teacherMcqKeys[idx].score = parseFloat(val) || 0.5;
+  updateTotalExamPointsCalculation();
+}
+
+function setQuickMcqCount(count) {
+  const newCount = parseInt(count, 10);
+  const diff = newCount - AppState.teacherMcqKeys.length;
+  if (diff > 0) {
+    for (let i = 0; i < diff; i++) {
+      const num = AppState.teacherMcqKeys.length + 1;
+      AppState.teacherMcqKeys.push({ num, type: 'mcq', correct: 'A', score: 0.5 });
+    }
+  } else if (diff < 0) {
+    AppState.teacherMcqKeys.splice(newCount);
+  }
+  renumberEssayKeys();
+  renderTeacherMcqGrid();
+  renderTeacherEssayGrid();
+  updateTotalExamPointsCalculation();
+  SoundEngine.playClick();
+}
+
+function parseFastMcqString() {
+  const raw = document.getElementById('fastMcqStringInput').value.trim();
   if (!raw) {
-    showToast('⚠️ Vui lòng nhập chuỗi đáp án (VD: 1A 2B 3C 4D 5:12 6:2.5 hoặc ABCD...)', 'warn');
+    showToast('⚠️ Vui lòng nhập chuỗi trắc nghiệm (VD: ABCDABCD hoặc 1A 2B 3C...)', 'warn');
     return;
   }
 
-  const items = [];
-  const regexWithNum = /(\d+)[\s.:-]+([A-D]|Đúng|Sai|[^\s,]+)/gi;
+  const letters = [];
+  const regexWithNum = /(\d+)[\s.:-]+([A-D])/gi;
   let match;
-  let hasNumberedMatches = false;
+  let hasNumbered = false;
 
   while ((match = regexWithNum.exec(raw)) !== null) {
-    hasNumberedMatches = true;
+    hasNumbered = true;
     const num = parseInt(match[1], 10);
-    const val = match[2].trim();
-    let type = 'mcq';
-    if (val.toUpperCase() === 'ĐÚNG' || val.toUpperCase() === 'SAI') type = 'truefalse';
-    else if (!/^[A-D]$/i.test(val)) type = 'essay';
-
-    items.push({ num, type, correct: val, score: 0.5, testInput: '' });
+    const ans = match[2].toUpperCase();
+    letters.push({ num, correct: ans });
   }
 
-  if (!hasNumberedMatches) {
-    const letters = raw.toUpperCase().replace(/[^A-D]/g, '').split('');
-    if (letters.length > 0) {
-      letters.forEach((l, idx) => {
-        items.push({ num: idx + 1, type: 'mcq', correct: l, score: 0.5, testInput: '' });
-      });
-    }
+  if (!hasNumbered) {
+    const chars = raw.toUpperCase().replace(/[^A-D]/g, '').split('');
+    chars.forEach((c, idx) => {
+      letters.push({ num: idx + 1, correct: c });
+    });
   }
 
-  if (items.length === 0) {
-    showToast('⚠️ Không thể nhận diện được chuỗi đáp án. Hãy nhập dạng: 1A 2B 3:12 4:2.5...', 'warn');
+  if (!letters.length) {
+    showToast('⚠️ Không nhận diện được chuỗi đáp án trắc nghiệm.', 'warn');
     return;
   }
 
-  items.sort((a, b) => a.num - b.num);
-  const perScore = Math.round((10 / items.length) * 100) / 100;
-  items.forEach(it => it.score = perScore);
+  letters.sort((a, b) => a.num - b.num);
+  AppState.teacherMcqKeys = letters.map(item => ({
+    num: item.num,
+    type: 'mcq',
+    correct: item.correct,
+    score: 0.5
+  }));
 
-  AppState.teacherAnswerKeys = items;
-  renderTeacherAnswerKeyGrid();
-  showToast(`✅ Đã nhận diện thành công ${items.length} câu đáp án!`, 'success');
+  renumberEssayKeys();
+  renderTeacherMcqGrid();
+  renderTeacherEssayGrid();
+  updateTotalExamPointsCalculation();
+  showToast(`✅ Đã nhận diện thành công ${letters.length} câu trắc nghiệm!`, 'success');
   SoundEngine.playCorrect();
 }
 
-/* Render Teacher Key Grid with Math Symbols & Live Match Tester */
-function renderTeacherAnswerKeyGrid() {
-  const container = document.getElementById('teacherAnswerKeyGrid');
+/* SECTION 2: Render Math Essay Grid */
+function renderTeacherEssayGrid() {
+  const container = document.getElementById('teacherEssayGridContainer');
+  const countBadge = document.getElementById('teacherEssayCountBadge');
   if (!container) return;
+
+  if (countBadge) countBadge.textContent = `${AppState.teacherEssayKeys.length} câu tự luận`;
 
   const mathSymbols = ['±', '√', 'π', '°', '²', '³', '≤', '≥', '≠', '/', '|'];
 
-  container.innerHTML = AppState.teacherAnswerKeys.map((item, idx) => {
-    let bodyControls = '';
+  if (!AppState.teacherEssayKeys.length) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:1.5rem;color:var(--text-muted);border:2px dashed var(--border-color);border-radius:var(--radius-lg);">
+        <p style="font-weight:700;">Chưa có câu hỏi tự luận nào. Bấm nút <strong>"+ Thêm Câu Tự Luận"</strong> để tạo!</p>
+      </div>
+    `;
+    return;
+  }
 
-    if (item.type === 'mcq') {
-      bodyControls = `
-        <div style="display:flex;gap:0.35rem;align-items:center;">
-          ${['A','B','C','D'].map(opt => `
-            <button type="button" class="bubble-btn ${item.correct.toUpperCase() === opt ? 'selected' : ''}" style="width:34px;height:34px;font-size:0.85rem;" onclick="setTeacherKeyAnswer(${idx}, '${opt}')">${opt}</button>
-          `).join('')}
-        </div>
-      `;
-    } else if (item.type === 'truefalse') {
-      bodyControls = `
-        <div style="display:flex;gap:0.35rem;align-items:center;">
-          <button type="button" class="bubble-btn ${item.correct === 'Đúng' ? 'selected' : ''}" style="width:auto;padding:0 10px;height:34px;font-size:0.8rem;" onclick="setTeacherKeyAnswer(${idx}, 'Đúng')">Đúng</button>
-          <button type="button" class="bubble-btn ${item.correct === 'Sai' ? 'selected' : ''}" style="width:auto;padding:0 10px;height:34px;font-size:0.8rem;" onclick="setTeacherKeyAnswer(${idx}, 'Sai')">Sai</button>
-        </div>
-      `;
-    } else {
-      // Enhanced Essay / Short Math Answer Editor with Live Match Tester
-      const testVal = item.testInput || '';
-      const isTestMatch = testVal ? checkAnswerMatch(testVal, item.correct) : null;
-
-      bodyControls = `
-        <div style="flex:1;min-width:320px;">
-          <div style="display:flex;gap:0.4rem;align-items:center;">
-            <input type="text" id="teacherKeyInput_${idx}" style="flex:1;padding:0.35rem 0.6rem;font-size:0.9rem;font-weight:700;border:2px solid var(--border-color);border-radius:var(--radius-sm);color:var(--indigo);" placeholder="Đáp số chuẩn (dùng | để thêm nhiều cách viết, VD: 12 | x=12)" value="${escapeHtml(item.correct)}" oninput="setTeacherKeyAnswer(${idx}, this.value)">
-          </div>
-
-          <!-- Quick Math Symbols Toolbar -->
-          <div class="math-symbol-bar">
-            <span style="font-size:0.75rem;font-weight:800;color:var(--text-muted);margin-right:2px;">Chèn nhanh:</span>
-            ${mathSymbols.map(sym => `
-              <button type="button" class="math-sym-btn" onclick="insertMathSymbol(${idx}, '${sym}')">${sym}</button>
-            `).join('')}
-          </div>
-
-          <!-- Live Match Tester -->
-          <div class="math-tester-box">
-            <span style="font-size:0.75rem;font-weight:800;color:var(--text-secondary);">🧪 Chấm thử:</span>
-            <input type="text" class="math-tester-input" placeholder="Gõ thử câu trả lời..." value="${escapeHtml(testVal)}" oninput="testTeacherAnswerMatch(${idx}, this.value)">
-            ${testVal ? (isTestMatch ? '<span class="math-tester-pill badge-pass">✅ Chấm ĐÚNG</span>' : '<span class="math-tester-pill badge-fail">❌ Chấm SAI</span>') : '<span style="font-size:0.75rem;color:var(--text-muted);">Nhập để thử</span>'}
-          </div>
-        </div>
-      `;
-    }
+  container.innerHTML = AppState.teacherEssayKeys.map((item, idx) => {
+    const testVal = item.testInput || '';
+    const isTestMatch = testVal ? checkAnswerMatch(testVal, item.correct) : null;
 
     return `
-      <div class="key-grid-item" style="align-items:flex-start;padding:0.75rem;">
-        <div style="display:flex;gap:0.4rem;align-items:center;min-width:70px;margin-top:4px;">
-          <span style="font-weight:900;color:var(--indigo);font-size:0.95rem;">Câu ${item.num}:</span>
-        </div>
-        <div style="display:flex;gap:0.6rem;align-items:flex-start;flex:1;flex-wrap:wrap;">
-          ${bodyControls}
-          <div style="display:flex;gap:0.4rem;align-items:center;margin-top:2px;">
-            <input type="number" step="0.25" min="0.25" max="10" style="width:60px;padding:0.35rem 0.4rem;font-size:0.85rem;text-align:center;font-weight:800;" value="${item.score}" title="Điểm của câu này" onchange="setTeacherKeyScore(${idx}, this.value)">
-            <select style="padding:0.35rem 0.4rem;font-size:0.85rem;width:125px;font-weight:700;" onchange="changeTeacherKeyType(${idx}, this.value)">
-              <option value="mcq" ${item.type === 'mcq' ? 'selected' : ''}>Trắc nghiệm A-D</option>
-              <option value="truefalse" ${item.type === 'truefalse' ? 'selected' : ''}>Đúng / Sai</option>
-              <option value="essay" ${item.type === 'essay' ? 'selected' : ''}>✍️ Tự luận điền số</option>
-            </select>
+      <div class="card" style="padding:1.1rem;margin-bottom:0.85rem;border-left:5px solid var(--indigo);background:var(--bg-card);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem;flex-wrap:wrap;gap:0.5rem;">
+          <span style="font-weight:900;color:var(--indigo);font-size:1.05rem;">✍️ Câu ${item.num} (Tự Luận Điền Số):</span>
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <label style="font-size:0.85rem;font-weight:800;color:var(--text-secondary);">Điểm số:</label>
+            <input type="number" step="0.25" min="0.25" max="10" style="width:70px;padding:0.35rem;font-size:0.9rem;text-align:center;font-weight:800;" value="${item.score}" onchange="setTeacherEssayScore(${idx}, this.value)">
+            <button type="button" class="btn btn-danger btn-sm" onclick="removeOneTeacherEssayQuestion(${idx})" title="Xóa câu này">🗑️</button>
           </div>
+        </div>
+
+        <div style="margin-bottom:0.5rem;">
+          <label style="font-size:0.85rem;font-weight:800;color:var(--text-primary);display:block;margin-bottom:0.3rem;">
+            🎯 Đáp số chuẩn (Dùng dấu <code style="background:var(--indigo-light);color:var(--indigo);padding:1px 6px;border-radius:4px;">|</code> để thêm nhiều cách viết tương đương):
+          </label>
+          <input type="text" id="teacherEssayInput_${idx}" style="width:100%;padding:0.5rem 0.8rem;font-size:1rem;font-weight:800;border:2px solid var(--border-color);border-radius:var(--radius-md);color:var(--indigo);" placeholder="VD: 12 | x=12 | x = 12 hoặc 1/2 | 0.5" value="${escapeHtml(item.correct)}" oninput="setTeacherEssayAnswer(${idx}, this.value)">
+        </div>
+
+        <div class="math-symbol-bar">
+          <span style="font-size:0.75rem;font-weight:800;color:var(--text-muted);margin-right:4px;">Chèn nhanh ký hiệu:</span>
+          ${mathSymbols.map(sym => `
+            <button type="button" class="math-sym-btn" onclick="insertMathSymbolToEssay(${idx}, '${sym}')">${sym}</button>
+          `).join('')}
+        </div>
+
+        <div class="math-tester-box" style="margin-top:0.6rem;">
+          <span style="font-size:0.8rem;font-weight:800;color:var(--text-secondary);">🧪 Chấm thử câu trả lời của học sinh:</span>
+          <input type="text" class="math-tester-input" style="flex:1;max-width:260px;" placeholder="Gõ thử câu trả lời bất kỳ..." value="${escapeHtml(testVal)}" oninput="testTeacherEssayMatch(${idx}, this.value)">
+          ${testVal ? (isTestMatch ? '<span class="math-tester-pill badge-pass">✅ Chấm ĐÚNG</span>' : '<span class="math-tester-pill badge-fail">❌ Chấm SAI</span>') : '<span style="font-size:0.75rem;color:var(--text-muted);">Nhập để xem thử kết quả</span>'}
         </div>
       </div>
     `;
   }).join('');
-
-  document.getElementById('teacherTotalQuestionsCount').textContent = `${AppState.teacherAnswerKeys.length} câu`;
 }
 
-function insertMathSymbol(idx, sym) {
-  const input = document.getElementById(`teacherKeyInput_${idx}`);
+function setTeacherEssayAnswer(idx, ans) {
+  AppState.teacherEssayKeys[idx].correct = ans;
+}
+
+function setTeacherEssayScore(idx, score) {
+  AppState.teacherEssayKeys[idx].score = parseFloat(score) || 1.0;
+  updateTotalExamPointsCalculation();
+}
+
+function insertMathSymbolToEssay(idx, sym) {
+  const input = document.getElementById(`teacherEssayInput_${idx}`);
   if (input) {
     const start = input.selectionStart || input.value.length;
     const end = input.selectionEnd || input.value.length;
@@ -803,61 +855,63 @@ function insertMathSymbol(idx, sym) {
     input.value = val.substring(0, start) + sym + val.substring(end);
     input.focus();
     input.selectionStart = input.selectionEnd = start + sym.length;
-    setTeacherKeyAnswer(idx, input.value);
+    setTeacherEssayAnswer(idx, input.value);
     SoundEngine.playClick();
   }
 }
 
-function testTeacherAnswerMatch(idx, val) {
-  AppState.teacherAnswerKeys[idx].testInput = val;
-  renderTeacherAnswerKeyGrid();
+function testTeacherEssayMatch(idx, val) {
+  AppState.teacherEssayKeys[idx].testInput = val;
+  renderTeacherEssayGrid();
 }
 
-function setTeacherKeyAnswer(idx, ans) {
-  AppState.teacherAnswerKeys[idx].correct = ans;
-}
-
-function setTeacherKeyScore(idx, score) {
-  AppState.teacherAnswerKeys[idx].score = parseFloat(score) || 0.5;
-}
-
-function changeTeacherKeyType(idx, type) {
-  AppState.teacherAnswerKeys[idx].type = type;
-  if (type === 'truefalse') {
-    AppState.teacherAnswerKeys[idx].correct = 'Đúng';
-  } else if (type === 'essay') {
-    AppState.teacherAnswerKeys[idx].correct = '12 | x=12';
-    AppState.teacherAnswerKeys[idx].score = 1.0;
-  } else {
-    AppState.teacherAnswerKeys[idx].correct = 'A';
-  }
-  renderTeacherAnswerKeyGrid();
-}
-
-function addOneTeacherKeyQuestion() {
-  const nextNum = AppState.teacherAnswerKeys.length + 1;
-  AppState.teacherAnswerKeys.push({
+function addOneTeacherEssayQuestion() {
+  const nextNum = AppState.teacherMcqKeys.length + AppState.teacherEssayKeys.length + 1;
+  AppState.teacherEssayKeys.push({
     num: nextNum,
-    type: 'mcq',
-    correct: 'A',
-    score: 0.5,
+    type: 'essay',
+    correct: '12 | x=12',
+    score: 2.5,
     testInput: ''
   });
-  renderTeacherAnswerKeyGrid();
+  renderTeacherEssayGrid();
+  updateTotalExamPointsCalculation();
   SoundEngine.playClick();
 }
 
-function removeOneTeacherKeyQuestion() {
-  if (AppState.teacherAnswerKeys.length <= 1) return;
-  AppState.teacherAnswerKeys.pop();
-  renderTeacherAnswerKeyGrid();
+function removeOneTeacherEssayQuestion(idx) {
+  AppState.teacherEssayKeys.splice(idx, 1);
+  renumberEssayKeys();
+  renderTeacherEssayGrid();
+  updateTotalExamPointsCalculation();
   SoundEngine.playClick();
 }
 
-/* Publish Single Quiz */
+function renumberEssayKeys() {
+  const startNum = AppState.teacherMcqKeys.length;
+  AppState.teacherEssayKeys.forEach((k, idx) => {
+    k.num = startNum + idx + 1;
+  });
+}
+
+function updateTotalExamPointsCalculation() {
+  const mcqTotal = AppState.teacherMcqKeys.reduce((sum, k) => sum + (k.score || 0), 0);
+  const essayTotal = AppState.teacherEssayKeys.reduce((sum, k) => sum + (k.score || 0), 0);
+  const totalScore = Math.round((mcqTotal + essayTotal) * 100) / 100;
+  const totalCount = AppState.teacherMcqKeys.length + AppState.teacherEssayKeys.length;
+
+  const scoreEl = document.getElementById('teacherTotalScoreCalculationBadge');
+  if (scoreEl) {
+    scoreEl.innerHTML = `Tổng: <strong>${totalCount} câu</strong> (Trắc nghiệm: ${mcqTotal}đ + Tự luận: ${essayTotal}đ = <strong>${totalScore}/10đ</strong>)`;
+  }
+}
+
+/* Combine MCQ + Essay into Published Quiz */
 async function publishTeacherQuiz() {
-  if (!AppState.teacherAnswerKeys.length) {
-    showToast('⚠️ Vui lòng thiết lập ít nhất 1 câu hỏi trong bảng đáp án.', 'warn');
+  const combinedKeys = [...AppState.teacherMcqKeys, ...AppState.teacherEssayKeys];
+
+  if (!combinedKeys.length) {
+    showToast('⚠️ Vui lòng thiết lập ít nhất 1 câu hỏi trắc nghiệm hoặc tự luận.', 'warn');
     return;
   }
 
@@ -891,7 +945,9 @@ async function publishTeacherQuiz() {
     id,
     title,
     timeLimit,
-    totalQuestions: AppState.teacherAnswerKeys.length,
+    totalQuestions: combinedKeys.length,
+    mcqCount: AppState.teacherMcqKeys.length,
+    essayCount: AppState.teacherEssayKeys.length,
     examMode: 'split_pdf',
     pdfFileName: AppState.teacherFileName || 'De_Thi_Toan.pdf',
     pdfDataUrl: AppState.teacherPdfData || null,
@@ -901,7 +957,7 @@ async function publishTeacherQuiz() {
     showLeaderboard,
     antiCheat,
     createdAt: new Date().toISOString(),
-    answerKeys: AppState.teacherAnswerKeys
+    answerKeys: combinedKeys
   };
 
   await StorageEngine.saveQuiz(quiz);
@@ -923,7 +979,7 @@ async function publishTeacherQuiz() {
   resDiv.innerHTML = `
     <div class="card" style="background:var(--primary-light);border-color:var(--primary);margin-top:1rem;">
       <h3 style="color:var(--primary-shadow);margin-bottom:0.4rem;">🎉 Đã Phát Hành Đề Thi Thành Công!</h3>
-      <p style="color:var(--primary-shadow);font-size:0.95rem;font-weight:700;">Phạm vi giao đề: <strong>${targetDesc}</strong></p>
+      <p style="color:var(--primary-shadow);font-size:0.95rem;font-weight:700;">Gồm ${AppState.teacherMcqKeys.length} câu trắc nghiệm + ${AppState.teacherEssayKeys.length} câu tự luận. Phạm vi: <strong>${targetDesc}</strong></p>
       <div style="margin:1rem 0;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
         <span class="code-badge" style="font-size:1.8rem;padding:0.6rem 1.4rem;">${id}</span>
         <button class="btn btn-secondary" onclick="loadSampleToStudent('${id}')">🚀 Vào Thi Thử Ngay</button>
@@ -972,7 +1028,7 @@ async function renderTeacherQuizManager() {
           <tr>
             <th>Tên Đề Thi</th>
             <th>Đối Tượng Giao</th>
-            <th>Số Câu</th>
+            <th>Cấu Trúc Đề</th>
             <th>Thời Gian</th>
             <th>Thao Tác</th>
           </tr>
@@ -986,11 +1042,17 @@ async function renderTeacherQuizManager() {
               targetLabel = `<span class="badge-status" style="background:var(--amber-light);color:var(--amber-shadow);">Đích danh ${(q.assignedStudents||[]).length} HS</span>`;
             }
 
+            const mcqCount = q.mcqCount || (q.answerKeys ? q.answerKeys.filter(k => k.type === 'mcq').length : 0);
+            const essayCount = q.essayCount || (q.answerKeys ? q.answerKeys.filter(k => k.type === 'essay').length : 0);
+
             return `
               <tr>
                 <td><strong style="color:var(--text-primary);font-size:1rem;">${escapeHtml(q.title)}</strong></td>
                 <td>${targetLabel}</td>
-                <td>${q.totalQuestions || (q.answerKeys ? q.answerKeys.length : 12)} câu</td>
+                <td>
+                  <span class="badge-status badge-pass" style="font-size:0.75rem;">${mcqCount} Trắc nghiệm</span>
+                  ${essayCount > 0 ? `<span class="badge-status" style="font-size:0.75rem;background:var(--amber-light);color:var(--amber-shadow);margin-left:4px;">${essayCount} Tự luận</span>` : ''}
+                </td>
                 <td>${q.timeLimit} phút</td>
                 <td>
                   <div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;">
@@ -1045,7 +1107,7 @@ async function resetSampleQuiz() {
   SoundEngine.playCorrect();
 }
 
-/* ================= PERSONALIZED EXAM FEED ================= */
+/* ================= STRICT PERSONALIZED EXAM FEED ================= */
 function updatePersonalizedExamFeed() {
   const currentName = (document.getElementById('studentJoinName')?.value || '').trim();
   const currentClass = (document.getElementById('studentJoinClass')?.value || '').trim();
@@ -1065,29 +1127,59 @@ async function renderSampleQuizzes(filterName = '', filterClass = '') {
   let displayedQuizzes = quizzes;
   if (filterName || filterClass) {
     displayedQuizzes = quizzes.filter(q => {
-      if (q.assignType === 'all' || !q.assignType) return true;
-      if (q.assignType === 'classes' && Array.isArray(q.assignedClasses)) {
-        return q.assignedClasses.some(c => c.toLowerCase() === filterClass.toLowerCase());
-      }
+      // 1. If assigned to specific students, only show if student name/tag matches
       if (q.assignType === 'students' && Array.isArray(q.assignedStudents)) {
         const studentTag = `${filterName} (${filterClass})`.toLowerCase();
         return q.assignedStudents.some(s => s.toLowerCase() === studentTag || s.toLowerCase().includes(filterName.toLowerCase()));
       }
+
+      // 2. If assigned to specific classes, only show if student's class matches
+      if (q.assignType === 'classes' && Array.isArray(q.assignedClasses)) {
+        if (!filterClass) return false;
+        return q.assignedClasses.some(c => c.toLowerCase() === filterClass.toLowerCase());
+      }
+
+      // 3. For public exams: Strictly check if exam targetClass or title matches the student's class
+      if (filterClass) {
+        // If the quiz specifies assignedClasses or targetClass
+        if (q.assignedClasses && q.assignedClasses.length > 0) {
+          const matchClass = q.assignedClasses.some(c => c.toLowerCase() === filterClass.toLowerCase());
+          if (!matchClass) return false;
+        }
+
+        // Check if title specifically mentions a grade (e.g. "Toán 8", "Lớp 8" vs Class 10)
+        const gradeMatch = q.title.match(/(?:Toán|Lớp)\s*(\d+)/i);
+        if (gradeMatch && gradeMatch[1]) {
+          const gradeNum = gradeMatch[1];
+          // If title says "Toán 8" but student is in "10", strictly exclude!
+          if (gradeNum !== filterClass && !filterClass.startsWith(gradeNum)) {
+            return false;
+          }
+        }
+      }
+
       return true;
     });
   }
 
+  // Nicely formatted header title
   const titleHeader = document.getElementById('studentFeedHeaderTitle');
   if (titleHeader) {
-    titleHeader.textContent = filterName ? `📚 Đề Thi Dành Riêng Cho ${filterName} (Lớp ${filterClass})` : '📚 Danh Sách Đề Thi Của Bạn';
+    if (filterName && filterClass) {
+      titleHeader.textContent = `📚 Đề Thi Dành Riêng Cho: ${filterName} (Lớp ${filterClass})`;
+    } else if (filterClass) {
+      titleHeader.textContent = `📚 Danh Sách Đề Thi Lớp ${filterClass}`;
+    } else {
+      titleHeader.textContent = '📚 Danh Sách Đề Thi';
+    }
   }
 
   if (!displayedQuizzes.length) {
     wrap.innerHTML = `
       <div style="text-align:center;padding:1.75rem 1rem;color:var(--text-muted);">
         <div style="font-size:2.5rem;margin-bottom:0.4rem;">📭</div>
-        <p style="font-weight:800;font-size:1.05rem;color:var(--amber-shadow);">Hiện tại chưa có đề thi nào được phân công cho ${escapeHtml(filterName)} (Lớp ${escapeHtml(filterClass)}).</p>
-        <p style="font-size:0.875rem;margin-top:4px;">Khi giáo viên giao bài theo lớp hoặc giao đích danh cho bạn, đề thi sẽ tự động xuất hiện ở đây.</p>
+        <p style="font-weight:800;font-size:1.05rem;color:var(--amber-shadow);">Hiện tại chưa có đề thi nào phù hợp với Lớp ${escapeHtml(filterClass || 'đang chọn')}.</p>
+        <p style="font-size:0.875rem;margin-top:4px;">Khi giáo viên tạo đề và giao bài cho Lớp ${escapeHtml(filterClass || '')}, đề thi sẽ tự động xuất hiện ở đây.</p>
       </div>
     `;
     return;
@@ -1101,6 +1193,9 @@ async function renderSampleQuizzes(filterName = '', filterClass = '') {
       targetBadge = `<span class="badge-status" style="font-size:0.75rem;background:var(--amber-light);color:var(--amber-shadow);">👤 Đích danh cho bạn</span>`;
     }
 
+    const mcqCount = q.mcqCount || (q.answerKeys ? q.answerKeys.filter(k => k.type === 'mcq').length : 0);
+    const essayCount = q.essayCount || (q.answerKeys ? q.answerKeys.filter(k => k.type === 'essay').length : 0);
+
     return `
       <div class="card" style="padding:1.25rem;margin-bottom:0.85rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;border-left:6px solid ${q.assignType === 'students' ? 'var(--amber)' : (q.assignType === 'classes' ? 'var(--sky)' : 'var(--primary)')};">
         <div>
@@ -1109,7 +1204,7 @@ async function renderSampleQuizzes(filterName = '', filterClass = '') {
             ${targetBadge}
           </div>
           <div style="font-size:0.9rem;color:var(--text-secondary);margin-top:4px;font-weight:600;">
-            ⏳ Thời gian: <strong>${q.timeLimit} phút</strong> · 📝 Quy mô: <strong>${q.totalQuestions || (q.answerKeys ? q.answerKeys.length : 12)} câu hỏi</strong>
+            ⏳ <strong>${q.timeLimit} phút</strong> · 📝 <strong>${mcqCount} câu trắc nghiệm</strong> + <strong>${essayCount} câu tự luận</strong>
           </div>
         </div>
         <div style="display:flex;gap:0.5rem;align-items:center;">
@@ -1195,15 +1290,13 @@ async function startExamWithQuizId(quizId) {
     setTimeout(() => {
       frame.contentDocument.body.innerHTML = `
         <div style="font-family:sans-serif;padding:35px;color:#1e293b;line-height:1.7;">
-          <h2 style="color:#4f46e5;margin-bottom:8px;">📄 ĐỀ KIỂM TRA GIỮA HỌC KỲ I — MÔN TOÁN 8</h2>
+          <h2 style="color:#4f46e5;margin-bottom:8px;">📄 ${escapeHtml(quiz.title)}</h2>
           <hr style="border:1px solid #cbd5e1;margin-bottom:20px;"/>
-          <h3 style="color:#0f172a;">I. PHẦN TRẮC NGHIỆM (7.0 điểm)</h3>
+          <h3 style="color:#0f172a;">I. PHẦN TRẮC NGHIỆM</h3>
           <p><strong>Câu 1:</strong> Đơn thức nào sau đây đồng dạng với đơn thức $-3x^2y$?<br/>A. $2xy$ &nbsp;&nbsp;&nbsp; B. $5x^2y$ &nbsp;&nbsp;&nbsp; C. $-3xy^2$ &nbsp;&nbsp;&nbsp; D. $x^3y$</p>
           <p><strong>Câu 2:</strong> Khai triển hằng đẳng thức $(x + 2)^2$ ta được:<br/>A. $x^2 + 4$ &nbsp;&nbsp;&nbsp; B. $x^2 + 2x + 4$ &nbsp;&nbsp;&nbsp; C. $x^2 + 4x + 4$ &nbsp;&nbsp;&nbsp; D. $x^2 - 4x + 4$</p>
-          <p><strong>Câu 3:</strong> Tứ giác có 4 góc bằng nhau là hình vuông. Đúng hay Sai?</p>
-          <p><strong>Câu 4:</strong> Tính giá trị của biểu thức $P = \\sqrt{16} + \\sqrt[3]{27} - 2^3$:<br/>A. -1 &nbsp;&nbsp;&nbsp; B. 1 &nbsp;&nbsp;&nbsp; C. 7 &nbsp;&nbsp;&nbsp; D. 15</p>
           <hr style="border:1px solid #cbd5e1;margin:25px 0;"/>
-          <h3 style="color:#0f172a;">II. PHẦN TỰ LUẬN ĐIỀN ĐÁP SỐ (3.0 điểm)</h3>
+          <h3 style="color:#0f172a;">II. PHẦN TỰ LUẬN ĐIỀN ĐÁP SỐ</h3>
           <p><strong>Câu 11:</strong> Tìm $x$ dương biết $x^2 - 144 = 0$. <em>(Nhập số 12 hoặc x = 12 vào ô bên phải)</em></p>
           <p><strong>Câu 12:</strong> Tính giá trị phân số $\\frac{1}{4} + 0.25$. <em>(Nhập số 0.5 hoặc 1/2)</em></p>
         </div>
@@ -1231,20 +1324,36 @@ function renderStudentAnswerSheet(keys) {
   const container = document.getElementById('studentAnswerSheetBody');
   if (!container) return;
 
-  container.innerHTML = keys.map((k) => {
-    const isFlagged = AppState.flaggedQuestions.has(k.num);
-    return `
-      <div class="bubble-q-row" id="sheetRow_${k.num}">
-        <div class="bubble-q-num">
-          <span>Câu ${k.num}</span>
-          <button type="button" class="flag-star-btn ${isFlagged ? 'flagged' : ''}" onclick="toggleFlagSheet(${k.num})" title="Đánh dấu phân vân">★</button>
-        </div>
-        ${renderSheetInputs(k)}
-      </div>
-    `;
-  }).join('');
+  const mcqList = keys.filter(k => k.type === 'mcq' || k.type === 'truefalse');
+  const essayList = keys.filter(k => k.type === 'essay');
 
+  let html = '';
+
+  if (mcqList.length > 0) {
+    html += `<div style="padding:0.4rem 0.6rem;background:var(--bg-tertiary);border-radius:var(--radius-sm);font-weight:900;color:var(--indigo);font-size:0.85rem;margin-bottom:0.5rem;">I. PHẦN TRẮC NGHIỆM (${mcqList.length} CÂU)</div>`;
+    html += mcqList.map(k => renderSingleSheetRow(k)).join('');
+  }
+
+  if (essayList.length > 0) {
+    html += `<div style="padding:0.4rem 0.6rem;background:var(--amber-light);border-radius:var(--radius-sm);font-weight:900;color:var(--amber-shadow);font-size:0.85rem;margin:1rem 0 0.5rem;">II. PHẦN TỰ LUẬN ĐIỀN ĐÁP SỐ (${essayList.length} CÂU)</div>`;
+    html += essayList.map(k => renderSingleSheetRow(k)).join('');
+  }
+
+  container.innerHTML = html;
   updateSheetProgress();
+}
+
+function renderSingleSheetRow(k) {
+  const isFlagged = AppState.flaggedQuestions.has(k.num);
+  return `
+    <div class="bubble-q-row" id="sheetRow_${k.num}">
+      <div class="bubble-q-num">
+        <span>Câu ${k.num}</span>
+        <button type="button" class="flag-star-btn ${isFlagged ? 'flagged' : ''}" onclick="toggleFlagSheet(${k.num})" title="Đánh dấu phân vân">★</button>
+      </div>
+      ${renderSheetInputs(k)}
+    </div>
+  `;
 }
 
 function renderSheetInputs(k) {
@@ -1268,7 +1377,7 @@ function renderSheetInputs(k) {
   } else {
     const current = AppState.studentAnswers[k.num] || '';
     return `
-      <div style="flex:1;max-width:220px;">
+      <div style="flex:1;max-width:240px;">
         <input type="text" class="sheet-essay-input" placeholder="Điền đáp số (VD: 12)..." value="${escapeHtml(current)}" oninput="recordSheetEssay(${k.num}, this.value)">
       </div>
     `;
@@ -1366,14 +1475,13 @@ function initAntiCheatListeners() {
   });
 }
 
-/* ================= ENHANCED SMART MATH MATCHER ================= */
+/* Enhanced Smart Math Matcher */
 function checkAnswerMatch(given, correct) {
   if (!given || !correct) return false;
   
   const gRaw = given.toString().trim();
   const cRaw = correct.toString().trim();
 
-  // Support multiple acceptable variations separated by | or ;
   const acceptableList = cRaw.split(/[|;]/).map(s => s.trim()).filter(Boolean);
   
   for (const target of acceptableList) {
@@ -1386,26 +1494,22 @@ function checkAnswerMatch(given, correct) {
 }
 
 function matchSingleMathAnswer(gStr, cStr) {
-  // Strip units (cm, cm2, cm3, m, mm, km/h, kg, g, deg, độ, °...)
   const unitRegex = /\s*(cm[23]?|m[23]?|mm|km(\/h)?|kg|g|độ|°|rad)\s*$/i;
   let gClean = gStr.replace(unitRegex, '').trim().toLowerCase().replace(/\s+/g, '');
   let cClean = cStr.replace(unitRegex, '').trim().toLowerCase().replace(/\s+/g, '');
 
   if (gClean === cClean) return true;
 
-  // Strip leading variables like x=, y=, z=, t=, x==
   const gStrippedVar = gClean.replace(/^[a-z]=[=]?/, '');
   const cStrippedVar = cClean.replace(/^[a-z]=[=]?/, '');
   if (gStrippedVar === cStrippedVar) return true;
 
-  // Decimal number comparison with tolerance 1e-4
   const gNum = parseMathNumber(gStr);
   const cNum = parseMathNumber(cStr);
   if (gNum !== null && cNum !== null) {
     if (Math.abs(gNum - cNum) < 1e-4) return true;
   }
 
-  // Fraction comparison
   const gFrac = parseFraction(gStr);
   const cFrac = parseFraction(cStr);
   if (gFrac !== null && cFrac !== null) {
@@ -1418,7 +1522,6 @@ function matchSingleMathAnswer(gStr, cStr) {
     if (Math.abs(gNum - cFrac) < 1e-4) return true;
   }
 
-  // Set of multiple roots (e.g. "2, 3" vs "3, 2" or "x=2; x=3")
   if (matchSetOfRoots(gStr, cStr)) {
     return true;
   }

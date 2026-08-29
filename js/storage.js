@@ -1,5 +1,5 @@
 /**
- * KhiemEdu Storage Engine with Secure Student PIN Protection
+ * KhiemEdu Storage Engine with Precise Class-Level Isolation
  */
 
 const STORAGE_PREFIX = 'khiemedu_';
@@ -132,7 +132,6 @@ const StorageEngine = {
     return keys;
   },
 
-  // Student Roster Management with PIN Security
   async getStudentRoster() {
     const roster = await this.get('student_roster');
     return roster || [];
@@ -142,7 +141,6 @@ const StorageEngine = {
     return await this.set('student_roster', roster);
   },
 
-  // Quizzes
   async saveQuiz(quiz) {
     return await this.set('quiz:' + quiz.id, quiz);
   },
@@ -177,17 +175,12 @@ const StorageEngine = {
     return true;
   },
 
-  // Results
   async saveResult(result) {
     const resultKey = `result:${result.quizId}:${result.className}_${result.name}_${Date.now()}`;
     result.id = resultKey;
     await this.set(resultKey, result);
     await this.set(`submitted:${result.quizId}:${result.className}_${result.name}`, '1');
     return resultKey;
-  },
-
-  async updateResult(resultKey, updatedResult) {
-    return await this.set(resultKey, updatedResult);
   },
 
   async hasSubmitted(quizId, className, name) {
@@ -208,56 +201,85 @@ const StorageEngine = {
     return results;
   },
 
-  // Seed sample student roster with PIN code for each student
   seedStudentRosterIfEmpty() {
     if (!localStorage.getItem(STORAGE_PREFIX + 'student_roster')) {
       const initialRoster = [
-        { id: 'SURI10', name: 'SURI', className: '10', avatar: '🦊', pin: '1234' },
-        { id: 'NGHIA7', name: 'NGHĨA', className: '7', avatar: '🚀', pin: '1234' },
-        { id: 'GIANG8', name: 'GIANG', className: '8', avatar: '🦁', pin: '1234' },
-        { id: 'TIEN12', name: 'TIÊN', className: '12', avatar: '🦉', pin: '1234' },
-        { id: 'MINH10', name: 'MINH', className: '10', avatar: '⚡', pin: '1234' }
+        { id: 'SURI10', name: 'SURI', className: '10', avatar: '🦊' },
+        { id: 'NGHIA7', name: 'NGHĨA', className: '7', avatar: '🚀' },
+        { id: 'GIANG8', name: 'GIANG', className: '8', avatar: '🦁' },
+        { id: 'TIEN12', name: 'TIÊN', className: '12', avatar: '🦉' },
+        { id: 'MINH10', name: 'MINH', className: '10', avatar: '⚡' }
       ];
       this.saveStudentRoster(initialRoster);
     }
   },
 
-  // Seed sample exam
   seedSampleDataIfEmpty() {
-    const sampleKey = 'quiz:AZOTA01';
-    if (!localStorage.getItem(STORAGE_PREFIX + sampleKey)) {
-      const sampleQuiz = {
-        id: 'AZOTA01',
-        title: 'Đề Kiểm Tra Giữa Học Kỳ I — Môn Toán',
-        timeLimit: 45,
-        totalQuestions: 12,
-        examMode: 'split_pdf',
-        pdfFileName: 'De_Kiem_Tra_Toan.pdf',
-        pdfDataUrl: null,
-        assignType: 'all',
-        assignedClasses: ['10', '8', '7', '12'],
-        assignedStudents: ['SURI (10)', 'GIANG (8)'],
-        shuffle: false,
-        showLeaderboard: true,
-        antiCheat: true,
-        createdAt: new Date().toISOString(),
-        answerKeys: [
-          { num: 1, type: 'mcq', correct: 'A', score: 0.5 },
-          { num: 2, type: 'mcq', correct: 'C', score: 0.5 },
-          { num: 3, type: 'mcq', correct: 'B', score: 0.5 },
-          { num: 4, type: 'mcq', correct: 'D', score: 0.5 },
-          { num: 5, type: 'mcq', correct: 'A', score: 0.5 },
-          { num: 6, type: 'mcq', correct: 'B', score: 0.5 },
-          { num: 7, type: 'mcq', correct: 'C', score: 0.5 },
-          { num: 8, type: 'mcq', correct: 'A', score: 0.5 },
-          { num: 9, type: 'truefalse', correct: 'Đúng', score: 1 },
-          { num: 10, type: 'truefalse', correct: 'Sai', score: 1 },
-          { num: 11, type: 'essay', correct: '12', score: 1.5 },
-          { num: 12, type: 'essay', correct: '0.5', score: 1.5 }
-        ]
-      };
-      this.saveQuiz(sampleQuiz);
-    }
+    // Sample Quiz 1: Math 10 for Class 10 (SURI, MINH)
+    const sample10 = {
+      id: 'TOAN10_GK1',
+      title: 'Đề Kiểm Tra Toán Học — Lớp 10',
+      targetClass: '10',
+      timeLimit: 45,
+      totalQuestions: 12,
+      mcqCount: 10,
+      essayCount: 2,
+      examMode: 'split_pdf',
+      pdfFileName: 'De_Toan_10.pdf',
+      pdfDataUrl: null,
+      assignType: 'classes',
+      assignedClasses: ['10', '10A1', '10A2'],
+      assignedStudents: ['SURI (10)', 'MINH (10)'],
+      createdAt: new Date().toISOString(),
+      answerKeys: [
+        { num: 1, type: 'mcq', correct: 'A', score: 0.5 },
+        { num: 2, type: 'mcq', correct: 'C', score: 0.5 },
+        { num: 3, type: 'mcq', correct: 'B', score: 0.5 },
+        { num: 4, type: 'mcq', correct: 'D', score: 0.5 },
+        { num: 5, type: 'mcq', correct: 'A', score: 0.5 },
+        { num: 6, type: 'mcq', correct: 'B', score: 0.5 },
+        { num: 7, type: 'mcq', correct: 'C', score: 0.5 },
+        { num: 8, type: 'mcq', correct: 'A', score: 0.5 },
+        { num: 9, type: 'mcq', correct: 'D', score: 0.5 },
+        { num: 10, type: 'mcq', correct: 'B', score: 0.5 },
+        { num: 11, type: 'essay', correct: '12 | x=12', score: 2.5 },
+        { num: 12, type: 'essay', correct: '1/2 | 0.5', score: 2.5 }
+      ]
+    };
+    this.saveQuiz(sample10);
+
+    // Sample Quiz 2: Math 8 for Class 8 (GIANG)
+    const sample8 = {
+      id: 'TOAN8_GK1',
+      title: 'Đề Kiểm Tra Giữa Học Kỳ I — Toán 8',
+      targetClass: '8',
+      timeLimit: 45,
+      totalQuestions: 12,
+      mcqCount: 10,
+      essayCount: 2,
+      examMode: 'split_pdf',
+      pdfFileName: 'De_Toan_8.pdf',
+      pdfDataUrl: null,
+      assignType: 'classes',
+      assignedClasses: ['8', '8A1', '8A2'],
+      assignedStudents: ['GIANG (8)'],
+      createdAt: new Date(Date.now() - 3600000).toISOString(),
+      answerKeys: [
+        { num: 1, type: 'mcq', correct: 'B', score: 0.5 },
+        { num: 2, type: 'mcq', correct: 'C', score: 0.5 },
+        { num: 3, type: 'mcq', correct: 'A', score: 0.5 },
+        { num: 4, type: 'mcq', correct: 'D', score: 0.5 },
+        { num: 5, type: 'mcq', correct: 'A', score: 0.5 },
+        { num: 6, type: 'mcq', correct: 'C', score: 0.5 },
+        { num: 7, type: 'mcq', correct: 'B', score: 0.5 },
+        { num: 8, type: 'mcq', correct: 'D', score: 0.5 },
+        { num: 9, type: 'mcq', correct: 'A', score: 0.5 },
+        { num: 10, type: 'mcq', correct: 'B', score: 0.5 },
+        { num: 11, type: 'essay', correct: '144 | x=12', score: 2.5 },
+        { num: 12, type: 'essay', correct: '0.25 | 1/4', score: 2.5 }
+      ]
+    };
+    this.saveQuiz(sample8);
   }
 };
 
