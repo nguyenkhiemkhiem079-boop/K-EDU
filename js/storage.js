@@ -201,6 +201,19 @@ const StorageEngine = {
     return results;
   },
 
+  async getAllResults() {
+    const keys = await this.list('result:');
+    const results = [];
+    for (const key of keys) {
+      const r = await this.get(key);
+      if (r) {
+        r.key = key;
+        results.push(r);
+      }
+    }
+    return results;
+  },
+
   seedStudentRosterIfEmpty() {
     if (!localStorage.getItem(STORAGE_PREFIX + 'student_roster')) {
       const initialRoster = [
@@ -214,7 +227,11 @@ const StorageEngine = {
     }
   },
 
-  seedSampleDataIfEmpty() {
+  seedSampleDataIfEmpty(force = false) {
+    if (!force && localStorage.getItem(STORAGE_PREFIX + 'sample_seeded')) {
+      return; // Already seeded once; never re-add deleted exams on page reload
+    }
+
     // Sample Quiz 1: Math 10 for Class 10 (SURI, MINH)
     const sample10 = {
       id: 'TOAN10_GK1',
@@ -280,6 +297,8 @@ const StorageEngine = {
       ]
     };
     this.saveQuiz(sample8);
+
+    localStorage.setItem(STORAGE_PREFIX + 'sample_seeded', '1');
   }
 };
 
