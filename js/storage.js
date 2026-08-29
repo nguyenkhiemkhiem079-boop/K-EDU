@@ -14,6 +14,9 @@ const StorageEngine = {
 
   async init() {
     await this.initIndexedDB();
+    if (window.FirebaseEngine) {
+      await window.FirebaseEngine.init();
+    }
     this.seedSampleDataIfEmpty();
     this.seedStudentRosterIfEmpty();
   },
@@ -61,18 +64,30 @@ const StorageEngine = {
 
   async getPdfBlob(quizId) {
     if (this.db) {
-      return new Promise((resolve) => {
+      const localPdf = await new Promise((resolve) => {
         const tx = this.db.transaction([STORE_PDFS], 'readonly');
         const store = tx.objectStore(STORE_PDFS);
         const req = store.get('pdf_' + quizId);
         req.onsuccess = () => resolve(req.result || null);
         req.onerror = () => resolve(null);
       });
+      if (localPdf) return localPdf;
     }
+
+    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
+      const quiz = await window.FirebaseEngine.getQuiz(quizId);
+      if (quiz && quiz.pdfDataUrl && quiz.pdfDataUrl.startsWith('http')) {
+        return quiz.pdfDataUrl;
+      }
+    }
+
     return this.get('pdf_' + quizId);
   },
 
   async removePdfBlob(quizId) {
+    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
+      await window.FirebaseEngine.deletePdf(quizId);
+    }
     if (this.db) {
       return new Promise((resolve) => {
         const tx = this.db.transaction([STORE_PDFS], 'readwrite');
@@ -133,23 +148,69 @@ const StorageEngine = {
   },
 
   async getStudentRoster() {
+    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
+      const cloudRoster = await window.FirebaseEngine.getStudentRoster();
+      if (cloudRoster) {
+        await this.set('student_roster', cloudRoster);
+        return cloudRoster;
+      }
+    }
     const roster = await this.get('student_roster');
     return roster || [];
   },
 
   async saveStudentRoster(roster) {
+    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
+      await window.FirebaseEngine.saveStudentRoster(roster);
+    }
     return await this.set('student_roster', roster);
   },
 
   async saveQuiz(quiz) {
-    return await this.set('quiz:' + quiz.id, quiz);
+    const quizToSave = { ...quiz };
+    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
+      await window.FirebaseEngine.saveQuiz(quizToSave);
+      if (quizToSave.pdfDataUrl && quizToSave.pdfDataUrl.startsWith('data:')) {
+        delete quizToSave.pdfDataUrl;
+      }
+      return await this.set('quiz:' + quiz.id, quizToSave);
+    }
+    if (quizToSave.pdfDataUrl && quizToSave.pdfDataUrl.startsWith('data:')) {
+      delete quizToSave.pdfDataUrl;
+    }
+    return await this.set('quiz:' + quiz.id, quizToSave);
   },
 
   async getQuiz(id) {
+    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
+      const cloudQuiz = await window.FirebaseEngine.getQuiz(id);
+      if (cloudQuiz) {
+        const quizToCache = { ...cloudQuiz };
+        if (quizToCache.pdfDataUrl && quizToCache.pdfDataUrl.startsWith('data:')) {
+          delete quizToCache.pdfDataUrl;
+        }
+        await this.set('quiz:' + id, quizToCache);
+        return cloudQuiz;
+      }
+    }
     return await this.get('quiz:' + id);
   },
 
   async getAllQuizzes() {
+    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
+      const cloudQuizzes = await window.FirebaseEngine.getAllQuizzes();
+      if (cloudQuizzes && cloudQuizzes.length > 0) {
+        for (const q of cloudQuizzes) {
+          const qCache = { ...q };
+          if (qCache.pdfDataUrl && qCache.pdfDataUrl.startsWith('data:')) {
+            delete qCache.pdfDataUrl;
+          }
+          await this.set('quiz:' + q.id, qCache);
+        }
+        return cloudQuizzes;
+      }
+    }
+
     const keys = await this.list('quiz:');
     const list = [];
     for (const key of keys) {
@@ -161,6 +222,9 @@ const StorageEngine = {
   },
 
   async deleteQuiz(quizId) {
+    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
+      await window.FirebaseEngine.deleteQuiz(quizId);
+    }
     await this.remove('quiz:' + quizId);
     await this.removePdfBlob(quizId);
 
@@ -178,6 +242,9 @@ const StorageEngine = {
   async saveResult(result) {
     const resultKey = `result:${result.quizId}:${result.className}_${result.name}_${Date.now()}`;
     result.id = resultKey;
+    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
+      await window.FirebaseEngine.saveResult(result);
+    }
     await this.set(resultKey, result);
     await this.set(`submitted:${result.quizId}:${result.className}_${result.name}`, '1');
     return resultKey;
@@ -189,6 +256,16 @@ const StorageEngine = {
   },
 
   async getResultsByQuiz(quizId) {
+    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
+      const cloudResults = await window.FirebaseEngine.getResultsByQuiz(quizId);
+      if (cloudResults && cloudResults.length > 0) {
+        for (const r of cloudResults) {
+          await this.set(r.id || `result:${r.quizId}:${r.className}_${r.name}_${Date.now()}`, r);
+        }
+        return cloudResults;
+      }
+    }
+
     const keys = await this.list(`result:${quizId}:`);
     const results = [];
     for (const key of keys) {
@@ -202,6 +279,16 @@ const StorageEngine = {
   },
 
   async getAllResults() {
+    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
+      const cloudResults = await window.FirebaseEngine.getAllResults();
+      if (cloudResults && cloudResults.length > 0) {
+        for (const r of cloudResults) {
+          await this.set(r.id || `result:${r.quizId}:${r.className}_${r.name}_${Date.now()}`, r);
+        }
+        return cloudResults;
+      }
+    }
+
     const keys = await this.list('result:');
     const results = [];
     for (const key of keys) {

@@ -136,6 +136,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await StorageEngine.init();
   SoundEngine.init();
   initTheme();
+  updateFirebaseUI();
   updateGamifyBar();
   initAvatars();
   initSeparatedTeacherGrids(10, 2);
@@ -3106,4 +3107,122 @@ function triggerBadgeCelebration(badgeName, isUnlocked) {
 function celebrateConfetti() {
   GamificationEngine.fireConfetti();
   SoundEngine.playFanfare();
+}
+
+/* ================= FIREBASE CLOUD CONFIG UI HANDLERS ================= */
+function toggleFirebaseConfigForm() {
+  const wrapper = document.getElementById('firebaseConfigFormWrapper');
+  if (wrapper) {
+    wrapper.classList.toggle('hidden');
+    SoundEngine.playClick();
+  }
+}
+
+function updateFirebaseUI() {
+  const badge = document.getElementById('firebaseConnectionBadge');
+  const apiInput = document.getElementById('fbApiKey');
+  const projectInput = document.getElementById('fbProjectId');
+  const bucketInput = document.getElementById('fbStorageBucket');
+  const authInput = document.getElementById('fbAuthDomain');
+  const appIdInput = document.getElementById('fbAppId');
+  const senderIdInput = document.getElementById('fbSenderId');
+
+  // Fill in inputs from storage if exists
+  const configStr = localStorage.getItem('khiemedu_firebase_config');
+  if (configStr) {
+    try {
+      const config = JSON.parse(configStr);
+      if (apiInput) apiInput.value = config.apiKey || '';
+      if (projectInput) projectInput.value = config.projectId || '';
+      if (bucketInput) bucketInput.value = config.storageBucket || '';
+      if (authInput) authInput.value = config.authDomain || '';
+      if (appIdInput) appIdInput.value = config.appId || '';
+      if (senderIdInput) senderIdInput.value = config.messagingSenderId || '';
+    } catch (e) {
+      console.error('Error parsing stored Firebase config:', e);
+    }
+  }
+
+  if (badge) {
+    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
+      badge.textContent = 'Đồng Bộ Cloud Bật ☁️';
+      badge.className = 'badge-status badge-pass';
+      badge.style.background = 'var(--rose)';
+      badge.style.color = '#fff';
+    } else {
+      const isEnabled = localStorage.getItem('khiemedu_firebase_enabled') === '1';
+      if (isEnabled && configStr) {
+        badge.textContent = 'Lỗi Kết Nối ⚠️';
+        badge.className = 'badge-status badge-warn';
+      } else {
+        badge.textContent = 'Đang Chạy Offline 📴';
+        badge.className = 'badge-status badge-fail';
+      }
+      badge.style.background = '';
+      badge.style.color = '';
+    }
+  }
+}
+
+async function handleSaveFirebaseConfig() {
+  const apiKey = document.getElementById('fbApiKey')?.value.trim();
+  const projectId = document.getElementById('fbProjectId')?.value.trim();
+  const storageBucket = document.getElementById('fbStorageBucket')?.value.trim();
+  const authDomain = document.getElementById('fbAuthDomain')?.value.trim();
+  const appId = document.getElementById('fbAppId')?.value.trim();
+  const messagingSenderId = document.getElementById('fbSenderId')?.value.trim();
+
+  if (!apiKey || !projectId || !storageBucket || !authDomain || !appId) {
+    showToast('⚠️ Vui lòng điền đầy đủ các thông số cấu hình Firebase bắt buộc!', 'warn');
+    SoundEngine.playWarning();
+    return;
+  }
+
+  const config = { apiKey, projectId, storageBucket, authDomain, appId, messagingSenderId };
+  showToast('⚡ Đang kết nối thử với Firebase Cloud...', 'info');
+
+  if (window.FirebaseEngine) {
+    const success = window.FirebaseEngine.saveConfig(config);
+    if (success) {
+      showToast('🎉 Kết nối Firebase Cloud Sync thành công!', 'success');
+      SoundEngine.playFanfare();
+      // Reload manager elements to sync with cloud
+      await loadStudentRoster();
+      updateFirebaseUI();
+      renderTeacherQuizManager();
+      renderTeacherRosterManager();
+      renderTeacherAnalyticsDashboard();
+      updatePersonalizedExamFeed();
+    } else {
+      showToast('❌ Cấu hình sai hoặc lỗi kết nối Firebase. Vui lòng kiểm tra console.', 'error');
+      SoundEngine.playWarning();
+      updateFirebaseUI();
+    }
+  }
+}
+
+function handleDisableFirebase() {
+  if (window.FirebaseEngine) {
+    window.FirebaseEngine.disable();
+    updateFirebaseUI();
+    showToast('📴 Đã tạm tắt đồng bộ đám mây. Hệ thống đang chạy offline.', 'info');
+    SoundEngine.playClick();
+  }
+}
+
+function handleClearFirebaseConfig() {
+  if (confirm('⚠️ Bạn có chắc chắn muốn xóa toàn bộ thông số kết nối Firebase khỏi máy này?')) {
+    if (window.FirebaseEngine) {
+      window.FirebaseEngine.clearConfig();
+    }
+    // Clear input fields
+    const fields = ['fbApiKey', 'fbProjectId', 'fbStorageBucket', 'fbAuthDomain', 'fbAppId', 'fbSenderId'];
+    fields.forEach(f => {
+      const el = document.getElementById(f);
+      if (el) el.value = '';
+    });
+    updateFirebaseUI();
+    showToast('🗑️ Đã xóa sạch credentials và chuyển về chạy offline.', 'info');
+    SoundEngine.playClick();
+  }
 }
