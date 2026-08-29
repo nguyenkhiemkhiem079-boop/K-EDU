@@ -26,6 +26,8 @@ const AppState = {
   batchExamsQueue: [],
   leaderboardTimer: null,
   studentRoster: [],
+  editingQuizId: null,
+  editingQuizCreatedAt: null,
   // Analytics Filters
   parentTimeFilter: 'all',
   teacherAnalyticsScope: 'all',
@@ -1415,6 +1417,370 @@ function updateTotalExamPointsCalculation() {
   }
 }
 
+/* ================= FILE UPLOAD & PREVIEW HANDLERS ================= */
+function handleTeacherPdfSelect() {
+  const fileInput = document.getElementById('teacherPdfFileInput');
+  if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
+
+  const file = fileInput.files[0];
+  AppState.teacherFileName = file.name;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    AppState.teacherPdfData = e.target.result;
+    
+    // Update preview frame
+    const previewWrap = document.getElementById('teacherPdfPreviewWrapper');
+    const previewFrame = document.getElementById('teacherPdfPreviewFrame');
+    const clearBtn = document.getElementById('clearPdfBtn');
+    const nameBadge = document.getElementById('teacherPdfFileNameBadge');
+
+    if (previewWrap) previewWrap.classList.remove('hidden');
+    if (previewFrame) previewFrame.src = AppState.teacherPdfData;
+    if (clearBtn) clearBtn.classList.remove('hidden');
+    if (nameBadge) {
+      nameBadge.classList.remove('hidden');
+      nameBadge.innerHTML = `📄 <strong>File đính kèm:</strong> ${escapeHtml(file.name)} (${(file.size / 1024).toFixed(1)} KB)`;
+    }
+
+    // Auto update exam title if currently default or empty
+    const titleInput = document.getElementById('teacherExamTitleInput');
+    if (titleInput && (titleInput.value === 'Đề Kiểm Tra Giữa Kì I — Môn Toán' || !titleInput.value.trim())) {
+      const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[_\\-]+/g, ' ');
+      titleInput.value = cleanName;
+    }
+
+    showToast(`📄 Đã tải lên file đề thi: ${file.name}`, 'success');
+    SoundEngine.playPop ? SoundEngine.playPop() : SoundEngine.playClick();
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearTeacherPdf() {
+  AppState.teacherPdfData = null;
+  AppState.teacherFileName = '';
+  const fileInput = document.getElementById('teacherPdfFileInput');
+  if (fileInput) fileInput.value = '';
+  const previewWrap = document.getElementById('teacherPdfPreviewWrapper');
+  const previewFrame = document.getElementById('teacherPdfPreviewFrame');
+  const clearBtn = document.getElementById('clearPdfBtn');
+  const nameBadge = document.getElementById('teacherPdfFileNameBadge');
+
+  if (previewWrap) previewWrap.classList.add('hidden');
+  if (previewFrame) previewFrame.src = 'about:blank';
+  if (clearBtn) clearBtn.classList.add('hidden');
+  if (nameBadge) nameBadge.classList.add('hidden');
+
+  showToast('🗑️ Đã gỡ bỏ file đề đính kèm.', 'info');
+}
+
+/* ================= BATCH EXAM UPLOAD HANDLERS ================= */
+function handleBatchFilesSelect() {
+  const fileInput = document.getElementById('batchExamFilesInput');
+  if (!fileInput || !fileInput.files || !fileInput.files.length) return;
+
+  const files = Array.from(fileInput.files);
+  const commonTimeLimit = parseInt(document.getElementById('batchCommonTimeLimitInput')?.value || '45', 10);
+  const commonQCount = parseInt(document.getElementById('batchCommonQuestionCountSelect')?.value || '12', 10);
+  const commonAssignType = document.getElementById('batchCommonAssignTypeSelect')?.value || 'all';
+
+  const defaultMcqCount = Math.max(1, commonQCount > 2 ? commonQCount - 2 : commonQCount);
+  const defaultEssayCount = commonQCount > 2 ? 2 : 0;
+
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const cleanTitle = file.name.replace(/\.[^/.]+$/, '').replace(/[_\\-]+/g, ' ');
+      
+      const opts = ['A', 'B', 'C', 'D'];
+      const mcqKeys = Array.from({ length: defaultMcqCount }, (_, i) => ({
+        num: i + 1,
+        type: 'mcq',
+        correct: opts[i % 4],
+        score: Math.round(((10 - defaultEssayCount * 2) / defaultMcqCount) * 100) / 100
+      }));
+
+      const essayKeys = Array.from({ length: defaultEssayCount }, (_, i) => ({
+        num: defaultMcqCount + i + 1,
+        type: 'essay',
+        correct: '12 | x=12',
+        score: 2.0
+      }));
+
+      AppState.batchExamsQueue.push({
+        id: generateQuizCode(),
+        fileName: file.name,
+        fileData: e.target.result,
+        title: cleanTitle,
+        timeLimit: commonTimeLimit,
+        totalQuestions: commonQCount,
+        assignType: commonAssignType,
+        answerKeys: [...mcqKeys, ...essayKeys]
+      });
+
+      renderBatchQueue();
+    };
+    reader.readAsDataURL(file);
+  });
+
+  fileInput.value = '';
+  showToast(`⚡ Đang chuẩn bị ${files.length} đề trong danh sách tải lên hàng loạt...`, 'info');
+}
+
+function renderBatchQueue() {
+  const wrap = document.getElementById('batchQueueTableWrap');
+  const badge = document.getElementById('batchQueueCountBadge');
+  if (!wrap) return;
+
+  const queue = AppState.batchExamsQueue;
+  if (badge) badge.textContent = `${queue.length} đề`;
+
+  if (!queue.length) {
+    wrap.innerHTML = '';
+    return;
+  }
+
+  wrap.innerHTML = `
+    <div style="background:var(--bg-card);padding:1rem;border-radius:var(--radius-lg);border:2px solid var(--border-color);margin-top:1rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem;">
+        <span style="font-weight:800;color:var(--text-primary);">📋 Danh Sách Đề Chờ Lưu & Phát Hành (${queue.length} đề):</span>
+        <button type="button" class="btn btn-primary btn-lg" onclick="publishBatchExams()">💾 Lưu & Phát Hành Toàn Bộ ${queue.length} Đề 🚀</button>
+      </div>
+
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Tên File / Đề Thi</th>
+              <th>Thời Gian</th>
+              <th>Số Câu</th>
+              <th>Đối Tượng</th>
+              <th>Thao Tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${queue.map((item, idx) => `
+              <tr>
+                <td><strong>${idx + 1}</strong></td>
+                <td>
+                  <input type="text" value="${escapeHtml(item.title)}" onchange="updateBatchItemTitle(${idx}, this.value)" style="width:100%;min-width:180px;padding:0.3rem 0.5rem;font-weight:700;">
+                  <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;">📄 ${escapeHtml(item.fileName)}</div>
+                </td>
+                <td>
+                  <input type="number" value="${item.timeLimit}" min="1" max="180" onchange="updateBatchItemTime(${idx}, this.value)" style="width:65px;padding:0.3rem;text-align:center;font-weight:700;"> p
+                </td>
+                <td><span class="badge-status badge-pass">${item.answerKeys.length} câu</span></td>
+                <td>
+                  <select onchange="updateBatchItemAssign(${idx}, this.value)" style="padding:0.3rem;font-weight:700;font-size:0.85rem;">
+                    <option value="all" ${item.assignType === 'all' ? 'selected' : ''}>🌍 Công khai</option>
+                    <option value="classes" ${item.assignType === 'classes' ? 'selected' : ''}>🏫 Theo Lớp</option>
+                  </select>
+                </td>
+                <td>
+                  <button type="button" class="btn btn-danger btn-sm" onclick="removeBatchQueueItem(${idx})" title="Xóa đề này khỏi hàng đợi">🗑️</button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function updateBatchItemTitle(idx, val) {
+  if (AppState.batchExamsQueue[idx]) AppState.batchExamsQueue[idx].title = val.trim();
+}
+
+function updateBatchItemTime(idx, val) {
+  if (AppState.batchExamsQueue[idx]) AppState.batchExamsQueue[idx].timeLimit = parseInt(val, 10) || 45;
+}
+
+function updateBatchItemAssign(idx, val) {
+  if (AppState.batchExamsQueue[idx]) AppState.batchExamsQueue[idx].assignType = val;
+}
+
+function removeBatchQueueItem(idx) {
+  AppState.batchExamsQueue.splice(idx, 1);
+  renderBatchQueue();
+  SoundEngine.playClick();
+}
+
+async function publishBatchExams() {
+  const queue = AppState.batchExamsQueue;
+  if (!queue.length) return;
+
+  for (const item of queue) {
+    const mcqKeys = item.answerKeys.filter(k => k.type === 'mcq');
+    const essayKeys = item.answerKeys.filter(k => k.type === 'essay');
+
+    const quiz = {
+      id: item.id || generateQuizCode(),
+      title: item.title,
+      timeLimit: item.timeLimit,
+      totalQuestions: item.answerKeys.length,
+      mcqCount: mcqKeys.length,
+      essayCount: essayKeys.length,
+      examMode: 'split_pdf',
+      pdfFileName: item.fileName,
+      pdfDataUrl: item.fileData,
+      assignType: item.assignType || 'all',
+      assignedClasses: [],
+      assignedStudents: [],
+      showLeaderboard: true,
+      antiCheat: true,
+      createdAt: new Date().toISOString(),
+      answerKeys: item.answerKeys
+    };
+
+    await StorageEngine.saveQuiz(quiz);
+    if (item.fileData) {
+      await StorageEngine.savePdfBlob(quiz.id, item.fileData);
+    }
+  }
+
+  showToast(`🎉 Đã lưu và phát hành thành công ${queue.length} đề thi mới!`, 'success');
+  SoundEngine.playFanfare();
+  GamificationEngine.fireConfetti();
+
+  AppState.batchExamsQueue = [];
+  renderBatchQueue();
+  updatePersonalizedExamFeed();
+  renderTeacherQuizManager();
+  renderTeacherAnalyticsDashboard();
+}
+
+/* ================= EDIT & MANAGE SINGLE EXAM ================= */
+async function editTeacherQuiz(quizId) {
+  const quiz = await StorageEngine.getQuiz(quizId);
+  if (!quiz) {
+    showToast('❌ Không tìm thấy đề thi cần chỉnh sửa.', 'error');
+    return;
+  }
+
+  AppState.editingQuizId = quizId;
+  AppState.editingQuizCreatedAt = quiz.createdAt || new Date().toISOString();
+
+  // Scroll smoothly to editor
+  const editorEl = document.getElementById('singleExamCreatorSection');
+  if (editorEl) editorEl.scrollIntoView({ behavior: 'smooth' });
+
+  // Update Edit Mode UI
+  const banner = document.getElementById('teacherExamEditorModeBanner');
+  const idText = document.getElementById('editingExamIdText');
+  const titleText = document.getElementById('editingExamTitleText');
+  const saveBtn = document.getElementById('teacherSaveQuizBtn');
+  const cancelBtn = document.getElementById('teacherCancelEditBtn');
+  const headerIcon = document.getElementById('creatorCardHeaderIcon');
+  const headerTitle = document.getElementById('creatorCardHeaderTitle');
+
+  if (banner) banner.classList.remove('hidden');
+  if (idText) idText.textContent = quiz.id;
+  if (titleText) titleText.textContent = quiz.title;
+  if (saveBtn) saveBtn.innerHTML = '💾 Lưu Thay Đổi Đề Thi (Update)';
+  if (cancelBtn) cancelBtn.classList.remove('hidden');
+  if (headerIcon) headerIcon.textContent = '✏️';
+  if (headerTitle) headerTitle.textContent = `Chỉnh Sửa Đề Thi: ${quiz.title}`;
+
+  // Populate form fields
+  const titleInput = document.getElementById('teacherExamTitleInput');
+  const timeLimitInput = document.getElementById('teacherExamTimeLimitInput');
+  const assignSelect = document.getElementById('assignTypeSelect');
+  const leaderboardToggle = document.getElementById('teacherShowLeaderboardToggle');
+  const antiCheatToggle = document.getElementById('teacherAntiCheatToggle');
+
+  if (titleInput) titleInput.value = quiz.title || '';
+  if (timeLimitInput) timeLimitInput.value = quiz.timeLimit || 45;
+  if (leaderboardToggle) leaderboardToggle.checked = quiz.showLeaderboard !== false;
+  if (antiCheatToggle) antiCheatToggle.checked = quiz.antiCheat !== false;
+
+  if (assignSelect) {
+    assignSelect.value = quiz.assignType || 'all';
+    renderAssignTargetsSelector();
+
+    // Check specific classes/students
+    if (quiz.assignType === 'classes' && Array.isArray(quiz.assignedClasses)) {
+      quiz.assignedClasses.forEach(c => {
+        const cb = document.querySelector(`input[name="assign_class_cb"][value="${c}"]`);
+        if (cb) cb.checked = true;
+      });
+    } else if (quiz.assignType === 'students' && Array.isArray(quiz.assignedStudents)) {
+      quiz.assignedStudents.forEach(s => {
+        const cb = document.querySelector(`input[name="assign_student_cb"][value="${s}"]`);
+        if (cb) cb.checked = true;
+      });
+    }
+  }
+
+  // Handle PDF preview
+  let pdfData = quiz.pdfDataUrl;
+  if (!pdfData) {
+    pdfData = await StorageEngine.getPdfBlob(quizId);
+  }
+  AppState.teacherPdfData = pdfData || null;
+  AppState.teacherFileName = quiz.pdfFileName || '';
+
+  const previewWrap = document.getElementById('teacherPdfPreviewWrapper');
+  const previewFrame = document.getElementById('teacherPdfPreviewFrame');
+  const clearBtn = document.getElementById('clearPdfBtn');
+  const nameBadge = document.getElementById('teacherPdfFileNameBadge');
+
+  if (pdfData) {
+    if (previewWrap) previewWrap.classList.remove('hidden');
+    if (previewFrame) previewFrame.src = pdfData;
+    if (clearBtn) clearBtn.classList.remove('hidden');
+    if (nameBadge) {
+      nameBadge.classList.remove('hidden');
+      nameBadge.innerHTML = `📄 <strong>File đang dùng:</strong> ${escapeHtml(quiz.pdfFileName || 'De_Thi.pdf')}`;
+    }
+  } else {
+    if (previewWrap) previewWrap.classList.add('hidden');
+    if (clearBtn) clearBtn.classList.add('hidden');
+    if (nameBadge) nameBadge.classList.add('hidden');
+  }
+
+  // Populate questions
+  const keys = quiz.answerKeys || [];
+  AppState.teacherMcqKeys = keys.filter(k => k.type === 'mcq').map(k => ({ ...k }));
+  AppState.teacherEssayKeys = keys.filter(k => k.type === 'essay').map(k => ({ ...k }));
+
+  renderTeacherMcqGrid();
+  renderTeacherEssayGrid();
+  updateTotalExamPointsCalculation();
+
+  showToast(`✏️ Đã mở chế độ chỉnh sửa cho đề [${quiz.title}].`, 'info');
+  SoundEngine.playPop ? SoundEngine.playPop() : SoundEngine.playClick();
+}
+
+function cancelTeacherQuizEdit() {
+  AppState.editingQuizId = null;
+  AppState.editingQuizCreatedAt = null;
+
+  const banner = document.getElementById('teacherExamEditorModeBanner');
+  const saveBtn = document.getElementById('teacherSaveQuizBtn');
+  const cancelBtn = document.getElementById('teacherCancelEditBtn');
+  const headerIcon = document.getElementById('creatorCardHeaderIcon');
+  const headerTitle = document.getElementById('creatorCardHeaderTitle');
+
+  if (banner) banner.classList.add('hidden');
+  if (saveBtn) saveBtn.innerHTML = '💾 Lưu & Phát Hành Đề Thi 🎯';
+  if (cancelBtn) cancelBtn.classList.add('hidden');
+  if (headerIcon) headerIcon.textContent = '➕';
+  if (headerTitle) headerTitle.textContent = 'Tạo & Thiết Lập 1 Đề Thi Riêng Biệt';
+
+  // Reset form to defaults
+  const titleInput = document.getElementById('teacherExamTitleInput');
+  const timeLimitInput = document.getElementById('teacherExamTimeLimitInput');
+  if (titleInput) titleInput.value = 'Đề Kiểm Tra Giữa Kì I — Môn Toán';
+  if (timeLimitInput) timeLimitInput.value = '45';
+
+  clearTeacherPdf();
+  initSeparatedTeacherGrids(10, 2);
+
+  showToast('🔄 Đã thoát chế độ chỉnh sửa. Đang ở chế độ tạo đề mới.', 'info');
+}
+
 /* ================= QUIZ PUBLISHING & RESULTS ================= */
 async function publishTeacherQuiz() {
   const combinedKeys = [...AppState.teacherMcqKeys, ...AppState.teacherEssayKeys];
@@ -1424,7 +1790,8 @@ async function publishTeacherQuiz() {
     return;
   }
 
-  const id = generateQuizCode();
+  const isEditing = !!AppState.editingQuizId;
+  const id = isEditing ? AppState.editingQuizId : generateQuizCode();
   const title = document.getElementById('teacherExamTitleInput').value.trim() || 'Đề Kiểm Tra Toán Học';
   const timeLimit = parseInt(document.getElementById('teacherExamTimeLimitInput').value || '45', 10);
   const showLeaderboard = document.getElementById('teacherShowLeaderboardToggle').checked;
@@ -1465,7 +1832,8 @@ async function publishTeacherQuiz() {
     assignedStudents,
     showLeaderboard,
     antiCheat,
-    createdAt: new Date().toISOString(),
+    createdAt: isEditing ? (AppState.editingQuizCreatedAt || new Date().toISOString()) : new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
     answerKeys: combinedKeys
   };
 
@@ -1488,15 +1856,33 @@ async function publishTeacherQuiz() {
   const resDiv = document.getElementById('publishSuccessResult');
   resDiv.innerHTML = `
     <div class="card" style="background:var(--primary-light);border-color:var(--primary);margin-top:1rem;">
-      <h3 style="color:var(--primary-shadow);margin-bottom:0.4rem;">🎉 Đã Phát Hành Đề Thi Thành Công!</h3>
+      <h3 style="color:var(--primary-shadow);margin-bottom:0.4rem;">${isEditing ? '💾 Đã Lưu & Cập Nhật Thay Đổi Thành Công!' : '🎉 Đã Phát Hành Đề Thi Thành Công!'}</h3>
       <p style="color:var(--primary-shadow);font-size:0.95rem;font-weight:700;">Gồm ${AppState.teacherMcqKeys.length} câu trắc nghiệm + ${AppState.teacherEssayKeys.length} câu tự luận. Phạm vi: <strong>${targetDesc}</strong></p>
       <div style="margin:1rem 0;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
         <span class="code-badge" style="font-size:1.8rem;padding:0.6rem 1.4rem;">${id}</span>
         <button class="btn btn-secondary" onclick="loadSampleToStudent('${id}')">🚀 Vào Thi Thử Ngay</button>
+        <button class="btn btn-primary" onclick="cancelTeacherQuizEdit()">➕ Tạo Đề Thi Khác</button>
       </div>
     </div>
   `;
   resDiv.scrollIntoView({ behavior: 'smooth' });
+
+  showToast(isEditing ? `💾 Đã lưu và cập nhật đề [${title}]!` : `🎉 Đã phát hành đề thi mới [${title}]!`, 'success');
+
+  // Reset Edit State
+  AppState.editingQuizId = null;
+  AppState.editingQuizCreatedAt = null;
+  const banner = document.getElementById('teacherExamEditorModeBanner');
+  const saveBtn = document.getElementById('teacherSaveQuizBtn');
+  const cancelBtn = document.getElementById('teacherCancelEditBtn');
+  const headerIcon = document.getElementById('creatorCardHeaderIcon');
+  const headerTitle = document.getElementById('creatorCardHeaderTitle');
+
+  if (banner) banner.classList.add('hidden');
+  if (saveBtn) saveBtn.innerHTML = '💾 Lưu & Phát Hành Đề Thi 🎯';
+  if (cancelBtn) cancelBtn.classList.add('hidden');
+  if (headerIcon) headerIcon.textContent = '➕';
+  if (headerTitle) headerTitle.textContent = 'Tạo & Thiết Lập 1 Đề Thi Riêng Biệt';
 }
 
 function generateQuizCode() {
@@ -1524,7 +1910,7 @@ async function renderTeacherQuizManager() {
   }
 
   wrap.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:gap:0.5rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
       <span style="font-weight:800;color:var(--text-secondary);">Tổng số đề thi: <strong>${quizzes.length}</strong></span>
       <div style="display:flex;gap:0.5rem;">
         <button class="btn btn-primary btn-sm" onclick="bulkSetAllQuizzesPublic()">🌍 Công Khai Tất Cả Đề</button>
@@ -1557,7 +1943,10 @@ async function renderTeacherQuizManager() {
 
             return `
               <tr>
-                <td><strong style="color:var(--text-primary);font-size:1rem;">${escapeHtml(q.title)}</strong></td>
+                <td>
+                  <strong style="color:var(--text-primary);font-size:1rem;">${escapeHtml(q.title)}</strong>
+                  <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;">Mã đề: <code>${q.id}</code></div>
+                </td>
                 <td>${targetLabel}</td>
                 <td>
                   <span class="badge-status badge-pass" style="font-size:0.75rem;">${mcqCount} Trắc nghiệm</span>
@@ -1566,6 +1955,7 @@ async function renderTeacherQuizManager() {
                 <td>${q.timeLimit} phút</td>
                 <td>
                   <div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;">
+                    <button class="btn btn-primary btn-sm" onclick="editTeacherQuiz('${q.id}')" title="Chỉnh sửa đề thi này">✏️ Sửa</button>
                     <button class="btn btn-secondary btn-sm" onclick="loadSampleToStudent('${q.id}')" title="Vào làm thử">🚀 Thi Thử</button>
                     <button class="btn btn-sky btn-sm" onclick="quickViewResults('${q.id}')" title="Xem bảng điểm của đề này">📊 Bảng Điểm</button>
                     <button class="btn btn-danger btn-sm" onclick="confirmDeleteQuiz('${q.id}', '${escapeHtml(q.title)}')" title="Xóa hoàn toàn đề này">🗑️ Xóa</button>
@@ -1611,7 +2001,7 @@ async function confirmDeleteQuiz(quizId, quizTitle) {
 }
 
 async function resetSampleQuiz() {
-  StorageEngine.seedSampleDataIfEmpty();
+  StorageEngine.seedSampleDataIfEmpty(true);
   showToast('✅ Đã nạp lại đề thi mẫu thành công!', 'success');
   updatePersonalizedExamFeed();
   renderTeacherQuizManager();
