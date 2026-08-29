@@ -1,6 +1,11 @@
 ﻿# Dependencies & Logs
 node_modules/
 dist/
+
+# Dữ liệu cá nhân / nội bộ - không đưa lên repo công khai
+lương/
+*.xlsx
+*.xls
 .DS_Store
 Thumbs.db
 *.log
