@@ -2,6 +2,69 @@
  * KhiemEdu Main Application Controller - 32+ Avatar Library, Real Analytics & Modern Student Roster Modal
  */
 
+/**
+ * ExamVault — giữ đáp án đúng (trường `correct`) bên trong một closure riêng,
+ * KHÔNG gắn vào AppState/window nên không thể đọc được bằng cách gõ
+ * `AppState.currentQuiz.answerKeys` (hoặc tương tự) trong Console khi học sinh
+ * đang làm bài. Học sinh chỉ nhận được bản "công khai" của answerKeys (không
+ * có trường correct); việc chấm điểm được thực hiện thông qua ExamVault.grade().
+ *
+ * Lưu ý: đây là giải pháp giảm thiểu tốt nhất có thể trên một web tĩnh
+ * không có backend. Một học sinh đủ kiên trì vẫn có thể đặt breakpoint và
+ * dò từng bước để suy ra đáp án đúng lúc chấm điểm. Để bảo mật triệt để,
+ * việc chấm điểm cần chuyển hẳn sang server (vd. Firebase Cloud Function).
+ */
+const ExamVault = (function () {
+  const vault = new Map(); // quizId -> mảng answerKeys đầy đủ (có trường correct)
+
+  function store(quizId, answerKeys) {
+    vault.set(quizId, Array.isArray(answerKeys) ? answerKeys : []);
+  }
+
+  function getPublicKeys(quizId) {
+    const keys = vault.get(quizId) || [];
+    // Trả về bản sao đã loại bỏ trường `correct` để render an toàn cho học sinh
+    return keys.map(({ correct, ...rest }) => ({ ...rest }));
+  }
+
+  function grade(quizId, studentAnswers) {
+    const keys = vault.get(quizId) || [];
+    let totalEarnedScore = 0;
+    let correctCount = 0;
+    const reviewData = [];
+
+    for (const k of keys) {
+      const given = studentAnswers[k.num];
+      const isCorrect = checkAnswerMatch(given, k.correct);
+      let earned = 0;
+
+      if (isCorrect) {
+        correctCount++;
+        earned = k.score;
+        totalEarnedScore += earned;
+      }
+
+      reviewData.push({
+        num: k.num,
+        type: k.type,
+        maxScore: k.score,
+        earnedScore: earned,
+        given: given || '(chưa điền)',
+        correctAnswer: k.correct,
+        isCorrect
+      });
+    }
+
+    return { totalEarnedScore, correctCount, total: keys.length, reviewData };
+  }
+
+  function clear(quizId) {
+    vault.delete(quizId);
+  }
+
+  return { store, getPublicKeys, grade, clear };
+})();
+
 const AppState = {
   activeTab: 'student',
   pendingTeacherTab: 'teacher',
@@ -2339,7 +2402,10 @@ async function startExamWithQuizId(quizId) {
     if (blobData) pdfUrl = blobData;
   }
 
-  AppState.currentQuiz = quiz;
+  // Giấu đáp án đúng vào ExamVault; AppState.currentQuiz chỉ chứa bản công khai
+  // (không có trường `correct`) để tránh lộ đáp án qua Console trình duyệt.
+  ExamVault.store(quizId, quiz.answerKeys || []);
+  AppState.currentQuiz = { ...quiz, answerKeys: ExamVault.getPublicKeys(quizId) };
   AppState.currentQuizId = quizId;
   AppState.studentName = name;
   AppState.studentClass = className;
@@ -2375,7 +2441,7 @@ async function startExamWithQuizId(quizId) {
     }, 200);
   }
 
-  renderStudentAnswerSheet(quiz.answerKeys || []);
+  renderStudentAnswerSheet(AppState.currentQuiz.answerKeys);
 
   AppState.totalExamSeconds = quiz.timeLimit * 60;
   startExamTimer(AppState.totalExamSeconds);
@@ -2624,34 +2690,9 @@ async function submitStudentExam(isAuto = false) {
   if (AppState.leaderboardTimer) clearInterval(AppState.leaderboardTimer);
 
   const quiz = AppState.currentQuiz;
-  const keys = quiz.answerKeys || [];
-  let totalEarnedScore = 0;
-  let correctCount = 0;
-  const reviewData = [];
+  const { totalEarnedScore, correctCount, total, reviewData } =
+    ExamVault.grade(AppState.currentQuizId, AppState.studentAnswers);
 
-  for (const k of keys) {
-    const given = AppState.studentAnswers[k.num];
-    const isCorrect = checkAnswerMatch(given, k.correct);
-    let earned = 0;
-
-    if (isCorrect) {
-      correctCount++;
-      earned = k.score;
-      totalEarnedScore += earned;
-    }
-
-    reviewData.push({
-      num: k.num,
-      type: k.type,
-      maxScore: k.score,
-      earnedScore: earned,
-      given: given || '(chưa điền)',
-      correctAnswer: k.correct,
-      isCorrect
-    });
-  }
-
-  const total = keys.length;
   const finalScore10 = Math.round(totalEarnedScore * 10) / 10;
   const scorePct = total ? Math.round((correctCount / total) * 100) : 0;
   const timeTakenSeconds = AppState.totalExamSeconds - AppState.secondsLeft;
@@ -2687,6 +2728,8 @@ async function submitStudentExam(isAuto = false) {
 
   SoundEngine.playFanfare();
   GamificationEngine.fireConfetti();
+
+  ExamVault.clear(AppState.currentQuizId);
 }
 
 function renderExamResultHero(result, rewards) {
