@@ -429,14 +429,24 @@ function escapeHtml(str) {
 async function loadStudentRoster() {
   AppState.studentRoster = await StorageEngine.getStudentRoster();
   if (!AppState.studentRoster || !AppState.studentRoster.length) {
-    StorageEngine.seedStudentRosterIfEmpty();
-    AppState.studentRoster = await StorageEngine.getStudentRoster();
+    AppState.studentRoster = StorageEngine.seedStudentRosterIfEmpty(true) || [];
   }
 }
 
-function renderTeacherRosterManager() {
+async function renderTeacherRosterManager() {
   const wrap = document.getElementById('teacherRosterManagerWrap');
   if (!wrap) return;
+
+  if (!AppState.studentRoster || !AppState.studentRoster.length) {
+    const raw = localStorage.getItem('khiemedu_student_roster');
+    if (raw) {
+      try { AppState.studentRoster = JSON.parse(raw); } catch (e) {}
+    }
+  }
+
+  if (!AppState.studentRoster || !AppState.studentRoster.length) {
+    AppState.studentRoster = StorageEngine.seedStudentRosterIfEmpty(true) || [];
+  }
 
   const roster = AppState.studentRoster || [];
 

@@ -23,15 +23,34 @@ const StorageEngine = {
 
   async purgeSampleQuizzes() {
     if (localStorage.getItem(STORAGE_PREFIX + 'sample_purged_v1') === '1') return;
+    localStorage.setItem(STORAGE_PREFIX + 'sample_purged_v1', '1');
+    localStorage.setItem(STORAGE_PREFIX + 'sample_seeded_v3', 'purged');
+
     const sampleIds = [
       'TOAN6_GK1', 'TOAN7_GK1', 'TOAN8_GK1', 'TOAN9_GK1',
       'TOAN_TS10', 'TOAN10_GK1', 'TOAN11_GK1', 'TOAN12_GK1'
     ];
-    for (const id of sampleIds) {
-      await this.deleteQuiz(id);
-    }
-    localStorage.setItem(STORAGE_PREFIX + 'sample_purged_v1', '1');
-    localStorage.setItem(STORAGE_PREFIX + 'sample_seeded_v3', 'purged');
+
+    // Mark tombstones instantly
+    const deletedIds = this.getDeletedQuizIds();
+    sampleIds.forEach(id => {
+      deletedIds.add(id);
+      localStorage.removeItem(STORAGE_PREFIX + 'quiz:' + id);
+      localStorage.removeItem(STORAGE_PREFIX + 'pdf_' + id);
+    });
+    localStorage.setItem(STORAGE_PREFIX + 'deleted_quizzes', JSON.stringify(Array.from(deletedIds)));
+
+    // Clean up Cloud & IndexedDB in background without blocking
+    setTimeout(async () => {
+      for (const id of sampleIds) {
+        try {
+          await this.removePdfBlob(id);
+          if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
+            await window.FirebaseEngine.deleteQuiz(id);
+          }
+        } catch (e) {}
+      }
+    }, 100);
   },
 
   initIndexedDB() {
@@ -179,22 +198,28 @@ const StorageEngine = {
   },
 
   async getStudentRoster() {
+    // 1. Get from local first for instantaneous rendering
+    let localRoster = await this.get('student_roster');
+    if (!Array.isArray(localRoster) || localRoster.length === 0) {
+      localRoster = this.seedStudentRosterIfEmpty(true) || [];
+    }
+
+    // 2. Sync with Cloud if active
     if (window.FirebaseEngine && window.FirebaseEngine.isActive && typeof window.FirebaseEngine.getStudentRoster === 'function') {
       try {
         const cloudRoster = await window.FirebaseEngine.getStudentRoster();
         if (Array.isArray(cloudRoster) && cloudRoster.length > 0) {
           await this.set('student_roster', cloudRoster);
           return cloudRoster;
+        } else if (Array.isArray(localRoster) && localRoster.length > 0) {
+          window.FirebaseEngine.saveStudentRoster(localRoster).catch(() => {});
         }
       } catch (err) {
         console.warn('Firebase getStudentRoster warning:', err);
       }
     }
-    const roster = await this.get('student_roster');
-    if (Array.isArray(roster) && roster.length > 0) {
-      return roster;
-    }
-    return this.seedStudentRosterIfEmpty(true) || [];
+
+    return localRoster;
   },
 
   async saveStudentRoster(roster) {
@@ -465,6 +490,7 @@ const StorageEngine = {
         { id: 'TIEN12', name: 'TIÊN', className: '12', avatar: '🦉' },
         { id: 'MINH10', name: 'MINH', className: '10', avatar: '⚡' }
       ];
+      localStorage.setItem(STORAGE_PREFIX + 'student_roster', JSON.stringify(initialRoster));
       this.saveStudentRoster(initialRoster);
       return initialRoster;
     }
