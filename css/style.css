@@ -1901,3 +1901,345 @@ tr:hover td { background: var(--bg-card-hover); }
   transform: scale(1.12);
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.35);
 }
+
+/* ================= 🏆 WEEKLY HALL OF FAME & REWARDS ENHANCEMENTS ================= */
+.weekly-controls-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-card);
+}
+
+.weekly-controls-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.user-league-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem;
+  border-radius: var(--radius-full);
+  font-weight: 800;
+  font-size: 0.9rem;
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+/* Weekly Quests (Battle Pass style) */
+.weekly-quests-card {
+  border-left: 5px solid var(--indigo);
+}
+
+.weekly-quests-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.quest-item-card {
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.quest-item-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--indigo);
+}
+
+.quest-item-card.completed {
+  border-color: var(--primary);
+  background: linear-gradient(180deg, var(--bg-card) 0%, rgba(16, 185, 129, 0.08) 100%);
+}
+
+.quest-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.quest-icon {
+  font-size: 1.8rem;
+  width: 44px;
+  height: 44px;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 0 var(--border-color);
+}
+
+.quest-progress-wrap {
+  width: 100%;
+  height: 10px;
+  background: var(--bg-card);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin: 0.75rem 0 0.4rem;
+  border: 1px solid var(--border-color);
+}
+
+.quest-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--indigo), var(--sky));
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease;
+}
+
+.quest-item-card.completed .quest-progress-fill {
+  background: linear-gradient(90deg, var(--primary), var(--emerald));
+}
+
+/* 6 Special Honors Grid */
+.special-honors-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.honor-badge-card {
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.honor-badge-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+
+.honor-badge-card.card-titan { border-color: #f59e0b; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), transparent); }
+.honor-badge-card.card-improved { border-color: #10b981; background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), transparent); }
+.honor-badge-card.card-speed { border-color: #0ea5e9; background: linear-gradient(135deg, rgba(14, 165, 233, 0.1), transparent); }
+.honor-badge-card.card-streak { border-color: #ef4444; background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), transparent); }
+.honor-badge-card.card-dedicated { border-color: #8b5cf6; background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), transparent); }
+.honor-badge-card.card-honest { border-color: #06b6d4; background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), transparent); }
+
+.honor-card-icon {
+  font-size: 2.3rem;
+  flex-shrink: 0;
+}
+
+.honor-card-info {
+  flex: 1;
+}
+
+.honor-card-tag {
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.2rem;
+}
+
+/* Leaderboard Sub-Tabs */
+.leaderboard-nav-tabs {
+  display: flex;
+  gap: 0.6rem;
+  background: var(--bg-tertiary);
+  padding: 0.4rem;
+  border-radius: var(--radius-full);
+  margin-bottom: 1.5rem;
+  max-width: 680px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.leaderboard-nav-tabs::-webkit-scrollbar { display: none; }
+
+.leaderboard-tab-btn {
+  flex: 1;
+  white-space: nowrap;
+  border: none;
+  background: transparent;
+  padding: 0.6rem 1.1rem;
+  border-radius: var(--radius-full);
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: all 0.2s ease;
+}
+
+.leaderboard-tab-btn.active {
+  background: var(--indigo);
+  color: #fff;
+  box-shadow: 0 3px 0 var(--indigo-shadow);
+}
+
+/* Inter-Class Battle Cards */
+.class-battle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.class-battle-card {
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  text-align: center;
+  position: relative;
+  transition: transform 0.2s ease;
+}
+
+.class-battle-card:hover {
+  transform: translateY(-5px);
+}
+
+.class-battle-card.rank-1 {
+  border-color: #f59e0b;
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.25);
+  background: linear-gradient(180deg, var(--bg-card) 0%, rgba(254, 243, 199, 0.25) 100%);
+}
+
+/* Reward Shop Items */
+.shop-xp-badge {
+  background: #fef3c7;
+  color: #b45309;
+  font-weight: 900;
+  padding: 0.4rem 1rem;
+  border-radius: var(--radius-full);
+  font-size: 1.05rem;
+  border: 2px solid #f59e0b;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.shop-items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1rem;
+}
+
+.shop-item-card {
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.shop-item-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--primary);
+}
+
+/* Avatar Frames */
+.avatar-with-frame.frame-fire {
+  box-shadow: 0 0 0 4px #ef4444, 0 0 15px rgba(239, 68, 68, 0.6) !important;
+  animation: fireGlow 1.5s infinite alternate ease-in-out;
+}
+
+.avatar-with-frame.frame-gold {
+  box-shadow: 0 0 0 4px #f59e0b, 0 0 18px rgba(245, 158, 11, 0.7) !important;
+}
+
+.avatar-with-frame.frame-neon {
+  box-shadow: 0 0 0 4px #06b6d4, 0 0 16px rgba(6, 182, 212, 0.7) !important;
+}
+
+@keyframes fireGlow {
+  0% { box-shadow: 0 0 0 3px #ef4444, 0 0 10px rgba(239, 68, 68, 0.5); }
+  100% { box-shadow: 0 0 0 5px #f97316, 0 0 20px rgba(249, 115, 22, 0.8); }
+}
+
+/* ================= 📜 OFFICIAL HONOR CERTIFICATE STYLES ================= */
+.certificate-container {
+  background: #fdfbf7;
+  border: 8px double #b45309;
+  border-radius: 12px;
+  padding: 2.25rem 2rem;
+  color: #1c1917;
+  text-align: center;
+  position: relative;
+  box-shadow: inset 0 0 30px rgba(180, 83, 9, 0.08);
+  font-family: 'Plus Jakarta Sans', serif;
+}
+
+.certificate-seal {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 0.75rem;
+  background: radial-gradient(circle, #f59e0b 0%, #b45309 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  box-shadow: 0 6px 16px rgba(180, 83, 9, 0.35);
+}
+
+.cert-school-name {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #78350f;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.cert-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 2rem;
+  font-weight: 900;
+  color: #92400e;
+  margin: 0.6rem 0 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.cert-student-name {
+  font-size: 1.85rem;
+  font-weight: 900;
+  color: #1e1b4b;
+  margin: 0.75rem 0 0.25rem;
+  border-bottom: 2px solid #b45309;
+  display: inline-block;
+  padding: 0 1.5rem 0.25rem;
+}
+
+.cert-achievement-box {
+  background: #fffbeb;
+  border: 1.5px dashed #f59e0b;
+  border-radius: 8px;
+  padding: 0.85rem 1.25rem;
+  margin: 1.25rem auto;
+  max-width: 500px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #92400e;
+}

@@ -14,7 +14,7 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
   
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=3.0">
   
   <!-- KaTeX Math Formula Rendering -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
@@ -136,6 +136,32 @@ GIANG, 8"></textarea>
         </button>
         <button type="button" class="btn btn-primary btn-lg" onclick="resumeStudentExam()" style="flex:1.2;min-width:170px;">
           ▶️ Tiếp Tục Làm Bài 🚀
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 📜 HONOR CERTIFICATE MODAL ================= -->
+  <div id="honorCertificateModal" class="auth-modal-backdrop hidden">
+    <div class="auth-card" style="max-width:760px;width:95%;padding:1.5rem;background:#fff;border:3px solid var(--amber);box-shadow:0 25px 50px rgba(0,0,0,0.35);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;border-bottom:1.5px solid var(--border-color);padding-bottom:0.75rem;">
+        <div style="font-weight:900;font-size:1.25rem;color:var(--text-primary);display:flex;align-items:center;gap:0.5rem;">
+          <span>📜</span> <span>BẰNG KHEN VINH DANH HỌC SINH K-EDU</span>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeHonorCertificateModal()" style="border-radius:var(--radius-full);width:36px;height:36px;padding:0;font-weight:900;">✕</button>
+      </div>
+
+      <div id="honorCertificatePrintArea" class="certificate-container">
+        <!-- Rendered dynamically by generateHonorCertificateHtml -->
+      </div>
+
+      <div style="display:flex;gap:0.75rem;justify-content:flex-end;margin-top:1.25rem;flex-wrap:wrap;">
+        <button type="button" class="btn btn-secondary" onclick="closeHonorCertificateModal()">Đóng</button>
+        <button type="button" class="btn btn-primary" onclick="printHonorCertificate()" style="display:flex;align-items:center;gap:0.4rem;">
+          <span>🖨️</span> <span>In Bằng Khen / Lưu PDF</span>
+        </button>
+        <button type="button" class="btn btn-success" onclick="shareCertificateToZalo()" style="display:flex;align-items:center;gap:0.4rem;">
+          <span>📱</span> <span>Khoe Bằng Khen Phụ Huynh Zalo</span>
         </button>
       </div>
     </div>
@@ -405,6 +431,8 @@ GIANG, 8"></textarea>
               <div class="stat-lbl">Số lần rời tab</div>
             </div>
           </div>
+
+          <div id="resultBonusBreakdown" class="hidden"></div>
 
           <div style="display:flex;justify-content:center;gap:1rem;margin-top:1.5rem;flex-wrap:wrap;">
             <button type="button" class="btn btn-primary" onclick="restartStudentJoin()">🔄 Làm Đề Khác</button>
@@ -969,17 +997,141 @@ GIANG, 8"></textarea>
 
     <!-- ================= GAMIFICATION / LEADERBOARD VIEW ================= -->
     <section id="tabGamification" class="view-section">
-      
-      <!-- Top 3 Podium Card -->
-      <div class="card" style="background: linear-gradient(180deg, var(--bg-card) 0%, rgba(240, 244, 249, 0.7) 100%);">
-        <div class="card-header">
-          <h2><span>👑</span> Bảng Vàng Vinh Danh — Top 3 Cao Thủ Toàn Trường</h2>
-          <button type="button" class="btn btn-primary btn-sm" onclick="celebrateConfetti()">🎉 Bắn Pháo Hoa Ăn Mừng</button>
+
+      <!-- Week Period & Class Filter Header Bar -->
+      <div class="weekly-controls-card">
+        <div class="weekly-controls-header">
+          <div>
+            <div style="font-size:0.85rem;font-weight:900;color:var(--indigo);text-transform:uppercase;letter-spacing:1px;">
+              🏆 ĐẠI CHIẾN BẢNG VÀNG K-EDU
+            </div>
+            <h2 style="font-size:1.65rem;color:var(--text-primary);margin:0.2rem 0;" id="weeklyHeaderPeriodTitle">
+              Bảng Vàng Vinh Danh Tuần Này
+            </h2>
+            <div style="font-size:0.9rem;font-weight:700;color:var(--text-secondary);" id="weeklyHeaderDateSubtitle">
+              Đang tính toán theo thời gian thực (00:00 Thứ 2 - 23:59 CN)
+            </div>
+          </div>
+
+          <!-- Time Period Pills -->
+          <div class="time-filter-bar" style="margin:0;">
+            <button type="button" class="time-filter-btn active" id="periodBtn_current" onclick="setWeeklyPeriod('current')">
+              <span>📅 Tuần Này</span>
+            </button>
+            <button type="button" class="time-filter-btn" id="periodBtn_previous" onclick="setWeeklyPeriod('previous')">
+              <span>⏮️ Tuần Trước</span>
+            </button>
+            <button type="button" class="time-filter-btn" id="periodBtn_all" onclick="setWeeklyPeriod('all')">
+              <span>🌟 Toàn Thời Gian</span>
+            </button>
+          </div>
         </div>
-        <p class="card-subtitle">Vinh danh những học sinh có điểm kinh nghiệm (XP) và chuỗi ngày học tập xuất sắc nhất:</p>
-        
-        <div id="hallOfFamePodiumWrap"></div>
-        <div id="hallOfFameListWrap"></div>
+
+        <!-- Class Filter Pills & User League Badge -->
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-top:1rem;padding-top:1rem;border-top:1.5px dashed var(--border-color);">
+          <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+            <span style="font-size:0.85rem;font-weight:800;color:var(--text-secondary);">Lọc theo khối/lớp:</span>
+            <select id="weeklyClassFilterSelect" onchange="filterWeeklyLeaderboardByClass(this.value)" class="form-input" style="width:auto;padding:0.35rem 0.85rem;font-weight:800;font-size:0.85rem;height:auto;border-radius:var(--radius-full);">
+              <option value="all">🌐 Toàn Trường (Tất cả khối)</option>
+              <option value="6">🎒 Khối Lớp 6</option>
+              <option value="7">📘 Khối Lớp 7</option>
+              <option value="8">📙 Khối Lớp 8</option>
+              <option value="9">📗 Khối Lớp 9</option>
+              <option value="10">🏛️ Khối Lớp 10</option>
+              <option value="11">✨ Khối Lớp 11</option>
+              <option value="12">🏆 Khối Lớp 12</option>
+            </select>
+          </div>
+
+          <div id="currentUserLeaguePill" class="user-league-pill">
+            <span>🥇</span> <span>Hạng Vàng</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- User Personal Weekly Mission Card (Battle Pass Quests) -->
+      <div class="card weekly-quests-card">
+        <div class="card-header" style="flex-wrap:wrap;gap:0.75rem;">
+          <div>
+            <h2><span>🎯</span> Nhiệm Vụ Tuần & Rương Kho Báu (+400 XP)</h2>
+            <p class="card-subtitle" style="margin-bottom:0;">Hoàn thành nhiệm vụ tuần để nhận điểm thưởng chuỗi và mở rương độc quyền:</p>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="openHonorCertificateForCurrentUser()" style="display:flex;align-items:center;gap:0.4rem;font-weight:800;border-radius:var(--radius-full);">
+            <span>📜</span> <span>Xem Bằng Khen Của Bạn</span>
+          </button>
+        </div>
+
+        <div class="weekly-quests-grid" id="weeklyQuestsGrid"></div>
+      </div>
+
+      <!-- 6 Multi-Dimensional Special Honors Cards -->
+      <div class="card" style="background:var(--bg-card);">
+        <div class="card-header">
+          <h2><span>🌟</span> 6 Hạng Mục Vinh Danh Xuất Sắc Tuần Này</h2>
+        </div>
+        <div class="special-honors-grid" id="specialHonorsGrid"></div>
+      </div>
+
+      <!-- Leaderboard Sub-Tabs: Individual vs Class Battle vs Shop -->
+      <div class="leaderboard-nav-tabs">
+        <button type="button" class="leaderboard-tab-btn active" id="tabBtnLeaderboardIndividual" onclick="switchLeaderboardSubTab('individual')">
+          <span>🏆 Bảng Cá Nhân (Podium & Rank)</span>
+        </button>
+        <button type="button" class="leaderboard-tab-btn" id="tabBtnLeaderboardClass" onclick="switchLeaderboardSubTab('class')">
+          <span>🏫 Đại Chiến Giữa Các Lớp</span>
+        </button>
+        <button type="button" class="leaderboard-tab-btn" id="tabBtnLeaderboardShop" onclick="switchLeaderboardSubTab('shop')">
+          <span>🎁 Cửa Hàng Đổi Thưởng XP</span>
+        </button>
+      </div>
+
+      <!-- SUB-TAB 1: INDIVIDUAL LEADERBOARD -->
+      <div id="subTabContentIndividual">
+        <!-- Top 3 Podium Card -->
+        <div class="card" style="background: linear-gradient(180deg, var(--bg-card) 0%, rgba(240, 244, 249, 0.7) 100%);">
+          <div class="card-header">
+            <h2><span>👑</span> Bục Vinh Quang — Top 3 Chiến Binh Tuần</h2>
+            <button type="button" class="btn btn-primary btn-sm" onclick="celebrateConfetti()">🎉 Bắn Pháo Hoa Ăn Mừng</button>
+          </div>
+          <p class="card-subtitle">Vinh danh 3 gương mặt có Điểm Vinh Danh (Weekly Honor XP) cao nhất trong tuần:</p>
+          
+          <div id="hallOfFamePodiumWrap"></div>
+        </div>
+
+        <!-- Full Detailed Table Card -->
+        <div class="card">
+          <div class="card-header">
+            <h2><span>📋</span> Bảng Xếp Hạng Chi Tiết Hàng Tuần</h2>
+          </div>
+          <div id="hallOfFameListWrap"></div>
+        </div>
+      </div>
+
+      <!-- SUB-TAB 2: INTER-CLASS BATTLE -->
+      <div id="subTabContentClass" class="hidden">
+        <div class="card">
+          <div class="card-header">
+            <h2><span>🏫</span> Đại Chiến Giữa Các Lớp — Đua Top Tập Thể</h2>
+          </div>
+          <p class="card-subtitle">Lớp học có tổng điểm XP và tỷ lệ hoàn thành bài tập cao nhất tuần sẽ nhận danh hiệu <strong>Lớp Học Toàn Năng</strong>:</p>
+          <div id="classBattleContainer"></div>
+        </div>
+      </div>
+
+      <!-- SUB-TAB 3: REWARD SHOP -->
+      <div id="subTabContentShop" class="hidden">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2><span>🎁</span> Cửa Hàng Vật Phẩm & Khung Avatar Danh Dự</h2>
+              <p class="card-subtitle">Dùng điểm XP bạn tích lũy được từ bài thi để đổi các vật phẩm và khung Avatar 3D độc quyền:</p>
+            </div>
+            <div class="shop-xp-badge" id="shopUserXpBadge">
+              <span>⭐</span> <span id="shopUserXpVal">350 XP</span>
+            </div>
+          </div>
+          <div class="shop-items-grid" id="shopItemsGrid"></div>
+        </div>
       </div>
 
       <!-- User Profile Gamer Card -->
@@ -988,13 +1140,14 @@ GIANG, 8"></textarea>
           <h2><span>🦊</span> Hồ Sơ Chiến Binh Của Bạn</h2>
         </div>
         <div style="display:flex;align-items:center;gap:1.75rem;flex-wrap:wrap;">
-          <div id="gamifyUserAvatar" style="font-size:4rem;background:var(--bg-tertiary);border:3px solid var(--border-color);width:100px;height:100px;border-radius:var(--radius-full);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 0 var(--border-color);">
+          <div id="gamifyUserAvatar" class="avatar-with-frame frame-gold" style="font-size:4rem;background:var(--bg-tertiary);border:3px solid var(--border-color);width:100px;height:100px;border-radius:var(--radius-full);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 0 var(--border-color);position:relative;">
             🦊
           </div>
           <div style="flex:1;">
             <div style="display:flex;align-items:center;gap:0.85rem;flex-wrap:wrap;">
               <h2 id="gamifyUserName" style="font-size:1.85rem;color:var(--text-primary);margin:0;">Học Sinh</h2>
               <span class="level-badge" id="gamifyLevelName" style="font-size:0.85rem;padding:0.25rem 0.8rem;">Cấp 1: Tân Binh</span>
+              <span id="gamifyUserLeagueBadge" class="level-badge" style="background:#fef3c7;color:#b45309;font-size:0.85rem;padding:0.25rem 0.8rem;">🥇 Hạng Vàng</span>
             </div>
             <div style="margin-top:1rem;">
               <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:800;color:var(--text-secondary);margin-bottom:0.4rem;">
@@ -1018,8 +1171,12 @@ GIANG, 8"></textarea>
             <div class="stat-lbl">Điểm 10 tuyệt đối</div>
           </div>
           <div class="stat-item">
-            <div class="stat-val" style="color:#ff9600;" id="statCurrentStreak">1 Ngày 🔥</div>
-            <div class="stat-lbl">Chuỗi Streak liên tục</div>
+            <div class="stat-val" style="color:#ef4444;" id="statPerfectStreak">0 🔥</div>
+            <div class="stat-lbl">Chuỗi 10 liên tiếp</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-val" style="color:#ff9600;" id="statCurrentStreak">1 Ngày ⚡</div>
+            <div class="stat-lbl">Chuỗi ngày học liên tục</div>
           </div>
         </div>
       </div>
@@ -1046,12 +1203,12 @@ GIANG, 8"></textarea>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
 
   <!-- Main Scripts -->
-  <script src="js/firebase.js?v=2.2"></script>
-  <script src="js/storage.js?v=2.2"></script>
-  <script src="js/sound.js?v=2.2"></script>
-  <script src="js/gamification.js?v=2.2"></script>
-  <script src="js/pdfExtractor.js?v=2.2"></script>
-  <script src="js/mathGenerator.js?v=2.2"></script>
-  <script src="js/app.js?v=2.2"></script>
+  <script src="js/firebase.js?v=3.0"></script>
+  <script src="js/storage.js?v=3.0"></script>
+  <script src="js/sound.js?v=3.0"></script>
+  <script src="js/gamification.js?v=3.0"></script>
+  <script src="js/pdfExtractor.js?v=3.0"></script>
+  <script src="js/mathGenerator.js?v=3.0"></script>
+  <script src="js/app.js?v=3.0"></script>
 </body>
 </html>
