@@ -3159,12 +3159,31 @@ function renderExamResultHero(result, rewards) {
   const sec = result.timeTakenSeconds % 60;
   document.getElementById('resultTimeTaken').textContent = `${min}p ${sec}s`;
 
+  // Hiển thị chi tiết điểm thưởng XP & Chuỗi điểm 10
+  const breakdownBox = document.getElementById('resultBonusBreakdown');
+  if (breakdownBox && rewards.bonusBreakdown && rewards.bonusBreakdown.length) {
+    breakdownBox.innerHTML = `
+      <div style="background:var(--bg-tertiary);border:1.5px solid var(--border-color);border-radius:var(--radius-md);padding:0.75rem 1rem;margin-top:0.75rem;text-align:left;">
+        <div style="font-weight:800;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.4rem;">CHI TIẾT ĐIỂM THƯỞNG BÀI THI:</div>
+        <div style="display:flex;flex-direction:column;gap:0.35rem;">
+          ${rewards.bonusBreakdown.map(b => `
+            <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:700;">
+              <span>${b.icon || '✨'} ${escapeHtml(b.label)}</span>
+              <span style="color:var(--indigo);">+${b.xp} XP</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    breakdownBox.classList.remove('hidden');
+  }
+
   const badgeBox = document.getElementById('resultNewlyUnlockedBadges');
   if (rewards.newlyUnlocked && rewards.newlyUnlocked.length) {
     badgeBox.innerHTML = `
       <div class="card" style="background:var(--amber-light);border-color:var(--amber);margin:1rem 0;text-align:center;">
         <h3 style="color:var(--amber-shadow);font-size:1.3rem;">🎉 Mở Khóa Huy Hiệu Mới!</h3>
-        <div style="display:flex;justify-content:center;gap:1.5rem;margin-top:0.75rem;">
+        <div style="display:flex;justify-content:center;gap:1.5rem;margin-top:0.75rem;flex-wrap:wrap;">
           ${rewards.newlyUnlocked.map(b => `
             <div>
               <div style="font-size:2.8rem;">${b.icon}</div>
@@ -3385,173 +3404,641 @@ function updateGamifyBar() {
   if (levelEl) levelEl.textContent = `Lv.${levelInfo.level} ${levelInfo.name}`;
 }
 
+/* ================= 🏆 EXPANDED WEEKLY HALL OF FAME & REWARDS ENGINE ================= */
+AppState.weeklyPeriod = 'current'; // 'current' | 'previous' | 'all'
+AppState.weeklyClassFilter = 'all';
+AppState.leaderboardSubTab = 'individual'; // 'individual' | 'class' | 'shop'
+
+function setWeeklyPeriod(period) {
+  AppState.weeklyPeriod = period;
+  ['current', 'previous', 'all'].forEach(p => {
+    const btn = document.getElementById('periodBtn_' + p);
+    if (btn) btn.classList.toggle('active', p === period);
+  });
+  SoundEngine.playClick();
+  renderGamificationTab();
+}
+
+function filterWeeklyLeaderboardByClass(className) {
+  AppState.weeklyClassFilter = className;
+  SoundEngine.playClick();
+  renderGamificationTab();
+}
+
+function switchLeaderboardSubTab(tab) {
+  AppState.leaderboardSubTab = tab;
+  ['individual', 'class', 'shop'].forEach(t => {
+    const btn = document.getElementById('tabBtnLeaderboard' + capitalize(t));
+    if (btn) btn.classList.toggle('active', t === tab);
+    const content = document.getElementById('subTabContent' + capitalize(t));
+    if (content) content.classList.toggle('hidden', t !== tab);
+  });
+  SoundEngine.playClick();
+  if (tab === 'shop') renderRewardShop();
+}
+
 async function renderGamificationTab() {
   const profile = GamificationEngine.getUserProfile();
   const levelInfo = GamificationEngine.getLevelInfo(profile.xp || 0);
+  const currentLeague = WeeklyHonorEngine.getLeague(profile.xp || 0);
 
+  // 1. Cập nhật hồ sơ cá nhân
   const nameEl = document.getElementById('gamifyUserName');
   const levelNameEl = document.getElementById('gamifyLevelName');
+  const userLeagueBadge = document.getElementById('gamifyUserLeagueBadge');
   const avatarEl = document.getElementById('gamifyUserAvatar');
   const xpTextEl = document.getElementById('gamifyXpText');
   const xpProgEl = document.getElementById('gamifyXpProgress');
 
   if (nameEl) nameEl.textContent = profile.name || 'Học Sinh';
   if (levelNameEl) levelNameEl.textContent = `Cấp ${levelInfo.level}: ${levelInfo.name}`;
-  if (avatarEl) avatarEl.textContent = profile.avatar || AppState.studentAvatar || '🦊';
+  if (userLeagueBadge) {
+    userLeagueBadge.innerHTML = `${currentLeague.icon} ${currentLeague.name}`;
+    userLeagueBadge.style.color = currentLeague.color;
+    userLeagueBadge.style.borderColor = currentLeague.border;
+  }
+  if (avatarEl) {
+    avatarEl.textContent = profile.avatar || AppState.studentAvatar || '🦊';
+    avatarEl.className = 'avatar-with-frame ' + (profile.frame || 'frame-gold');
+  }
   if (xpTextEl) xpTextEl.textContent = `${levelInfo.currentXp} / ${levelInfo.nextXp} XP (${levelInfo.progress}%)`;
   if (xpProgEl) xpProgEl.style.width = `${levelInfo.progress}%`;
 
   const totalExamsEl = document.getElementById('statTotalExams');
   const perfScoresEl = document.getElementById('statPerfectScores');
+  const perfStreakEl = document.getElementById('statPerfectStreak');
   const streakEl = document.getElementById('statCurrentStreak');
 
   if (totalExamsEl) totalExamsEl.textContent = profile.examsCount || 0;
   if (perfScoresEl) perfScoresEl.textContent = profile.perfectCount || 0;
-  if (streakEl) streakEl.textContent = `${profile.streak || 1} Ngày 🔥`;
+  if (perfStreakEl) perfStreakEl.textContent = `${profile.perfectStreak || 0} 🔥`;
+  if (streakEl) streakEl.textContent = `${profile.streak || 1} Ngày ⚡`;
 
-  const badgesGrid = document.getElementById('badgesShowcaseGrid');
-  if (badgesGrid) {
-    const unlocked = new Set(profile.unlockedBadges || []);
-    badgesGrid.innerHTML = BADGES_DEFINITIONS.map(b => {
-      const isUnlocked = unlocked.has(b.id);
-      return `
-        <div class="badge-card ${isUnlocked ? 'unlocked' : 'locked'}" onclick="triggerBadgeCelebration('${b.name}', ${isUnlocked})">
-          <div class="badge-icon">${b.icon}</div>
-          <div class="badge-title">${escapeHtml(b.name)}</div>
-          <div class="badge-desc">${escapeHtml(b.desc)}</div>
-          <div style="margin-top:0.4rem;font-size:0.75rem;font-weight:800;color:${isUnlocked ? 'var(--primary-shadow)' : 'var(--text-muted)'};">
-            ${isUnlocked ? '✅ ĐÃ MỞ KHÓA' : '🔒 CHƯA ĐẠT'}
-          </div>
-        </div>
-      `;
-    }).join('');
+  // 2. Tính toán chu kỳ tuần
+  let weekRange = null;
+  let offset = 0;
+  if (AppState.weeklyPeriod === 'current') {
+    offset = 0;
+    weekRange = WeeklyHonorEngine.getWeekRange(0);
+  } else if (AppState.weeklyPeriod === 'previous') {
+    offset = 1;
+    weekRange = WeeklyHonorEngine.getWeekRange(1);
   }
 
-  renderHallOfFameLeaderboard();
-}
+  const periodTitleEl = document.getElementById('weeklyHeaderPeriodTitle');
+  const periodSubEl = document.getElementById('weeklyHeaderDateSubtitle');
+  if (periodTitleEl) {
+    periodTitleEl.textContent = AppState.weeklyPeriod === 'all' 
+      ? 'Bảng Vàng Danh Dự Toàn Thời Gian' 
+      : (AppState.weeklyPeriod === 'previous' ? 'Bảng Vàng Vinh Danh Tuần Trước' : 'Bảng Vàng Vinh Danh Tuần Này');
+  }
+  if (periodSubEl && weekRange) {
+    periodSubEl.textContent = weekRange.label;
+  } else if (periodSubEl) {
+    periodSubEl.textContent = 'Tổng hợp toàn bộ thành tích từ trước đến nay';
+  }
 
-async function renderHallOfFameLeaderboard() {
-  const podiumWrap = document.getElementById('hallOfFamePodiumWrap');
-  const listWrap = document.getElementById('hallOfFameListWrap');
-  if (!podiumWrap || !listWrap) return;
-
+  // 3. Lấy dữ liệu thật từ Storage
   const roster = await StorageEngine.getStudentRoster();
   const allResults = await StorageEngine.getAllResults();
+  const availableQuizzes = await StorageEngine.getAllQuizzes();
 
-  const statsMap = {};
-  roster.forEach(s => {
-    statsMap[s.name.toLowerCase()] = {
-      name: s.name,
-      className: s.className,
-      avatar: s.avatar || '🦊',
-      xp: 200,
-      exams: 0,
-      avgScore: 0,
-      totalScore: 0
-    };
-  });
+  // Bảng xếp hạng tuần
+  const rankings = WeeklyHonorEngine.calculateWeeklyLeaderboard(
+    allResults,
+    weekRange,
+    roster,
+    availableQuizzes,
+    AppState.weeklyClassFilter
+  );
 
-  allResults.forEach(r => {
-    const key = r.name.toLowerCase();
-    if (!statsMap[key]) {
-      statsMap[key] = {
-        name: r.name,
-        className: r.className || '10',
-        avatar: r.avatar || '🦊',
-        xp: 150,
-        exams: 0,
-        avgScore: 0,
-        totalScore: 0
-      };
+  // Tính tuần trước để so sánh tiến độ vượt bậc
+  const prevWeekRange = WeeklyHonorEngine.getWeekRange(offset + 1);
+  const prevRankings = WeeklyHonorEngine.calculateWeeklyLeaderboard(
+    allResults,
+    prevWeekRange,
+    roster,
+    availableQuizzes,
+    AppState.weeklyClassFilter
+  );
+
+  // 6 Hạng mục vinh danh đặc biệt
+  const specialHonors = WeeklyHonorEngine.calculateSpecialHonors(rankings, prevRankings);
+
+  // Thống kê cá nhân học sinh trong tuần
+  const currentStudentStats = rankings.find(s => s.name.trim().toLowerCase() === (profile.name || '').trim().toLowerCase()) || null;
+
+  // Cập nhật League Pill
+  const userPill = document.getElementById('currentUserLeaguePill');
+  if (userPill) {
+    const sLeague = currentStudentStats ? currentStudentStats.league : currentLeague;
+    userPill.innerHTML = `${sLeague.icon} <span>${sLeague.name}</span>`;
+    userPill.style.borderColor = sLeague.border;
+    userPill.style.color = sLeague.color;
+  }
+
+  // 4. Render các thành phần
+  renderWeeklyQuests(profile, currentStudentStats);
+  renderSpecialHonors(specialHonors);
+  renderWeeklyPodium(rankings);
+  renderWeeklyHallOfFameTable(rankings);
+
+  // Đại chiến giữa các lớp
+  const classBattle = WeeklyHonorEngine.calculateClassBattle(rankings);
+  renderClassBattle(classBattle);
+
+  // Cửa hàng đổi thưởng
+  renderRewardShop();
+
+  // Huy hiệu
+  renderBadgesShowcase(profile);
+}
+
+/* 🎯 RENDER NHIỆM VỤ TUẦN */
+function renderWeeklyQuests(profile, studentWeeklyStat) {
+  const container = document.getElementById('weeklyQuestsGrid');
+  if (!container) return;
+
+  const quests = WeeklyHonorEngine.getWeeklyQuests(profile, studentWeeklyStat);
+  container.innerHTML = quests.map(q => {
+    const pct = Math.round((q.current / q.target) * 100);
+    return `
+      <div class="quest-item-card ${q.isCompleted ? 'completed' : ''}">
+        <div>
+          <div class="quest-header">
+            <div class="quest-icon">${q.icon}</div>
+            <div style="flex:1;">
+              <div style="font-weight:800;font-size:0.95rem;color:var(--text-primary);">${escapeHtml(q.title)}</div>
+              <div style="font-size:0.8rem;color:var(--text-secondary);">${escapeHtml(q.desc)}</div>
+            </div>
+          </div>
+          <div class="quest-progress-wrap">
+            <div class="quest-progress-fill" style="width:${pct}%;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.75rem;font-weight:800;color:var(--text-secondary);">
+            <span>Tiến độ: ${q.current}/${q.target}</span>
+            <span style="color:var(--indigo);">+${q.rewardXp} XP</span>
+          </div>
+        </div>
+        <div style="margin-top:0.75rem;text-align:right;">
+          ${q.isCompleted 
+            ? '<span class="badge-status badge-pass" style="font-size:0.75rem;">✅ ĐÃ HOÀN THÀNH</span>'
+            : '<span style="font-size:0.75rem;font-weight:800;color:var(--text-muted);">Đang thực hiện...</span>'}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* 🌟 RENDER 6 HẠNG MỤC VINH DANH ĐẶC BIỆT */
+function renderSpecialHonors(honors) {
+  const container = document.getElementById('specialHonorsGrid');
+  if (!container) return;
+
+  const items = [
+    {
+      title: 'Thủ Khoa Tuần',
+      tag: 'Điểm & XP Cao Nhất',
+      icon: '👑',
+      cardClass: 'card-titan',
+      tagColor: '#b45309',
+      student: honors.titan,
+      metric: honors.titan ? `${honors.titan.honorXp} XP · ${honors.titan.avgScore}/10đ` : 'Chưa có'
+    },
+    {
+      title: 'Ngôi Sao Tiến Bộ',
+      tag: 'Tăng Điểm Vượt Bậc',
+      icon: '🧗',
+      cardClass: 'card-improved',
+      tagColor: '#15803d',
+      student: honors.mostImproved,
+      metric: honors.mostImproved ? `+${honors.mostImproved.scoreDiff} điểm so tuần trước` : 'Chưa có'
+    },
+    {
+      title: 'Thần Tốc Toán Học',
+      tag: 'Nộp Nhanh & Điểm Giỏi',
+      icon: '⚡',
+      cardClass: 'card-speed',
+      tagColor: '#0369a1',
+      student: honors.speedMaster,
+      metric: honors.speedMaster ? `Đạt ${honors.speedMaster.avgScore}đ · Tốc độ chớp nhoáng` : 'Chưa có'
+    },
+    {
+      title: 'Chiến Binh Bất Bại',
+      tag: 'Chuỗi 10 Dài Nhất',
+      icon: '🔥',
+      cardClass: 'card-streak',
+      tagColor: '#b91c1c',
+      student: honors.streakMaster,
+      metric: honors.streakMaster ? `Chuỗi ${honors.streakMaster.maxPerfectStreak} bài 10 tuyệt đối` : 'Chưa có'
+    },
+    {
+      title: 'Ong Vàng Chăm Chỉ',
+      tag: 'Giải Nhiều Đề Nhất',
+      icon: '📚',
+      cardClass: 'card-dedicated',
+      tagColor: '#6d28d9',
+      student: honors.dedicated,
+      metric: honors.dedicated ? `Đã nộp ${honors.dedicated.submissionsCount} đề thi` : 'Chưa có'
+    },
+    {
+      title: 'Biểu Tượng Chính Trực',
+      tag: 'Kỷ Luật Tuyệt Đối',
+      icon: '🕊️',
+      cardClass: 'card-honest',
+      tagColor: '#0e7490',
+      student: honors.honestParagon,
+      metric: honors.honestParagon ? `100% 0 vi phạm tab` : 'Chưa có'
     }
-    statsMap[key].exams++;
-    statsMap[key].totalScore += (r.totalScore || 0);
-    statsMap[key].xp += (r.totalScore >= 8 ? 150 : 80);
-  });
+  ];
 
-  const studentsList = Object.values(statsMap);
-  studentsList.forEach(s => {
-    s.avgScore = s.exams ? (Math.round((s.totalScore / s.exams) * 10) / 10) : 8.5;
-  });
+  container.innerHTML = items.map(item => {
+    const st = item.student;
+    return `
+      <div class="honor-badge-card ${item.cardClass}">
+        <div class="honor-card-icon">${item.icon}</div>
+        <div class="honor-card-info">
+          <div class="honor-card-tag" style="color:${item.tagColor};">${item.tag}</div>
+          <div style="font-weight:900;font-size:1.05rem;color:var(--text-primary);margin-bottom:0.15rem;">
+            ${item.title}: <strong>${st ? escapeHtml(st.name) : 'Đang chờ đón'}</strong>
+          </div>
+          <div style="font-size:0.8rem;color:var(--text-secondary);font-weight:700;">
+            ${st ? `Lớp ${escapeHtml(st.className)} · ${item.metric}` : 'Hãy là người đầu tiên đạt danh hiệu này!'}
+          </div>
+        </div>
+        ${st ? `
+          <button type="button" class="btn btn-secondary btn-sm" onclick="openHonorCertificateForStudent('${escapeHtml(st.name)}', '${item.title}')" title="Xem & In Bằng Khen" style="padding:0.35rem 0.6rem;font-size:0.75rem;border-radius:var(--radius-full);">
+            📜 Bằng Khen
+          </button>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+}
 
-  studentsList.sort((a, b) => b.xp - a.xp || b.avgScore - a.avgScore);
+/* 👑 RENDER BỤC VINH QUANG 3D */
+function renderWeeklyPodium(rankings) {
+  const podiumWrap = document.getElementById('hallOfFamePodiumWrap');
+  if (!podiumWrap) return;
 
-  const top1 = studentsList[0] || { name: 'SURI', className: '10', avatar: '🦊', xp: 850, avgScore: 9.5 };
-  const top2 = studentsList[1] || { name: 'NGHĨA', className: '10', avatar: '🦉', xp: 620, avgScore: 8.8 };
-  const top3 = studentsList[2] || { name: 'GIANG', className: '10', avatar: '🦁', xp: 480, avgScore: 8.2 };
+  const top1 = rankings[0] || { name: 'SURI', className: '10', avatar: '🦊', honorXp: 950, avgScore: 10, maxPerfectStreak: 3 };
+  const top2 = rankings[1] || { name: 'NGHĨA', className: '10', avatar: '🦉', honorXp: 720, avgScore: 9.5, maxPerfectStreak: 2 };
+  const top3 = rankings[2] || { name: 'GIANG', className: '10', avatar: '🦁', honorXp: 540, avgScore: 8.8, maxPerfectStreak: 1 };
 
   podiumWrap.innerHTML = `
-    <div class="podium-container">
+    <div class="podium-wrapper">
       <!-- #2 Silver -->
-      <div class="podium-column podium-col-2">
-        <div class="podium-avatar-bubble">
-          <div class="podium-avatar">${top2.avatar}</div>
-          <div class="podium-rank-badge badge-rank-2">2</div>
+      <div class="podium-col rank-2">
+        <div class="podium-avatar-wrap">
+          <div class="podium-avatar avatar-with-frame ${top2.frame || 'frame-gold'}">${top2.avatar || '🦉'}</div>
         </div>
-        <div class="podium-stand stand-silver">
-          <div class="podium-user-name">${escapeHtml(top2.name)}</div>
-          <div class="podium-user-score">⭐ ${top2.xp} XP</div>
-          <div class="podium-step-number">#2</div>
-        </div>
+        <div class="podium-name">${escapeHtml(top2.name)}</div>
+        <div class="podium-class">Lớp ${escapeHtml(top2.className)}</div>
+        <div class="podium-xp-tag">⭐ ${top2.honorXp || 0} XP</div>
+        <div class="podium-step">2</div>
       </div>
 
       <!-- #1 Gold -->
-      <div class="podium-column podium-col-1">
-        <div class="podium-avatar-bubble">
-          <div class="podium-crown">👑</div>
-          <div class="podium-avatar">${top1.avatar}</div>
-          <div class="podium-rank-badge badge-rank-1">1</div>
+      <div class="podium-col rank-1">
+        <div class="podium-crown">👑</div>
+        <div class="podium-avatar-wrap">
+          <div class="podium-avatar avatar-with-frame ${top1.frame || 'frame-gold'}">${top1.avatar || '🦊'}</div>
         </div>
-        <div class="podium-stand stand-gold">
-          <div class="podium-user-name">${escapeHtml(top1.name)}</div>
-          <div class="podium-user-score">⭐ ${top1.xp} XP</div>
-          <div class="podium-step-number">#1</div>
-        </div>
+        <div class="podium-name" style="font-size:1.15rem;color:#b45309;">${escapeHtml(top1.name)}</div>
+        <div class="podium-class">Lớp ${escapeHtml(top1.className)}</div>
+        <div class="podium-xp-tag" style="background:#fef3c7;color:#b45309;font-size:0.95rem;">⭐ ${top1.honorXp || 0} XP</div>
+        <div class="podium-step">1</div>
       </div>
 
       <!-- #3 Bronze -->
-      <div class="podium-column podium-col-3">
-        <div class="podium-avatar-bubble">
-          <div class="podium-avatar">${top3.avatar}</div>
-          <div class="podium-rank-badge badge-rank-3">3</div>
+      <div class="podium-col rank-3">
+        <div class="podium-avatar-wrap">
+          <div class="podium-avatar avatar-with-frame ${top3.frame || ''}">${top3.avatar || '🦁'}</div>
         </div>
-        <div class="podium-stand stand-bronze">
-          <div class="podium-user-name">${escapeHtml(top3.name)}</div>
-          <div class="podium-user-score">⭐ ${top3.xp} XP</div>
-          <div class="podium-step-number">#3</div>
-        </div>
+        <div class="podium-name">${escapeHtml(top3.name)}</div>
+        <div class="podium-class">Lớp ${escapeHtml(top3.className)}</div>
+        <div class="podium-xp-tag">⭐ ${top3.honorXp || 0} XP</div>
+        <div class="podium-step">3</div>
       </div>
     </div>
   `;
+}
+
+/* 📋 RENDER BẢNG TỔNG SẮP VINH DANH HÀNG TUẦN */
+function renderWeeklyHallOfFameTable(rankings) {
+  const listWrap = document.getElementById('hallOfFameListWrap');
+  if (!listWrap) return;
+
+  if (rankings.length === 0) {
+    listWrap.innerHTML = `
+      <div style="text-align:center;padding:2.5rem;color:var(--text-muted);">
+        <div style="font-size:3rem;margin-bottom:0.5rem;">📭</div>
+        <div style="font-size:1.1rem;font-weight:800;">Chưa có kết quả bài thi nào trong khoảng thời gian này!</div>
+        <div style="font-size:0.875rem;">Hãy là người đầu tiên làm bài thi để đứng đầu Bảng Vàng!</div>
+      </div>
+    `;
+    return;
+  }
 
   listWrap.innerHTML = `
-    <div class="table-responsive" style="margin-top:1.5rem;">
+    <div class="table-responsive" style="margin-top:0.5rem;">
       <table>
         <thead>
           <tr>
-            <th>Hạng</th>
+            <th style="width:60px;">Hạng</th>
             <th>Chiến Binh</th>
             <th>Lớp</th>
-            <th>Kinh Nghiệm (XP)</th>
-            <th>Điểm TB</th>
-            <th>Bài Thi Đã Làm</th>
+            <th>Hạng Đấu</th>
+            <th>Bài Tuần</th>
+            <th>Điểm 10</th>
+            <th>Chuỗi 10 🔥</th>
+            <th>Tiến Độ Bài</th>
+            <th>Điểm Vinh Danh</th>
+            <th style="text-align:center;">Bằng Khen</th>
           </tr>
         </thead>
         <tbody>
-          ${studentsList.slice(3).map((s, idx) => `
-            <tr>
-              <td><strong>#${idx + 4}</strong></td>
-              <td><strong>${s.avatar} ${escapeHtml(s.name)}</strong></td>
-              <td><span class="badge-status badge-pass">Lớp ${escapeHtml(s.className)}</span></td>
-              <td><strong style="color:var(--indigo);">⭐ ${s.xp} XP</strong></td>
-              <td><strong>${s.avgScore}/10đ</strong></td>
-              <td>${s.exams} bài</td>
-            </tr>
-          `).join('')}
+          ${rankings.map(s => {
+            const lg = s.league || WeeklyHonorEngine.getLeague(s.honorXp);
+            return `
+              <tr style="${s.rank <= 3 ? 'background:rgba(245, 158, 11, 0.04);' : ''}">
+                <td>
+                  <strong style="font-size:1.05rem;color:${s.rank === 1 ? '#d97706' : (s.rank === 2 ? '#64748b' : (s.rank === 3 ? '#b45309' : 'var(--text-primary)'))};">
+                    ${s.rank === 1 ? '🥇 1' : (s.rank === 2 ? '🥈 2' : (s.rank === 3 ? '🥉 3' : '#' + s.rank))}
+                  </strong>
+                </td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:0.6rem;">
+                    <span style="font-size:1.5rem;">${s.avatar || '🦊'}</span>
+                    <div>
+                      <strong style="color:var(--text-primary);font-size:0.95rem;">${escapeHtml(s.name)}</strong>
+                      ${s.honorsBadges && s.honorsBadges.length ? `
+                        <div style="display:flex;gap:0.25rem;flex-wrap:wrap;margin-top:2px;">
+                          ${s.honorsBadges.map(b => `<span style="font-size:0.7rem;background:var(--bg-tertiary);padding:1px 5px;border-radius:4px;font-weight:800;">${b}</span>`).join('')}
+                        </div>
+                      ` : ''}
+                    </div>
+                  </div>
+                </td>
+                <td><span class="badge-status badge-pass">Lớp ${escapeHtml(s.className)}</span></td>
+                <td>
+                  <span class="user-league-pill" style="padding:0.2rem 0.6rem;font-size:0.75rem;border-color:${lg.border};color:${lg.color};">
+                    ${lg.icon} ${lg.name}
+                  </span>
+                </td>
+                <td><strong>${s.submissionsCount}</strong> bài</td>
+                <td><strong style="color:var(--primary);">${s.perfectScores}</strong></td>
+                <td><strong style="color:#ef4444;">${s.maxPerfectStreak ? s.maxPerfectStreak + ' liên tiếp 🔥' : '—'}</strong></td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:0.35rem;">
+                    <div style="width:50px;height:6px;background:var(--bg-tertiary);border-radius:3px;overflow:hidden;">
+                      <div style="width:${s.completionRate || 0}%;height:100%;background:var(--primary);"></div>
+                    </div>
+                    <span style="font-size:0.75rem;font-weight:800;">${s.completionRate || 0}%</span>
+                  </div>
+                </td>
+                <td><strong style="color:var(--indigo);font-size:1.05rem;">⭐ ${s.honorXp} XP</strong></td>
+                <td style="text-align:center;">
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="openHonorCertificateForStudent('${escapeHtml(s.name)}', '${s.rank === 1 ? 'QUÁN QUÂN TUẦN' : 'CHIẾN BINH XUẤT SẮC'}')" style="padding:0.3rem 0.6rem;font-size:0.8rem;border-radius:var(--radius-full);" title="Xem Bằng Khen">
+                    📜 In
+                  </button>
+                </td>
+              </tr>
+            `;
+          }).join('')}
         </tbody>
       </table>
     </div>
   `;
+}
+
+/* 🏫 RENDER ĐẠI CHIẾN GIỮA CÁC LỚP */
+function renderClassBattle(classBattle) {
+  const container = document.getElementById('classBattleContainer');
+  if (!container) return;
+
+  if (classBattle.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted);">Chưa có dữ liệu thi đua giữa các lớp!</div>';
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="class-battle-grid">
+      ${classBattle.map(c => `
+        <div class="class-battle-card ${c.rank === 1 ? 'rank-1' : ''}">
+          <div style="font-size:2.5rem;margin-bottom:0.3rem;">
+            ${c.rank === 1 ? '🏆' : (c.rank === 2 ? '🥈' : (c.rank === 3 ? '🥉' : '🏫'))}
+          </div>
+          <div style="font-size:1.35rem;font-weight:900;color:var(--text-primary);margin-bottom:0.25rem;">
+            Lớp ${escapeHtml(c.className)}
+          </div>
+          <div style="display:inline-block;padding:0.25rem 0.8rem;background:var(--bg-card);border-radius:var(--radius-full);font-size:0.8rem;font-weight:800;color:var(--indigo);margin-bottom:1rem;">
+            Hạng #${c.rank} Toàn Trường
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;font-size:0.85rem;text-align:left;background:var(--bg-card);padding:0.85rem;border-radius:var(--radius-md);border:1px solid var(--border-color);">
+            <div>Thành viên: <strong>${c.studentsCount} học sinh</strong></div>
+            <div>Bài nộp: <strong>${c.totalSubmissions} bài</strong></div>
+            <div>Điểm 10: <strong style="color:var(--primary);">${c.perfectCount} lần</strong></div>
+            <div>Điểm TB lớp: <strong style="color:var(--amber);">${c.classAvgScore}/10đ</strong></div>
+          </div>
+          <div style="margin-top:1rem;font-size:1.15rem;font-weight:900;color:var(--indigo);">
+            ⭐ ${c.totalHonorXp} Tổng XP
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+/* 🎁 RENDER CỬA HÀNG ĐỔI THƯỞNG XP */
+function renderRewardShop() {
+  const profile = GamificationEngine.getUserProfile();
+  const xpBadge = document.getElementById('shopUserXpVal');
+  if (xpBadge) xpBadge.textContent = `${profile.xp || 0} XP`;
+
+  const container = document.getElementById('shopItemsGrid');
+  if (!container) return;
+
+  const inv = profile.inventory || [];
+
+  container.innerHTML = SHOP_ITEMS.map(item => {
+    const isOwned = inv.includes(item.id);
+    const canAfford = (profile.xp || 0) >= item.priceXp;
+
+    return `
+      <div class="shop-item-card">
+        <div>
+          <div style="font-size:3rem;margin-bottom:0.5rem;">${item.icon}</div>
+          <div style="font-weight:800;font-size:1.05rem;color:var(--text-primary);margin-bottom:0.3rem;">${escapeHtml(item.name)}</div>
+          <div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.4;margin-bottom:0.75rem;">${escapeHtml(item.desc)}</div>
+        </div>
+        <div>
+          <div style="font-weight:900;font-size:1.1rem;color:var(--amber);margin-bottom:0.6rem;">
+            ⭐ ${item.priceXp} XP
+          </div>
+          ${isOwned ? `
+            <button type="button" class="btn btn-secondary btn-sm" onclick="equipShopItem('${item.id}', '${item.type}')" style="width:100%;font-weight:800;">
+              ${profile.frame === item.cssClass ? '✅ Đang Trang Bị' : '⚡ Trang Bị Ngay'}
+            </button>
+          ` : `
+            <button type="button" class="btn btn-primary btn-sm" onclick="buyShopItem('${item.id}')" ${!canAfford ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''} style="width:100%;font-weight:800;">
+              🛒 Đổi Vật Phẩm
+            </button>
+          `}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function buyShopItem(itemId) {
+  const item = SHOP_ITEMS.find(i => i.id === itemId);
+  if (!item) return;
+
+  const profile = GamificationEngine.getUserProfile();
+  if ((profile.xp || 0) < item.priceXp) {
+    SoundEngine.playWarning();
+    showToast('⚠️ Bạn chưa đủ điểm XP để đổi vật phẩm này! Hãy làm thêm bài thi nhé.', 'warn');
+    return;
+  }
+
+  profile.xp -= item.priceXp;
+  if (!profile.inventory) profile.inventory = [];
+  profile.inventory.push(itemId);
+
+  if (item.type === 'frame') {
+    profile.frame = item.cssClass;
+  }
+
+  GamificationEngine.saveUserProfile(profile);
+  GamificationEngine.fireConfetti();
+  SoundEngine.playFanfare();
+  showToast(`🎉 Mở khóa thành công: ${item.name}!`, 'success');
+
+  renderGamificationTab();
+}
+
+function equipShopItem(itemId, itemType) {
+  const item = SHOP_ITEMS.find(i => i.id === itemId);
+  if (!item) return;
+
+  const profile = GamificationEngine.getUserProfile();
+  if (itemType === 'frame') {
+    profile.frame = item.cssClass;
+  }
+
+  GamificationEngine.saveUserProfile(profile);
+  SoundEngine.playClick();
+  showToast(`✨ Đã trang bị: ${item.name}!`, 'success');
+  renderGamificationTab();
+}
+
+/* 🏅 RENDER HUY HIỆU */
+function renderBadgesShowcase(profile) {
+  const badgesGrid = document.getElementById('badgesShowcaseGrid');
+  if (!badgesGrid) return;
+
+  const unlocked = new Set(profile.unlockedBadges || []);
+  badgesGrid.innerHTML = BADGES_DEFINITIONS.map(b => {
+    const isUnlocked = unlocked.has(b.id);
+    return `
+      <div class="badge-card ${isUnlocked ? 'unlocked' : 'locked'}" onclick="triggerBadgeCelebration('${b.name}', ${isUnlocked})">
+        <div class="badge-icon-wrap" style="font-size:2.8rem;margin-bottom:0.4rem;">${b.icon}</div>
+        <div class="badge-title" style="font-weight:800;font-size:0.95rem;color:var(--text-primary);">${escapeHtml(b.name)}</div>
+        <div class="badge-desc" style="font-size:0.8rem;color:var(--text-secondary);margin-top:0.25rem;">${escapeHtml(b.desc)}</div>
+        <div style="margin-top:0.6rem;font-size:0.75rem;font-weight:800;color:${isUnlocked ? 'var(--primary-shadow)' : 'var(--text-muted)'};">
+          ${isUnlocked ? '✅ ĐÃ MỞ KHÓA' : '🔒 CHƯA ĐẠT'}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* ================= 📜 HONOR CERTIFICATE HANDLERS ================= */
+async function openHonorCertificateForStudent(studentName, customTitle = 'HỌC SINH XUẤT SẮC TOÀN DIỆN') {
+  const modal = document.getElementById('honorCertificateModal');
+  const printArea = document.getElementById('honorCertificatePrintArea');
+  if (!modal || !printArea) return;
+
+  const allResults = await StorageEngine.getAllResults();
+  const roster = await StorageEngine.getStudentRoster();
+  const availableQuizzes = await StorageEngine.getAllQuizzes();
+  const weekRange = WeeklyHonorEngine.getWeekRange(AppState.weeklyPeriod === 'previous' ? 1 : 0);
+
+  const rankings = WeeklyHonorEngine.calculateWeeklyLeaderboard(allResults, weekRange, roster, availableQuizzes);
+  const st = rankings.find(s => s.name.trim().toLowerCase() === studentName.trim().toLowerCase()) || {
+    name: studentName,
+    className: '10',
+    rank: 1,
+    honorXp: 850,
+    perfectScores: 2,
+    maxPerfectStreak: 2
+  };
+
+  printArea.innerHTML = `
+    <div class="certificate-container">
+      <div class="certificate-seal">🏆</div>
+      <div class="cert-school-name">HỆ THỐNG GIÁO DỤC K-EDU · TOÀN QUỐC</div>
+      <div class="cert-title">GIẤY CHỨNG NHẬN VINH DANH</div>
+      <p style="font-style:italic;color:#78350f;margin-bottom:0.5rem;font-size:0.95rem;">Chứng nhận thành tích học tập và rèn luyện môn Toán xuất sắc:</p>
+
+      <div class="cert-student-name">${escapeHtml(st.name)}</div>
+      <div style="font-size:1.1rem;font-weight:800;color:#4338ca;margin-bottom:0.5rem;">Học Sinh Lớp ${escapeHtml(st.className)}</div>
+
+      <div class="cert-achievement-box">
+        <div style="font-size:1.15rem;font-weight:900;margin-bottom:0.35rem;">✨ DANH HIỆU: ${escapeHtml(customTitle)} ✨</div>
+        <div style="display:flex;justify-content:space-around;flex-wrap:wrap;gap:0.5rem;margin-top:0.4rem;">
+          <span>Thứ Hạng: <strong>Hạng #${st.rank || 1}</strong></span>
+          <span>Điểm Vinh Danh: <strong>${st.honorXp || 0} XP</strong></span>
+          <span>Điểm 10: <strong>${st.perfectScores || 0} bài</strong></span>
+        </div>
+        <div style="font-size:0.8rem;color:#78350f;margin-top:0.4rem;">(${escapeHtml(weekRange.label)})</div>
+      </div>
+
+      <p style="font-size:0.88rem;color:#57534e;max-width:560px;margin:0 auto 1.25rem;line-height:1.5;">
+        Hội Đồng Sư Phạm K-EDU nhiệt liệt tuyên dương nỗ lực bền bỉ và tinh thần tự giác của em. Chúc em tiếp tục giữ vững phong độ và gặt hái thêm nhiều thành công rực rỡ!
+      </p>
+
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:1.5rem;padding:0 1rem;flex-wrap:wrap;gap:1rem;">
+        <div style="text-align:left;">
+          <div style="font-size:0.75rem;color:#78350f;font-weight:700;">Mã định danh Bằng khen:</div>
+          <div style="font-family:monospace;font-weight:800;color:#92400e;">KEDU-HONOR-${Date.now().toString().slice(-6)}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:0.8rem;color:#78350f;font-style:italic;margin-bottom:0.25rem;">Ngày cấp: ${new Date().toLocaleDateString('vi-VN')}</div>
+          <div style="font-weight:900;font-size:0.95rem;color:#1e1b4b;">HỘI ĐỒNG SƯ PHẠM K-EDU</div>
+          <div style="font-size:1.5rem;margin-top:0.15rem;">✍️ <em>KhiemEdu</em></div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  modal.classList.remove('hidden');
+  SoundEngine.playFanfare();
+}
+
+function openHonorCertificateForCurrentUser() {
+  const profile = GamificationEngine.getUserProfile();
+  openHonorCertificateForStudent(profile.name || 'Học Sinh', 'CHIẾN BINH TOÀN NĂNG TUẦN');
+}
+
+function closeHonorCertificateModal() {
+  const modal = document.getElementById('honorCertificateModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function printHonorCertificate() {
+  window.print();
+}
+
+function shareCertificateToZalo() {
+  const profile = GamificationEngine.getUserProfile();
+  const text = `🎉 Con vừa nhận được BẰNG KHEN VINH DANH trên Hệ thống Toán K-EDU tuần này với danh hiệu Học Sinh Xuất Sắc! Bố mẹ xem thành tích của con nhé! 🌟`;
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('📋 Đã sao chép lời chúc mừng và bằng khen! Bạn có thể dán ngay vào Zalo gửi cho Bố Mẹ!', 'success');
+  }).catch(() => {
+    showToast('🎉 Hãy chụp màn hình Bằng Khen để gửi vào Zalo cho Bố Mẹ nhé!', 'success');
+  });
 }
 
 function triggerBadgeCelebration(badgeName, isUnlocked) {
