@@ -2217,23 +2217,201 @@ tr:hover td { background: var(--bg-card-hover); }
   border-color: var(--primary);
 }
 
-/* Avatar Frames */
-.avatar-with-frame.frame-fire {
-  box-shadow: 0 0 0 4px #ef4444, 0 0 15px rgba(239, 68, 68, 0.6) !important;
-  animation: fireGlow 1.5s infinite alternate ease-in-out;
+/* ================= 🎨 18 UNIQUE BADGE AVATAR FRAMES ================= */
+.avatar-with-frame {
+  position: relative !important;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
 }
 
+/* 1. Frame Target (Hồng Ngọc Tân Binh) */
+.avatar-with-frame.frame-target {
+  box-shadow: 0 0 0 3.5px #f43f5e, 0 0 12px rgba(244, 63, 94, 0.45) !important;
+  border-color: #ffe4e6 !important;
+}
+
+/* 2. Frame Gold Perfect (Hào Quang Kim Cương Vàng) */
+.avatar-with-frame.frame-gold-perfect,
 .avatar-with-frame.frame-gold {
-  box-shadow: 0 0 0 4px #f59e0b, 0 0 18px rgba(245, 158, 11, 0.7) !important;
+  box-shadow: 0 0 0 4px #fbbf24, 0 0 18px rgba(251, 191, 36, 0.65) !important;
+  border-color: #fef08a !important;
+  animation: pulseGold 2s infinite alternate ease-in-out;
+}
+@keyframes pulseGold {
+  0% { box-shadow: 0 0 0 3.5px #f59e0b, 0 0 12px rgba(245, 158, 11, 0.5); }
+  100% { box-shadow: 0 0 0 5px #fbbf24, 0 0 24px rgba(251, 191, 36, 0.85); }
 }
 
+/* 3. Frame Dual Swords (Song Kiếm Lam Băng) */
+.avatar-with-frame.frame-dual-swords {
+  box-shadow: 0 0 0 4px #0ea5e9, 0 0 16px rgba(14, 165, 233, 0.6) !important;
+  border-color: #bae6fd !important;
+  animation: frostyIce 2s infinite alternate ease-in-out;
+}
+@keyframes frostyIce {
+  0% { box-shadow: 0 0 0 3px #0284c7, 0 0 10px rgba(2, 132, 199, 0.5); }
+  100% { box-shadow: 0 0 0 5px #38bdf8, 0 0 20px rgba(56, 189, 248, 0.8); }
+}
+
+/* 4. Frame Triple Stars (Tinh Cầu Vũ Trụ) */
+.avatar-with-frame.frame-triple-stars {
+  box-shadow: 0 0 0 4px #8b5cf6, 0 0 20px rgba(139, 92, 246, 0.7) !important;
+  border-color: #ddd6fe !important;
+  animation: cosmicGalaxy 3s infinite linear;
+}
+@keyframes cosmicGalaxy {
+  0% { filter: hue-rotate(0deg); }
+  50% { filter: hue-rotate(45deg); box-shadow: 0 0 0 5px #c084fc, 0 0 25px rgba(192, 132, 252, 0.85); }
+  100% { filter: hue-rotate(0deg); }
+}
+
+/* 5. Frame Sovereign Crown (Ngai Vàng Đế Vương) */
+.avatar-with-frame.frame-sovereign-crown {
+  box-shadow: 0 0 0 4.5px #d97706, 0 0 25px rgba(217, 119, 6, 0.75) !important;
+  border-color: #fde68a !important;
+}
+
+/* 6. Frame Aegis Shield (Khiên Thần Hộ Mệnh) */
+.avatar-with-frame.frame-aegis-shield {
+  box-shadow: 0 0 0 4px #10b981, 0 0 16px rgba(16, 185, 129, 0.6) !important;
+  border-color: #a7f3d0 !important;
+}
+
+/* 7. Frame Rising Star (Sao Băng Hy Vọng) */
+.avatar-with-frame.frame-rising-star {
+  box-shadow: 0 0 0 3.5px #14b8a6, 0 0 14px rgba(20, 184, 166, 0.55) !important;
+  border-color: #ccfbf1 !important;
+}
+
+/* 8. Frame Lightning Storm (Lôi Điện Chớp Nhoáng) */
+.avatar-with-frame.frame-lightning-storm,
 .avatar-with-frame.frame-neon {
-  box-shadow: 0 0 0 4px #06b6d4, 0 0 16px rgba(6, 182, 212, 0.7) !important;
+  box-shadow: 0 0 0 4px #eab308, 0 0 18px rgba(234, 179, 8, 0.7) !important;
+  border-color: #fef08a !important;
+  animation: lightningZap 1.2s infinite ease-in-out;
+}
+@keyframes lightningZap {
+  0%, 100% { box-shadow: 0 0 0 3.5px #eab308, 0 0 12px rgba(234, 179, 8, 0.5); }
+  25% { box-shadow: 0 0 0 5.5px #06b6d4, 0 0 24px rgba(6, 182, 212, 0.85); }
+  75% { box-shadow: 0 0 0 4.5px #facc15, 0 0 20px rgba(250, 204, 21, 0.8); }
 }
 
+/* 9. Frame Angel Wings (Cánh Chim Bạch Kim) */
+.avatar-with-frame.frame-angel-wings {
+  box-shadow: 0 0 0 4px #e2e8f0, 0 0 18px rgba(226, 232, 240, 0.85) !important;
+  border-color: #ffffff !important;
+}
+
+/* 10. Frame Flame Ember (Hỏa Diệm Nhiệt Huyết) */
+.avatar-with-frame.frame-flame-ember,
+.avatar-with-frame.frame-fire {
+  box-shadow: 0 0 0 4px #ea580c, 0 0 18px rgba(234, 88, 12, 0.65) !important;
+  border-color: #ffedd5 !important;
+  animation: fireGlow 1.4s infinite alternate ease-in-out;
+}
 @keyframes fireGlow {
   0% { box-shadow: 0 0 0 3px #ef4444, 0 0 10px rgba(239, 68, 68, 0.5); }
   100% { box-shadow: 0 0 0 5px #f97316, 0 0 20px rgba(249, 115, 22, 0.8); }
+}
+
+/* 11. Frame Solar Flare (Bão Mặt Trời) */
+.avatar-with-frame.frame-solar-flare {
+  box-shadow: 0 0 0 4.5px #f97316, 0 0 22px rgba(249, 115, 22, 0.8) !important;
+  border-color: #fed7aa !important;
+  animation: solarPulse 1.8s infinite alternate ease-in-out;
+}
+@keyframes solarPulse {
+  0% { box-shadow: 0 0 0 4px #ea580c, 0 0 14px rgba(234, 88, 12, 0.6); }
+  100% { box-shadow: 0 0 0 6px #facc15, 0 0 28px rgba(250, 204, 21, 0.9); }
+}
+
+/* 12. Frame Arcane Tome (Vòng Phép Cổ Thư) */
+.avatar-with-frame.frame-arcane-tome {
+  box-shadow: 0 0 0 4px #9333ea, 0 0 18px rgba(147, 51, 234, 0.65) !important;
+  border-color: #f3e8ff !important;
+}
+
+/* 13. Frame Celestial Grandmaster (Hào Quang Thần Giới) */
+.avatar-with-frame.frame-celestial-grandmaster {
+  box-shadow: 0 0 0 5px #ec4899, 0 0 25px rgba(236, 72, 153, 0.75) !important;
+  border-color: #fdf2f8 !important;
+  animation: rainbowRotate 4s infinite linear;
+}
+@keyframes rainbowRotate {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+/* 14. Frame Moonlight Owl (Ánh Trăng Huyền Diệu) */
+.avatar-with-frame.frame-moonlight-owl {
+  box-shadow: 0 0 0 4px #38bdf8, 0 0 16px rgba(56, 189, 248, 0.6) !important;
+  border-color: #0f172a !important;
+}
+
+/* 15. Frame Morning Sun (Bình Minh Tỏa Rạng) */
+.avatar-with-frame.frame-morning-sun {
+  box-shadow: 0 0 0 4px #fb923c, 0 0 18px rgba(251, 146, 60, 0.65) !important;
+  border-color: #ffedd5 !important;
+}
+
+/* 16. Frame Academic Laurel (Vòng Nguyệt Quế Vinh Quang) */
+.avatar-with-frame.frame-academic-laurel {
+  box-shadow: 0 0 0 4.5px #ca8a04, 0 0 20px rgba(202, 138, 4, 0.7) !important;
+  border-color: #fef9c3 !important;
+}
+
+/* 17. Frame Diamond Frost (Pha Lê Kim Cương) */
+.avatar-with-frame.frame-diamond-frost {
+  box-shadow: 0 0 0 4.5px #06b6d4, 0 0 22px rgba(6, 182, 212, 0.75) !important;
+  border-color: #cffafe !important;
+  animation: diamondShimmer 2s infinite alternate ease-in-out;
+}
+@keyframes diamondShimmer {
+  0% { box-shadow: 0 0 0 3.5px #0891b2, 0 0 12px rgba(8, 145, 178, 0.5); }
+  100% { box-shadow: 0 0 0 5.5px #22d3ee, 0 0 26px rgba(34, 211, 238, 0.85); }
+}
+
+/* 18. Frame Champion Throne (Vương Miện Quán Quân) */
+.avatar-with-frame.frame-champion-throne {
+  box-shadow: 0 0 0 5px #eab308, 0 0 28px rgba(234, 179, 8, 0.9) !important;
+  border-color: #fef08a !important;
+  animation: championGlow 1.8s infinite alternate ease-in-out;
+}
+@keyframes championGlow {
+  0% { box-shadow: 0 0 0 4px #d97706, 0 0 16px rgba(217, 119, 6, 0.65); }
+  100% { box-shadow: 0 0 0 6px #facc15, 0 0 32px rgba(250, 204, 21, 1); }
+}
+
+/* Badge Preview Frame Container */
+.badge-avatar-preview {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-full);
+  margin: 0 auto 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.3rem;
+  background: var(--bg-card);
+  border: 3px solid var(--border-color);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.badge-card:hover .badge-avatar-preview {
+  transform: scale(1.15);
+}
+
+.badge-frame-pill {
+  font-size: 0.725rem;
+  font-weight: 800;
+  color: var(--indigo);
+  background: var(--bg-tertiary);
+  padding: 0.25rem 0.55rem;
+  border-radius: var(--radius-full);
+  margin-top: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid var(--border-color);
 }
 
 /* ================= 📜 OFFICIAL HONOR CERTIFICATE STYLES ================= */

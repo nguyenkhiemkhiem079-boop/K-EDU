@@ -3933,25 +3933,84 @@ function equipShopItem(itemId, itemType) {
   renderGamificationTab();
 }
 
-/* 🏅 RENDER HUY HIỆU */
+/* 🏅 RENDER HUY HIỆU & THÀNH TỰU KÈM KHUNG VIỀN AVATAR */
 function renderBadgesShowcase(profile) {
   const badgesGrid = document.getElementById('badgesShowcaseGrid');
   if (!badgesGrid) return;
 
   const unlocked = new Set(profile.unlockedBadges || []);
+  const currentFrame = profile.frame || 'frame-target';
+
   badgesGrid.innerHTML = BADGES_DEFINITIONS.map(b => {
     const isUnlocked = unlocked.has(b.id);
+    const frame = b.frame || { name: 'Viền Cơ Bản', cssClass: 'frame-target', icon: '🎯' };
+    const isEquipped = currentFrame === frame.cssClass;
+
     return `
-      <div class="badge-card ${isUnlocked ? 'unlocked' : 'locked'}" onclick="triggerBadgeCelebration('${b.name}', ${isUnlocked})">
-        <div class="badge-icon-wrap" style="font-size:2.8rem;margin-bottom:0.4rem;">${b.icon}</div>
-        <div class="badge-title" style="font-weight:800;font-size:0.95rem;color:var(--text-primary);">${escapeHtml(b.name)}</div>
-        <div class="badge-desc" style="font-size:0.8rem;color:var(--text-secondary);margin-top:0.25rem;">${escapeHtml(b.desc)}</div>
-        <div style="margin-top:0.6rem;font-size:0.75rem;font-weight:800;color:${isUnlocked ? 'var(--primary-shadow)' : 'var(--text-muted)'};">
-          ${isUnlocked ? '✅ ĐÃ MỞ KHÓA' : '🔒 CHƯA ĐẠT'}
+      <div class="badge-card ${isUnlocked ? 'unlocked' : 'locked'}" onclick="triggerBadgeCelebration('${b.name}', ${isUnlocked}, '${frame.cssClass}', '${escapeHtml(frame.name)}')">
+        <!-- Khung Viền Avatar Mẫu -->
+        <div class="badge-avatar-preview avatar-with-frame ${isUnlocked ? frame.cssClass : ''}">
+          <span>${b.icon}</span>
+        </div>
+
+        <div class="badge-title" style="font-weight:900;font-size:0.95rem;color:var(--text-primary);margin-bottom:0.2rem;">
+          ${escapeHtml(b.name)}
+        </div>
+        
+        <div class="badge-desc" style="font-size:0.8rem;color:var(--text-secondary);line-height:1.4;">
+          ${escapeHtml(b.desc)}
+        </div>
+
+        <!-- Tên Khung Viền Thưởng -->
+        <div>
+          <span class="badge-frame-pill">
+            <span>🎁</span> <span>Khung: ${escapeHtml(frame.name)}</span>
+          </span>
+        </div>
+
+        <!-- Trạng Thái & Nút Trang Bị Khung -->
+        <div style="margin-top:0.65rem;">
+          ${isUnlocked ? (
+            isEquipped 
+              ? `<button type="button" class="btn btn-secondary btn-sm" style="width:100%;font-size:0.75rem;padding:0.35rem 0.5rem;font-weight:800;border-color:var(--primary);color:var(--primary);" disabled>
+                   ✅ Đang Dùng Khung
+                 </button>`
+              : `<button type="button" class="btn btn-primary btn-sm" onclick="event.stopPropagation(); equipBadgeFrame('${frame.cssClass}', '${escapeHtml(frame.name)}')" style="width:100%;font-size:0.75rem;padding:0.35rem 0.5rem;font-weight:800;">
+                   ⚡ Dùng Khung Này
+                 </button>`
+          ) : `
+            <div style="font-size:0.75rem;font-weight:800;color:var(--text-muted);padding:0.35rem 0;">
+              🔒 CHƯA ĐẠT
+            </div>
+          `}
         </div>
       </div>
     `;
   }).join('');
+}
+
+function equipBadgeFrame(frameCssClass, frameName) {
+  const profile = GamificationEngine.getUserProfile();
+  profile.frame = frameCssClass;
+  if (!profile.unlockedFrames) profile.unlockedFrames = [];
+  if (!profile.unlockedFrames.includes(frameCssClass)) profile.unlockedFrames.push(frameCssClass);
+  GamificationEngine.saveUserProfile(profile);
+
+  SoundEngine.playClick();
+  GamificationEngine.fireConfetti();
+  showToast(`✨ Đã đổi sang khung Avatar: ${frameName}!`, 'success');
+  renderGamificationTab();
+}
+
+function triggerBadgeCelebration(badgeName, isUnlocked, frameCssClass, frameName) {
+  if (isUnlocked) {
+    GamificationEngine.fireConfetti();
+    SoundEngine.playFanfare();
+    showToast(`🏆 Huy hiệu: ${badgeName} — Nhận khung: ${frameName}! Bấm "Dùng Khung Này" để trang bị!`, 'success');
+  } else {
+    SoundEngine.playWarning();
+    showToast(`🔒 Huy hiệu: ${badgeName} chưa mở khóa. Hãy hoàn thành thử thách để nhận khung viền độc quyền này nhé!`, 'warn');
+  }
 }
 
 /* ================= 📜 HONOR CERTIFICATE HANDLERS ================= */
@@ -4039,17 +4098,6 @@ function shareCertificateToZalo() {
   }).catch(() => {
     showToast('🎉 Hãy chụp màn hình Bằng Khen để gửi vào Zalo cho Bố Mẹ nhé!', 'success');
   });
-}
-
-function triggerBadgeCelebration(badgeName, isUnlocked) {
-  if (isUnlocked) {
-    GamificationEngine.fireConfetti();
-    SoundEngine.playFanfare();
-    showToast(`🏆 Huy hiệu: ${badgeName} đã mở khóa!`, 'success');
-  } else {
-    SoundEngine.playWarning();
-    showToast(`🔒 Huy hiệu: ${badgeName} chưa đạt. Hãy luyện thêm bài thi nhé!`, 'warn');
-  }
 }
 
 function celebrateConfetti() {
