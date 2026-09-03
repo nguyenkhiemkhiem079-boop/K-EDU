@@ -111,6 +111,32 @@ GIANG, 8"></textarea>
         </div>
       </form>
     </div>
+  <!-- ================= PAUSED EXAM MODAL ================= -->
+  <div id="pauseExamModal" class="auth-modal-backdrop hidden">
+    <div class="auth-card" style="max-width:480px;border:3px solid var(--amber);box-shadow:0 20px 40px rgba(0,0,0,0.35), 0 8px 0 var(--amber-shadow);">
+      <div style="font-size:3.5rem;margin-bottom:0.5rem;">⏸️</div>
+      <h2 style="font-size:1.55rem;color:var(--text-primary);margin-bottom:0.4rem;">Bài Thi Đang Tạm Dừng</h2>
+      <p style="color:var(--text-secondary);font-size:0.9rem;font-weight:600;line-height:1.5;margin-bottom:1.25rem;">
+        Đồng hồ đếm ngược đã dừng. Toàn bộ đáp án bạn đã chọn đã được hệ thống lưu trữ an toàn. Bạn có thể giải quyết việc đột xuất và tiếp tục làm bài bất kỳ lúc nào!
+      </p>
+
+      <div style="background:var(--bg-tertiary);border:2px solid var(--border-color);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1.25rem;text-align:left;">
+        <div style="font-weight:800;font-size:1rem;color:var(--text-primary);margin-bottom:0.4rem;" id="pausedExamTitle">Đề Kiểm Tra Toán</div>
+        <div style="display:flex;justify-content:space-between;font-size:0.875rem;font-weight:700;color:var(--text-secondary);flex-wrap:wrap;gap:0.3rem;">
+          <span id="pausedExamProgress" style="color:var(--indigo);">Đã làm: 0/0 câu</span>
+          <span id="pausedExamTimeLeft" style="color:var(--amber-shadow);">⏱️ Còn lại: 00:00</span>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;justify-content:center;">
+        <button type="button" class="btn btn-secondary" onclick="exitPausedExamToHome()" style="flex:1;min-width:150px;">
+          🚪 Về Trang Chủ (Đã Lưu)
+        </button>
+        <button type="button" class="btn btn-primary btn-lg" onclick="resumeStudentExam()" style="flex:1.2;min-width:170px;">
+          ▶️ Tiếp Tục Làm Bài 🚀
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- ================= TOP NAVBAR ================= -->
@@ -168,6 +194,9 @@ GIANG, 8"></textarea>
       
       <!-- Student Profile & Exam Feed Arena -->
       <div id="studentJoinSection">
+        <!-- Active Paused Exam Banner (Hidden by default) -->
+        <div id="activePausedExamBanner" class="hidden" style="max-width:720px;margin:0 auto 1.25rem;"></div>
+
         <div class="card" style="max-width:720px;margin:0 auto 1.5rem;background:linear-gradient(180deg, var(--bg-card) 0%, var(--bg-primary) 100%);">
           <div style="text-align:center;margin-bottom:1.25rem;">
             <div style="font-size:3rem;margin-bottom:0.25rem;">🦊 ⚡ 📚</div>
@@ -275,7 +304,12 @@ GIANG, 8"></textarea>
                   Đã làm: 0/12 câu (0%)
                 </div>
               </div>
-              <div class="timer-box" id="splitExamTimerBox">⏱️ 00:00</div>
+              <div style="display:flex;align-items:center;gap:0.4rem;">
+                <div class="timer-box" id="splitExamTimerBox">⏱️ 00:00</div>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="pauseStudentExam()" title="Tạm dừng làm bài và lưu tiến độ" style="padding:0.45rem 0.65rem;font-size:1.05rem;border-radius:var(--radius-md);height:38px;display:flex;align-items:center;justify-content:center;font-weight:800;">
+                  ⏸️
+                </button>
+              </div>
             </div>
 
             <!-- Live Leaderboard Drawer -->
@@ -287,11 +321,16 @@ GIANG, 8"></textarea>
             <!-- Scrollable 3D Bubble Question Rows -->
             <div class="sheet-scroll-body" id="studentAnswerSheetBody"></div>
 
-            <div class="sheet-footer">
-              <span style="font-size:0.85rem;font-weight:700;color:var(--text-muted);">★ = Đánh dấu xem lại</span>
-              <button type="button" class="btn btn-success btn-lg" onclick="submitStudentExam()">
-                Nộp Bài 🚀
+            <div class="sheet-footer" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.6rem;">
+              <button type="button" class="btn btn-secondary" onclick="pauseStudentExam()" style="display:flex;align-items:center;gap:0.4rem;font-weight:800;font-size:0.95rem;">
+                <span>⏸️</span> <span>Tạm Dừng</span>
               </button>
+              <div style="display:flex;align-items:center;gap:0.6rem;">
+                <span style="font-size:0.8rem;font-weight:700;color:var(--text-muted);">★ = Đánh dấu</span>
+                <button type="button" class="btn btn-success btn-lg" onclick="submitStudentExam()">
+                  Nộp Bài 🚀
+                </button>
+              </div>
             </div>
           </div>
 
@@ -975,12 +1014,12 @@ GIANG, 8"></textarea>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
 
   <!-- Main Scripts -->
-  <script src="js/firebase.js?v=1.8"></script>
-  <script src="js/storage.js?v=1.8"></script>
-  <script src="js/sound.js?v=1.8"></script>
-  <script src="js/gamification.js?v=1.8"></script>
-  <script src="js/pdfExtractor.js?v=1.8"></script>
-  <script src="js/mathGenerator.js?v=1.8"></script>
-  <script src="js/app.js?v=1.8"></script>
+  <script src="js/firebase.js?v=1.9"></script>
+  <script src="js/storage.js?v=1.9"></script>
+  <script src="js/sound.js?v=1.9"></script>
+  <script src="js/gamification.js?v=1.9"></script>
+  <script src="js/pdfExtractor.js?v=1.9"></script>
+  <script src="js/mathGenerator.js?v=1.9"></script>
+  <script src="js/app.js?v=1.9"></script>
 </body>
 </html>
