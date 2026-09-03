@@ -340,6 +340,10 @@ function switchTab(tabId) {
     sec.classList.toggle('active', sec.id === 'tab' + capitalize(tabId));
   });
 
+  if (tabId !== 'student') {
+    document.body.classList.remove('in-exam-session');
+  }
+
   SoundEngine.playClick();
 
   if (tabId === 'gamification') {
@@ -2569,6 +2573,9 @@ async function startExamWithQuizId(quizId) {
 
   document.getElementById('studentJoinSection').classList.add('hidden');
   document.getElementById('studentExamSection').classList.remove('hidden');
+  document.body.classList.add('in-exam-session');
+  setMobileExamView('pdf');
+  updateMobileSheetBadges();
   document.getElementById('splitExamExamTitle').textContent = quiz.title;
   document.getElementById('splitExamStudentInfo').textContent = `${name} — Lớp ${className}`;
 
@@ -2712,6 +2719,48 @@ function updateSheetProgress() {
   if (fillBar) {
     fillBar.style.width = `${pct}%`;
   }
+  updateMobileSheetBadges();
+}
+
+/* ================= 📱 MOBILE EXAM EXPANDED VIEW CONTROLLER ================= */
+function setMobileExamView(mode) {
+  const layout = document.querySelector('.split-exam-layout');
+  if (!layout) return;
+
+  layout.classList.remove('view-pdf', 'view-sheet', 'view-both');
+  layout.classList.add('view-' + mode);
+
+  const btnMap = {
+    pdf: 'btnMobileViewPdf',
+    sheet: 'btnMobileViewSheet',
+    both: 'btnMobileViewBoth'
+  };
+
+  Object.entries(btnMap).forEach(([m, id]) => {
+    const btn = document.getElementById(id);
+    if (btn) {
+      btn.classList.toggle('active', m === mode);
+    }
+  });
+
+  // Smooth scroll to top of pane when switching views
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  if (typeof SoundEngine !== 'undefined' && SoundEngine.playClick) {
+    SoundEngine.playClick();
+  }
+}
+
+function updateMobileSheetBadges() {
+  if (!AppState.currentQuiz) return;
+  const total = AppState.currentQuiz.answerKeys ? AppState.currentQuiz.answerKeys.length : 0;
+  const answered = Object.values(AppState.studentAnswers || {}).filter(v => v !== undefined && v !== '').length;
+  const text = `${answered}/${total}`;
+
+  const b1 = document.getElementById('mobileAnsweredBadge');
+  const b2 = document.getElementById('mobileFloatingAnswerCount');
+  if (b1) b1.textContent = text;
+  if (b2) b2.textContent = text;
 }
 
 /* Timer & Anti Cheat */
@@ -2900,6 +2949,7 @@ function exitPausedExamToHome() {
   }
 
   // Return to student view
+  document.body.classList.remove('in-exam-session');
   document.getElementById('studentExamSection')?.classList.add('hidden');
   document.getElementById('studentJoinSection')?.classList.remove('hidden');
   document.getElementById('studentResultSection')?.classList.add('hidden');
@@ -3085,6 +3135,7 @@ async function submitStudentExam(isAuto = false) {
   const rewards = GamificationEngine.awardExamRewards(resultRecord);
   updateGamifyBar();
 
+  document.body.classList.remove('in-exam-session');
   document.getElementById('studentExamSection').classList.add('hidden');
   document.getElementById('studentResultSection').classList.remove('hidden');
 
@@ -3311,6 +3362,7 @@ function showToast(msg, type = 'info') {
 }
 
 function restartStudentJoin() {
+  document.body.classList.remove('in-exam-session');
   document.getElementById('studentResultSection').classList.add('hidden');
   document.getElementById('studentExamSection').classList.add('hidden');
   document.getElementById('studentJoinSection').classList.remove('hidden');
