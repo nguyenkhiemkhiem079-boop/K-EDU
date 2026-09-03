@@ -221,6 +221,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderGamificationTab();
   initAntiCheatListeners();
   checkUrlQuizParam();
+  checkAndRenderPausedExamBanner();
   initFirebaseRealtimeSync();
 });
 
@@ -350,6 +351,7 @@ function switchTab(tabId) {
     renderAssignTargetsSelector();
   } else if (tabId === 'student') {
     updatePersonalizedExamFeed();
+    checkAndRenderPausedExamBanner();
   } else if (tabId === 'parent') {
     renderParentTab();
   }
@@ -2374,6 +2376,7 @@ function updatePersonalizedExamFeed() {
   const currentName = (document.getElementById('studentJoinName')?.value || '').trim();
   const currentClass = (document.getElementById('studentJoinClass')?.value || '').trim();
   renderSampleQuizzes(currentName, currentClass);
+  checkAndRenderPausedExamBanner();
 }
 
 async function renderSampleQuizzes(filterName = '', filterClass = '') {
@@ -2539,9 +2542,24 @@ async function startExamWithQuizId(quizId) {
   AppState.currentQuizId = quizId;
   AppState.studentName = name;
   AppState.studentClass = className;
-  AppState.studentAnswers = {};
-  AppState.flaggedQuestions.clear();
-  AppState.tabSwitches = 0;
+
+  // Kiểm tra xem học sinh có phiên làm bài đang tạm dừng cho đề này không
+  const pausedSession = getPausedExamSession(name, quizId);
+  const isResuming = !!pausedSession;
+
+  if (isResuming) {
+    AppState.studentAnswers = { ...(pausedSession.studentAnswers || {}) };
+    AppState.flaggedQuestions = new Set(pausedSession.flaggedQuestions || []);
+    AppState.tabSwitches = pausedSession.tabSwitches || 0;
+    AppState.totalExamSeconds = pausedSession.totalExamSeconds || (quiz.timeLimit * 60);
+    AppState.secondsLeft = (pausedSession.secondsLeft !== undefined) ? pausedSession.secondsLeft : AppState.totalExamSeconds;
+  } else {
+    AppState.studentAnswers = {};
+    AppState.flaggedQuestions.clear();
+    AppState.tabSwitches = 0;
+    AppState.totalExamSeconds = quiz.timeLimit * 60;
+    AppState.secondsLeft = AppState.totalExamSeconds;
+  }
 
   const profile = GamificationEngine.getUserProfile();
   profile.name = name;
@@ -2575,8 +2593,11 @@ async function startExamWithQuizId(quizId) {
 
   renderStudentAnswerSheet(AppState.currentQuiz.answerKeys);
 
-  AppState.totalExamSeconds = quiz.timeLimit * 60;
-  startExamTimer(AppState.totalExamSeconds);
+  startExamTimer(AppState.secondsLeft);
+
+  if (isResuming) {
+    showToast('✨ Đã khôi phục toàn bộ các câu trả lời và thời gian làm bài của bạn!', 'success');
+  }
 
   if (quiz.showLeaderboard) {
     document.getElementById('splitLiveLeaderboardBox').classList.remove('hidden');
@@ -2657,11 +2678,13 @@ function selectBubbleAnswer(num, opt) {
   AppState.studentAnswers[num] = opt;
   SoundEngine.playClick();
   renderStudentAnswerSheet(AppState.currentQuiz.answerKeys);
+  saveCurrentExamSessionToPaused();
 }
 
 function recordSheetEssay(num, val) {
   AppState.studentAnswers[num] = val;
   updateSheetProgress();
+  saveCurrentExamSessionToPaused();
 }
 
 function toggleFlagSheet(num) {
@@ -2672,6 +2695,7 @@ function toggleFlagSheet(num) {
   }
   SoundEngine.playClick();
   renderStudentAnswerSheet(AppState.currentQuiz.answerKeys);
+  saveCurrentExamSessionToPaused();
 }
 
 function updateSheetProgress() {
@@ -2724,6 +2748,11 @@ function updateExamTimerUI() {
 function initAntiCheatListeners() {
   document.addEventListener('visibilitychange', () => {
     const examSection = document.getElementById('studentExamSection');
+    const pauseModal = document.getElementById('pauseExamModal');
+    // Khi đang tạm dừng làm bài, không tính vi phạm rời tab
+    if (pauseModal && !pauseModal.classList.contains('hidden')) {
+      return;
+    }
     if (document.hidden && examSection && !examSection.classList.contains('hidden')) {
       AppState.tabSwitches++;
       const banner = document.getElementById('splitExamCheatBanner');
@@ -2742,6 +2771,207 @@ function initAntiCheatListeners() {
       showToast('⚠️ Không thể sao chép nội dung trong phòng thi!', 'warn');
     }
   });
+}
+
+/* ================= PAUSE & RESUME EXAM ENGINE ================= */
+function getPausedExamStorageKey(name, quizId) {
+  const cleanName = (name || '').trim().toUpperCase();
+  return 'khiemedu_paused_exam_' + cleanName + '_' + quizId;
+}
+
+function getPausedExamSession(name, quizId) {
+  try {
+    const key = getPausedExamStorageKey(name, quizId);
+    const raw = localStorage.getItem(key);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return null;
+}
+
+function getActivePausedExamSession() {
+  try {
+    const raw = localStorage.getItem('khiemedu_active_paused_session');
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return null;
+}
+
+function saveCurrentExamSessionToPaused() {
+  if (!AppState.currentQuiz || !AppState.currentQuizId) return null;
+
+  const session = {
+    quizId: AppState.currentQuizId,
+    quizTitle: AppState.currentQuiz.title,
+    quizTargetClass: AppState.currentQuiz.targetClass,
+    quizExamTerm: AppState.currentQuiz.examTerm,
+    timeLimit: AppState.currentQuiz.timeLimit,
+    studentName: AppState.studentName,
+    studentClass: AppState.studentClass,
+    studentAvatar: AppState.studentAvatar,
+    studentAnswers: { ...AppState.studentAnswers },
+    flaggedQuestions: Array.from(AppState.flaggedQuestions),
+    secondsLeft: AppState.secondsLeft,
+    totalExamSeconds: AppState.totalExamSeconds,
+    tabSwitches: AppState.tabSwitches,
+    pausedAt: new Date().toISOString()
+  };
+
+  const key = getPausedExamStorageKey(AppState.studentName, AppState.currentQuizId);
+  localStorage.setItem(key, JSON.stringify(session));
+  localStorage.setItem('khiemedu_active_paused_session', JSON.stringify(session));
+  return session;
+}
+
+function clearPausedExamSession(studentName, quizId) {
+  if (studentName && quizId) {
+    const key = getPausedExamStorageKey(studentName, quizId);
+    localStorage.removeItem(key);
+  }
+  const active = getActivePausedExamSession();
+  if (active && (!quizId || active.quizId === quizId)) {
+    localStorage.removeItem('khiemedu_active_paused_session');
+  }
+  checkAndRenderPausedExamBanner();
+}
+
+function pauseStudentExam() {
+  if (!AppState.currentQuiz || !AppState.currentQuizId) return;
+
+  // 1. Freeze timer
+  if (AppState.timerInterval) {
+    clearInterval(AppState.timerInterval);
+    AppState.timerInterval = null;
+  }
+
+  // 2. Save session snapshot
+  const session = saveCurrentExamSessionToPaused();
+  if (!session) return;
+
+  // 3. Populate modal UI
+  const total = AppState.currentQuiz.answerKeys ? AppState.currentQuiz.answerKeys.length : 0;
+  const answered = Object.values(AppState.studentAnswers).filter(v => v !== undefined && v !== '').length;
+  const m = Math.floor(AppState.secondsLeft / 60);
+  const s = AppState.secondsLeft % 60;
+
+  const titleEl = document.getElementById('pausedExamTitle');
+  const progressEl = document.getElementById('pausedExamProgress');
+  const timeEl = document.getElementById('pausedExamTimeLeft');
+
+  if (titleEl) titleEl.textContent = session.quizTitle;
+  if (progressEl) progressEl.textContent = `Đã làm: ${answered}/${total} câu (${total ? Math.round(answered / total * 100) : 0}%)`;
+  if (timeEl) timeEl.textContent = `⏱️ Còn lại: ${m} phút ${String(s).padStart(2, '0')} giây`;
+
+  const modal = document.getElementById('pauseExamModal');
+  if (modal) modal.classList.remove('hidden');
+
+  if (typeof SoundEngine !== 'undefined' && SoundEngine.playWarning) {
+    SoundEngine.playWarning();
+  }
+  showToast('⏸️ Bài thi đã tạm dừng! Toàn bộ đáp án của bạn đã được lưu an toàn.', 'info');
+}
+
+function resumeStudentExam() {
+  const modal = document.getElementById('pauseExamModal');
+  if (modal) modal.classList.add('hidden');
+
+  // Resume countdown
+  if (AppState.secondsLeft > 0) {
+    startExamTimer(AppState.secondsLeft);
+  }
+
+  if (typeof SoundEngine !== 'undefined' && SoundEngine.playClick) {
+    SoundEngine.playClick();
+  }
+  showToast('▶️ Đã tiếp tục làm bài thi!', 'success');
+}
+
+function exitPausedExamToHome() {
+  const modal = document.getElementById('pauseExamModal');
+  if (modal) modal.classList.add('hidden');
+
+  // Freeze any timers
+  if (AppState.timerInterval) {
+    clearInterval(AppState.timerInterval);
+    AppState.timerInterval = null;
+  }
+  if (AppState.leaderboardTimer) {
+    clearInterval(AppState.leaderboardTimer);
+    AppState.leaderboardTimer = null;
+  }
+
+  // Return to student view
+  document.getElementById('studentExamSection')?.classList.add('hidden');
+  document.getElementById('studentJoinSection')?.classList.remove('hidden');
+  document.getElementById('studentResultSection')?.classList.add('hidden');
+
+  checkAndRenderPausedExamBanner();
+  updatePersonalizedExamFeed();
+
+  showToast('💾 Đã lưu bài thi dở dang! Bạn có thể quay lại làm tiếp bất kỳ lúc nào.', 'success');
+}
+
+function checkAndRenderPausedExamBanner() {
+  const banner = document.getElementById('activePausedExamBanner');
+  if (!banner) return;
+
+  const active = getActivePausedExamSession();
+  if (!active) {
+    banner.classList.add('hidden');
+    banner.innerHTML = '';
+    return;
+  }
+
+  const answered = Object.values(active.studentAnswers || {}).filter(v => v !== undefined && v !== '').length;
+  const m = Math.floor((active.secondsLeft || 0) / 60);
+  const s = (active.secondsLeft || 0) % 60;
+
+  banner.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;background:linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);border:2.5px solid var(--amber);border-radius:var(--radius-xl);padding:1.1rem 1.4rem;box-shadow:0 8px 24px rgba(245,158,11,0.2), 0 4px 0 var(--amber-shadow);animation:modalPop 0.3s ease;">
+      <div style="display:flex;align-items:center;gap:1rem;">
+        <div style="font-size:2.4rem;background:#fde68a;width:56px;height:56px;border-radius:var(--radius-full);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(245,158,11,0.3);">
+          ⏸️
+        </div>
+        <div>
+          <div style="font-size:0.75rem;font-weight:900;color:var(--amber-shadow);text-transform:uppercase;letter-spacing:1px;">
+            ⚡ BÀI THI ĐANG TẠM DỪNG CỦA BẠN (ĐÃ LƯU TIẾN ĐỘ)
+          </div>
+          <div style="font-size:1.15rem;font-weight:900;color:var(--text-primary);margin:2px 0;">
+            ${escapeHtml(active.quizTitle)}
+          </div>
+          <div style="font-size:0.85rem;color:var(--text-secondary);font-weight:700;">
+            👤 <strong>${escapeHtml(active.studentName)}</strong> (${escapeHtml(active.studentClass)}) · ⏱️ Còn lại: <strong style="color:var(--amber-shadow);">${m}p ${String(s).padStart(2, '0')}s</strong> · Đã trả lời: <strong style="color:var(--primary-shadow);">${answered} câu</strong>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="discardPausedExamSession('${escapeHtml(active.studentName)}', '${escapeHtml(active.quizId)}')">
+          🗑️ Hủy Bài Này
+        </button>
+        <button type="button" class="btn btn-primary btn-lg" onclick="resumeActivePausedSession()" style="background:var(--amber);border-color:var(--amber-shadow);color:#fff;box-shadow:0 4px 0 var(--amber-shadow);font-weight:900;">
+          ▶️ Tiếp Tục Thi Ngay 🚀
+        </button>
+      </div>
+    </div>
+  `;
+  banner.classList.remove('hidden');
+}
+
+function resumeActivePausedSession() {
+  const active = getActivePausedExamSession();
+  if (!active) return;
+  // Điền tên & lớp nếu người dùng chưa nhập
+  const nameInput = document.getElementById('studentJoinName');
+  const classInput = document.getElementById('studentJoinClass');
+  if (nameInput && active.studentName) nameInput.value = active.studentName;
+  if (classInput && active.studentClass) classInput.value = active.studentClass;
+  startExamWithQuizId(active.quizId);
+}
+
+function discardPausedExamSession(name, quizId) {
+  if (confirm('⚠️ Bạn có chắc muốn hủy bỏ bài thi đang làm dở này? Dữ liệu câu trả lời sẽ bị xóa.')) {
+    clearPausedExamSession(name, quizId);
+    showToast('🗑️ Đã hủy bỏ bài thi dở dang.', 'info');
+  }
 }
 
 /* Smart Math Matcher */
@@ -2820,6 +3050,9 @@ function parseFraction(str) {
 async function submitStudentExam(isAuto = false) {
   if (AppState.timerInterval) clearInterval(AppState.timerInterval);
   if (AppState.leaderboardTimer) clearInterval(AppState.leaderboardTimer);
+
+  // Xóa phiên tạm dừng cho bài thi này
+  clearPausedExamSession(AppState.studentName, AppState.currentQuizId);
 
   const quiz = AppState.currentQuiz;
   const { totalEarnedScore, correctCount, total, reviewData } =
@@ -3082,6 +3315,7 @@ function restartStudentJoin() {
   document.getElementById('studentExamSection').classList.add('hidden');
   document.getElementById('studentJoinSection').classList.remove('hidden');
   updatePersonalizedExamFeed();
+  checkAndRenderPausedExamBanner();
   SoundEngine.playClick();
 }
 
