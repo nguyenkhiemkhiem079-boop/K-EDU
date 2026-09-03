@@ -29,9 +29,17 @@ const FirebaseEngine = {
 
       if (configStr) {
         try {
-          config = JSON.parse(configStr);
+          const parsed = JSON.parse(configStr);
+          if (parsed && typeof parsed.apiKey === 'string' && parsed.apiKey.startsWith('AIzaSy')) {
+            config = parsed;
+          } else {
+            console.warn('Stored Firebase config had corrupted/autofilled apiKey. Resetting to defaultConfig.');
+            localStorage.removeItem('khiemedu_firebase_config');
+            config = this.defaultConfig;
+          }
         } catch (e) {
           console.error("Error parsing localstorage config, using default:", e);
+          config = this.defaultConfig;
         }
       }
 
