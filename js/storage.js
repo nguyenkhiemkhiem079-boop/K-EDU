@@ -17,8 +17,21 @@ const StorageEngine = {
     if (window.FirebaseEngine) {
       await window.FirebaseEngine.init();
     }
-    this.seedSampleDataIfEmpty();
+    await this.purgeSampleQuizzes();
     this.seedStudentRosterIfEmpty();
+  },
+
+  async purgeSampleQuizzes() {
+    if (localStorage.getItem(STORAGE_PREFIX + 'sample_purged_v1') === '1') return;
+    const sampleIds = [
+      'TOAN6_GK1', 'TOAN7_GK1', 'TOAN8_GK1', 'TOAN9_GK1',
+      'TOAN_TS10', 'TOAN10_GK1', 'TOAN11_GK1', 'TOAN12_GK1'
+    ];
+    for (const id of sampleIds) {
+      await this.deleteQuiz(id);
+    }
+    localStorage.setItem(STORAGE_PREFIX + 'sample_purged_v1', '1');
+    localStorage.setItem(STORAGE_PREFIX + 'sample_seeded_v3', 'purged');
   },
 
   initIndexedDB() {
@@ -260,12 +273,22 @@ const StorageEngine = {
     return null;
   },
 
+  getDeletedQuizIds() {
+    try {
+      const raw = localStorage.getItem(STORAGE_PREFIX + 'deleted_quizzes');
+      return new Set(raw ? JSON.parse(raw) : []);
+    } catch {
+      return new Set();
+    }
+  },
+
   async getAllQuizzes() {
+    const deletedIds = this.getDeletedQuizIds();
     const localKeys = await this.list('quiz:');
     const localList = [];
     for (const key of localKeys) {
       const q = await this.get(key);
-      if (q) {
+      if (q && !deletedIds.has(q.id)) {
         if (!q.pdfDataUrl && q.examHtml) {
           q.pdfDataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(q.examHtml);
         }
@@ -279,12 +302,12 @@ const StorageEngine = {
         if (cloudQuizzes && cloudQuizzes.length > 0) {
           // Merge local và cloud thông minh theo ID
           const quizMap = new Map();
-          // Đưa đề local vào trước
-          localList.forEach(q => { if (q && q.id) quizMap.set(q.id, q); });
+          // Đưa đề local vào trước (bỏ qua đề đã xóa)
+          localList.forEach(q => { if (q && q.id && !deletedIds.has(q.id)) quizMap.set(q.id, q); });
 
           // Cloud cập nhật hoặc bổ sung
           cloudQuizzes.forEach(cq => {
-            if (!cq || !cq.id) return;
+            if (!cq || !cq.id || deletedIds.has(cq.id)) return;
             if (!cq.pdfDataUrl && cq.examHtml) {
               cq.pdfDataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(cq.examHtml);
             }
@@ -323,8 +346,17 @@ const StorageEngine = {
   },
 
   async deleteQuiz(quizId) {
+    // Record tombstone so it never resurrects
+    const deletedIds = this.getDeletedQuizIds();
+    deletedIds.add(quizId);
+    localStorage.setItem(STORAGE_PREFIX + 'deleted_quizzes', JSON.stringify(Array.from(deletedIds)));
+
     if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
-      await window.FirebaseEngine.deleteQuiz(quizId);
+      try {
+        await window.FirebaseEngine.deleteQuiz(quizId);
+      } catch (e) {
+        console.warn('Firebase deleteQuiz error:', e);
+      }
     }
     await this.remove('quiz:' + quizId);
     await this.removePdfBlob(quizId);
@@ -416,7 +448,7 @@ const StorageEngine = {
   },
 
   seedSampleDataIfEmpty(force = false) {
-    if (!force && localStorage.getItem(STORAGE_PREFIX + 'sample_seeded_v3')) {
+    if (!force) {
       return;
     }
 

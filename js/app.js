@@ -2231,9 +2231,9 @@ async function renderTeacherQuizManager() {
   wrap.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
       <span style="font-weight:800;color:var(--text-secondary);">Tổng số đề thi: <strong>${quizzes.length}</strong></span>
-      <div style="display:flex;gap:0.5rem;">
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
         <button class="btn btn-primary btn-sm" onclick="bulkSetAllQuizzesPublic()">🌍 Công Khai Tất Cả Đề</button>
-        <button class="btn btn-secondary btn-sm" onclick="resetSampleQuiz()">🔄 Nạp đề mẫu</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteAllSampleQuizzes()">🗑️ Xóa Tất Cả Đề Mẫu</button>
       </div>
     </div>
 
@@ -2314,22 +2314,39 @@ function quickViewResults(quizId) {
 
 async function confirmDeleteQuiz(quizId, quizTitle) {
   if (confirm(`⚠️ BẠN CÓ CHẮC CHẮN MUỐN XÓA ĐỀ THI NÀY?\n\n- Tên đề: ${quizTitle}\n\nLưu ý: Toàn bộ bảng điểm và kết quả bài làm của học sinh cho đề này cũng sẽ bị xóa vĩnh viễn.`)) {
+    showToast('⚡ Đang xóa đề thi...', 'info');
     await StorageEngine.deleteQuiz(quizId);
     showToast(`🗑️ Đã xóa thành công đề thi!`, 'success');
     SoundEngine.playClick();
-    updatePersonalizedExamFeed();
-    renderTeacherQuizManager();
-    renderTeacherAnalyticsDashboard();
+    await updatePersonalizedExamFeed();
+    await renderTeacherQuizManager();
+    await renderTeacherAnalyticsDashboard();
   }
 }
 
-async function resetSampleQuiz() {
-  StorageEngine.seedSampleDataIfEmpty(true);
-  showToast('✅ Đã nạp lại đề thi mẫu thành công!', 'success');
-  updatePersonalizedExamFeed();
-  renderTeacherQuizManager();
-  renderTeacherAnalyticsDashboard();
-  SoundEngine.playCorrect();
+async function deleteAllSampleQuizzes() {
+  const sampleIds = [
+    'TOAN6_GK1', 'TOAN7_GK1', 'TOAN8_GK1', 'TOAN9_GK1',
+    'TOAN_TS10', 'TOAN10_GK1', 'TOAN11_GK1', 'TOAN12_GK1'
+  ];
+
+  if (!confirm('🗑️ Bạn có chắc chắn muốn XÓA SẠCH toàn bộ các đề thi mẫu khỏi hệ thống? (Các đề do bạn tự tạo vẫn được giữ nguyên)')) {
+    return;
+  }
+
+  showToast('⚡ Đang xóa sạch tất cả đề thi mẫu...', 'info');
+
+  for (const id of sampleIds) {
+    await StorageEngine.deleteQuiz(id);
+  }
+
+  showToast('✅ Đã xóa sạch toàn bộ đề mẫu khỏi máy và Cloud!', 'success');
+  if (typeof SoundEngine !== 'undefined' && SoundEngine.playCorrect) {
+    SoundEngine.playCorrect();
+  }
+  await updatePersonalizedExamFeed();
+  await renderTeacherQuizManager();
+  await renderTeacherAnalyticsDashboard();
 }
 
 /* ================= PERSONALIZED EXAM FEED ================= */
