@@ -60,24 +60,42 @@ const StorageEngine = {
         resolve(null);
         return;
       }
-      const req = indexedDB.open(DB_NAME, DB_VERSION);
-      req.onupgradeneeded = (e) => {
-        const db = e.target.result;
-        if (!db.objectStoreNames.contains(STORE_PDFS)) {
-          db.createObjectStore(STORE_PDFS);
-        }
-        if (!db.objectStoreNames.contains(STORE_SUBMISSIONS)) {
-          db.createObjectStore(STORE_SUBMISSIONS);
-        }
-      };
-      req.onsuccess = (e) => {
-        this.db = e.target.result;
-        resolve(this.db);
-      };
-      req.onerror = (e) => {
-        console.error('IndexedDB open error:', e);
+      const timer = setTimeout(() => {
+        console.warn('IndexedDB open timeout, falling back');
         resolve(null);
-      };
+      }, 1000);
+
+      try {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(STORE_PDFS)) {
+            db.createObjectStore(STORE_PDFS);
+          }
+          if (!db.objectStoreNames.contains(STORE_SUBMISSIONS)) {
+            db.createObjectStore(STORE_SUBMISSIONS);
+          }
+        };
+        req.onsuccess = (e) => {
+          clearTimeout(timer);
+          this.db = e.target.result;
+          resolve(this.db);
+        };
+        req.onerror = (e) => {
+          clearTimeout(timer);
+          console.error('IndexedDB open error:', e);
+          resolve(null);
+        };
+        req.onblocked = (e) => {
+          clearTimeout(timer);
+          console.warn('IndexedDB open blocked');
+          resolve(null);
+        };
+      } catch (err) {
+        clearTimeout(timer);
+        console.warn('IndexedDB exception:', err);
+        resolve(null);
+      }
     });
   },
 
@@ -237,6 +255,13 @@ const StorageEngine = {
     const quizToSave = { ...quiz };
     quizToSave.updatedAt = new Date().toISOString();
 
+    // Remove from deleted tombstone so it immediately shows up
+    const deletedIds = this.getDeletedQuizIds();
+    if (deletedIds.has(quiz.id)) {
+      deletedIds.delete(quiz.id);
+      localStorage.setItem(STORAGE_PREFIX + 'deleted_quizzes', JSON.stringify(Array.from(deletedIds)));
+    }
+
     // Preserve examHtml for auto-generated or HTML exams
     if (!quizToSave.examHtml && quizToSave.pdfDataUrl && typeof quizToSave.pdfDataUrl === 'string' && quizToSave.pdfDataUrl.startsWith('data:text/html')) {
       try {
@@ -247,31 +272,42 @@ const StorageEngine = {
       } catch (e) {}
     }
 
-    // 1. Luôn lưu nội dung file PDF / HTML gốc vào IndexedDB để đảm bảo an toàn tuyệt đối
-    if (quizToSave.pdfDataUrl && (quizToSave.pdfDataUrl.startsWith('data:') || quizToSave.pdfDataUrl.startsWith('blob:') || quizToSave.pdfDataUrl instanceof Blob)) {
-      await this.savePdfBlob(quiz.id, quizToSave.pdfDataUrl);
-    }
-
-    let cloudResult = null;
-    // 2. Nếu Firebase Cloud đang bật, lưu và upload PDF lên Firebase
-    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
-      cloudResult = await window.FirebaseEngine.saveQuiz(quizToSave);
-      if (cloudResult && cloudResult.downloadUrl) {
-        quizToSave.pdfDataUrl = cloudResult.downloadUrl;
-        quiz.pdfDataUrl = cloudResult.downloadUrl;
-      }
-    }
-
-    // 3. Chuẩn bị lưu vào LocalStorage: chỉ loại bỏ chuỗi Data URL nếu quá lớn (> 300KB).
-    // Đối với đề thi tự sinh dạng HTML (~15KB), GIỮ NGUYÊN trong LocalStorage để học sinh & máy local mở được ngay cả khi offline!
+    // 1. Save to LocalStorage IMMEDIATELY (guaranteed 0ms local persistence, UI updates instantly)
     const localCacheQuiz = { ...quizToSave };
     if (localCacheQuiz.pdfDataUrl && (localCacheQuiz.pdfDataUrl.startsWith('data:') || localCacheQuiz.pdfDataUrl.startsWith('blob:'))) {
       if (typeof localCacheQuiz.pdfDataUrl === 'string' && localCacheQuiz.pdfDataUrl.length > 300000) {
         delete localCacheQuiz.pdfDataUrl;
       }
     }
-
     await this.set('quiz:' + quiz.id, localCacheQuiz);
+    if (this.channel) {
+      this.channel.postMessage({ type: 'quizzes_updated', quizId: quiz.id });
+    }
+
+    // 2. Save PDF / HTML to IndexedDB safely in background
+    if (quizToSave.pdfDataUrl && (quizToSave.pdfDataUrl.startsWith('data:') || quizToSave.pdfDataUrl.startsWith('blob:') || quizToSave.pdfDataUrl instanceof Blob)) {
+      try {
+        await this.savePdfBlob(quiz.id, quizToSave.pdfDataUrl);
+      } catch (e) {
+        console.warn('savePdfBlob non-fatal error:', e);
+      }
+    }
+
+    // 3. Push to Firebase Cloud in background/parallel (safe from crashes)
+    let cloudResult = null;
+    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
+      try {
+        cloudResult = await window.FirebaseEngine.saveQuiz(quizToSave);
+        if (cloudResult && cloudResult.downloadUrl) {
+          quizToSave.pdfDataUrl = cloudResult.downloadUrl;
+          quiz.pdfDataUrl = cloudResult.downloadUrl;
+          await this.set('quiz:' + quiz.id, quizToSave);
+        }
+      } catch (e) {
+        console.warn('FirebaseEngine saveQuiz warning:', e);
+      }
+    }
+
     return {
       success: true,
       cloudSaved: !!(cloudResult && cloudResult.success),
