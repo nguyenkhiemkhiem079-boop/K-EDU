@@ -179,20 +179,31 @@ const StorageEngine = {
   },
 
   async getStudentRoster() {
-    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
-      const cloudRoster = await window.FirebaseEngine.getStudentRoster();
-      if (cloudRoster) {
-        await this.set('student_roster', cloudRoster);
-        return cloudRoster;
+    if (window.FirebaseEngine && window.FirebaseEngine.isActive && typeof window.FirebaseEngine.getStudentRoster === 'function') {
+      try {
+        const cloudRoster = await window.FirebaseEngine.getStudentRoster();
+        if (Array.isArray(cloudRoster) && cloudRoster.length > 0) {
+          await this.set('student_roster', cloudRoster);
+          return cloudRoster;
+        }
+      } catch (err) {
+        console.warn('Firebase getStudentRoster warning:', err);
       }
     }
     const roster = await this.get('student_roster');
-    return roster || [];
+    if (Array.isArray(roster) && roster.length > 0) {
+      return roster;
+    }
+    return this.seedStudentRosterIfEmpty(true) || [];
   },
 
   async saveStudentRoster(roster) {
-    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
-      await window.FirebaseEngine.saveStudentRoster(roster);
+    if (window.FirebaseEngine && window.FirebaseEngine.isActive && typeof window.FirebaseEngine.saveStudentRoster === 'function') {
+      try {
+        await window.FirebaseEngine.saveStudentRoster(roster);
+      } catch (err) {
+        console.warn('Firebase saveStudentRoster error:', err);
+      }
     }
     return await this.set('student_roster', roster);
   },
@@ -434,8 +445,19 @@ const StorageEngine = {
     return results;
   },
 
-  seedStudentRosterIfEmpty() {
-    if (!localStorage.getItem(STORAGE_PREFIX + 'student_roster')) {
+  seedStudentRosterIfEmpty(force = false) {
+    const raw = localStorage.getItem(STORAGE_PREFIX + 'student_roster');
+    let hasStudents = false;
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          hasStudents = true;
+        }
+      } catch (e) {}
+    }
+
+    if (force || !hasStudents) {
       const initialRoster = [
         { id: 'SURI10', name: 'SURI', className: '10', avatar: '🦊' },
         { id: 'NGHIA7', name: 'NGHĨA', className: '7', avatar: '🚀' },
@@ -444,7 +466,9 @@ const StorageEngine = {
         { id: 'MINH10', name: 'MINH', className: '10', avatar: '⚡' }
       ];
       this.saveStudentRoster(initialRoster);
+      return initialRoster;
     }
+    return null;
   },
 
   seedSampleDataIfEmpty(force = false) {
