@@ -109,6 +109,15 @@ function detectTermFromTitle(title = '') {
   return 'regular';
 }
 
+function detectGradeFromTitle(title = '') {
+  if (!title) return '10';
+  if (/TS10|vào\s*10|tuyển\s*sinh/i.test(title)) return 'TS10';
+  if (/(?:Lớp|Khối|Toán)\s*12|THPT|Tốt nghiệp/i.test(title) && !/10|11/i.test(title)) return '12';
+  const m = title.match(/(?:Toán|Lớp|Khối|K)\s*(\d+)/i);
+  if (m && m[1]) return m[1];
+  return '10';
+}
+
 function getExamTermBadge(term = 'regular') {
   switch (term) {
     case 'GK1': return '<span class="badge-status" style="font-size:0.75rem;background:#e0f2fe;color:#0369a1;font-weight:800;">🍂 Giữa HK1</span>';
@@ -211,6 +220,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderAssignTargetsSelector();
   renderGamificationTab();
   initAntiCheatListeners();
+  checkUrlQuizParam();
+  initFirebaseRealtimeSync();
 });
 
 /* ================= AVATAR PICKER ENGINE ================= */
@@ -1555,9 +1566,11 @@ function triggerAutoGenerateMathExam() {
 
     // 1. Populate Creator form
     const titleInput = document.getElementById('teacherExamTitleInput');
+    const gradeSelect = document.getElementById('teacherExamGradeSelect');
     const termSelect = document.getElementById('teacherExamTermSelect');
     const timeLimitInput = document.getElementById('teacherExamTimeLimitInput');
     if (titleInput) titleInput.value = generated.title;
+    if (gradeSelect) gradeSelect.value = grade;
     if (termSelect) termSelect.value = term;
     if (timeLimitInput) timeLimitInput.value = generated.timeLimit;
 
@@ -1596,24 +1609,75 @@ function triggerAutoGenerateMathExam() {
       nameBadge.innerHTML = `📄 <strong>Tài liệu đề Toán đã sinh:</strong> ${escapeHtml(generated.title || '')}`;
     }
 
-    // 4. Update Grids
+    // 4. TỰ ĐỘNG LƯU VÀ PHÁT HÀNH ĐỀ THI LÊN CẢ LOCAL VÀ CLOUD NGAY LẬP TỨC
+    const newQuizId = generateQuizCode();
+    const autoQuiz = {
+      id: newQuizId,
+      title: generated.title,
+      targetClass: grade,
+      examTerm: term,
+      timeLimit: generated.timeLimit,
+      totalQuestions: generated.answerKeys.length,
+      mcqCount: generated.mcqCount,
+      essayCount: generated.essayCount,
+      examMode: 'split_pdf',
+      examHtml: generated.examHtml, // Nhúng trực tiếp HTML đề thi để mọi thiết bị học sinh đều mở được ngay
+      pdfFileName: AppState.teacherFileName,
+      pdfDataUrl: dataUrl,
+      assignType: 'all',
+      assignedClasses: [],
+      assignedStudents: [],
+      showLeaderboard: true,
+      antiCheat: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      answerKeys: generated.answerKeys
+    };
+
+    const saveRes = await StorageEngine.saveQuiz(autoQuiz);
+    await StorageEngine.savePdfBlob(newQuizId, dataUrl);
+
+    // Gán trạng thái đang chỉnh sửa đề này để nếu thầy cô muốn sửa thêm thì bấm "Lưu Thay Đổi"
+    AppState.editingQuizId = newQuizId;
+    AppState.editingQuizCreatedAt = autoQuiz.createdAt;
+
+    // 5. Cập nhật giao diện lưới soạn thảo và danh sách đề
     renderTeacherMcqGrid();
     renderTeacherEssayGrid();
     updateTotalExamPointsCalculation();
+    updatePersonalizedExamFeed();
+    renderTeacherQuizManager();
+    renderTeacherAnalyticsDashboard();
 
-    // 5. Show success result box
+    // 6. Hiển thị hộp thông báo kết quả phát hành nổi bật
     const resBox = document.getElementById('mathGenResultBox');
     if (resBox) {
       resBox.classList.remove('hidden');
+      const cloudStatusMsg = (saveRes && saveRes.cloudSaved)
+        ? '<span style="color:var(--emerald-shadow);">☁️ Đã đồng bộ lên Firebase Cloud (Học sinh trên máy khác có thể thấy và làm bài ngay)!</span>'
+        : '<span style="color:var(--amber-shadow);">💾 Đã lưu vào bộ nhớ máy này (Sẵn sàng phát hành hoặc thi thử).</span>';
+
       resBox.innerHTML = `
-        <div style="background:var(--primary-light);border:2px solid var(--primary);border-radius:var(--radius-lg);padding:1rem 1.25rem;">
-          <h4 style="color:var(--primary-shadow);margin-bottom:0.35rem;font-size:1.05rem;">🎉 Đã Tự Động Sinh Xong Đề Toán!</h4>
-          <p style="color:var(--primary-shadow);font-size:0.9rem;font-weight:700;margin-bottom:0.75rem;">
-            Đã tạo <strong>${generated.mcqCount} câu trắc nghiệm</strong> + <strong>${generated.essayCount} câu tự luận</strong>, tự động nạp bảng đáp án và tài liệu đề bài có công thức Toán LaTeX.
-          </p>
-          <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
-            <button type="button" class="btn btn-primary" onclick="document.getElementById('singleExamCreatorSection').scrollIntoView({behavior:'smooth'})">📝 Xem & Biên Tập Đề Ở Dưới</button>
-            <button type="button" class="btn btn-success" onclick="publishTeacherQuiz()">💾 Lưu & Phát Hành Đề Này Ngay</button>
+        <div style="background:var(--primary-light);border:2px solid var(--primary);border-radius:var(--radius-lg);padding:1.15rem 1.35rem;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.75rem;">
+            <div>
+              <h4 style="color:var(--primary-shadow);margin-bottom:0.35rem;font-size:1.15rem;">🎉 ĐÃ TỰ ĐỘNG SINH & LƯU PHÁT HÀNH ĐỀ THI THÀNH CÔNG!</h4>
+              <p style="color:var(--primary-shadow);font-size:0.92rem;font-weight:700;margin-bottom:0.4rem;">
+                Đề: <strong>${escapeHtml(generated.title)}</strong> (Lớp ${grade} · ${term} · ${generated.timeLimit} phút)
+              </p>
+              <div style="font-size:0.875rem;font-weight:700;">${cloudStatusMsg}</div>
+            </div>
+            <div style="text-align:right;">
+              <span class="code-badge" style="font-size:1.6rem;padding:0.4rem 1rem;">${newQuizId}</span>
+              <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:2px;">MÃ ĐỀ THI</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin-top:1rem;">
+            <button type="button" class="btn btn-primary" onclick="loadSampleToStudent('${newQuizId}')">🚀 Vào Thi Thử Ngay</button>
+            <button type="button" class="btn btn-secondary" onclick="copyQuizCode('${newQuizId}')">📋 Sao Chép Mã Đề</button>
+            <button type="button" class="btn btn-sky" onclick="copyQuizLink('${newQuizId}')">🔗 Sao Chép Link Đề</button>
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('singleExamCreatorSection').scrollIntoView({behavior:'smooth'})">✏️ Chỉnh Sửa Đề Ở Dưới</button>
           </div>
         </div>
       `;
@@ -1621,7 +1685,7 @@ function triggerAutoGenerateMathExam() {
 
     if (typeof SoundEngine !== 'undefined' && SoundEngine.playFanfare) SoundEngine.playFanfare();
     if (typeof GamificationEngine !== 'undefined' && GamificationEngine.fireConfetti) GamificationEngine.fireConfetti();
-    showToast(`⚡ Đã tự động sinh thành công: ${generated.title}!`, 'success');
+    showToast(`⚡ Đã tự động sinh và lưu đề thi [${newQuizId}] thành công!`, 'success');
   } catch (err) {
     console.error("Math Generator Error:", err);
     showToast(`⚠️ Có lỗi khi sinh đề: ${err.message}`, 'error');
@@ -1838,6 +1902,8 @@ async function publishBatchExams() {
     const quiz = {
       id: item.id || generateQuizCode(),
       title: item.title,
+      targetClass: item.targetClass || detectGradeFromTitle(item.title) || '10',
+      examTerm: item.examTerm || detectTermFromTitle(item.title) || 'GK1',
       timeLimit: item.timeLimit,
       totalQuestions: item.answerKeys.length,
       mcqCount: mcqKeys.length,
@@ -1851,6 +1917,7 @@ async function publishBatchExams() {
       showLeaderboard: true,
       antiCheat: true,
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       answerKeys: item.answerKeys
     };
 
@@ -1905,6 +1972,7 @@ async function editTeacherQuiz(quizId) {
 
   // Populate form fields
   const titleInput = document.getElementById('teacherExamTitleInput');
+  const gradeSelect = document.getElementById('teacherExamGradeSelect');
   const termSelect = document.getElementById('teacherExamTermSelect');
   const timeLimitInput = document.getElementById('teacherExamTimeLimitInput');
   const assignSelect = document.getElementById('assignTypeSelect');
@@ -1912,6 +1980,7 @@ async function editTeacherQuiz(quizId) {
   const antiCheatToggle = document.getElementById('teacherAntiCheatToggle');
 
   if (titleInput) titleInput.value = quiz.title || '';
+  if (gradeSelect) gradeSelect.value = quiz.targetClass || detectGradeFromTitle(quiz.title) || '10';
   if (termSelect) termSelect.value = quiz.examTerm || detectTermFromTitle(quiz.title);
   if (timeLimitInput) timeLimitInput.value = quiz.timeLimit || 45;
   if (leaderboardToggle) leaderboardToggle.checked = quiz.showLeaderboard !== false;
@@ -1993,9 +2062,11 @@ function cancelTeacherQuizEdit() {
 
   // Reset form to defaults
   const titleInput = document.getElementById('teacherExamTitleInput');
+  const gradeSelect = document.getElementById('teacherExamGradeSelect');
   const termSelect = document.getElementById('teacherExamTermSelect');
   const timeLimitInput = document.getElementById('teacherExamTimeLimitInput');
   if (titleInput) titleInput.value = 'Đề Kiểm Tra Giữa Kì I — Môn Toán';
+  if (gradeSelect) gradeSelect.value = '10';
   if (termSelect) termSelect.value = 'GK1';
   if (timeLimitInput) timeLimitInput.value = '45';
 
@@ -2017,6 +2088,8 @@ async function publishTeacherQuiz() {
   const isEditing = !!AppState.editingQuizId;
   const id = isEditing ? AppState.editingQuizId : generateQuizCode();
   const title = document.getElementById('teacherExamTitleInput').value.trim() || 'Đề Kiểm Tra Toán Học';
+  const gradeSelect = document.getElementById('teacherExamGradeSelect');
+  const targetClass = gradeSelect ? gradeSelect.value : (detectGradeFromTitle(title) || '10');
   const examTerm = document.getElementById('teacherExamTermSelect')?.value || detectTermFromTitle(title);
   const timeLimit = parseInt(document.getElementById('teacherExamTimeLimitInput').value || '45', 10);
   const showLeaderboard = document.getElementById('teacherShowLeaderboardToggle').checked;
@@ -2042,15 +2115,27 @@ async function publishTeacherQuiz() {
     }
   }
 
+  let examHtml = null;
+  if (AppState.teacherPdfData && typeof AppState.teacherPdfData === 'string' && AppState.teacherPdfData.startsWith('data:text/html')) {
+    try {
+      const parts = AppState.teacherPdfData.split(',');
+      if (parts.length > 1) {
+        examHtml = decodeURIComponent(parts[1]);
+      }
+    } catch (e) {}
+  }
+
   const quiz = {
     id,
     title,
+    targetClass,
     examTerm,
     timeLimit,
     totalQuestions: combinedKeys.length,
     mcqCount: AppState.teacherMcqKeys.length,
     essayCount: AppState.teacherEssayKeys.length,
     examMode: 'split_pdf',
+    examHtml,
     pdfFileName: AppState.teacherFileName || 'De_Thi_Toan.pdf',
     pdfDataUrl: AppState.teacherPdfData || null,
     assignType,
@@ -2063,7 +2148,7 @@ async function publishTeacherQuiz() {
     answerKeys: combinedKeys
   };
 
-  await StorageEngine.saveQuiz(quiz);
+  const saveRes = await StorageEngine.saveQuiz(quiz);
   if (AppState.teacherPdfData) {
     await StorageEngine.savePdfBlob(id, AppState.teacherPdfData);
   }
@@ -2074,6 +2159,14 @@ async function publishTeacherQuiz() {
   updatePersonalizedExamFeed();
   renderTeacherQuizManager();
   renderTeacherAnalyticsDashboard();
+
+  let saveToast = isEditing ? `💾 Đã lưu và cập nhật đề [${title}]!` : `🎉 Đã phát hành đề thi mới [${title}]!`;
+  if (saveRes && saveRes.cloudSaved) {
+    saveToast += ' (Đã đồng bộ lên Firebase Cloud ☁️)';
+  } else if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
+    saveToast += ' (Lưu thành công vào máy local 💾. Lưu ý: Firebase Cloud chưa được kích hoạt)';
+  }
+  showToast(saveToast, 'success');
 
   const targetDesc = assignType === 'all' 
     ? '🌍 Công khai toàn bộ' 
@@ -2273,10 +2366,8 @@ async function renderSampleQuizzes(filterName = '', filterClass = '') {
     const targetGrade = AppState.selectedGradeFilter;
     displayedQuizzes = displayedQuizzes.filter(q => {
       if (q.targetClass && q.targetClass.toString() === targetGrade) return true;
-      const gradeMatch = q.title.match(/(?:Toán|Lớp)\s*(\d+|TS10)/i);
-      if (gradeMatch && gradeMatch[1]) {
-        return gradeMatch[1].toString() === targetGrade;
-      }
+      const gradeFromTitle = detectGradeFromTitle(q.title);
+      if (gradeFromTitle && gradeFromTitle.toString() === targetGrade) return true;
       return false;
     });
   }
@@ -2383,10 +2474,19 @@ async function startExamWithQuizId(quizId) {
   }
 
   statusEl.innerHTML = '<span style="color:var(--indigo);">⏳ Đang tải đề thi...</span>';
-  const quiz = await StorageEngine.getQuiz(quizId);
+  let quiz = await StorageEngine.getQuiz(quizId);
+
+  // If not found locally, attempt direct fetch from Firebase Cloud
+  if (!quiz && window.FirebaseEngine && window.FirebaseEngine.isActive) {
+    statusEl.innerHTML = '<span style="color:var(--indigo);">☁️ Đang tìm đề thi trên Firebase Cloud...</span>';
+    quiz = await window.FirebaseEngine.getQuiz(quizId);
+    if (quiz) {
+      await StorageEngine.saveQuiz(quiz);
+    }
+  }
 
   if (!quiz) {
-    statusEl.innerHTML = '<span style="color:var(--rose);">❌ Không tìm thấy đề thi. Hãy thử lại!</span>';
+    statusEl.innerHTML = '<span style="color:var(--rose);">❌ Không tìm thấy đề thi với mã: <strong>' + escapeHtml(quizId) + '</strong>. Vui lòng kiểm tra lại!</span>';
     return;
   }
 
@@ -2400,6 +2500,9 @@ async function startExamWithQuizId(quizId) {
   if (!pdfUrl) {
     const blobData = await StorageEngine.getPdfBlob(quizId);
     if (blobData) pdfUrl = blobData;
+  }
+  if (!pdfUrl && quiz.examHtml) {
+    pdfUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(quiz.examHtml);
   }
 
   // Giấu đáp án đúng vào ExamVault; AppState.currentQuiz chỉ chứa bản công khai
@@ -2427,6 +2530,8 @@ async function startExamWithQuizId(quizId) {
   const frame = document.getElementById('studentPdfViewerFrame');
   if (pdfUrl) {
     frame.src = pdfUrl;
+  } else if (quiz.examHtml) {
+    frame.src = 'data:text/html;charset=utf-8,' + encodeURIComponent(quiz.examHtml);
   } else {
     frame.src = 'about:blank';
     setTimeout(() => {
@@ -3212,6 +3317,51 @@ function updateFirebaseUI() {
   }
 }
 
+async function handleTestFirebaseConnection() {
+  const statusBox = document.getElementById('firebaseConnectionStatusBox');
+  if (!window.FirebaseEngine) {
+    showToast('⚠️ Không tìm thấy Firebase SDK!', 'error');
+    return;
+  }
+  if (statusBox) {
+    statusBox.innerHTML = '<span style="color:var(--indigo);font-weight:700;">⚡ Đang gửi ping kiểm tra kết nối Firestore & Storage...</span>';
+  }
+  showToast('⚡ Đang kiểm tra kết nối Firebase Cloud...', 'info');
+
+  const res = await window.FirebaseEngine.testConnection();
+  if (res.ok) {
+    showToast('🎉 Kết nối Firebase Cloud Sync thành công!', 'success');
+    SoundEngine.playFanfare();
+    if (statusBox) {
+      statusBox.innerHTML = `
+        <div style="background:rgba(34, 197, 94, 0.12);border:1.5px solid var(--emerald);padding:0.7rem 0.9rem;border-radius:8px;color:var(--emerald-shadow);font-size:0.9rem;">
+          <strong style="display:block;margin-bottom:2px;">✅ KẾT NỐI FIREBASE THÀNH CÔNG:</strong>
+          <div>${escapeHtml(res.message)}</div>
+        </div>
+      `;
+    }
+  } else {
+    showToast('⚠️ Kiểm tra Firebase: Chưa hoàn tất thiết lập', 'warn');
+    SoundEngine.playWarning();
+    const projectId = (window.FirebaseEngine.defaultConfig && window.FirebaseEngine.defaultConfig.projectId) || 'k-edu-d2051';
+    if (statusBox) {
+      statusBox.innerHTML = `
+        <div style="background:rgba(239, 68, 68, 0.08);border:1.5px solid var(--rose);padding:0.7rem 0.9rem;border-radius:8px;color:var(--rose);font-size:0.875rem;">
+          <strong style="display:block;margin-bottom:4px;">⚠️ PHÁT HIỆN VẤN ĐỀ VỀ FIREBASE:</strong>
+          <div style="margin-bottom:6px;line-height:1.4;">${escapeHtml(res.message)}</div>
+          <div style="background:var(--bg-card);padding:0.5rem 0.75rem;border-radius:6px;color:var(--text-secondary);font-size:0.82rem;border:1px dashed var(--rose);">
+            💡 <strong>Hướng dẫn thiết lập 1 phút trên Firebase Console:</strong>
+            <ul style="margin:4px 0 0 1rem;padding:0;">
+              <li>Truy cập <a href="https://console.firebase.google.com/project/${escapeHtml(projectId)}/firestore" target="_blank" style="color:var(--primary);font-weight:700;text-decoration:underline;">Firebase Console Firestore</a> &rarr; Bấm <strong>"Create database"</strong> (chọn Test mode).</li>
+              <li>Truy cập <a href="https://console.firebase.google.com/project/${escapeHtml(projectId)}/storage" target="_blank" style="color:var(--primary);font-weight:700;text-decoration:underline;">Firebase Console Storage</a> &rarr; Bấm <strong>"Get started"</strong> (chọn Test mode).</li>
+            </ul>
+          </div>
+        </div>
+      `;
+    }
+  }
+}
+
 async function handleSaveFirebaseConfig() {
   const apiKey = document.getElementById('fbApiKey')?.value.trim();
   const projectId = document.getElementById('fbProjectId')?.value.trim();
@@ -3227,20 +3377,19 @@ async function handleSaveFirebaseConfig() {
   }
 
   const config = { apiKey, projectId, storageBucket, authDomain, appId, messagingSenderId };
-  showToast('⚡ Đang kết nối thử với Firebase Cloud...', 'info');
+  showToast('⚡ Đang lưu cấu hình và kiểm tra kết nối...', 'info');
 
   if (window.FirebaseEngine) {
     const success = window.FirebaseEngine.saveConfig(config);
     if (success) {
-      showToast('🎉 Kết nối Firebase Cloud Sync thành công!', 'success');
-      SoundEngine.playFanfare();
-      // Reload manager elements to sync with cloud
-      await loadStudentRoster();
       updateFirebaseUI();
+      await handleTestFirebaseConnection();
+      await loadStudentRoster();
       renderTeacherQuizManager();
       renderTeacherRosterManager();
       renderTeacherAnalyticsDashboard();
       updatePersonalizedExamFeed();
+      initFirebaseRealtimeSync();
     } else {
       showToast('❌ Cấu hình sai hoặc lỗi kết nối Firebase. Vui lòng kiểm tra console.', 'error');
       SoundEngine.playWarning();
@@ -3253,6 +3402,10 @@ function handleDisableFirebase() {
   if (window.FirebaseEngine) {
     window.FirebaseEngine.disable();
     updateFirebaseUI();
+    if (unsubQuizzesListener) {
+      try { unsubQuizzesListener(); } catch (e) {}
+      unsubQuizzesListener = null;
+    }
     showToast('📴 Đã tạm tắt đồng bộ đám mây. Hệ thống đang chạy offline.', 'info');
     SoundEngine.playClick();
   }
@@ -3262,6 +3415,10 @@ function handleClearFirebaseConfig() {
   if (confirm('⚠️ Bạn có chắc chắn muốn xóa toàn bộ thông số kết nối Firebase khỏi máy này?')) {
     if (window.FirebaseEngine) {
       window.FirebaseEngine.clearConfig();
+    }
+    if (unsubQuizzesListener) {
+      try { unsubQuizzesListener(); } catch (e) {}
+      unsubQuizzesListener = null;
     }
     // Clear input fields
     const fields = ['fbApiKey', 'fbProjectId', 'fbStorageBucket', 'fbAuthDomain', 'fbAppId', 'fbSenderId'];
@@ -3300,5 +3457,77 @@ async function handleSyncLocalToFirebase() {
       showToast('❌ Lỗi khi đồng bộ dữ liệu. Chi tiết ở Console.', 'error');
       SoundEngine.playWarning();
     }
+  }
+}
+
+/* ================= DIRECT CODE ENTRY & SHARING HELPERS ================= */
+async function handleJoinByDirectCode() {
+  const codeInput = document.getElementById('directQuizCodeInput');
+  const code = codeInput ? codeInput.value.trim().toUpperCase() : '';
+  if (!code) {
+    showToast('⚠️ Vui lòng nhập mã đề thi (gồm 6 ký tự)!', 'warn');
+    if (codeInput) codeInput.focus();
+    return;
+  }
+  await startExamWithQuizId(code);
+}
+
+function copyQuizCode(code) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(code);
+    showToast(`📋 Đã sao chép mã đề: ${code}`, 'success');
+  } else {
+    prompt('Mã đề thi của bạn:', code);
+  }
+  SoundEngine.playClick();
+}
+
+function copyQuizLink(code) {
+  const url = `${window.location.origin}${window.location.pathname}?quiz=${encodeURIComponent(code)}`;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url);
+    showToast('🔗 Đã sao chép link đề thi vào bộ nhớ tạm!', 'success');
+  } else {
+    prompt('Link làm bài thi trực tiếp:', url);
+  }
+  SoundEngine.playClick();
+}
+
+function checkUrlQuizParam() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const quizParam = params.get('quiz');
+    if (quizParam) {
+      const codeInput = document.getElementById('directQuizCodeInput');
+      if (codeInput) codeInput.value = quizParam.toUpperCase();
+      showToast(`🎯 Đã nhận diện mã đề [${quizParam.toUpperCase()}]. Nhập tên & lớp để vào thi ngay!`, 'info');
+    }
+  } catch (e) {}
+}
+
+let unsubQuizzesListener = null;
+
+function initFirebaseRealtimeSync() {
+  if (unsubQuizzesListener) {
+    try { unsubQuizzesListener(); } catch (e) {}
+    unsubQuizzesListener = null;
+  }
+
+  if (window.FirebaseEngine && window.FirebaseEngine.isActive && typeof window.FirebaseEngine.listenToQuizzes === 'function') {
+    unsubQuizzesListener = window.FirebaseEngine.listenToQuizzes(async (cloudQuizzes) => {
+      if (!cloudQuizzes || !cloudQuizzes.length) return;
+      console.log('☁️ [Realtime Sync] Nhận được đề thi từ Firebase Cloud:', cloudQuizzes.length);
+
+      for (const q of cloudQuizzes) {
+        const cacheItem = { ...q };
+        if (cacheItem.pdfDataUrl && cacheItem.pdfDataUrl.startsWith('data:') && cacheItem.pdfDataUrl.length > 300000) {
+          delete cacheItem.pdfDataUrl;
+        }
+        await StorageEngine.set('quiz:' + q.id, cacheItem);
+      }
+
+      updatePersonalizedExamFeed();
+      renderTeacherQuizManager();
+    });
   }
 }
