@@ -1,25 +1,263 @@
 /**
- * KhiemEdu Gamification & Weekly Hall of Fame Engine v3.0
+ * KhiemEdu Gamification & Weekly Hall of Fame Engine v3.2
  * Tích hợp Bảng Vàng Vinh Danh Theo Tuần, 5 Hạng Đấu Tuần (Leagues),
- * Đa Chiều Vinh Danh (Thủ Khoa, Tiến Bộ, Thần Tốc, Bất Bại, Chăm Chỉ, Toàn Năng),
- * Đại Chiến Giữa Các Lớp (Inter-Class Battle), Nhiệm Vụ Tuần (Battle Pass Quests),
- * Cửa Hàng Đổi Thưởng XP và Bằng Khen Tuần Đẹp Mắt Gửi Phụ Huynh.
+ * Đa Chiều Vinh Danh, Đại Chiến Lớp, Nhiệm Vụ Tuần (Battle Pass Quests),
+ * 18 Huy Hiệu Danh Giá & Thành Tựu — MỖI HUY HIỆU TẶNG 1 KHUNG VIỀN AVATAR ĐỘC BẢN!
  */
 
 const BADGES_DEFINITIONS = [
-  { id: 'first_blood', name: 'Phát Súng Đầu', icon: '🎯', desc: 'Hoàn thành bài thi trắc nghiệm đầu tiên', xpReq: 0 },
-  { id: 'perfect_10', name: 'Điểm Tuyệt Đối', icon: '💯', desc: 'Đạt 10/10 điểm trong bất kỳ bài thi nào', xpReq: 0 },
-  { id: 'streak_perfect_2', name: 'Song Đao Hợp Bích', icon: '⚔️', desc: 'Đạt 10/10 điểm trong 2 bài thi liên tiếp', xpReq: 0 },
-  { id: 'streak_perfect_3', name: 'Tam Tinh Tỏa Sáng', icon: '🌟', desc: 'Đạt 10/10 điểm trong 3 bài thi liên tiếp', xpReq: 0 },
-  { id: 'streak_perfect_5', name: 'Bất Khả Chiến Bại', icon: '👑', desc: 'Duy trì chuỗi 5 bài thi liên tiếp đạt điểm 10', xpReq: 0 },
-  { id: 'weekly_completionist', name: 'Chiến Binh Toàn Năng', icon: '🛡️', desc: 'Hoàn thành 100% toàn bộ bài tập được giao trong tuần', xpReq: 0 },
-  { id: 'most_improved_badge', name: 'Ngôi Sao Vượt Khó', icon: '🧗', desc: 'Tiến bộ vượt bậc về điểm số so với tuần trước', xpReq: 0 },
-  { id: 'speed_demon', name: 'Thần Tốc', icon: '⚡', desc: 'Hoàn thành bài thi dưới 50% thời gian quy định', xpReq: 0 },
-  { id: 'honest_soul', name: 'Chính Trực', icon: '🕊️', desc: 'Làm bài thi mà không rời khỏi màn hình lần nào', xpReq: 0 },
-  { id: 'streak_3', name: 'Chăm Chỉ 3 Ngày', icon: '🔥', desc: 'Duy trì chuỗi học tập 3 ngày liên tiếp', xpReq: 0 },
-  { id: 'streak_7', name: 'Chiến Binh 7 Ngày', icon: '⭐', desc: 'Duy trì chuỗi học tập 7 ngày liên tiếp', xpReq: 0 },
-  { id: 'quiz_master', name: 'Bậc Thầy Luyện Đề', icon: '📚', desc: 'Hoàn thành từ 5 bài thi trở lên', xpReq: 0 },
-  { id: 'grand_master', name: 'Đại Tông Sư', icon: '🏆', desc: 'Đạt cấp độ 5 trở lên trên hệ thống', xpReq: 1000 }
+  {
+    id: 'first_blood',
+    name: 'Phát Súng Đầu',
+    icon: '🎯',
+    desc: 'Hoàn thành bài thi trắc nghiệm đầu tiên',
+    xpReq: 0,
+    frame: {
+      id: 'frame_target',
+      name: 'Viền Hồng Ngọc Tân Binh',
+      icon: '🎯',
+      cssClass: 'frame-target',
+      desc: 'Viền hồng ngọc đôi sáng nhẹ khích lệ chiến binh mới bắt đầu hành trình'
+    }
+  },
+  {
+    id: 'perfect_10',
+    name: 'Điểm Tuyệt Đối',
+    icon: '💯',
+    desc: 'Đạt 10/10 điểm trong bất kỳ bài thi nào',
+    xpReq: 0,
+    frame: {
+      id: 'frame_gold_perfect',
+      name: 'Hào Quang Kim Cương Vàng',
+      icon: '💯',
+      cssClass: 'frame-gold-perfect',
+      desc: 'Viền hào quang vàng rực tỏa 4 tia sáng lấp lánh cho điểm 10 trọn vẹn'
+    }
+  },
+  {
+    id: 'streak_perfect_2',
+    name: 'Song Đao Hợp Bích',
+    icon: '⚔️',
+    desc: 'Đạt 10/10 điểm trong 2 bài thi liên tiếp',
+    xpReq: 0,
+    frame: {
+      id: 'frame_dual_swords',
+      name: 'Song Kiếm Lam Băng',
+      icon: '⚔️',
+      cssClass: 'frame-dual-swords',
+      desc: 'Viền hàn băng xanh lam sắc lẹm phát ra luồng điện băng giá kỳ ảo'
+    }
+  },
+  {
+    id: 'streak_perfect_3',
+    name: 'Tam Tinh Tỏa Sáng',
+    icon: '🌟',
+    desc: 'Đạt 10/10 điểm trong 3 bài thi liên tiếp',
+    xpReq: 0,
+    frame: {
+      id: 'frame_triple_stars',
+      name: 'Tinh Cầu Vũ Trụ',
+      icon: '🌟',
+      cssClass: 'frame-triple-stars',
+      desc: 'Hào quang ngân hà tím vàng xoay vòng bất tận mang năng lượng vũ trụ'
+    }
+  },
+  {
+    id: 'streak_perfect_5',
+    name: 'Bất Khả Chiến Bại',
+    icon: '👑',
+    desc: 'Duy trì chuỗi 5 bài thi liên tiếp đạt điểm 10',
+    xpReq: 0,
+    frame: {
+      id: 'frame_sovereign_crown',
+      name: 'Ngai Vàng Đế Vương',
+      icon: '👑',
+      cssClass: 'frame-sovereign-crown',
+      desc: 'Khung rồng vàng hoàng gia tối thượng lộng lẫy uy phong'
+    }
+  },
+  {
+    id: 'weekly_completionist',
+    name: 'Chiến Binh Toàn Năng',
+    icon: '🛡️',
+    desc: 'Hoàn thành 100% toàn bộ bài tập được giao trong tuần',
+    xpReq: 0,
+    frame: {
+      id: 'frame_aegis_shield',
+      name: 'Khiên Thần Hộ Mệnh',
+      icon: '🛡️',
+      cssClass: 'frame-aegis-shield',
+      desc: 'Khiên hộ vệ lục bảo phát ra hào quang kiên cố không gì xuyên phá'
+    }
+  },
+  {
+    id: 'most_improved_badge',
+    name: 'Ngôi Sao Vượt Khó',
+    icon: '🧗',
+    desc: 'Tiến bộ vượt bậc về điểm số so với tuần trước',
+    xpReq: 0,
+    frame: {
+      id: 'frame_rising_star',
+      name: 'Sao Băng Hy Vọng',
+      icon: '🧗',
+      cssClass: 'frame-rising-star',
+      desc: 'Viền ngọc lục bảo phát sáng biểu trưng cho sự vươn lên mạnh mẽ'
+    }
+  },
+  {
+    id: 'speed_demon',
+    name: 'Thần Tốc',
+    icon: '⚡',
+    desc: 'Hoàn thành bài thi dưới 50% thời gian quy định & điểm ≥ 8.0',
+    xpReq: 0,
+    frame: {
+      id: 'frame_lightning_storm',
+      name: 'Lôi Điện Chớp Nhoáng',
+      icon: '⚡',
+      cssClass: 'frame-lightning-storm',
+      desc: 'Viền sấm sét neon vàng cyan nhấp nháy tốc độ âm thanh'
+    }
+  },
+  {
+    id: 'honest_soul',
+    name: 'Chính Trực',
+    icon: '🕊️',
+    desc: 'Làm bài thi mà không rời khỏi màn hình lần nào',
+    xpReq: 0,
+    frame: {
+      id: 'frame_angel_wings',
+      name: 'Cánh Chim Bạch Kim',
+      icon: '🕊️',
+      cssClass: 'frame-angel-wings',
+      desc: 'Viền bạch kim thanh khiết với vầng hào quang thiên thần tinh khôi'
+    }
+  },
+  {
+    id: 'streak_3',
+    name: 'Chăm Chỉ 3 Ngày',
+    icon: '🔥',
+    desc: 'Duy trì chuỗi học tập 3 ngày liên tiếp',
+    xpReq: 0,
+    frame: {
+      id: 'frame_flame_ember',
+      name: 'Hỏa Diệm Nhiệt Huyết',
+      icon: '🔥',
+      cssClass: 'frame-flame-ember',
+      desc: 'Ngọn lửa rực cháy cam đỏ thắp sáng ngọn lửa tri thức bền bỉ'
+    }
+  },
+  {
+    id: 'streak_7',
+    name: 'Chiến Binh 7 Ngày',
+    icon: '⭐',
+    desc: 'Duy trì chuỗi học tập 7 ngày liên tiếp',
+    xpReq: 0,
+    frame: {
+      id: 'frame_solar_flare',
+      name: 'Bão Mặt Trời',
+      icon: '⭐',
+      cssClass: 'frame-solar-flare',
+      desc: 'Vòng xoáy mặt trời hoàng kim uy lực bừng sáng rực rỡ'
+    }
+  },
+  {
+    id: 'quiz_master',
+    name: 'Bậc Thầy Luyện Đề',
+    icon: '📚',
+    desc: 'Hoàn thành từ 5 bài thi trở lên trên hệ thống',
+    xpReq: 0,
+    frame: {
+      id: 'frame_arcane_tome',
+      name: 'Vòng Phép Cổ Thư',
+      icon: '📚',
+      cssClass: 'frame-arcane-tome',
+      desc: 'Vòng tròn ma pháp màu thạch anh tím của bậc thầy học giả'
+    }
+  },
+  {
+    id: 'grand_master',
+    name: 'Đại Tông Sư',
+    icon: '🏆',
+    desc: 'Đạt cấp độ 5 trở lên trên hệ thống (≥ 2000 XP)',
+    xpReq: 2000,
+    frame: {
+      id: 'frame_celestial_grandmaster',
+      name: 'Hào Quang Thần Giới',
+      icon: '🏆',
+      cssClass: 'frame-celestial-grandmaster',
+      desc: 'Hào quang cầu vồng chuyển động đa sắc đẳng cấp tối cao'
+    }
+  },
+  {
+    id: 'night_owl',
+    name: 'Cú Đêm Chăm Chỉ',
+    icon: '🦉',
+    desc: 'Hoàn thành bài thi trong khung giờ đêm (20:00 - 23:59)',
+    xpReq: 0,
+    frame: {
+      id: 'frame_moonlight_owl',
+      name: 'Ánh Trăng Huyền Diệu',
+      icon: '🦉',
+      cssClass: 'frame-moonlight-owl',
+      desc: 'Viền bóng đêm huyền bí đính ánh trăng bạc mờ ảo lãng mạn'
+    }
+  },
+  {
+    id: 'early_bird',
+    name: 'Bình Minh Chăm Học',
+    icon: '🌅',
+    desc: 'Hoàn thành bài thi sớm trước 7:30 sáng',
+    xpReq: 0,
+    frame: {
+      id: 'frame_morning_sun',
+      name: 'Bình Minh Tỏa Rạng',
+      icon: '🌅',
+      cssClass: 'frame-morning-sun',
+      desc: 'Tia nắng ban mai vàng cam tiếp thêm năng lượng học tập dồi dào'
+    }
+  },
+  {
+    id: 'scholar_100_correct',
+    name: 'Học Giả Bách Khoa',
+    icon: '🎓',
+    desc: 'Đạt tích lũy từ 50 câu trả lời đúng trên hệ thống',
+    xpReq: 0,
+    frame: {
+      id: 'frame_academic_laurel',
+      name: 'Vòng Nguyệt Quế Vinh Quang',
+      icon: '🎓',
+      cssClass: 'frame-academic-laurel',
+      desc: 'Vòng lá nguyệt quế dát vàng cổ điển danh giá của thủ khoa'
+    }
+  },
+  {
+    id: 'diamond_ranker',
+    name: 'Chiến Thần Kim Cương',
+    icon: '💎',
+    desc: 'Đạt Hạng Kim Cương trở lên trong tuần (≥ 1000 XP)',
+    xpReq: 1000,
+    frame: {
+      id: 'frame_diamond_frost',
+      name: 'Pha Lê Kim Cương',
+      icon: '💎',
+      cssClass: 'frame-diamond-frost',
+      desc: 'Khung tinh thể kim cương sáng chói đa giác phản quang lộng lẫy'
+    }
+  },
+  {
+    id: 'weekly_champion',
+    name: 'Quán Quân Bảng Vàng',
+    icon: '👑',
+    desc: 'Đứng Hạng 1 trên Bảng Vàng Vinh Danh tuần',
+    xpReq: 0,
+    frame: {
+      id: 'frame_champion_throne',
+      name: 'Vương Miện Quán Quân',
+      icon: '👑',
+      cssClass: 'frame-champion-throne',
+      desc: 'Hào quang vương giả đỉnh cao dành riêng cho Nhà Vô Địch'
+    }
+  }
 ];
 
 const LEVEL_TIERS = [
@@ -41,9 +279,9 @@ const WEEKLY_LEAGUES = [
 
 /* ================= 🎁 CỬA HÀNG ĐỔI THƯỞNG XP (REWARD SHOP) ================= */
 const SHOP_ITEMS = [
-  { id: 'frame_fire', name: 'Khung Lửa Rực Cháy', icon: '🔥', type: 'frame', priceXp: 300, desc: 'Hiệu ứng lửa cháy rực rỡ xung quanh Avatar của bạn', cssClass: 'frame-fire' },
-  { id: 'frame_gold', name: 'Khung Vương Miện Vàng', icon: '👑', type: 'frame', priceXp: 600, desc: 'Khung Hoàng Gia dát vàng sáng lấp lánh dành cho thủ khoa', cssClass: 'frame-gold' },
-  { id: 'frame_neon', name: 'Khung Điện Quang Neon', icon: '⚡', type: 'frame', priceXp: 450, desc: 'Hiệu ứng điện quang Cyberpunk đổi màu năng động', cssClass: 'frame-neon' },
+  { id: 'frame_fire', name: 'Khung Lửa Rực Cháy', icon: '🔥', type: 'frame', priceXp: 300, desc: 'Hiệu ứng lửa cháy rực rỡ xung quanh Avatar của bạn', cssClass: 'frame-flame-ember' },
+  { id: 'frame_gold', name: 'Khung Vương Miện Vàng', icon: '👑', type: 'frame', priceXp: 600, desc: 'Khung Hoàng Gia dát vàng sáng lấp lánh dành cho thủ khoa', cssClass: 'frame-sovereign-crown' },
+  { id: 'frame_neon', name: 'Khung Điện Quang Neon', icon: '⚡', type: 'frame', priceXp: 450, desc: 'Hiệu ứng điện quang Cyberpunk đổi màu năng động', cssClass: 'frame-lightning-storm' },
   { id: 'shield_freeze', name: 'Khiên Bảo Vệ Chuỗi', icon: '🛡️', type: 'consumable', priceXp: 200, desc: 'Tự động bảo vệ chuỗi Streak không bị mất nếu nghỉ 1 ngày' },
   { id: 'avatar_dragon', name: 'Linh Vật Rồng Lửa', icon: '🐉', type: 'avatar', priceXp: 500, desc: 'Linh vật Avatar tối thượng thể hiện sức mạnh toán học' }
 ];
@@ -109,9 +347,6 @@ const WeeklyHonorEngine = {
     return time >= weekRange.start.getTime() && time <= weekRange.end.getTime();
   },
 
-  /**
-   * Tính toán Bảng Xếp Hạng Tuần Đầy Đủ (Chi tiết tới từng học sinh)
-   */
   calculateWeeklyLeaderboard(allResults = [], weekRange = null, roster = [], availableQuizzes = [], targetClass = 'all') {
     const studentMap = {};
 
@@ -122,7 +357,7 @@ const WeeklyHonorEngine = {
         name: st.name.trim(),
         className: st.className || 'Chung',
         avatar: st.avatar || '🦊',
-        frame: st.frame || '',
+        frame: st.frame || 'frame-gold-perfect',
         submissionsCount: 0,
         uniqueQuizzes: new Set(),
         perfectScores: 0,
@@ -154,7 +389,7 @@ const WeeklyHonorEngine = {
           name: res.name.trim(),
           className: res.className || '10',
           avatar: res.avatar || '🦊',
-          frame: res.frame || '',
+          frame: res.frame || 'frame-gold-perfect',
           submissionsCount: 0,
           uniqueQuizzes: new Set(),
           perfectScores: 0,
@@ -184,17 +419,16 @@ const WeeklyHonorEngine = {
         item.honestSubmissions++;
       }
 
-      // Hệ thống tính điểm vinh danh (Honor Scoring)
-      let earnedXp = 50; // Nộp bài
+      // Điểm Vinh Danh
+      let earnedXp = 50;
       if (score >= 10 || res.scorePct === 100) {
-        earnedXp += 120; // Điểm 10
+        earnedXp += 120;
         item.perfectScores++;
         item.currentPerfectStreak++;
         if (item.currentPerfectStreak > item.maxPerfectStreak) {
           item.maxPerfectStreak = item.currentPerfectStreak;
         }
 
-        // Chuỗi điểm 10 bùng nổ
         if (item.currentPerfectStreak === 2) {
           earnedXp += 100;
           if (!item.honorsBadges.includes('⚔️ Song Đao')) item.honorsBadges.push('⚔️ Song Đao');
@@ -230,7 +464,6 @@ const WeeklyHonorEngine = {
       const completedCount = st.uniqueQuizzes.size;
       st.completionRate = Math.min(100, Math.round((completedCount / totalRequired) * 100));
 
-      // Thưởng lớn nếu hoàn thành 100% bài tập tuần
       if (completedCount >= totalRequired && totalRequired > 0) {
         st.honorXp += 400;
         if (!st.honorsBadges.includes('🛡️ Toàn Năng')) {
@@ -238,7 +471,6 @@ const WeeklyHonorEngine = {
         }
       }
 
-      // Gán Hạng Đấu (League)
       st.league = WeeklyHonorEngine.getLeague(st.honorXp);
     });
 
@@ -260,16 +492,11 @@ const WeeklyHonorEngine = {
     return list;
   },
 
-  /**
-   * Tính toán 6 Hạng Mục Vinh Danh Đặc Biệt Trong Tuần
-   */
   calculateSpecialHonors(weeklyRankings, previousWeekRankings = []) {
     if (!weeklyRankings || weeklyRankings.length === 0) return {};
 
-    // 1. 👑 Thủ Khoa Tuần
     const titan = weeklyRankings.find(s => s.honorXp > 0) || weeklyRankings[0] || null;
 
-    // 2. 🧗 Ngôi Sao Tiến Bộ Vượt Bậc
     let mostImproved = null;
     let maxDiff = 0;
     if (previousWeekRankings.length > 0) {
@@ -290,7 +517,6 @@ const WeeklyHonorEngine = {
       });
     }
 
-    // 3. ⚡ Thần Tốc Toán Học (Làm bài nhanh nhất với điểm cao >= 9.0)
     let speedMaster = null;
     let fastestSec = 999999;
     weeklyRankings.forEach(s => {
@@ -300,7 +526,6 @@ const WeeklyHonorEngine = {
       }
     });
 
-    // 4. 🛡️ Chiến Binh Bất Bại (Chuỗi 10 dài nhất)
     let streakMaster = null;
     let maxStreak = 0;
     weeklyRankings.forEach(s => {
@@ -310,7 +535,6 @@ const WeeklyHonorEngine = {
       }
     });
 
-    // 5. 📚 Ong Vàng Chăm Chỉ (Nhiều đề nhất tuần)
     let dedicated = null;
     let maxSub = 0;
     weeklyRankings.forEach(s => {
@@ -320,7 +544,6 @@ const WeeklyHonorEngine = {
       }
     });
 
-    // 6. 🕊️ Biểu Tượng Chính Trực (Tỷ lệ trung thực cao nhất)
     let honestParagon = null;
     let maxHonest = 0;
     weeklyRankings.forEach(s => {
@@ -340,9 +563,6 @@ const WeeklyHonorEngine = {
     };
   },
 
-  /**
-   * Tính Bảng Đại Chiến Giữa Các Lớp (Inter-Class Battle)
-   */
   calculateClassBattle(weeklyRankings) {
     const map = {};
     weeklyRankings.forEach(st => {
@@ -375,9 +595,6 @@ const WeeklyHonorEngine = {
     return list;
   },
 
-  /**
-   * Lấy Danh Sách Nhiệm Vụ Tuần (Weekly Battle Pass Quests)
-   */
   getWeeklyQuests(profile, studentWeeklyStat = null) {
     const submissions = studentWeeklyStat ? studentWeeklyStat.submissionsCount : 0;
     const perfects = studentWeeklyStat ? studentWeeklyStat.perfectScores : 0;
@@ -427,14 +644,16 @@ const GamificationEngine = {
         name: 'Nguyễn Văn An',
         className: '10',
         avatar: '🦊',
-        frame: 'frame-gold',
+        frame: 'frame-target',
         xp: 350,
         streak: 3,
         perfectStreak: 1,
         lastActiveDate: new Date().toISOString().slice(0, 10),
         examsCount: 3,
         perfectCount: 1,
-        inventory: ['frame_gold'],
+        totalCorrectAnswers: 28,
+        inventory: ['frame_target', 'frame-target'],
+        unlockedFrames: ['frame-target', 'frame-gold-perfect', 'frame-flame-ember', 'frame-angel-wings'],
         unlockedBadges: ['first_blood', 'streak_3', 'honest_soul']
       };
       this.saveUserProfile(initial);
@@ -444,6 +663,9 @@ const GamificationEngine = {
       const p = JSON.parse(raw);
       if (p.perfectStreak === undefined) p.perfectStreak = 0;
       if (!p.inventory) p.inventory = [];
+      if (!p.unlockedFrames) p.unlockedFrames = ['frame-target'];
+      if (!p.unlockedBadges) p.unlockedBadges = ['first_blood'];
+      if (!p.frame) p.frame = 'frame-target';
       return p;
     } catch {
       return {};
@@ -452,6 +674,13 @@ const GamificationEngine = {
 
   saveUserProfile(profile) {
     localStorage.setItem('khiemedu_profile', JSON.stringify(profile));
+  },
+
+  equipAvatarFrame(frameCssClass) {
+    const profile = this.getUserProfile();
+    profile.frame = frameCssClass;
+    this.saveUserProfile(profile);
+    return profile;
   },
 
   getLevelInfo(xp) {
@@ -476,8 +705,11 @@ const GamificationEngine = {
 
   awardExamRewards(result, allQuizzesForClass = []) {
     const profile = this.getUserProfile();
-    let xpGained = 50; // Điểm nộp bài
+    let xpGained = 50;
     const bonusBreakdown = [];
+
+    // Tích lũy câu đúng
+    profile.totalCorrectAnswers = (profile.totalCorrectAnswers || 0) + (result.correct || 0);
 
     // Điểm số bài thi
     if (result.totalScore >= 10 || result.scorePct === 100) {
@@ -512,9 +744,17 @@ const GamificationEngine = {
       bonusBreakdown.push({ label: 'Chính Trực (0 lần rời tab)', xp: 25, icon: '🕊️' });
     }
 
+    // Kiểm tra thần tốc
+    const isSpeedy = result.timeTakenSeconds && result.timeLimitSeconds && (result.timeTakenSeconds <= result.timeLimitSeconds * 0.5) && (result.totalScore >= 8.0);
+    if (isSpeedy) {
+      xpGained += 30;
+      bonusBreakdown.push({ label: 'Thần Tốc (≤ 50% thời gian)', xp: 30, icon: '⚡' });
+    }
+
     profile.xp = (profile.xp || 0) + xpGained;
     profile.examsCount = (profile.examsCount || 0) + 1;
 
+    // Chuỗi ngày học
     const today = new Date().toISOString().slice(0, 10);
     if (profile.lastActiveDate) {
       const last = new Date(profile.lastActiveDate);
@@ -522,7 +762,6 @@ const GamificationEngine = {
       if (diffDays === 1) {
         profile.streak = (profile.streak || 1) + 1;
       } else if (diffDays > 1) {
-        // Kiểm tra xem có khiên bảo vệ streak không
         if (profile.inventory && profile.inventory.includes('shield_freeze')) {
           const idx = profile.inventory.indexOf('shield_freeze');
           profile.inventory.splice(idx, 1);
@@ -536,14 +775,23 @@ const GamificationEngine = {
     }
     profile.lastActiveDate = today;
 
+    // Mở khóa Huy hiệu & Khung Viền Avatar
     const newlyUnlocked = [];
     if (!profile.unlockedBadges) profile.unlockedBadges = [];
+    if (!profile.unlockedFrames) profile.unlockedFrames = ['frame-target'];
 
     const unlockBadge = (id) => {
       if (!profile.unlockedBadges.includes(id)) {
         profile.unlockedBadges.push(id);
         const b = BADGES_DEFINITIONS.find(item => item.id === id);
-        if (b) newlyUnlocked.push(b);
+        if (b) {
+          newlyUnlocked.push(b);
+          if (b.frame && !profile.unlockedFrames.includes(b.frame.cssClass)) {
+            profile.unlockedFrames.push(b.frame.cssClass);
+            // Tự động trang bị khung mới mở khóa
+            profile.frame = b.frame.cssClass;
+          }
+        }
       }
     };
 
@@ -553,10 +801,17 @@ const GamificationEngine = {
     if (profile.perfectStreak >= 3) unlockBadge('streak_perfect_3');
     if (profile.perfectStreak >= 5) unlockBadge('streak_perfect_5');
     if (result.tabSwitches === 0) unlockBadge('honest_soul');
+    if (isSpeedy) unlockBadge('speed_demon');
     if (profile.streak >= 3) unlockBadge('streak_3');
     if (profile.streak >= 7) unlockBadge('streak_7');
     if (profile.examsCount >= 5) unlockBadge('quiz_master');
-    if (profile.xp >= 1000) unlockBadge('grand_master');
+    if (profile.xp >= 2000) unlockBadge('grand_master');
+    if (profile.xp >= 1000) unlockBadge('diamond_ranker');
+    if (profile.totalCorrectAnswers >= 50) unlockBadge('scholar_100_correct');
+
+    const currentHour = new Date().getHours();
+    if (currentHour >= 20 || currentHour <= 23) unlockBadge('night_owl');
+    if (currentHour >= 4 && currentHour < 8) unlockBadge('early_bird');
 
     this.saveUserProfile(profile);
 
