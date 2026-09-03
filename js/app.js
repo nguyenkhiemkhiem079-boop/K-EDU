@@ -1539,7 +1539,7 @@ function updateMathGenEssaySummary() {
   }
 }
 
-function triggerAutoGenerateMathExam() {
+async function triggerAutoGenerateMathExam() {
   if (typeof MathEngine === 'undefined') {
     showToast('⚠️ Bộ sinh đề toán chưa sẵn sàng, vui lòng thử lại.', 'warn');
     return;

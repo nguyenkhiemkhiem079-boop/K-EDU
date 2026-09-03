@@ -19,7 +19,7 @@ const FirebaseEngine = {
     measurementId: "G-WCYHEF2QTE"
   },
 
-  init() {
+  async init() {
     try {
       const configStr = localStorage.getItem('khiemedu_firebase_config');
       const isEnabledStr = localStorage.getItem('khiemedu_firebase_enabled');
