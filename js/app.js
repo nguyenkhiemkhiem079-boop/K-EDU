@@ -281,6 +281,60 @@ function selectAvatar(emoji, name = '') {
   if (name) showToast(`✨ Đã chọn Avatar: ${emoji} ${name}`, 'info');
 }
 
+/* ================= 👑 ROLE ĐẶC BIỆT: THẦY KHIÊM (MASTER CREATOR) ================= */
+function isMasterTeacherRole(name) {
+  const n = (name !== undefined ? name : (AppState.studentName || GamificationEngine.getUserProfile().name || '')).trim().toLowerCase();
+  return n.includes('thầy khiêm') || n.includes('thay khiem') || n === 'khiêm' || n === 'khiem' || n.includes('thaykhiem');
+}
+
+function updateMasterTeacherRoleUI(isActive) {
+  const navBadge = document.getElementById('masterTeacherNavBadge');
+  if (navBadge) navBadge.classList.toggle('hidden', !isActive);
+
+  const detectedPill = document.getElementById('masterTeacherDetectedPill');
+  if (detectedPill) detectedPill.classList.toggle('hidden', !isActive);
+}
+
+function activateMasterTeacherRole() {
+  const nameInput = document.getElementById('studentJoinName');
+  const classInput = document.getElementById('studentJoinClass');
+  if (nameInput) nameInput.value = 'Thầy Khiêm';
+  if (classInput) classInput.value = 'GV / Sáng Lập Viên';
+
+  AppState.studentName = 'Thầy Khiêm';
+  AppState.studentClass = 'GV / Sáng Lập Viên';
+  AppState.studentAvatar = '👨‍🏫';
+
+  const profile = GamificationEngine.getUserProfile();
+  profile.name = 'Thầy Khiêm';
+  profile.className = 'GV / Sáng Lập Viên';
+  profile.avatar = '👨‍🏫';
+  profile.frame = 'frame-master-khiem';
+  profile.isMasterTeacher = true;
+  profile.xp = Math.max(profile.xp || 0, 9999);
+  profile.streak = Math.max(profile.streak || 0, 99);
+  profile.perfectStreak = Math.max(profile.perfectStreak || 0, 10);
+  
+  // Mở khóa TOÀN BỘ 18 HUY HIỆU VÀ KHUNG VIỀN!
+  profile.unlockedBadges = BADGES_DEFINITIONS.map(b => b.id);
+  profile.unlockedFrames = BADGES_DEFINITIONS.map(b => b.frame.cssClass);
+  if (!profile.unlockedFrames.includes('frame-master-khiem')) {
+    profile.unlockedFrames.push('frame-master-khiem');
+  }
+
+  GamificationEngine.saveUserProfile(profile);
+  TeacherAuth.login(); // Tự động mở khóa quyền quản trị giáo viên!
+
+  selectAvatar('👨‍🏫');
+  updateGamifyBar();
+  updateMasterTeacherRoleUI(true);
+  updatePersonalizedExamFeed();
+
+  GamificationEngine.fireConfetti();
+  SoundEngine.playFanfare();
+  showToast('👑 Chào mừng Thầy Khiêm! Bạn đã đăng nhập Role Master Creator (Mở khóa 100% quyền hạn, khung viền & chế độ Giám Khảo)!', 'success');
+}
+
 /* Restore previous student login session if available */
 function initSavedStudentSession() {
   const savedProfile = GamificationEngine.getUserProfile();
@@ -294,6 +348,10 @@ function initSavedStudentSession() {
     AppState.studentClass = savedProfile.className || '10';
   }
   updatePersonalizedExamFeed();
+  if (isMasterTeacherRole()) {
+    updateMasterTeacherRoleUI(true);
+    TeacherAuth.login();
+  }
 }
 
 /* ================= THEME & SOUND ================= */
@@ -327,9 +385,13 @@ function toggleSound() {
 /* ================= TAB NAVIGATION ================= */
 function switchTab(tabId) {
   if ((tabId === 'teacher' || tabId === 'results') && !TeacherAuth.isLoggedIn()) {
-    AppState.pendingTeacherTab = tabId;
-    openTeacherAuthModal();
-    return;
+    if (isMasterTeacherRole()) {
+      TeacherAuth.login();
+    } else {
+      AppState.pendingTeacherTab = tabId;
+      openTeacherAuthModal();
+      return;
+    }
   }
 
   AppState.activeTab = tabId;
@@ -2379,6 +2441,13 @@ function filterExamFeedByGrade(grade) {
 function updatePersonalizedExamFeed() {
   const currentName = (document.getElementById('studentJoinName')?.value || '').trim();
   const currentClass = (document.getElementById('studentJoinClass')?.value || '').trim();
+  
+  const isMaster = isMasterTeacherRole(currentName);
+  updateMasterTeacherRoleUI(isMaster);
+  if (isMaster) {
+    TeacherAuth.login();
+  }
+
   renderSampleQuizzes(currentName, currentClass);
   checkAndRenderPausedExamBanner();
 }
@@ -2574,6 +2643,12 @@ async function startExamWithQuizId(quizId) {
   document.getElementById('studentJoinSection').classList.add('hidden');
   document.getElementById('studentExamSection').classList.remove('hidden');
   document.body.classList.add('in-exam-session');
+
+  // Master Teacher Exam Toolbar toggle
+  const isMaster = isMasterTeacherRole(name);
+  const masterToolbar = document.getElementById('masterTeacherExamToolbar');
+  if (masterToolbar) masterToolbar.classList.toggle('hidden', !isMaster);
+
   setMobileExamView('pdf');
   updateMobileSheetBadges();
   document.getElementById('splitExamExamTitle').textContent = quiz.title;
@@ -2720,6 +2795,44 @@ function updateSheetProgress() {
     fillBar.style.width = `${pct}%`;
   }
   updateMobileSheetBadges();
+}
+
+/* ================= 👑 MASTER TEACHER EXAM TOOLBAR ACTIONS ================= */
+function masterTeacherRevealAnswers() {
+  if (!AppState.currentQuizData) return;
+  const questions = AppState.currentQuizData.questions || [];
+  let count = 0;
+  questions.forEach((q, idx) => {
+    const qIndex = idx + 1;
+    const correctAns = (q.correctAnswer || '').trim().toUpperCase();
+    if (correctAns) {
+      const optBtn = document.querySelector(`.bubble-btn[data-question="${qIndex}"][data-opt="${correctAns}"]`);
+      if (optBtn) {
+        optBtn.style.outline = '3px solid #10b981';
+        optBtn.style.backgroundColor = 'rgba(16, 185, 129, 0.2)';
+        optBtn.style.color = '#047857';
+        optBtn.style.fontWeight = '900';
+        count++;
+      }
+    }
+  });
+  SoundEngine.playFanfare();
+  showToast(`👁️ Thầy Khiêm: Đã làm nổi bật ${count} đáp án chính xác trên Phiếu Làm Bài!`, 'success');
+}
+
+function masterTeacherAutoSolve10() {
+  if (!AppState.currentQuizData) return;
+  const questions = AppState.currentQuizData.questions || [];
+  questions.forEach((q, idx) => {
+    const qIndex = idx + 1;
+    const correctAns = (q.correctAnswer || '').trim().toUpperCase();
+    if (correctAns) {
+      handleBubbleSelect(qIndex, correctAns);
+    }
+  });
+  SoundEngine.playFanfare();
+  showToast('⚡ Thầy Khiêm đã tự động điền 100% đáp án đúng! Chuẩn bị nộp bài...', 'success');
+  setTimeout(() => submitStudentExam(), 600);
 }
 
 /* ================= 📱 MOBILE EXAM EXPANDED VIEW CONTROLLER ================= */
