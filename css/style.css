@@ -504,10 +504,165 @@ input:focus, select:focus, textarea:focus {
   min-height: 650px;
 }
 
-@media (max-width: 992px) {
+/* Mobile Mode Switcher Bar (Hidden on Desktop/Tablet > 900px) */
+.mobile-exam-mode-bar {
+  display: none;
+}
+.mobile-floating-sheet-trigger,
+.mobile-floating-pdf-trigger {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  /* In-Exam Focus Mode: Compact or hide global header on mobile */
+  body.in-exam-session .navbar {
+    padding: 0.35rem 1rem;
+  }
+  body.in-exam-session .nav-tabs,
+  body.in-exam-session .user-gamify-bar {
+    display: none !important;
+  }
+  body.in-exam-session .brand-title {
+    font-size: 1.15rem;
+  }
+
+  /* Normal mobile navbar improvements */
+  .nav-tabs {
+    overflow-x: auto;
+    max-width: 100%;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.25rem;
+  }
+  .nav-tabs::-webkit-scrollbar { display: none; }
+  .nav-tab-btn {
+    padding: 0.4rem 0.85rem;
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
+
+  /* Mobile Exam Mode Segmented Bar */
+  .mobile-exam-mode-bar {
+    display: flex;
+    gap: 0.4rem;
+    background: var(--bg-card);
+    padding: 0.35rem;
+    border-radius: var(--radius-full);
+    border: 2px solid var(--border-color);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    margin: 0.35rem auto 0.75rem;
+    position: sticky;
+    top: 52px;
+    z-index: 45;
+    max-width: 600px;
+  }
+
+  .mobile-mode-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 0.55rem 0.5rem;
+    border-radius: var(--radius-full);
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    transition: all 0.18s ease;
+  }
+
+  .mobile-mode-btn.active {
+    background: var(--indigo);
+    color: #ffffff;
+    box-shadow: 0 3px 0 var(--indigo-shadow);
+  }
+
+  .mobile-answered-badge {
+    background: rgba(255, 255, 255, 0.25);
+    padding: 1px 7px;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+  }
+  .mobile-mode-btn:not(.active) .mobile-answered-badge {
+    background: var(--bg-tertiary);
+    color: var(--indigo);
+  }
+
+  /* Responsive Exam Layout on Mobile */
   .split-exam-layout {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
     height: auto;
+    min-height: unset;
+    gap: 1rem;
+  }
+
+  /* View Mode: PDF Only (Full screen) */
+  .split-exam-layout.view-pdf .pdf-viewer-pane {
+    display: flex !important;
+    height: calc(100vh - 140px) !important;
+    min-height: 520px;
+    position: relative;
+  }
+  .split-exam-layout.view-pdf .answer-sheet-pane {
+    display: none !important;
+  }
+  .split-exam-layout.view-pdf .mobile-floating-sheet-trigger {
+    display: flex !important;
+    position: absolute;
+    bottom: 1.25rem;
+    right: 1.25rem;
+    z-index: 30;
+  }
+
+  /* View Mode: Sheet Only (Full screen) */
+  .split-exam-layout.view-sheet .pdf-viewer-pane {
+    display: none !important;
+  }
+  .split-exam-layout.view-sheet .answer-sheet-pane {
+    display: flex !important;
+    height: calc(100vh - 140px) !important;
+    min-height: 520px;
+  }
+  .split-exam-layout.view-sheet .mobile-floating-pdf-trigger {
+    display: flex !important;
+  }
+
+  /* View Mode: Both (Stacked scroll) */
+  .split-exam-layout.view-both .pdf-viewer-pane {
+    display: flex !important;
+    height: 480px !important;
+  }
+  .split-exam-layout.view-both .answer-sheet-pane {
+    display: flex !important;
+    height: auto !important;
+  }
+
+  .pdf-render-frame {
+    height: 100% !important;
+    min-height: 420px;
+  }
+
+  .bubble-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 1.05rem;
+    margin: 0 4px;
+  }
+
+  .bubble-q-row {
+    padding: 0.85rem 0.6rem;
+  }
+
+  .sheet-scroll-body {
+    max-height: unset;
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
 

@@ -278,7 +278,21 @@ GIANG, 8"></textarea>
           ⚠️ CẢNH BÁO: Bạn đã rời khỏi màn hình làm bài! Số lần vi phạm sẽ lưu vào bảng điểm.
         </div>
 
-        <div class="split-exam-layout">
+        <!-- Mobile View Mode Segmented Controller (Visible on <= 900px) -->
+        <div class="mobile-exam-mode-bar" id="mobileExamModeBar">
+          <button type="button" class="mobile-mode-btn active" id="btnMobileViewPdf" onclick="setMobileExamView('pdf')">
+            <span>📄 Đề Bài Thi</span>
+          </button>
+          <button type="button" class="mobile-mode-btn" id="btnMobileViewSheet" onclick="setMobileExamView('sheet')">
+            <span>✍️ Phiếu Làm Bài</span>
+            <span class="mobile-answered-badge" id="mobileAnsweredBadge">0/0</span>
+          </button>
+          <button type="button" class="mobile-mode-btn" id="btnMobileViewBoth" onclick="setMobileExamView('both')" title="Xem cả 2 (cuộn dọc)">
+            <span>↕️ Cả 2</span>
+          </button>
+        </div>
+
+        <div class="split-exam-layout view-pdf">
           
           <!-- LEFT PANE: Original PDF Document -->
           <div class="pdf-viewer-pane">
@@ -291,10 +305,26 @@ GIANG, 8"></textarea>
               </div>
             </div>
             <iframe id="studentPdfViewerFrame" class="pdf-render-frame" title="Đề thi gốc"></iframe>
+
+            <!-- Floating Jump-to-Sheet Button on Mobile -->
+            <div class="mobile-floating-sheet-trigger" id="mobileFloatingSheetTrigger">
+              <button type="button" class="btn btn-primary btn-lg" onclick="setMobileExamView('sheet')" style="box-shadow:0 8px 24px rgba(79,70,229,0.45);border-radius:var(--radius-full);font-weight:900;display:flex;align-items:center;gap:0.6rem;padding:0.75rem 1.4rem;">
+                <span>✍️ Điền Đáp Án</span>
+                <span id="mobileFloatingAnswerCount" style="background:#fff;color:var(--primary);padding:2px 8px;border-radius:var(--radius-full);font-size:0.85rem;font-weight:800;">0/0</span>
+                <span>➔</span>
+              </button>
+            </div>
           </div>
 
           <!-- RIGHT PANE: OMR 3D Bubble Answer Sheet -->
           <div class="answer-sheet-pane">
+            <!-- Mobile Quick Return to PDF Button -->
+            <div class="mobile-floating-pdf-trigger" id="mobileFloatingPdfTrigger" style="padding:0.6rem 1.2rem 0;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="setMobileExamView('pdf')" style="border-radius:var(--radius-full);font-weight:800;display:flex;align-items:center;gap:0.4rem;padding:0.4rem 0.9rem;font-size:0.85rem;">
+                <span>⬅️ Đọc Lại Đề Bài</span>
+              </button>
+            </div>
+
             <div class="sheet-header">
               <div style="flex:1;">
                 <div style="font-weight:800;font-size:1rem;color:var(--text-primary);" id="splitExamStudentInfo">Học Sinh</div>
@@ -1016,12 +1046,12 @@ GIANG, 8"></textarea>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
 
   <!-- Main Scripts -->
-  <script src="js/firebase.js?v=2.1"></script>
-  <script src="js/storage.js?v=2.1"></script>
-  <script src="js/sound.js?v=2.1"></script>
-  <script src="js/gamification.js?v=2.1"></script>
-  <script src="js/pdfExtractor.js?v=2.1"></script>
-  <script src="js/mathGenerator.js?v=2.1"></script>
-  <script src="js/app.js?v=2.1"></script>
+  <script src="js/firebase.js?v=2.2"></script>
+  <script src="js/storage.js?v=2.2"></script>
+  <script src="js/sound.js?v=2.2"></script>
+  <script src="js/gamification.js?v=2.2"></script>
+  <script src="js/pdfExtractor.js?v=2.2"></script>
+  <script src="js/mathGenerator.js?v=2.2"></script>
+  <script src="js/app.js?v=2.2"></script>
 </body>
 </html>
