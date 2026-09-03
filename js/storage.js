@@ -50,6 +50,7 @@ const StorageEngine = {
   },
 
   async savePdfBlob(quizId, base64OrBlob) {
+    if (!this.db) await this.initIndexedDB();
     if (this.db) {
       return new Promise((resolve) => {
         const tx = this.db.transaction([STORE_PDFS], 'readwrite');
@@ -59,10 +60,15 @@ const StorageEngine = {
         tx.onerror = () => resolve(false);
       });
     }
-    return this.set('pdf_' + quizId, base64OrBlob);
+    // Fallback only for small files
+    if (typeof base64OrBlob === 'string' && base64OrBlob.length < 500000) {
+      return this.set('pdf_' + quizId, base64OrBlob);
+    }
+    return false;
   },
 
   async getPdfBlob(quizId) {
+    if (!this.db) await this.initIndexedDB();
     if (this.db) {
       const localPdf = await new Promise((resolve) => {
         const tx = this.db.transaction([STORE_PDFS], 'readonly');
@@ -74,10 +80,21 @@ const StorageEngine = {
       if (localPdf) return localPdf;
     }
 
+    // Check cached quiz in localStorage
+    const cachedQuiz = await this.get('quiz:' + quizId);
+    if (cachedQuiz && cachedQuiz.pdfDataUrl && cachedQuiz.pdfDataUrl.startsWith('http')) {
+      return cachedQuiz.pdfDataUrl;
+    }
+
+    // Check Firebase Cloud
     if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
-      const quiz = await window.FirebaseEngine.getQuiz(quizId);
-      if (quiz && quiz.pdfDataUrl && quiz.pdfDataUrl.startsWith('http')) {
-        return quiz.pdfDataUrl;
+      try {
+        const quiz = await window.FirebaseEngine.getQuiz(quizId);
+        if (quiz && quiz.pdfDataUrl && quiz.pdfDataUrl.startsWith('http')) {
+          return quiz.pdfDataUrl;
+        }
+      } catch (err) {
+        console.warn('Firebase getQuiz fallback error:', err);
       }
     }
 
@@ -88,6 +105,7 @@ const StorageEngine = {
     if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
       await window.FirebaseEngine.deletePdf(quizId);
     }
+    if (!this.db) await this.initIndexedDB();
     if (this.db) {
       return new Promise((resolve) => {
         const tx = this.db.transaction([STORE_PDFS], 'readwrite');
@@ -168,57 +186,140 @@ const StorageEngine = {
 
   async saveQuiz(quiz) {
     const quizToSave = { ...quiz };
+    quizToSave.updatedAt = new Date().toISOString();
+
+    // Preserve examHtml for auto-generated or HTML exams
+    if (!quizToSave.examHtml && quizToSave.pdfDataUrl && typeof quizToSave.pdfDataUrl === 'string' && quizToSave.pdfDataUrl.startsWith('data:text/html')) {
+      try {
+        const parts = quizToSave.pdfDataUrl.split(',');
+        if (parts.length > 1) {
+          quizToSave.examHtml = decodeURIComponent(parts[1]);
+        }
+      } catch (e) {}
+    }
+
+    // 1. Luôn lưu nội dung file PDF / HTML gốc vào IndexedDB để đảm bảo an toàn tuyệt đối
+    if (quizToSave.pdfDataUrl && (quizToSave.pdfDataUrl.startsWith('data:') || quizToSave.pdfDataUrl.startsWith('blob:') || quizToSave.pdfDataUrl instanceof Blob)) {
+      await this.savePdfBlob(quiz.id, quizToSave.pdfDataUrl);
+    }
+
+    let cloudResult = null;
+    // 2. Nếu Firebase Cloud đang bật, lưu và upload PDF lên Firebase
     if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
-      await window.FirebaseEngine.saveQuiz(quizToSave);
-      if (quizToSave.pdfDataUrl && quizToSave.pdfDataUrl.startsWith('data:')) {
-        delete quizToSave.pdfDataUrl;
+      cloudResult = await window.FirebaseEngine.saveQuiz(quizToSave);
+      if (cloudResult && cloudResult.downloadUrl) {
+        quizToSave.pdfDataUrl = cloudResult.downloadUrl;
+        quiz.pdfDataUrl = cloudResult.downloadUrl;
       }
-      return await this.set('quiz:' + quiz.id, quizToSave);
     }
-    if (quizToSave.pdfDataUrl && quizToSave.pdfDataUrl.startsWith('data:')) {
-      delete quizToSave.pdfDataUrl;
+
+    // 3. Chuẩn bị lưu vào LocalStorage: chỉ loại bỏ chuỗi Data URL nếu quá lớn (> 300KB).
+    // Đối với đề thi tự sinh dạng HTML (~15KB), GIỮ NGUYÊN trong LocalStorage để học sinh & máy local mở được ngay cả khi offline!
+    const localCacheQuiz = { ...quizToSave };
+    if (localCacheQuiz.pdfDataUrl && (localCacheQuiz.pdfDataUrl.startsWith('data:') || localCacheQuiz.pdfDataUrl.startsWith('blob:'))) {
+      if (typeof localCacheQuiz.pdfDataUrl === 'string' && localCacheQuiz.pdfDataUrl.length > 300000) {
+        delete localCacheQuiz.pdfDataUrl;
+      }
     }
-    return await this.set('quiz:' + quiz.id, quizToSave);
+
+    await this.set('quiz:' + quiz.id, localCacheQuiz);
+    return {
+      success: true,
+      cloudSaved: !!(cloudResult && cloudResult.success),
+      error: cloudResult && cloudResult.error ? cloudResult.error : null
+    };
   },
 
   async getQuiz(id) {
+    let localQuiz = await this.get('quiz:' + id);
+    if (localQuiz) {
+      if (!localQuiz.pdfDataUrl && localQuiz.examHtml) {
+        localQuiz.pdfDataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(localQuiz.examHtml);
+      }
+      return localQuiz;
+    }
+
     if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
-      const cloudQuiz = await window.FirebaseEngine.getQuiz(id);
-      if (cloudQuiz) {
-        const quizToCache = { ...cloudQuiz };
-        if (quizToCache.pdfDataUrl && quizToCache.pdfDataUrl.startsWith('data:')) {
-          delete quizToCache.pdfDataUrl;
+      try {
+        const cloudQuiz = await window.FirebaseEngine.getQuiz(id);
+        if (cloudQuiz) {
+          if (!cloudQuiz.pdfDataUrl && cloudQuiz.examHtml) {
+            cloudQuiz.pdfDataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(cloudQuiz.examHtml);
+          }
+          const quizToCache = { ...cloudQuiz };
+          if (quizToCache.pdfDataUrl && quizToCache.pdfDataUrl.startsWith('data:') && quizToCache.pdfDataUrl.length > 300000) {
+            delete quizToCache.pdfDataUrl;
+          }
+          await this.set('quiz:' + id, quizToCache);
+          return cloudQuiz;
         }
-        await this.set('quiz:' + id, quizToCache);
-        return cloudQuiz;
+      } catch (err) {
+        console.warn('Firebase getQuiz failed, falling back to local:', err);
       }
     }
-    return await this.get('quiz:' + id);
+    return null;
   },
 
   async getAllQuizzes() {
-    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
-      const cloudQuizzes = await window.FirebaseEngine.getAllQuizzes();
-      if (cloudQuizzes && cloudQuizzes.length > 0) {
-        for (const q of cloudQuizzes) {
-          const qCache = { ...q };
-          if (qCache.pdfDataUrl && qCache.pdfDataUrl.startsWith('data:')) {
-            delete qCache.pdfDataUrl;
-          }
-          await this.set('quiz:' + q.id, qCache);
+    const localKeys = await this.list('quiz:');
+    const localList = [];
+    for (const key of localKeys) {
+      const q = await this.get(key);
+      if (q) {
+        if (!q.pdfDataUrl && q.examHtml) {
+          q.pdfDataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(q.examHtml);
         }
-        return cloudQuizzes;
+        localList.push(q);
       }
     }
 
-    const keys = await this.list('quiz:');
-    const list = [];
-    for (const key of keys) {
-      const q = await this.get(key);
-      if (q) list.push(q);
+    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
+      try {
+        const cloudQuizzes = await window.FirebaseEngine.getAllQuizzes();
+        if (cloudQuizzes && cloudQuizzes.length > 0) {
+          // Merge local và cloud thông minh theo ID
+          const quizMap = new Map();
+          // Đưa đề local vào trước
+          localList.forEach(q => { if (q && q.id) quizMap.set(q.id, q); });
+
+          // Cloud cập nhật hoặc bổ sung
+          cloudQuizzes.forEach(cq => {
+            if (!cq || !cq.id) return;
+            if (!cq.pdfDataUrl && cq.examHtml) {
+              cq.pdfDataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(cq.examHtml);
+            }
+            const existing = quizMap.get(cq.id);
+            if (!existing) {
+              quizMap.set(cq.id, cq);
+            } else {
+              const cloudTime = new Date(cq.updatedAt || cq.createdAt || 0).getTime();
+              const localTime = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
+              if (cloudTime >= localTime) {
+                quizMap.set(cq.id, cq);
+              }
+            }
+          });
+
+          const merged = Array.from(quizMap.values());
+          merged.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+          // Cập nhật bộ nhớ đệm LocalStorage
+          for (const q of merged) {
+            const cacheItem = { ...q };
+            if (cacheItem.pdfDataUrl && cacheItem.pdfDataUrl.startsWith('data:') && cacheItem.pdfDataUrl.length > 300000) {
+              delete cacheItem.pdfDataUrl;
+            }
+            await this.set('quiz:' + q.id, cacheItem);
+          }
+          return merged;
+        }
+      } catch (e) {
+        console.warn('Firebase getAllQuizzes failed, using local list:', e);
+      }
     }
-    list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-    return list;
+
+    localList.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    return localList;
   },
 
   async deleteQuiz(quizId) {
@@ -557,15 +658,23 @@ const StorageEngine = {
   },
 
   async syncLocalToCloud() {
-    if (!window.FirebaseEngine || !window.FirebaseEngine.isActive) return;
+    if (!window.FirebaseEngine || !window.FirebaseEngine.isActive) {
+      throw new Error('Firebase chưa kích hoạt hoặc chưa cấu hình.');
+    }
     try {
       console.log('☁️ [Sync] Bắt đầu đồng bộ dữ liệu local lên Cloud...');
       
-      // 1. Đồng bộ Quizzes
+      // 1. Đồng bộ Quizzes (bao gồm upload PDF từ IndexedDB lên Storage)
       const quizKeys = await this.list('quiz:');
       for (const key of quizKeys) {
         const q = await this.get(key);
         if (q) {
+          if (!q.pdfDataUrl || !q.pdfDataUrl.startsWith('http')) {
+            const blob = await this.getPdfBlob(q.id);
+            if (blob) {
+              q.pdfDataUrl = blob;
+            }
+          }
           await window.FirebaseEngine.saveQuiz(q);
         }
       }
@@ -586,6 +695,7 @@ const StorageEngine = {
       }
 
       console.log('☁️ [Sync] Đồng bộ dữ liệu local lên Cloud HOÀN TẤT!');
+      return true;
     } catch (e) {
       console.error('☁️ [Sync] Lỗi khi đồng bộ lên Cloud:', e);
       throw e;

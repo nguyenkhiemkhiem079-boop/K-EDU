@@ -191,6 +191,17 @@ GIANG, 8"></textarea>
               <label>✨ Chọn Avatar Yêu Thích (32+ Linh Thú & Chiến Binh)</label>
               <div id="avatarSelector" style="margin-top:0.3rem;"></div>
             </div>
+
+            <!-- Direct Quiz Code Entry -->
+            <div style="margin-top:1.1rem;padding:0.9rem 1.1rem;background:var(--bg-tertiary);border-radius:var(--radius-lg);border:1.5px dashed var(--primary);display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+              <div style="font-weight:700;color:var(--text-primary);font-size:0.9rem;display:flex;align-items:center;gap:0.4rem;">
+                <span>🔑</span> <span>Vào Đề Thi Bằng Mã:</span>
+              </div>
+              <div style="display:flex;gap:0.5rem;flex:1;min-width:220px;">
+                <input type="text" id="directQuizCodeInput" placeholder="Nhập mã 6 ký tự (VD: AB3X9K)" style="text-transform:uppercase;font-weight:800;letter-spacing:1.5px;text-align:center;" maxlength="10">
+                <button type="button" class="btn btn-primary" onclick="handleJoinByDirectCode()" style="white-space:nowrap;">🚀 Vào Thi</button>
+              </div>
+            </div>
           </form>
           <div id="joinQuizStatus" style="margin-top:0.5rem;font-size:0.95rem;text-align:center;font-weight:700;"></div>
         </div>
@@ -438,10 +449,12 @@ GIANG, 8"></textarea>
 
           <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
             <button type="button" class="btn btn-primary" onclick="handleSaveFirebaseConfig()">💾 Lưu & Kết Nối Cloud ⚡</button>
+            <button type="button" class="btn btn-secondary" onclick="handleTestFirebaseConnection()">🩺 Kiểm Tra Kết Nối Cloud</button>
             <button type="button" class="btn btn-sky" onclick="handleSyncLocalToFirebase()">☁️ Đồng Bộ Dữ Liệu Lên Cloud</button>
             <button type="button" class="btn btn-secondary" onclick="handleDisableFirebase()">📴 Chạy Offline (Tạm ngắt)</button>
             <button type="button" class="btn btn-danger btn-sm" onclick="handleClearFirebaseConfig()">🗑️ Xóa Credentials</button>
           </div>
+          <div id="firebaseConnectionStatusBox" style="margin-top:0.75rem;font-size:0.875rem;"></div>
         </div>
       </div>
 
@@ -774,11 +787,24 @@ GIANG, 8"></textarea>
           <h3 style="font-size:1.1rem;color:var(--text-primary);margin-bottom:1rem;">Bước 3 — Cấu Hình & Phân Quyền Giao Đề</h3>
           
           <div class="form-row">
-            <div class="form-group">
+            <div class="form-group" style="flex: 2; min-width: 240px;">
               <label>Tên Đề Thi</label>
               <input type="text" id="teacherExamTitleInput" value="Đề Kiểm Tra Giữa Kì I — Môn Toán">
             </div>
-            <div class="form-group">
+            <div class="form-group" style="flex: 1; min-width: 140px;">
+              <label>🏫 Khối / Lớp</label>
+              <select id="teacherExamGradeSelect" style="font-weight:700;">
+                <option value="6">Lớp 6</option>
+                <option value="7">Lớp 7</option>
+                <option value="8">Lớp 8</option>
+                <option value="9">Lớp 9</option>
+                <option value="TS10">🎓 Tuyển Sinh Vào 10</option>
+                <option value="10" selected>Lớp 10</option>
+                <option value="11">Lớp 11</option>
+                <option value="12">Lớp 12 / THPT</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex: 1.2; min-width: 170px;">
               <label>📅 Kỳ Thi / Phân Loại (ToanMath)</label>
               <select id="teacherExamTermSelect" style="font-weight:700;">
                 <option value="GK1" selected>🍂 Giữa Học Kỳ 1 (GK1)</option>
@@ -790,8 +816,8 @@ GIANG, 8"></textarea>
                 <option value="regular">📝 Kiểm Tra Thường Xuyên</option>
               </select>
             </div>
-            <div class="form-group">
-              <label>Thời Gian Làm Bài (Phút)</label>
+            <div class="form-group" style="flex: 0.8; min-width: 120px;">
+              <label>Thời Gian (Phút)</label>
               <input type="number" id="teacherExamTimeLimitInput" value="45" min="1" max="180">
             </div>
           </div>
@@ -948,12 +974,12 @@ GIANG, 8"></textarea>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
 
   <!-- Main Scripts -->
-  <script src="js/firebase.js?v=1.1"></script>
-  <script src="js/storage.js?v=1.1"></script>
-  <script src="js/sound.js?v=1.1"></script>
-  <script src="js/gamification.js?v=1.1"></script>
-  <script src="js/pdfExtractor.js?v=1.1"></script>
-  <script src="js/mathGenerator.js?v=1.1"></script>
-  <script src="js/app.js?v=1.1"></script>
+  <script src="js/firebase.js?v=1.3"></script>
+  <script src="js/storage.js?v=1.3"></script>
+  <script src="js/sound.js?v=1.3"></script>
+  <script src="js/gamification.js?v=1.3"></script>
+  <script src="js/pdfExtractor.js?v=1.3"></script>
+  <script src="js/mathGenerator.js?v=1.3"></script>
+  <script src="js/app.js?v=1.3"></script>
 </body>
 </html>
