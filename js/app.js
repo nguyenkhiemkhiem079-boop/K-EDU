@@ -3376,11 +3376,17 @@ async function handleSaveFirebaseConfig() {
     return;
   }
 
+  if (!apiKey.startsWith('AIzaSy')) {
+    showToast('⚠️ API Key không hợp lệ! Mã Firebase API Key của Google luôn bắt đầu bằng "AIzaSy..."', 'error');
+    SoundEngine.playWarning();
+    return;
+  }
+
   const config = { apiKey, projectId, storageBucket, authDomain, appId, messagingSenderId };
   showToast('⚡ Đang lưu cấu hình và kiểm tra kết nối...', 'info');
 
   if (window.FirebaseEngine) {
-    const success = window.FirebaseEngine.saveConfig(config);
+    const success = await window.FirebaseEngine.saveConfig(config);
     if (success) {
       updateFirebaseUI();
       await handleTestFirebaseConnection();
@@ -3396,6 +3402,18 @@ async function handleSaveFirebaseConfig() {
       updateFirebaseUI();
     }
   }
+}
+
+async function handleResetFirebaseDefaultConfig() {
+  localStorage.removeItem('khiemedu_firebase_config');
+  localStorage.setItem('khiemedu_firebase_enabled', '1');
+  if (window.FirebaseEngine) {
+    await window.FirebaseEngine.init();
+  }
+  updateFirebaseUI();
+  showToast('🔄 Đã khôi phục cấu hình chuẩn của Google Firebase!', 'success');
+  if (typeof SoundEngine !== 'undefined' && SoundEngine.playFanfare) SoundEngine.playFanfare();
+  await handleTestFirebaseConnection();
 }
 
 function handleDisableFirebase() {
