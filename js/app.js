@@ -281,10 +281,26 @@ function selectAvatar(emoji, name = '') {
   if (name) showToast(`✨ Đã chọn Avatar: ${emoji} ${name}`, 'info');
 }
 
-/* ================= 👑 ROLE ĐẶC BIỆT: THẦY KHIÊM (MASTER CREATOR) ================= */
+/* ================= 👑 ROLE ĐẶC BIỆT: THẦY KHIÊM (CẦN MẬT KHẨU BẢO MẬT) ================= */
+const MasterTeacherAuth = {
+  getPassword() {
+    return localStorage.getItem('khiemedu_master_pass') || 'khiem123';
+  },
+  setPassword(newPass) {
+    localStorage.setItem('khiemedu_master_pass', newPass);
+  },
+  isVerified() {
+    return localStorage.getItem('khiemedu_master_verified') === 'true';
+  },
+  setVerified(val = true) {
+    localStorage.setItem('khiemedu_master_verified', val ? 'true' : 'false');
+  }
+};
+
 function isMasterTeacherRole(name) {
   const n = (name !== undefined ? name : (AppState.studentName || GamificationEngine.getUserProfile().name || '')).trim().toLowerCase();
-  return n.includes('thầy khiêm') || n.includes('thay khiem') || n === 'khiêm' || n === 'khiem' || n.includes('thaykhiem');
+  const isNameMatch = n.includes('thầy khiêm') || n.includes('thay khiem') || n === 'khiêm' || n === 'khiem' || n.includes('thaykhiem');
+  return isNameMatch && MasterTeacherAuth.isVerified();
 }
 
 function updateMasterTeacherRoleUI(isActive) {
@@ -293,6 +309,100 @@ function updateMasterTeacherRoleUI(isActive) {
 
   const detectedPill = document.getElementById('masterTeacherDetectedPill');
   if (detectedPill) detectedPill.classList.toggle('hidden', !isActive);
+}
+
+function handleMasterTeacherActivation() {
+  if (MasterTeacherAuth.isVerified()) {
+    activateMasterTeacherRole();
+  } else {
+    openMasterTeacherAuthModal();
+  }
+}
+
+function openMasterTeacherAuthModal() {
+  const modal = document.getElementById('masterTeacherAuthModal');
+  const input = document.getElementById('masterTeacherPinInput');
+  const err = document.getElementById('masterTeacherAuthError');
+  if (err) err.textContent = '';
+  if (input) {
+    input.value = '';
+    setTimeout(() => input.focus(), 150);
+  }
+  if (modal) modal.classList.remove('hidden');
+  SoundEngine.playWarning();
+}
+
+function closeMasterTeacherAuthModal() {
+  const modal = document.getElementById('masterTeacherAuthModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function toggleMasterPassVisibility() {
+  const input = document.getElementById('masterTeacherPinInput');
+  if (input) {
+    input.type = input.type === 'password' ? 'text' : 'password';
+  }
+}
+
+function verifyMasterTeacherAuth() {
+  const input = document.getElementById('masterTeacherPinInput');
+  const errorEl = document.getElementById('masterTeacherAuthError');
+  const enteredPass = (input ? input.value : '').trim();
+  const correctPass = MasterTeacherAuth.getPassword();
+
+  if (enteredPass === correctPass) {
+    MasterTeacherAuth.setVerified(true);
+    closeMasterTeacherAuthModal();
+    activateMasterTeacherRole();
+  } else {
+    if (errorEl) errorEl.textContent = '❌ Mật khẩu không chính xác! Vui lòng thử lại.';
+    SoundEngine.playWarning();
+    if (input) {
+      input.classList.add('shake');
+      setTimeout(() => input.classList.remove('shake'), 500);
+      input.focus();
+    }
+  }
+}
+
+function promptChangeMasterPassword() {
+  const currentPass = prompt('Nhập mật khẩu Thầy Khiêm hiện tại:');
+  if (currentPass === null) return;
+  if (currentPass !== MasterTeacherAuth.getPassword()) {
+    alert('❌ Mật khẩu hiện tại không đúng!');
+    return;
+  }
+  const newPass = prompt('Nhập mật khẩu Thầy Khiêm mới (tối thiểu 4 ký tự):');
+  if (!newPass || newPass.trim().length < 4) {
+    alert('⚠️ Mật khẩu mới phải có ít nhất 4 ký tự!');
+    return;
+  }
+  MasterTeacherAuth.setPassword(newPass.trim());
+  showToast('🔑 Đã đổi mật khẩu Role Thầy Khiêm thành công!', 'success');
+  SoundEngine.playCorrect();
+}
+
+function logoutMasterTeacherRole() {
+  MasterTeacherAuth.setVerified(false);
+  const profile = GamificationEngine.getUserProfile();
+  profile.isMasterTeacher = false;
+  profile.name = 'Học Sinh';
+  profile.className = '10';
+  profile.frame = 'frame-target';
+  GamificationEngine.saveUserProfile(profile);
+
+  sessionStorage.removeItem('khiemedu_teacher_logged');
+  
+  const nameInput = document.getElementById('studentJoinName');
+  const classInput = document.getElementById('studentJoinClass');
+  if (nameInput) nameInput.value = '';
+  if (classInput) classInput.value = '10';
+  AppState.studentName = '';
+
+  updateMasterTeacherRoleUI(false);
+  updateGamifyBar();
+  updatePersonalizedExamFeed();
+  showToast('🚪 Đã đăng xuất khỏi Role Thầy Khiêm!', 'info');
 }
 
 function activateMasterTeacherRole() {
@@ -332,7 +442,7 @@ function activateMasterTeacherRole() {
 
   GamificationEngine.fireConfetti();
   SoundEngine.playFanfare();
-  showToast('👑 Chào mừng Thầy Khiêm! Bạn đã đăng nhập Role Master Creator (Mở khóa 100% quyền hạn, khung viền & chế độ Giám Khảo)!', 'success');
+  showToast('👑 Chào mừng Thầy Khiêm! Xác thực mật khẩu thành công! Bạn đã mở khóa toàn bộ quyền hạn & Khung Viền Hoàng Kim Long Phụng!', 'success');
 }
 
 /* Restore previous student login session if available */
@@ -2442,10 +2552,36 @@ function updatePersonalizedExamFeed() {
   const currentName = (document.getElementById('studentJoinName')?.value || '').trim();
   const currentClass = (document.getElementById('studentJoinClass')?.value || '').trim();
   
-  const isMaster = isMasterTeacherRole(currentName);
-  updateMasterTeacherRoleUI(isMaster);
-  if (isMaster) {
-    TeacherAuth.login();
+  const n = currentName.toLowerCase();
+  const isKhiemName = n.includes('thầy khiêm') || n.includes('thay khiem') || n === 'khiêm' || n === 'khiem' || n.includes('thaykhiem');
+
+  if (isKhiemName && !MasterTeacherAuth.isVerified()) {
+    const detectedPill = document.getElementById('masterTeacherDetectedPill');
+    if (detectedPill) {
+      detectedPill.innerHTML = `
+        <span>🔒 Bạn đang nhập tên Thầy Khiêm. Cần mật khẩu để mở khóa Role Master!</span>
+        <button type="button" class="btn btn-sm btn-primary" onclick="openMasterTeacherAuthModal()" style="font-size:0.75rem;padding:0.25rem 0.65rem;border-radius:var(--radius-full);background:linear-gradient(135deg, #f59e0b, #8b5cf6);">Nhập Mật Khẩu 🔑</button>
+      `;
+      detectedPill.classList.remove('hidden');
+    }
+    const navBadge = document.getElementById('masterTeacherNavBadge');
+    if (navBadge) navBadge.classList.add('hidden');
+  } else {
+    const isMaster = isMasterTeacherRole(currentName);
+    updateMasterTeacherRoleUI(isMaster);
+    if (isMaster) {
+      TeacherAuth.login();
+      const detectedPill = document.getElementById('masterTeacherDetectedPill');
+      if (detectedPill) {
+        detectedPill.innerHTML = `
+          <span>👑 Đang hoạt động: <strong>Role Thầy Khiêm (Master Creator)</strong> — Đã mở khóa 100% đặc quyền & Khung Viền Hoàng Kim!</span>
+          <div style="display:flex;gap:0.4rem;">
+            <button type="button" class="btn btn-sm btn-secondary" onclick="switchTab('teacher')" style="font-size:0.75rem;padding:0.25rem 0.65rem;border-radius:var(--radius-full);">Vào Bàn Giáo Viên ➔</button>
+            <button type="button" class="btn btn-sm" onclick="logoutMasterTeacherRole()" style="font-size:0.75rem;padding:0.25rem 0.6rem;border-radius:var(--radius-full);background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);">🚪 Thoát Role</button>
+          </div>
+        `;
+      }
+    }
   }
 
   renderSampleQuizzes(currentName, currentClass);
