@@ -52,29 +52,30 @@ const FirebaseEngine = {
       }
 
       // Initialize Firebase (Compat mode)
-      if (window.firebase && firebase.apps.length === 0) {
+      if (window.firebase) {
+        // If an existing default app exists, delete it so the new configuration takes effect cleanly
+        if (firebase.apps.length > 0) {
+          await Promise.all(firebase.apps.map(a => a.delete().catch(() => {})));
+        }
         this.app = firebase.initializeApp(config);
-      } else if (window.firebase) {
-        this.app = firebase.app();
+        this.db = firebase.firestore();
+        this.storage = firebase.storage();
+        this.isActive = true;
+
+        // Enable offline persistence for Firestore if possible
+        this.db.enablePersistence().catch((err) => {
+          if (err.code === 'failed-precondition') {
+            console.warn('Firestore offline persistence failed: multiple tabs open');
+          } else if (err.code === 'unimplemented') {
+            console.warn('Firestore offline persistence is not supported in this browser');
+          }
+        });
+
+        console.log('☁️ Firebase initialized and Cloud Sync is ACTIVE!');
+        return true;
       } else {
         throw new Error('Chưa nạp được SDK Firebase từ CDN.');
       }
-
-      this.db = firebase.firestore();
-      this.storage = firebase.storage();
-      this.isActive = true;
-
-      // Enable offline persistence for Firestore if possible
-      this.db.enablePersistence().catch((err) => {
-        if (err.code === 'failed-precondition') {
-          console.warn('Firestore offline persistence failed: multiple tabs open');
-        } else if (err.code === 'unimplemented') {
-          console.warn('Firestore offline persistence is not supported in this browser');
-        }
-      });
-
-      console.log('☁️ Firebase initialized and Cloud Sync is ACTIVE!');
-      return true;
     } catch (e) {
       console.error('Firebase initialization error:', e);
       this.isActive = false;
@@ -82,11 +83,11 @@ const FirebaseEngine = {
     }
   },
 
-  // Save config to LocalStorage
-  saveConfig(config) {
+  // Save config to LocalStorage and reinitialize
+  async saveConfig(config) {
     localStorage.setItem('khiemedu_firebase_config', JSON.stringify(config));
     localStorage.setItem('khiemedu_firebase_enabled', '1');
-    return this.init();
+    return await this.init();
   },
 
   // Disable Firebase
