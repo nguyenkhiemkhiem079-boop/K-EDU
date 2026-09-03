@@ -61,11 +61,11 @@ const FirebaseEngine = {
 
       // Initialize Firebase (Compat mode)
       if (window.firebase) {
-        // If an existing default app exists, delete it so the new configuration takes effect cleanly
-        if (firebase.apps.length > 0) {
-          await Promise.all(firebase.apps.map(a => a.delete().catch(() => {})));
+        if (!firebase.apps.length) {
+          this.app = firebase.initializeApp(config);
+        } else {
+          this.app = firebase.app();
         }
-        this.app = firebase.initializeApp(config);
         this.db = firebase.firestore();
         this.storage = firebase.storage();
         this.isActive = true;
@@ -95,6 +95,9 @@ const FirebaseEngine = {
   async saveConfig(config) {
     localStorage.setItem('khiemedu_firebase_config', JSON.stringify(config));
     localStorage.setItem('khiemedu_firebase_enabled', '1');
+    if (window.firebase && firebase.apps.length > 0) {
+      await Promise.all(firebase.apps.map(a => a.delete().catch(() => {})));
+    }
     return await this.init();
   },
 
@@ -248,15 +251,17 @@ const FirebaseEngine = {
 
       // Upload with proper contentType metadata so iframe renders it inline instead of downloading
       const ref = this.storage.ref().child(`quizzes/pdf_${quizId}${ext}`);
-      const uploadTask = await ref.put(blob, {
+      const uploadPromise = ref.put(blob, {
         contentType: mimeType,
         cacheControl: 'public, max-age=86400'
       });
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Storage upload timeout')), 3500));
+      const uploadTask = await Promise.race([uploadPromise, timeoutPromise]);
       const downloadUrl = await uploadTask.ref.getDownloadURL();
       console.log('☁️ PDF/Document uploaded to Firebase Storage:', downloadUrl);
       return downloadUrl;
     } catch (e) {
-      console.error('Firebase Storage upload error:', e);
+      console.warn('Firebase Storage upload non-fatal warning:', e.message || e);
       return null;
     }
   },
@@ -296,10 +301,14 @@ const FirebaseEngine = {
       // If quiz contains raw base64 or data URL, upload to Firebase Storage if available
       if (quizToSave.pdfDataUrl && (quizToSave.pdfDataUrl.startsWith('data:') || quizToSave.pdfDataUrl.startsWith('blob:') || quizToSave.pdfDataUrl instanceof Blob)) {
         if (this.storage) {
-          downloadUrl = await this.uploadPdf(quiz.id, quizToSave.pdfDataUrl, quizToSave.pdfFileName);
-          if (downloadUrl) {
-            quizToSave.pdfDataUrl = downloadUrl;
-            quiz.pdfDataUrl = downloadUrl; // Update original reference so caller can cache it
+          try {
+            downloadUrl = await this.uploadPdf(quiz.id, quizToSave.pdfDataUrl, quizToSave.pdfFileName);
+            if (downloadUrl) {
+              quizToSave.pdfDataUrl = downloadUrl;
+              quiz.pdfDataUrl = downloadUrl; // Update original reference so caller can cache it
+            }
+          } catch (e) {
+            console.warn('Storage upload skipped:', e);
           }
         }
         
@@ -311,7 +320,10 @@ const FirebaseEngine = {
         }
       }
 
-      await this.db.collection('quizzes').doc(quiz.id).set(quizToSave);
+      const setPromise = this.db.collection('quizzes').doc(quiz.id).set(quizToSave);
+      const setTimer = new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore save timeout')), 4000));
+      await Promise.race([setPromise, setTimer]);
+
       console.log('☁️ Quiz saved to Firestore with embedded content:', quiz.id);
       return { success: true, downloadUrl };
     } catch (e) {
