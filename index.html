@@ -14,7 +14,7 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
   
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="css/style.css?v=3.3">
+  <link rel="stylesheet" href="css/style.css?v=3.4">
   
   <!-- KaTeX Math Formula Rendering -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
@@ -44,7 +44,34 @@
     </div>
   </div>
 
-  <!-- ================= ADD STUDENT MODAL ================= -->
+  <!-- ================= MASTER TEACHER PASSWORD MODAL ================= -->
+  <div id="masterTeacherAuthModal" class="auth-modal-backdrop hidden">
+    <div class="auth-card" style="border:2px solid #f59e0b;background:linear-gradient(180deg, var(--bg-card) 0%, var(--bg-primary) 100%);">
+      <div style="font-size:3.5rem;margin-bottom:0.5rem;animation:pulseGold 2s infinite alternate;">👑</div>
+      <h2 style="font-size:1.6rem;color:var(--text-primary);margin-bottom:0.4rem;">Xác Thực Quyền Hạn: Thầy Khiêm</h2>
+      <p style="color:var(--text-secondary);font-size:0.9rem;font-weight:600;line-height:1.5;">
+        Đây là Role Tối Cao dành riêng cho Sáng Lập Viên & Master Creator. Vui lòng nhập <strong>Mật Khẩu Thầy Khiêm</strong> để kích hoạt:
+      </p>
+      
+      <form onsubmit="verifyMasterTeacherAuth(); return false;">
+        <div style="position:relative;margin:1rem 0;">
+          <input type="password" id="masterTeacherPinInput" class="auth-pin-input" placeholder="Nhập mật khẩu..." autocomplete="off" required style="letter-spacing:2px;">
+          <button type="button" onclick="toggleMasterPassVisibility()" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.25rem;">👁️</button>
+        </div>
+        
+        <div id="masterTeacherAuthError" style="color:var(--rose);font-weight:800;font-size:0.85rem;margin-bottom:1rem;min-height:20px;"></div>
+        
+        <div style="display:flex;gap:0.75rem;justify-content:center;">
+          <button type="button" class="btn btn-secondary" onclick="closeMasterTeacherAuthModal()">Hủy Bỏ</button>
+          <button type="submit" class="btn btn-primary btn-lg" style="flex:1;background:linear-gradient(135deg, #f59e0b, #8b5cf6);border:none;font-weight:900;">👑 Mở Khóa Master</button>
+        </div>
+        <div style="margin-top:1.1rem;display:flex;justify-content:space-between;align-items:center;font-size:0.8rem;color:var(--text-muted);">
+          <span>Mật khẩu mặc định: <code>khiem123</code></span>
+          <a href="#" onclick="promptChangeMasterPassword(); return false;" style="color:var(--indigo);font-weight:700;text-decoration:none;">Đổi Mật Khẩu 🔑</a>
+        </div>
+      </form>
+    </div>
+  </div>
   <div id="addStudentModal" class="roster-modal-backdrop hidden">
     <div class="roster-modal-card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
@@ -243,8 +270,8 @@ GIANG, 8"></textarea>
               <div style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;font-weight:800;color:var(--text-primary);">
                 <span>👑</span> <span>Dành cho Giáo viên:</span>
               </div>
-              <button type="button" class="btn btn-sm" onclick="activateMasterTeacherRole()" style="background:linear-gradient(135deg, #f59e0b, #8b5cf6);color:#fff;border:none;font-weight:900;border-radius:var(--radius-full);padding:0.4rem 1rem;box-shadow:0 3px 10px rgba(245, 158, 11, 0.35);cursor:pointer;display:inline-flex;align-items:center;gap:0.4rem;">
-                <span>👨‍🏫</span> <span>Kích Hoạt Role Thầy Khiêm (Admin VIP)</span>
+              <button type="button" class="btn btn-sm" onclick="handleMasterTeacherActivation()" style="background:linear-gradient(135deg, #f59e0b, #8b5cf6);color:#fff;border:none;font-weight:900;border-radius:var(--radius-full);padding:0.4rem 1rem;box-shadow:0 3px 10px rgba(245, 158, 11, 0.35);cursor:pointer;display:inline-flex;align-items:center;gap:0.4rem;">
+                <span>👨‍🏫</span> <span>Kích Hoạt Role Thầy Khiêm (Cần Pass 🔑)</span>
               </button>
             </div>
 
@@ -261,8 +288,11 @@ GIANG, 8"></textarea>
 
             <!-- Role Master Khiem Active Banner -->
             <div id="masterTeacherDetectedPill" class="hidden" style="margin-bottom:0.85rem;padding:0.65rem 1rem;background:linear-gradient(90deg, #fef3c7, #f3e8ff);border:1.5px solid #f59e0b;border-radius:var(--radius-md);color:#92400e;font-weight:800;font-size:0.85rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;">
-              <span>👑 Đang hoạt động: <strong>Role Thầy Khiêm (Master Creator)</strong> — Đã mở khóa 100% đặc quyền, Giám khảo kiểm tra & Khung Viền Hoàng Kim Long Phụng!</span>
-              <button type="button" class="btn btn-sm btn-secondary" onclick="switchTab('teacher')" style="font-size:0.75rem;padding:0.25rem 0.65rem;border-radius:var(--radius-full);">Vào Bàn Giáo Viên ➔</button>
+              <span>👑 Đang hoạt động: <strong>Role Thầy Khiêm (Master Creator)</strong> — Đã mở khóa 100% đặc quyền & Khung Viền Hoàng Kim!</span>
+              <div style="display:flex;gap:0.4rem;">
+                <button type="button" class="btn btn-sm btn-secondary" onclick="switchTab('teacher')" style="font-size:0.75rem;padding:0.25rem 0.65rem;border-radius:var(--radius-full);">Vào Bàn Giáo Viên ➔</button>
+                <button type="button" class="btn btn-sm" onclick="logoutMasterTeacherRole()" style="font-size:0.75rem;padding:0.25rem 0.6rem;border-radius:var(--radius-full);background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);">🚪 Thoát Role</button>
+              </div>
             </div>
 
             <div class="form-group">
@@ -1245,6 +1275,6 @@ GIANG, 8"></textarea>
   <script src="js/gamification.js?v=3.2"></script>
   <script src="js/pdfExtractor.js?v=3.2"></script>
   <script src="js/mathGenerator.js?v=3.2"></script>
-  <script src="js/app.js?v=3.3"></script>
+  <script src="js/app.js?v=3.4"></script>
 </body>
 </html>
