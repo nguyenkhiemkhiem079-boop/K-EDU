@@ -421,7 +421,7 @@ GIANG, 8"></textarea>
                 <!-- Document-Only Mode Controls (Student only sees exam and submits) -->
                 <div id="documentOnlyControls" class="hidden" style="display:flex;align-items:center;gap:0.6rem;">
                   <div class="timer-box" id="docExamTimerBox" style="font-size:0.9rem;padding:4px 10px;">⏱️ 00:00</div>
-                  <button type="button" class="btn btn-success btn-sm" onclick="submitStudentExam()" style="font-weight:800;padding:0.45rem 1.1rem;box-shadow:0 4px 12px rgba(16,185,129,0.35);">
+                  <button type="button" id="btnSubmitDocExam" class="btn btn-success btn-sm" onclick="submitStudentExam()" style="font-weight:800;padding:0.45rem 1.1rem;box-shadow:0 4px 12px rgba(16,185,129,0.35);">
                     🚀 Nộp Bài Thi
                   </button>
                 </div>
@@ -485,7 +485,7 @@ GIANG, 8"></textarea>
               </button>
               <div style="display:flex;align-items:center;gap:0.6rem;">
                 <span style="font-size:0.8rem;font-weight:700;color:var(--text-muted);">★ = Đánh dấu</span>
-                <button type="button" class="btn btn-success btn-lg" onclick="submitStudentExam()">
+                <button type="button" id="btnSubmitStudentExam" class="btn btn-success btn-lg" onclick="submitStudentExam()">
                   Nộp Bài 🚀
                 </button>
               </div>
@@ -620,6 +620,9 @@ GIANG, 8"></textarea>
         </button>
         <button type="button" class="teacher-subtab-btn" id="btnTeacherSubtab_analytics" onclick="switchTeacherSubtab('analytics')">
           <span>📈 Thống Kê & Phân Tích</span>
+        </button>
+        <button type="button" class="teacher-subtab-btn" id="btnTeacherSubtab_vouchers" onclick="switchTeacherSubtab('vouchers')">
+          <span>🎟️ Quản Lý Đổi Thưởng</span>
         </button>
         <button type="button" class="teacher-subtab-btn" id="btnTeacherSubtab_settings" onclick="switchTeacherSubtab('settings')">
           <span>⚙️ Cài Đặt & Cloud</span>
@@ -874,19 +877,27 @@ GIANG, 8"></textarea>
             <h2><span>📐</span> Tự Động Sinh Đề & Câu Hỏi Toán & ĐGNL (Math Auto-Generator)</h2>
             <span class="badge-status" style="background:#ede9fe;color:#6d28d9;font-weight:800;">LaTeX & KaTeX Chuẩn</span>
           </div>
-          <p class="card-subtitle">
-            Tự động sinh bộ đề kèm công thức LaTeX, phương trình và ma trận đáp án giải thích chi tiết (Toán 6 - 12 & Đánh Giá Năng Lực):
-          </p>
+          <!-- MODE SWITCHER: TOÁN PHỔ THÔNG vs ĐÁNH GIÁ NĂNG LỰC -->
+          <div style="display:flex;gap:0.75rem;margin-bottom:1.25rem;border-bottom:2px solid var(--border-color);padding-bottom:1rem;flex-wrap:wrap;align-items:center;">
+            <span style="font-weight:900;color:var(--text-secondary);font-size:0.88rem;text-transform:uppercase;letter-spacing:0.5px;">Chọn Hệ Thống Sinh Đề:</span>
+            <button type="button" id="tabMathModeStandard" class="btn btn-primary" onclick="switchMathGenMode('standard')" style="border-radius:var(--radius-full);font-weight:800;padding:0.6rem 1.35rem;box-shadow:0 3px 10px rgba(99,102,241,0.25);">
+              📐 1. Toán Phổ Thông Chuẩn SGK (Lớp 6 - 12)
+            </button>
+            <button type="button" id="tabMathModeDgnl" class="btn btn-secondary" onclick="switchMathGenMode('dgnl')" style="border-radius:var(--radius-full);font-weight:800;padding:0.6rem 1.35rem;border:2px solid #8b5cf6;color:#6d28d9;background:var(--bg-card);">
+              🧠 2. Đánh Giá Năng Lực Chuẩn Hóa (Mini 100 / Full 200) ⭐ MỚI
+            </button>
+          </div>
 
-          <div class="form-row" style="background:var(--bg-tertiary);padding:1rem 1.25rem;border-radius:var(--radius-lg);border:2px solid var(--border-color);margin-bottom:1rem;">
-            <div class="form-group">
-              <label>🎯 Định Hướng Đề Thi</label>
-              <select id="mathGenTrackSelect" onchange="handleTrackChange(this.value)" style="font-weight:700;">
-                <option value="toan" selected>📐 Toán Phổ Thông (Lớp 6 - 12)</option>
-                <option value="dgnl_qg">🧠 ĐGNL ĐHQG (Định Lượng & Logic)</option>
-                <option value="dgnl_hn">⚡ ĐGTD Bách Khoa / ĐHQGHN</option>
-              </select>
-            </div>
+          <!-- PANEL 1: TOÁN PHỔ THÔNG CHUẨN SGK (LỚP 6 - 12) -->
+          <div id="mathGenStandardPanel">
+            <div class="form-row" style="background:var(--bg-tertiary);padding:1rem 1.25rem;border-radius:var(--radius-lg);border:2px solid var(--border-color);margin-bottom:1rem;">
+              <div class="form-group">
+                <label>🎯 Định Hướng Đề Thi</label>
+                <select id="mathGenTrackSelect" onchange="handleTrackChange(this.value)" style="font-weight:700;">
+                  <option value="toan" selected>📐 Toán Phổ Thông Chuẩn SGK (Lớp 6 - 12)</option>
+                  <option value="dgnl">🧠 Đánh Giá Năng Lực (Mini 100 / Full 200) ➔ Chuyển Ngay</option>
+                </select>
+              </div>
 
             <div class="form-group">
               <label>🏫 Khối Lớp / Hệ Thi</label>
@@ -898,9 +909,8 @@ GIANG, 8"></textarea>
                 <option value="10" selected>Toán 10</option>
                 <option value="11">Toán 11</option>
                 <option value="12">Toán 12</option>
-                <option value="TS10">Luyện Thi Vào 10</option>
-                <option value="DGNL">🧠 ĐGNL (ĐHQG & TSA)</option>
-                <option value="all">Tổng Hợp Đa Dạng</option>
+                <option value="TS10">Luyện Thi Tuyển Sinh Vào 10</option>
+                <option value="all">Tổng Hợp Đa Dạng Khối</option>
               </select>
             </div>
 
@@ -913,7 +923,6 @@ GIANG, 8"></textarea>
                 <option value="CK2">☀️ Cuối Học Kỳ 2 (CK2)</option>
                 <option value="TS10">🎓 Tuyển Sinh Vào 10</option>
                 <option value="THPT">🏛️ Thi Tốt Nghiệp THPT</option>
-                <option value="DGNL">🧠 Đánh Giá Năng Lực</option>
                 <option value="all">Tổng Hợp Cả Năm</option>
               </select>
             </div>
@@ -927,8 +936,6 @@ GIANG, 8"></textarea>
                 <option value="Hình học">Hình học & Đo lường</option>
                 <option value="Hàm số">Hàm số & Parabol</option>
                 <option value="Vectơ">Vectơ & Tọa độ Oxy</option>
-                <option value="DGNL_Logic">ĐGNL: Logic & Suy Luận</option>
-                <option value="DGNL_Data">ĐGNL: Xử Lý Số Liệu</option>
               </select>
             </div>
 
@@ -1083,6 +1090,89 @@ GIANG, 8"></textarea>
               👁️ Xem Trước Bản In Đề Toán (LaTeX)
             </button>
           </div>
+          </div><!-- /mathGenStandardPanel -->
+
+          <!-- PANEL 2: ĐÁNH GIÁ NĂNG LỰC (ĐGNL) ĐỘC LẬP (MINI 100 / FULL 200) -->
+          <div id="mathGenDgnlPanel" class="hidden">
+            <div style="background:var(--bg-tertiary);border:2px solid var(--indigo);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.25rem;">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;">
+                <h4 style="margin:0;color:var(--indigo);font-size:1.15rem;display:flex;align-items:center;gap:0.5rem;">
+                  <span>🧠</span> <strong>Hệ Thống Đề Thi Đánh Giá Năng Lực Chuẩn Hóa</strong>
+                </h4>
+                <span class="badge-status" style="background:#ede9fe;color:#6d28d9;font-weight:800;">
+                  100% Trắc Nghiệm ĐGNL Độc Lập
+                </span>
+              </div>
+
+              <!-- 2 LỰA CHỌN GÓI ĐỀ: MINI TEST 100 CÂU & FULL TEST 200 CÂU -->
+              <label style="font-weight:800;display:block;margin-bottom:0.75rem;color:var(--text-primary);">
+                🎯 Chọn Định Dạng Đề Thi ĐGNL:
+              </label>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:1rem;margin-bottom:1.25rem;">
+                
+                <!-- MINI TEST 100 CÂU -->
+                <div class="dgnl-package-card" id="cardDgnlMini" onclick="selectDgnlPackage('mini')" style="cursor:pointer;border:2.5px solid var(--indigo);background:var(--bg-card);border-radius:var(--radius-lg);padding:1.15rem;position:relative;box-shadow:0 4px 14px rgba(99,102,241,0.15);transition:all 0.2s ease;">
+                  <input type="radio" name="dgnlPackageRadio" id="dgnlPackageMini" value="mini" checked style="position:absolute;top:1rem;right:1rem;width:1.3rem;height:1.3rem;accent-color:var(--indigo);">
+                  <div style="font-size:1.2rem;font-weight:800;color:var(--indigo);margin-bottom:0.35rem;display:flex;align-items:center;gap:0.4rem;">
+                    <span>⚡</span> Mini Test — 100 Câu
+                  </div>
+                  <div style="font-size:0.88rem;color:var(--text-secondary);margin-bottom:0.75rem;line-height:1.4;">
+                    Đề thi rút gọn tinh chuẩn, phù hợp khảo sát định kỳ hoặc luyện tốc độ giải đề phản xạ.
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:0.35rem;font-size:0.84rem;font-weight:700;color:var(--text-primary);background:var(--bg-tertiary);padding:0.65rem 0.85rem;border-radius:var(--radius-md);">
+                    <div>📊 <strong>40 câu</strong> Tư duy Định lượng (Toán học)</div>
+                    <div>🧩 <strong>30 câu</strong> Tư duy Logic & Suy luận</div>
+                    <div>📈 <strong>30 câu</strong> Phân tích & Xử lý Số liệu</div>
+                    <div style="color:var(--indigo);margin-top:2px;">⏱️ Thời gian tiêu chuẩn: <strong>90 phút</strong></div>
+                  </div>
+                </div>
+
+                <!-- FULL TEST 200 CÂU -->
+                <div class="dgnl-package-card" id="cardDgnlFull" onclick="selectDgnlPackage('full')" style="cursor:pointer;border:2px solid var(--border-color);background:var(--bg-card);border-radius:var(--radius-lg);padding:1.15rem;position:relative;opacity:0.85;transition:all 0.2s ease;">
+                  <input type="radio" name="dgnlPackageRadio" id="dgnlPackageFull" value="full" style="position:absolute;top:1rem;right:1rem;width:1.3rem;height:1.3rem;accent-color:var(--indigo);">
+                  <div style="font-size:1.2rem;font-weight:800;color:#7c3aed;margin-bottom:0.35rem;display:flex;align-items:center;gap:0.4rem;">
+                    <span>🎯</span> Full Test — 200 Câu
+                  </div>
+                  <div style="font-size:0.88rem;color:var(--text-secondary);margin-bottom:0.75rem;line-height:1.4;">
+                    Bộ đề toàn diện mô phỏng chính xác áp lực và cấu trúc kỳ thi thực chiến của các ĐH hàng đầu.
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:0.35rem;font-size:0.84rem;font-weight:700;color:var(--text-primary);background:var(--bg-tertiary);padding:0.65rem 0.85rem;border-radius:var(--radius-md);">
+                    <div>📊 <strong>80 câu</strong> Tư duy Định lượng (Toán học)</div>
+                    <div>🧩 <strong>60 câu</strong> Tư duy Logic & Suy luận</div>
+                    <div>📈 <strong>60 câu</strong> Phân tích & Xử lý Số liệu</div>
+                    <div style="color:#7c3aed;margin-top:2px;">⏱️ Thời gian tiêu chuẩn: <strong>150 phút</strong></div>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- THIẾT LẬP BỔ SUNG: HỆ THI & THỜI GIAN -->
+              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:0.85rem;margin-bottom:1.25rem;">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label style="font-weight:800;">🏛️ Hệ Thống Kỳ Thi Mục Tiêu</label>
+                  <select id="dgnlTargetExamSelect" style="font-weight:700;border:2px solid var(--indigo);border-radius:var(--radius-md);padding:0.55rem 0.75rem;background:var(--bg-tertiary);width:100%;">
+                    <option value="HCM" selected>🏛️ ĐHQG TP.HCM (Đánh Giá Năng Lực)</option>
+                    <option value="HSA">🏛️ ĐHQG Hà Nội (HSA — Đánh Giá Năng Lực)</option>
+                    <option value="TSA">🏛️ ĐHBK Hà Nội (TSA — Đánh Giá Tư Duy)</option>
+                  </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                  <label style="font-weight:800;color:var(--indigo);">⏱️ Thời Gian Làm Bài (Phút)</label>
+                  <input type="number" id="dgnlTimeLimitInput" value="90" min="10" max="300" style="font-weight:800;border:2px solid var(--indigo);border-radius:var(--radius-md);padding:0.55rem 0.75rem;background:var(--bg-tertiary);width:100%;">
+                </div>
+              </div>
+
+              <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+                <button type="button" id="btnGenerateDgnlExam" class="btn btn-primary btn-lg" onclick="triggerAutoGenerateDgnlExam()" style="background:linear-gradient(135deg, #4f46e5, #7c3aed);font-weight:800;">
+                  🚀 TẠO ĐỀ ĐÁNH GIÁ NĂNG LỰC NGAY (100 CÂU — 90 PHÚT)
+                </button>
+                <button type="button" class="btn btn-secondary btn-lg" onclick="previewDgnlExamDocument()">
+                  👁️ Xem Trước Bản In LaTeX
+                </button>
+              </div>
+            </div>
+          </div>
 
           <div id="mathGenResultBox" class="hidden" style="margin-top:1rem;"></div>
         </div>
@@ -1149,13 +1239,30 @@ GIANG, 8"></textarea>
 
         <!-- Section 2B: Student & Class Roster Manager -->
         <div class="card" style="border-left: 6px solid var(--primary);">
-          <div class="card-header">
+          <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;">
             <h2><span>👥</span> Quản Lý Danh Bạ Học Sinh & Lớp Học</h2>
+            <button type="button" class="btn btn-danger btn-sm" onclick="openTeacherPenaltyModal()" style="display:inline-flex;align-items:center;gap:0.4rem;font-weight:800;">
+              <span>⚖️</span> <span>Sổ Kỷ Luật & Trừ Điểm</span>
+            </button>
           </div>
           <p class="card-subtitle">
             Danh sách học sinh được phân chia theo từng lớp. Dùng để phân quyền giao đề theo lớp hoặc giao đích danh cho từng bạn:
           </p>
           <div id="teacherRosterManagerWrap"></div>
+        </div>
+
+        <!-- Section 2C: Disciplinary & Penalty Log Manager -->
+        <div class="card" style="border-left: 6px solid var(--rose);margin-top:1.5rem;">
+          <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;">
+            <h2><span>⚖️</span> Sổ Ghi Nhận Kỷ Luật & Điểm Nề Nếp Thi Đua</h2>
+            <button type="button" class="btn btn-danger btn-sm" onclick="openTeacherPenaltyModal()" style="display:inline-flex;align-items:center;gap:0.4rem;font-weight:800;">
+              <span>➕</span> <span>Thêm Ghi Nhận Kỷ Luật / Thưởng Nề Nếp</span>
+            </button>
+          </div>
+          <p class="card-subtitle">
+            Theo dõi tất cả các quyết định trừ điểm hoặc cộng điểm nề nếp học tập của giáo viên và cảnh báo vi phạm phòng thi:
+          </p>
+          <div id="teacherPenaltyManagerWrap"></div>
         </div>
 
       </div>
@@ -1254,6 +1361,29 @@ GIANG, 8"></textarea>
 
       </div>
 
+      <!-- ================= SUB-TAB 5: QUẢN LÝ ĐỔI THƯỞNG HỌC SINH ================= -->
+      <div id="teacherSubtabView_vouchers" class="hidden">
+        <div class="card" style="border-left: 6px solid var(--indigo);">
+          <div class="card-header" style="flex-wrap:wrap;gap:0.75rem;">
+            <div>
+              <h2><span>🎟️</span> Bàn Quản Lý Đổi Thưởng & Xác Nhận Voucher Học Sinh</h2>
+              <p class="card-subtitle" style="margin-bottom:0;">
+                Duyệt voucher miễn BTVN, xác nhận tặng trà sữa hoặc hoàn lại điểm XP cho học sinh:
+              </p>
+            </div>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;" id="teacherVoucherFilterGroup">
+              <button type="button" class="btn btn-secondary btn-sm active" id="btnVoucherFilter_all" onclick="renderTeacherVouchersManager('all')">Tất Cả</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btnVoucherFilter_pending" onclick="renderTeacherVouchersManager('pending')">Chờ Thầy Duyệt ⏳</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btnVoucherFilter_redeemed" onclick="renderTeacherVouchersManager('redeemed')">Đã Nhận Quà ✅</button>
+            </div>
+          </div>
+
+          <div id="teacherVouchersTableWrap" style="margin-top:1rem;">
+            <!-- Populated via renderTeacherVouchersManager() -->
+          </div>
+        </div>
+      </div>
+
     </section>
 
     <!-- ================= RESULTS VIEW ================= -->
@@ -1346,7 +1476,7 @@ GIANG, 8"></textarea>
       <div class="card weekly-quests-card">
         <div class="card-header" style="flex-wrap:wrap;gap:0.75rem;">
           <div>
-            <h2><span>🎯</span> Nhiệm Vụ Tuần & Rương Kho Báu (+400 XP)</h2>
+            <h2><span>🎯</span> Nhiệm Vụ Tuần & Rương Kho Báu (+45 XP)</h2>
             <p class="card-subtitle" style="margin-bottom:0;">Hoàn thành nhiệm vụ tuần để nhận điểm thưởng chuỗi và mở rương độc quyền:</p>
           </div>
           <button type="button" class="btn btn-secondary btn-sm" onclick="openHonorCertificateForCurrentUser()" style="display:flex;align-items:center;gap:0.4rem;font-weight:800;border-radius:var(--radius-full);">
@@ -1417,16 +1547,93 @@ GIANG, 8"></textarea>
       <!-- SUB-TAB 3: REWARD SHOP -->
       <div id="subTabContentShop" class="hidden">
         <div class="card">
-          <div class="card-header">
+          <div class="card-header" style="flex-wrap:wrap;gap:1rem;">
             <div>
-              <h2><span>🎁</span> Cửa Hàng Vật Phẩm & Khung Avatar Danh Dự</h2>
-              <p class="card-subtitle">Dùng điểm XP bạn tích lũy được từ bài thi để đổi các vật phẩm và khung Avatar 3D độc quyền:</p>
+              <h2><span>🎁</span> Cửa Hàng Đổi Thưởng & Vật Phẩm K-EDU</h2>
+              <p class="card-subtitle" style="margin-bottom:0;">Dùng điểm XP thi đua tích lũy để đổi đặc quyền học tập, vật phẩm bổ trợ và vòng quay may mắn:</p>
             </div>
-            <div class="shop-xp-badge" id="shopUserXpBadge">
-              <span>⭐</span> <span id="shopUserXpVal">350 XP</span>
+            <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+              <div id="shopActiveBoosterPill" class="hidden" style="background:#e0e7ff;color:var(--indigo);font-weight:800;padding:0.4rem 0.85rem;border-radius:var(--radius-full);font-size:0.85rem;border:1.5px solid var(--indigo);">
+                ⚡ 2x XP: Còn hiệu lực
+              </div>
+              <div class="shop-xp-badge" id="shopUserXpBadge">
+                <span>⭐</span> <span id="shopUserXpVal">0 XP</span>
+              </div>
             </div>
           </div>
-          <div class="shop-items-grid" id="shopItemsGrid"></div>
+
+          <!-- Category Navigation Tabs -->
+          <div class="shop-cat-nav">
+            <button type="button" class="shop-cat-btn active" id="btnShopCat_perks" onclick="switchShopCategory('perks')">
+              <span>🎟️ Voucher Lớp Học</span>
+            </button>
+            <button type="button" class="shop-cat-btn" id="btnShopCat_boosters" onclick="switchShopCategory('boosters')">
+              <span>⚡ Vật Phẩm Trợ Lực</span>
+            </button>
+            <button type="button" class="shop-cat-btn" id="btnShopCat_cosmetics" onclick="switchShopCategory('cosmetics')">
+              <span>👑 Khung & Danh Hiệu</span>
+            </button>
+            <button type="button" class="shop-cat-btn" id="btnShopCat_wheel" onclick="switchShopCategory('wheel')">
+              <span>🎰 Vòng Quay May Mắn</span>
+            </button>
+            <button type="button" class="shop-cat-btn" id="btnShopCat_wallet" onclick="switchShopCategory('wallet')">
+              <span>🎒 Túi Đồ Của Em</span>
+            </button>
+          </div>
+
+          <!-- Section 1: Standard Item Grid (perks, boosters, cosmetics) -->
+          <div id="shopStandardItemsWrap">
+            <div class="shop-items-grid" id="shopItemsGrid"></div>
+          </div>
+
+          <!-- Section 2: Lucky Spin Wheel (hidden by default) -->
+          <div id="shopLuckyWheelWrap" class="hidden">
+            <div class="lucky-wheel-container">
+              <div style="text-align:center;max-width:550px;margin-bottom:1rem;">
+                <h3 style="font-size:1.4rem;color:var(--text-primary);margin-bottom:0.3rem;">🎰 Vòng Quay Nhân Phẩm K-EDU</h3>
+                <p style="font-size:0.875rem;color:var(--text-secondary);font-weight:600;">
+                  Chi phí: <strong style="color:var(--amber);">20 XP / lượt</strong>. Cơ hội trúng ngay Thẻ 2x XP Booster, Khung Sakura độc bản hoặc Jackpot +50 XP!
+                </p>
+              </div>
+
+              <div class="lucky-wheel-wrap">
+                <div class="lucky-wheel-pointer"></div>
+                <canvas id="luckyWheelCanvas" width="320" height="320" class="lucky-wheel-canvas"></canvas>
+                <button type="button" id="btnSpinWheel" class="lucky-wheel-center-btn" onclick="handleSpinLuckyWheel()">
+                  <span>QUAY</span>
+                  <span style="font-size:0.65rem;opacity:0.9;">20 XP</span>
+                </button>
+              </div>
+
+              <div id="luckyWheelResultBanner" class="hidden" style="margin-top:1rem;padding:0.75rem 1.5rem;background:linear-gradient(135deg, #fef3c7, #fde68a);border:2px solid #f59e0b;border-radius:var(--radius-lg);text-align:center;animation:bounceIn 0.3s ease;">
+                <div style="font-size:1.1rem;font-weight:900;color:#b45309;" id="luckyWheelResultTitle">🎉 Chúc mừng!</div>
+                <div style="font-size:0.875rem;font-weight:700;color:#92400e;margin-top:0.2rem;" id="luckyWheelResultDesc">...</div>
+              </div>
+
+              <!-- Reward Odds Reference -->
+              <div style="margin-top:1.5rem;width:100%;max-width:620px;background:var(--bg-tertiary);border-radius:var(--radius-md);padding:1rem;border:1px solid var(--border-color);">
+                <div style="font-weight:800;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.6rem;text-transform:uppercase;letter-spacing:0.5px;">
+                  📋 Danh Sách Phần Thưởng & Tỉ Lệ:
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(170px, 1fr));gap:0.5rem;font-size:0.8rem;font-weight:700;">
+                  <div style="padding:0.35rem 0.5rem;background:var(--bg-card);border-radius:6px;border-left:3px solid #6366f1;">🌟 2x XP Booster (15%)</div>
+                  <div style="padding:0.35rem 0.5rem;background:var(--bg-card);border-radius:6px;border-left:3px solid #0ea5e9;">🛡️ Bùa Hộ Mệnh (20%)</div>
+                  <div style="padding:0.35rem 0.5rem;background:var(--bg-card);border-radius:6px;border-left:3px solid #f59e0b;">💰 Jackpot +50 XP (5%)</div>
+                  <div style="padding:0.35rem 0.5rem;background:var(--bg-card);border-radius:6px;border-left:3px solid #ec4899;">🌸 Khung Sakura (10%)</div>
+                  <div style="padding:0.35rem 0.5rem;background:var(--bg-card);border-radius:6px;border-left:3px solid #8b5cf6;">🧋 Giảm 50 XP Trà Sữa (10%)</div>
+                  <div style="padding:0.35rem 0.5rem;background:var(--bg-card);border-radius:6px;border-left:3px solid #10b981;">🍀 Thưởng May Mắn +5 XP (40%)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 3: Student Wallet & Backpack (hidden by default) -->
+          <div id="shopStudentWalletWrap" class="hidden">
+            <div id="studentWalletContent">
+              <!-- Rendered via renderStudentWallet() -->
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -1476,6 +1683,9 @@ GIANG, 8"></textarea>
           </div>
         </div>
       </div>
+
+      <!-- Student Disciplinary & Conduct Status Card -->
+      <div id="studentDisciplinaryWrap"></div>
 
       <!-- Badges Showcase -->
       <div class="card">
@@ -1642,6 +1852,126 @@ GIANG, 8"></textarea>
         <button type="button" class="btn btn-danger" onclick="executeAdminResetVinhDanh()" style="display:flex;align-items:center;gap:0.4rem;">
           <span>⚡</span> <span>Xác Nhận Thực Hiện Reset</span>
         </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= MODAL GIÁO VIÊN TRỪ ĐIỂM & KỶ LUẬT THI ĐUA ================= -->
+  <div id="modalTeacherPenalty" class="auth-modal-backdrop hidden" style="z-index:9998;">
+    <div class="penalty-modal-card">
+      
+      <!-- Modal Header -->
+      <div style="padding:1.2rem 1.5rem;border-bottom:2px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg, rgba(244,63,94,0.12), rgba(239,68,68,0.06));">
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <span style="font-size:1.75rem;">⚖️</span>
+          <div>
+            <h3 style="margin:0;font-size:1.25rem;font-weight:900;color:var(--text-primary);">
+              SỔ KỶ LUẬT & ĐIỀU CHỈNH ĐIỂM THI ĐUA
+            </h3>
+            <p style="margin:0.2rem 0 0;font-size:0.825rem;color:var(--text-secondary);font-weight:700;">
+              Trừ điểm vi phạm nề nếp hoặc cộng điểm khuyến khích vào Điểm Vinh Danh của học sinh
+            </p>
+          </div>
+        </div>
+        <button type="button" class="icon-btn" onclick="closeTeacherPenaltyModal()" title="Đóng" style="font-size:1.2rem;line-height:1;">✕</button>
+      </div>
+
+      <!-- Modal Body -->
+      <div style="padding:1.5rem;overflow-y:auto;flex:1;">
+        
+        <form id="teacherPenaltyForm" onsubmit="submitTeacherPenaltyForm(); return false;">
+          
+          <div class="form-row">
+            <div class="form-group" style="flex:1.5;">
+              <label>👤 Chọn Học Sinh Vi Phạm / Khen Thưởng:</label>
+              <select id="penaltyStudentSelect" class="form-input" onchange="onPenaltyStudentSelected()" required>
+                <option value="">-- Chọn học sinh từ danh bạ --</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label>🏫 Lớp Học:</label>
+              <input type="text" id="penaltyClassInput" class="form-input" placeholder="Lớp học..." required>
+            </div>
+          </div>
+
+          <!-- Quick Presets -->
+          <div style="margin-bottom:1.15rem;">
+            <label style="font-size:0.85rem;font-weight:800;color:var(--text-secondary);margin-bottom:0.3rem;display:block;">
+              ⚡ Chọn Nhanh Mức Phạt & Thưởng Mẫu:
+            </label>
+            <div class="quick-penalty-presets">
+              <button type="button" class="penalty-preset-btn" onclick="applyQuickPenaltyPreset(-5, 'Đi học muộn / Mất trật tự trong giờ')">
+                <span>⏱️</span> <span>-5 XP: Đi muộn / Mất trật tự</span>
+              </button>
+              <button type="button" class="penalty-preset-btn" onclick="applyQuickPenaltyPreset(-10, 'Không nộp bài tập về nhà đúng hạn')">
+                <span>📚</span> <span>-10 XP: Thiếu BTVN</span>
+              </button>
+              <button type="button" class="penalty-preset-btn" onclick="applyQuickPenaltyPreset(-20, 'Gian lận / Rời màn hình / Vi phạm nội quy nghiêm trọng')">
+                <span>🚫</span> <span>-20 XP: Gian lận thi cử</span>
+              </button>
+              <button type="button" class="penalty-preset-btn preset-reward" onclick="applyQuickPenaltyPreset(5, 'Tích cực phát biểu xây dựng bài')">
+                <span>🙋</span> <span>+5 XP: Phát biểu sôi nổi</span>
+              </button>
+              <button type="button" class="penalty-preset-btn preset-reward" onclick="applyQuickPenaltyPreset(10, 'Tiến bộ vượt bậc / Hoàn thành xuất sắc nhiệm vụ')">
+                <span>🌟</span> <span>+10 XP: Khen thưởng tiến bộ</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group" style="flex:1;">
+              <label>⚖️ Điểm Thay Đổi (XP) — Nhập số âm (-) để trừ:</label>
+              <input type="number" id="penaltyXpInput" class="form-input" value="-5" min="-100" max="100" required style="font-weight:900;font-size:1.1rem;color:var(--rose);">
+            </div>
+            <div class="form-group" style="flex:2;">
+              <label>📝 Lý Do Điều Chỉnh / Vi Phạm:</label>
+              <input type="text" id="penaltyReasonInput" class="form-input" placeholder="VD: Đi muộn 15 phút, Thiếu bài tập số 3..." required>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:1.25rem;">
+            <label>💬 Lời Nhắn / Ghi Chú Của Giáo Viên (Phụ huynh & học sinh sẽ xem được):</label>
+            <input type="text" id="penaltyNoteInput" class="form-input" placeholder="VD: Thầy nhắc nhở lần đầu, lần sau sẽ trừ nặng hơn...">
+          </div>
+
+          <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+            <button type="button" class="btn btn-secondary" onclick="closeTeacherPenaltyModal()">Hủy Bỏ</button>
+            <button type="submit" class="btn btn-danger" style="display:flex;align-items:center;gap:0.4rem;font-weight:800;">
+              <span>💾</span> <span>Áp Dụng Trừ / Cộng Điểm</span>
+            </button>
+          </div>
+        </form>
+
+        <!-- Disciplinary History Section -->
+        <div style="margin-top:2rem;border-top:1.5px dashed var(--border-color);padding-top:1.25rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.85rem;flex-wrap:wrap;gap:0.5rem;">
+            <h4 style="margin:0;font-size:1.05rem;font-weight:900;color:var(--text-primary);display:flex;align-items:center;gap:0.4rem;">
+              <span>📜</span> <span>Lịch Sử Xử Lý Kỷ Luật Gần Đây</span>
+            </h4>
+            <span id="penaltyHistoryCountBadge" class="badge-status badge-pass" style="font-size:0.75rem;">0 bản ghi</span>
+          </div>
+
+          <div class="table-responsive" style="max-height:260px;overflow-y:auto;">
+            <table class="penalty-history-table">
+              <thead>
+                <tr>
+                  <th>Thời Gian</th>
+                  <th>Học Sinh</th>
+                  <th>Lớp</th>
+                  <th>Mức Điểm</th>
+                  <th>Lý Do Vi Phạm / Thưởng</th>
+                  <th>Ghi Chú</th>
+                  <th>Hành Động</th>
+                </tr>
+              </thead>
+              <tbody id="penaltyHistoryTableBody">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
 
     </div>

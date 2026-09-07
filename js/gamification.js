@@ -261,29 +261,199 @@ const BADGES_DEFINITIONS = [
 ];
 
 const LEVEL_TIERS = [
-  { level: 1, name: 'Tân Binh Học Tập', minXp: 0, maxXp: 200, icon: '🌱' },
-  { level: 2, name: 'Học Giả Siêng Năng', minXp: 200, maxXp: 500, icon: '📖' },
-  { level: 3, name: 'Chiến Binh Toán Học', minXp: 500, maxXp: 1000, icon: '⚔️' },
-  { level: 4, name: 'Bậc Thầy Giải Đề', minXp: 1000, maxXp: 2000, icon: '🧙‍♂️' },
-  { level: 5, name: 'Đại Tông Sư Toán Học', minXp: 2000, maxXp: 5000, icon: '👑' }
+  { level: 1, name: 'Tân Binh Học Tập', minXp: 0, maxXp: 50, icon: '🌱' },
+  { level: 2, name: 'Học Giả Siêng Năng', minXp: 50, maxXp: 150, icon: '📖' },
+  { level: 3, name: 'Chiến Binh Toán Học', minXp: 150, maxXp: 300, icon: '⚔️' },
+  { level: 4, name: 'Bậc Thầy Giải Đề', minXp: 300, maxXp: 600, icon: '🧙‍♂️' },
+  { level: 5, name: 'Đại Tông Sư K-EDU', minXp: 600, maxXp: 1500, icon: '👑' }
 ];
 
-/* ================= 🛡️ 5 HẠNG ĐẤU XẾP HẠNG TUẦN (WEEKLY LEAGUES) ================= */
+/* ================= 🛡️ 5 HẠNG ĐẤU XẾP HẠNG TUẦN (WEEKLY LEAGUES - DEFLATED SCALE) ================= */
 const WEEKLY_LEAGUES = [
-  { id: 'bronze', name: 'Hạng Đồng', icon: '🪵', minXp: 0, maxXp: 299, color: '#b45309', border: '#d97706', bg: 'rgba(180, 83, 9, 0.1)' },
-  { id: 'silver', name: 'Hạng Bạc', icon: '🥈', minXp: 300, maxXp: 599, color: '#64748b', border: '#94a3b8', bg: 'rgba(100, 116, 139, 0.1)' },
-  { id: 'gold', name: 'Hạng Vàng', icon: '🥇', minXp: 600, maxXp: 999, color: '#d97706', border: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)' },
-  { id: 'diamond', name: 'Hạng Kim Cương', icon: '💎', minXp: 1000, maxXp: 1499, color: '#0284c7', border: '#0ea5e9', bg: 'rgba(14, 165, 233, 0.12)' },
-  { id: 'legend', name: 'Hạng Huyền Thoại', icon: '👑', minXp: 1500, maxXp: 999999, color: '#7c3aed', border: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)' }
+  { id: 'bronze', name: 'Hạng Đồng', icon: '🪵', minXp: 0, maxXp: 39, color: '#b45309', border: '#d97706', bg: 'rgba(180, 83, 9, 0.1)' },
+  { id: 'silver', name: 'Hạng Bạc', icon: '🥈', minXp: 40, maxXp: 79, color: '#64748b', border: '#94a3b8', bg: 'rgba(100, 116, 139, 0.1)' },
+  { id: 'gold', name: 'Hạng Vàng', icon: '🥇', minXp: 80, maxXp: 149, color: '#d97706', border: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)' },
+  { id: 'diamond', name: 'Hạng Kim Cương', icon: '💎', minXp: 150, maxXp: 249, color: '#0284c7', border: '#0ea5e9', bg: 'rgba(14, 165, 233, 0.12)' },
+  { id: 'legend', name: 'Hạng Huyền Thoại', icon: '👑', minXp: 250, maxXp: 999999, color: '#7c3aed', border: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)' }
 ];
 
-/* ================= 🎁 CỬA HÀNG ĐỔI THƯỞNG XP (REWARD SHOP) ================= */
+/* ================= 🎁 CỬA HÀNG ĐỔI THƯỞNG K-EDU (REWARD HUB & MARKETPLACE) ================= */
 const SHOP_ITEMS = [
-  { id: 'frame_fire', name: 'Khung Lửa Rực Cháy', icon: '🔥', type: 'frame', priceXp: 300, desc: 'Hiệu ứng lửa cháy rực rỡ xung quanh Avatar của bạn', cssClass: 'frame-flame-ember' },
-  { id: 'frame_gold', name: 'Khung Vương Miện Vàng', icon: '👑', type: 'frame', priceXp: 600, desc: 'Khung Hoàng Gia dát vàng sáng lấp lánh dành cho thủ khoa', cssClass: 'frame-sovereign-crown' },
-  { id: 'frame_neon', name: 'Khung Điện Quang Neon', icon: '⚡', type: 'frame', priceXp: 450, desc: 'Hiệu ứng điện quang Cyberpunk đổi màu năng động', cssClass: 'frame-lightning-storm' },
-  { id: 'shield_freeze', name: 'Khiên Bảo Vệ Chuỗi', icon: '🛡️', type: 'consumable', priceXp: 200, desc: 'Tự động bảo vệ chuỗi Streak không bị mất nếu nghỉ 1 ngày' },
-  { id: 'avatar_dragon', name: 'Linh Vật Rồng Lửa', icon: '🐉', type: 'avatar', priceXp: 500, desc: 'Linh vật Avatar tối thượng thể hiện sức mạnh toán học' }
+  // === CATEGORY 1: VOUCHER & ĐẶC QUYỀN LỚP HỌC (perks) ===
+  {
+    id: 'perk_homework_pass',
+    name: 'Thẻ Miễn 1 Buổi BTVN',
+    icon: '🎟️',
+    type: 'perk',
+    category: 'perks',
+    priceXp: 120,
+    desc: 'Xuất trình mã Voucher điện tử cho Thầy Khiêm để được miễn làm bài tập về nhà 1 buổi!',
+    prefix: 'HW',
+    badgeText: 'HOT 🎟️'
+  },
+  {
+    id: 'perk_milk_tea',
+    name: 'Voucher Trà Sữa Thầy Khiêm',
+    icon: '🧋',
+    type: 'perk',
+    category: 'perks',
+    priceXp: 250,
+    desc: 'Đổi 1 ly trà sữa thơm ngon hoặc phần nước ngọt giải khát tại buổi học trực tiếp của Thầy.',
+    prefix: 'TS',
+    badgeText: 'QUÀ THỰC TẾ 🧋'
+  },
+  {
+    id: 'perk_bonus_point',
+    name: 'Điểm Cộng Ưu Tiên Kiểm Tra',
+    icon: '📝',
+    type: 'perk',
+    category: 'perks',
+    priceXp: 180,
+    desc: 'Được cộng ưu tiên +0.5 điểm trực tiếp vào bài kiểm tra 15 phút trên lớp học.',
+    prefix: 'PT',
+    badgeText: 'ĐẶC QUYỀN 📝'
+  },
+
+  // === CATEGORY 2: THẺ BỔ TRỢ & VẬT PHẨM TRỢ LỰC (boosters) ===
+  {
+    id: 'booster_xp_2x',
+    name: 'Thẻ Nhân Đôi XP (24h)',
+    icon: '🌟',
+    type: 'booster',
+    category: 'boosters',
+    priceXp: 40,
+    desc: 'Kích hoạt nhân 2 toàn bộ điểm XP nhận được từ tất cả các bài thi trong 24 giờ tiếp theo.',
+    durationHours: 24,
+    badgeText: 'X2 XP ⚡'
+  },
+  {
+    id: 'shield_freeze',
+    name: 'Bùa Hộ Mệnh Chuỗi Streak',
+    icon: '🛡️',
+    type: 'booster',
+    category: 'boosters',
+    priceXp: 25,
+    desc: 'Tự động bảo vệ chuỗi ngày học Streak không bị đứt đoạn nếu lỡ quên hoặc bận 1 ngày.',
+    badgeText: 'BẢO VỆ 🛡️'
+  },
+  {
+    id: 'booster_deep_hint',
+    name: 'Vé Lời Giải Chuyên Sâu VDC',
+    icon: '💡',
+    type: 'booster',
+    category: 'boosters',
+    priceXp: 15,
+    desc: 'Mở khóa phân tích sơ đồ tư duy giải nhanh cho các câu hỏi Vận dụng cao (VDC) điểm 10.',
+    badgeText: 'MẸO GIẢI 💡'
+  },
+
+  // === CATEGORY 3: DANH HIỆU ĐEO TRƯỚC TÊN (titles) ===
+  {
+    id: 'title_thu_khoa',
+    name: 'Danh hiệu [🏆 Thủ Khoa K-EDU]',
+    icon: '🏆',
+    type: 'title',
+    category: 'titles',
+    priceXp: 100,
+    titleText: '🏆 Thủ Khoa',
+    titleColor: '#d97706',
+    desc: 'Gắn huy hiệu danh dự vương giả màu vàng sáng chói cạnh tên bạn trên Bảng Vàng toàn trường.'
+  },
+  {
+    id: 'title_dgnl_god',
+    name: 'Danh hiệu [🧠 Chiến Thần ĐGNL]',
+    icon: '🧠',
+    type: 'title',
+    category: 'titles',
+    priceXp: 80,
+    titleText: '🧠 Chiến Thần ĐGNL',
+    titleColor: '#7c3aed',
+    desc: 'Khẳng định đẳng cấp tư duy logic và số liệu chuẩn hóa của thí sinh chinh phục ĐGNL hàng đầu.'
+  },
+  {
+    id: 'title_hoc_ba',
+    name: 'Danh hiệu [💎 Học Bá]',
+    icon: '💎',
+    type: 'title',
+    category: 'titles',
+    priceXp: 70,
+    titleText: '💎 Học Bá',
+    titleColor: '#0284c7',
+    desc: 'Danh xưng dành riêng cho những bạn học sinh chăm chỉ, đạt điểm cao liên tục.'
+  },
+  {
+    id: 'title_bat_bai',
+    name: 'Danh hiệu [⚡ Bất Bại]',
+    icon: '⚡',
+    type: 'title',
+    category: 'titles',
+    priceXp: 90,
+    titleText: '⚡ Bất Bại',
+    titleColor: '#dc2626',
+    desc: 'Tia chớp đỏ rực lửa thể hiện phong độ thi cử bất khả chiến bại.'
+  },
+
+  // === CATEGORY 4: KHUNG AVATAR 3D ĐỘC QUYỀN (frames) ===
+  {
+    id: 'frame_sakura',
+    name: 'Khung Cánh Hoa Anh Đào',
+    icon: '🌸',
+    type: 'frame',
+    category: 'frames',
+    priceXp: 50,
+    desc: 'Hiệu ứng cánh hoa anh đào nở rộ lung linh mang sắc xuân tươi thắm xung quanh Avatar.',
+    cssClass: 'frame-sakura-bloom'
+  },
+  {
+    id: 'frame_galaxy',
+    name: 'Khung Dải Ngân Hà Vũ Trụ',
+    icon: '🌌',
+    type: 'frame',
+    category: 'frames',
+    priceXp: 80,
+    desc: 'Vòng xoáy ngân hà tinh vân huyền ảo tỏa ánh sao băng tím thẫm đa chiều.',
+    cssClass: 'frame-cosmic-galaxy'
+  },
+  {
+    id: 'frame_neon',
+    name: 'Khung Điện Quang Cyberpunk',
+    icon: '⚡',
+    type: 'frame',
+    category: 'frames',
+    priceXp: 65,
+    desc: 'Hiệu ứng neon công nghệ tương lai nhấp nháy năng động màu xanh ngọc lam.',
+    cssClass: 'frame-neon-cyber'
+  },
+  {
+    id: 'frame_gold',
+    name: 'Khung Hoàng Gia Dát Vàng',
+    icon: '👑',
+    type: 'frame',
+    category: 'frames',
+    priceXp: 120,
+    desc: 'Khung kim hoàn hoàng tộc dát vàng 24K đính ngọc bích quý phái của thủ khoa.',
+    cssClass: 'frame-royal-gold'
+  },
+  {
+    id: 'frame_fire',
+    name: 'Khung Lửa Rực Cháy',
+    icon: '🔥',
+    type: 'frame',
+    category: 'frames',
+    priceXp: 40,
+    desc: 'Ngọn lửa đỏ cam rực cháy tiếp thêm tinh thần quyết tâm giải toán mãnh liệt.',
+    cssClass: 'frame-flame-ember'
+  }
+];
+
+/* ================= 🎰 VÒNG QUAY MAY MẮN (LUCKY SPIN WHEEL) ================= */
+const LUCKY_WHEEL_ITEMS = [
+  { id: 'w_booster_2x', name: 'Thẻ 2x XP Booster (24h)', icon: '🌟', type: 'booster', color: '#6366f1', weight: 15 },
+  { id: 'w_shield', name: 'Bùa Hộ Mệnh Chuỗi Streak', icon: '🛡️', type: 'booster', color: '#0ea5e9', weight: 20 },
+  { id: 'w_jackpot_50', name: 'Jackpot +50 XP Khủng!', icon: '💰', type: 'xp', value: 50, color: '#f59e0b', weight: 5 },
+  { id: 'w_frame_sakura', name: 'Khung Avatar Sakura', icon: '🌸', type: 'frame', frameClass: 'frame-sakura-bloom', color: '#ec4899', weight: 10 },
+  { id: 'w_voucher_discount', name: 'Mã Giảm 50 XP Đổi Trà Sữa', icon: '🧋', type: 'discount', color: '#8b5cf6', weight: 10 },
+  { id: 'w_consolation_5', name: 'Thưởng May Mắn +5 XP', icon: '🍀', type: 'xp', value: 5, color: '#10b981', weight: 40 }
 ];
 
 /* ================= 🗓️ WEEKLY HONOR ENGINE ================= */
@@ -375,21 +545,39 @@ const WeeklyHonorEngine = {
 
     const sortedResults = [...allResults].sort((a, b) => new Date(a.submittedAt || 0) - new Date(b.submittedAt || 0));
 
+    // Nhóm bài nộp theo từng học sinh và theo từng đề thi (quizId)
+    // để chỉ lấy ĐIỂM CAO NHẤT cho mỗi đề, ngăn chặn hoàn toàn lạm phát điểm do làm lại
+    const studentSubmissions = {};
+
     sortedResults.forEach(res => {
       if (!res || !res.name) return;
       if (targetClass !== 'all' && res.className !== targetClass) return;
-      
-      if (weekRange && !this.isInWeek(res.submittedAt, weekRange)) {
-        return;
-      }
+      if (weekRange && !this.isInWeek(res.submittedAt, weekRange)) return;
 
       const key = res.name.trim().toLowerCase();
-      if (!studentMap[key]) {
-        studentMap[key] = {
+      if (!studentSubmissions[key]) {
+        studentSubmissions[key] = {
           name: res.name.trim(),
           className: res.className || '10',
           avatar: res.avatar || '🦊',
           frame: res.frame || 'frame-gold-perfect',
+          byQuiz: {}
+        };
+      }
+      const qId = res.quizId || 'quiz_default';
+      if (!studentSubmissions[key].byQuiz[qId]) {
+        studentSubmissions[key].byQuiz[qId] = [];
+      }
+      studentSubmissions[key].byQuiz[qId].push(res);
+    });
+
+    Object.entries(studentSubmissions).forEach(([key, stData]) => {
+      if (!studentMap[key]) {
+        studentMap[key] = {
+          name: stData.name,
+          className: stData.className,
+          avatar: stData.avatar,
+          frame: stData.frame,
           submissionsCount: 0,
           uniqueQuizzes: new Set(),
           perfectScores: 0,
@@ -406,53 +594,99 @@ const WeeklyHonorEngine = {
       }
 
       const item = studentMap[key];
-      item.submissionsCount++;
-      if (res.quizId) item.uniqueQuizzes.add(res.quizId);
-      const score = typeof res.totalScore === 'number' ? res.totalScore : 0;
-      item.totalScoreSum += score;
-      item.lastSubmittedAt = res.submittedAt;
+      let practiceBonusTotal = 0;
 
-      if (res.timeTakenSeconds && res.timeTakenSeconds < item.fastestQuizSeconds) {
-        item.fastestQuizSeconds = res.timeTakenSeconds;
-      }
-      if (res.tabSwitches === 0) {
-        item.honestSubmissions++;
-      }
+      // Sắp xếp các đề theo thời gian nộp bài đầu tiên
+      const quizIds = Object.keys(stData.byQuiz);
+      quizIds.sort((qa, qb) => {
+        const timeA = new Date(stData.byQuiz[qa][0].submittedAt || 0);
+        const timeB = new Date(stData.byQuiz[qb][0].submittedAt || 0);
+        return timeA - timeB;
+      });
 
-      // Điểm Vinh Danh
-      let earnedXp = 50;
-      if (score >= 10 || res.scorePct === 100) {
-        earnedXp += 120;
-        item.perfectScores++;
-        item.currentPerfectStreak++;
-        if (item.currentPerfectStreak > item.maxPerfectStreak) {
-          item.maxPerfectStreak = item.currentPerfectStreak;
+      quizIds.forEach(qId => {
+        const attempts = stData.byQuiz[qId];
+        // Chọn bài thi có điểm cao nhất trong các lần nộp của đề này
+        const bestAttempt = [...attempts].sort((a, b) => {
+          if ((b.totalScore || 0) !== (a.totalScore || 0)) {
+            return (b.totalScore || 0) - (a.totalScore || 0);
+          }
+          return (a.timeTakenSeconds || 9999) - (b.timeTakenSeconds || 9999);
+        })[0];
+
+        item.submissionsCount++;
+        item.uniqueQuizzes.add(qId);
+        const score = typeof bestAttempt.totalScore === 'number' ? bestAttempt.totalScore : 0;
+        item.totalScoreSum += score;
+        item.lastSubmittedAt = bestAttempt.submittedAt;
+
+        if (bestAttempt.timeTakenSeconds && bestAttempt.timeTakenSeconds < item.fastestQuizSeconds) {
+          item.fastestQuizSeconds = bestAttempt.timeTakenSeconds;
+        }
+        if (bestAttempt.tabSwitches === 0) {
+          item.honestSubmissions++;
         }
 
-        if (item.currentPerfectStreak === 2) {
-          earnedXp += 100;
-          if (!item.honorsBadges.includes('⚔️ Song Đao')) item.honorsBadges.push('⚔️ Song Đao');
-        } else if (item.currentPerfectStreak === 3) {
-          earnedXp += 250;
-          if (!item.honorsBadges.includes('🌟 Tam Tinh')) item.honorsBadges.push('🌟 Tam Tinh');
-        } else if (item.currentPerfectStreak >= 5) {
-          earnedXp += 500;
-          if (!item.honorsBadges.includes('👑 Bất Bại')) item.honorsBadges.push('👑 Bất Bại');
+        // Tính điểm Vinh Danh cho kết quả tốt nhất của đề này (kinh tế điểm mới không lạm phát)
+        let earnedXp = 5; // Điểm nền hoàn thành bài thi
+        if (score >= 10 || bestAttempt.scorePct === 100) {
+          earnedXp += 10; // Điểm 10 tuyệt đối
+          item.perfectScores++;
+          item.currentPerfectStreak++;
+          if (item.currentPerfectStreak > item.maxPerfectStreak) {
+            item.maxPerfectStreak = item.currentPerfectStreak;
+          }
+
+          if (item.currentPerfectStreak === 2) {
+            earnedXp += 5;
+            if (!item.honorsBadges.includes('⚔️ Song Đao')) item.honorsBadges.push('⚔️ Song Đao');
+          } else if (item.currentPerfectStreak === 3) {
+            earnedXp += 10;
+            if (!item.honorsBadges.includes('🌟 Tam Tinh')) item.honorsBadges.push('🌟 Tam Tinh');
+          } else if (item.currentPerfectStreak >= 5) {
+            earnedXp += 20;
+            if (!item.honorsBadges.includes('👑 Bất Bại')) item.honorsBadges.push('👑 Bất Bại');
+          }
+        } else {
+          item.currentPerfectStreak = 0;
+          if (score >= 9.0) earnedXp += 5;
+          else if (score >= 8.0) earnedXp += 3;
         }
-      } else {
-        item.currentPerfectStreak = 0;
-        if (score >= 9.0) earnedXp += 60;
-        else if (score >= 8.0) earnedXp += 30;
-      }
 
-      if (res.tabSwitches === 0) earnedXp += 25;
+        if (bestAttempt.tabSwitches === 0) earnedXp += 2;
+        item.honorXp += earnedXp;
 
-      item.honorXp += earnedXp;
+        // Nếu có làm lại (retake), chỉ cộng thưởng rèn luyện nhỏ (1 XP mỗi lần, tối đa 5 XP/tuần)
+        const retakesCount = attempts.length - 1;
+        if (retakesCount > 0 && practiceBonusTotal < 5) {
+          const bonus = Math.min(retakesCount * 1, 5 - practiceBonusTotal);
+          practiceBonusTotal += bonus;
+        }
+      });
+
+      item.honorXp += practiceBonusTotal;
+      item.avgScore = item.submissionsCount ? Math.round((item.totalScoreSum / item.submissionsCount) * 10) / 10 : 0;
     });
 
     const list = Object.values(studentMap);
     list.forEach(st => {
-      st.avgScore = st.submissionsCount ? (Math.round((st.totalScoreSum / st.submissionsCount) * 10) / 10) : 0;
+      // Áp dụng điểm thưởng/phạt kỷ luật từ Giáo viên (Teacher Disciplinary Adjustments)
+      const allPenalties = typeof StorageEngine !== 'undefined' && typeof StorageEngine.getAllPenalties === 'function'
+        ? StorageEngine.getAllPenalties()
+        : [];
+
+      const studentPenalties = allPenalties.filter(p => {
+        if (!p || !p.studentName) return false;
+        if (p.studentName.trim().toLowerCase() !== st.name.trim().toLowerCase()) return false;
+        if (weekRange && !WeeklyHonorEngine.isInWeek(p.createdAt, weekRange)) return false;
+        return true;
+      });
+
+      const penaltySum = studentPenalties.reduce((sum, p) => sum + (p.xpChange || 0), 0);
+      st.honorXp = Math.max(0, st.honorXp + penaltySum);
+      st.penaltiesCount = studentPenalties.length;
+      st.penaltiesTotalXp = penaltySum;
+      st.penaltiesList = studentPenalties;
 
       const classQuizzes = availableQuizzes.filter(q => {
         if (!q.grade) return true;
@@ -465,7 +699,7 @@ const WeeklyHonorEngine = {
       st.completionRate = Math.min(100, Math.round((completedCount / totalRequired) * 100));
 
       if (completedCount >= totalRequired && totalRequired > 0) {
-        st.honorXp += 400;
+        st.honorXp += 25; // Thưởng hoàn thành 100% nhiệm vụ tuần (deflated from 400)
         if (!st.honorsBadges.includes('🛡️ Toàn Năng')) {
           st.honorsBadges.push('🛡️ Toàn Năng');
         }
@@ -607,7 +841,7 @@ const WeeklyHonorEngine = {
         desc: 'Hoàn thành ít nhất 3 đề thi trong tuần',
         target: 3,
         current: Math.min(3, submissions),
-        rewardXp: 150,
+        rewardXp: 15,
         icon: '🎯',
         isCompleted: submissions >= 3
       },
@@ -617,7 +851,7 @@ const WeeklyHonorEngine = {
         desc: 'Giành ít nhất 1 bài thi đạt điểm 10 tuyệt đối',
         target: 1,
         current: Math.min(1, perfects),
-        rewardXp: 200,
+        rewardXp: 20,
         icon: '💯',
         isCompleted: perfects >= 1
       },
@@ -627,7 +861,7 @@ const WeeklyHonorEngine = {
         desc: 'Làm bài thi nghiêm túc, 0 lần rời màn hình',
         target: 1,
         current: Math.min(1, honest),
-        rewardXp: 100,
+        rewardXp: 10,
         icon: '🕊️',
         isCompleted: honest >= 1
       }
@@ -645,7 +879,7 @@ const GamificationEngine = {
         className: '10',
         avatar: '🦊',
         frame: 'frame-target',
-        xp: 350,
+        xp: 45,
         streak: 3,
         perfectStreak: 1,
         lastActiveDate: new Date().toISOString().slice(0, 10),
@@ -654,7 +888,12 @@ const GamificationEngine = {
         totalCorrectAnswers: 28,
         inventory: ['frame_target', 'frame-target'],
         unlockedFrames: ['frame-target', 'frame-gold-perfect', 'frame-flame-ember', 'frame-angel-wings'],
-        unlockedBadges: ['first_blood', 'streak_3', 'honest_soul']
+        unlockedBadges: ['first_blood', 'streak_3', 'honest_soul'],
+        vouchers: [],
+        boosters: {},
+        unlockedTitles: [],
+        equippedTitle: '',
+        penalties: []
       };
       this.saveUserProfile(initial);
       return initial;
@@ -666,6 +905,11 @@ const GamificationEngine = {
       if (!p.unlockedFrames) p.unlockedFrames = ['frame-target'];
       if (!p.unlockedBadges) p.unlockedBadges = ['first_blood'];
       if (!p.frame) p.frame = 'frame-target';
+      if (!p.vouchers) p.vouchers = [];
+      if (!p.boosters) p.boosters = {};
+      if (!p.unlockedTitles) p.unlockedTitles = [];
+      if (!p.equippedTitle) p.equippedTitle = '';
+      if (!p.penalties) p.penalties = [];
       return p;
     } catch {
       return {};
@@ -692,7 +936,12 @@ const GamificationEngine = {
       totalCorrectAnswers: 0,
       inventory: ['frame_target', 'frame-target'],
       unlockedFrames: ['frame-target'],
-      unlockedBadges: []
+      unlockedBadges: [],
+      vouchers: [],
+      boosters: {},
+      unlockedTitles: [],
+      equippedTitle: '',
+      penalties: []
     };
     this.saveUserProfile(clean);
     return clean;
@@ -727,50 +976,114 @@ const GamificationEngine = {
 
   awardExamRewards(result, allQuizzesForClass = []) {
     const profile = this.getUserProfile();
-    let xpGained = 50;
-    const bonusBreakdown = [];
+
+    // Kiểm tra thẻ nhân đôi XP (2x XP Booster) còn hiệu lực
+    const hasActive2x = profile.boosters && profile.boosters.xp2xUntil && profile.boosters.xp2xUntil > Date.now();
+
+    // ================= XỬ LÝ LÀM LẠI (RETAKE) — CHỐNG LẠM PHÁT ĐIỂM =================
+    if (result.isRetake) {
+      let baseRetakeXp = 2; // Điểm rèn luyện củng cố tượng trưng (deflated from 10)
+      const bonusBreakdown = [{ label: 'Luyện tập củng cố (Làm lại đề)', xp: baseRetakeXp, icon: '🔄' }];
+
+      if (result.tabSwitches === 0) {
+        baseRetakeXp += 1;
+        bonusBreakdown.push({ label: 'Tập trung chính trực', xp: 1, icon: '🕊️' });
+      }
+
+      let finalRetakeXp = baseRetakeXp;
+      if (hasActive2x) {
+        finalRetakeXp *= 2;
+        bonusBreakdown.push({ label: '⚡ Kích hoạt 2x Booster (Nhân đôi XP)', xp: baseRetakeXp, icon: '🌟' });
+      }
+
+      profile.xp = (profile.xp || 0) + finalRetakeXp;
+      this.saveUserProfile(profile);
+
+      return {
+        xpGained: finalRetakeXp,
+        streak: profile.streak || 1,
+        bonusBreakdown,
+        newBadges: [],
+        newFrames: []
+      };
+    }
+
+    // ================= LÀM BÀI MỚI (LẦN ĐẦU) — QUY CHUẨN ĐIỂM DEFLATED =================
+    let xpGained = 5; // Base XP hoàn thành đề (deflated from 50)
+    const bonusBreakdown = [{ label: 'Hoàn thành bài thi', xp: 5, icon: '📝' }];
 
     // Tích lũy câu đúng
     profile.totalCorrectAnswers = (profile.totalCorrectAnswers || 0) + (result.correct || 0);
 
     // Điểm số bài thi
     if (result.totalScore >= 10 || result.scorePct === 100) {
-      xpGained += 120;
-      bonusBreakdown.push({ label: 'Điểm 10 Tuyệt Đối', xp: 120, icon: '💯' });
+      xpGained += 10; // deflated from 120
+      bonusBreakdown.push({ label: 'Điểm 10 Tuyệt Đối', xp: 10, icon: '💯' });
       profile.perfectCount = (profile.perfectCount || 0) + 1;
       profile.perfectStreak = (profile.perfectStreak || 0) + 1;
 
       if (profile.perfectStreak === 2) {
-        xpGained += 100;
-        bonusBreakdown.push({ label: 'Chuỗi 2 Điểm 10 (Song Đao ⚔️)', xp: 100, icon: '⚔️' });
+        xpGained += 5; // deflated from 100
+        bonusBreakdown.push({ label: 'Chuỗi 2 Điểm 10 (Song Đao ⚔️)', xp: 5, icon: '⚔️' });
       } else if (profile.perfectStreak === 3) {
-        xpGained += 250;
-        bonusBreakdown.push({ label: 'Chuỗi 3 Điểm 10 (Tam Tinh 🌟)', xp: 250, icon: '🌟' });
+        xpGained += 10; // deflated from 250
+        bonusBreakdown.push({ label: 'Chuỗi 3 Điểm 10 (Tam Tinh 🌟)', xp: 10, icon: '🌟' });
       } else if (profile.perfectStreak >= 5) {
-        xpGained += 500;
-        bonusBreakdown.push({ label: `Chuỗi ${profile.perfectStreak} Điểm 10 (Bất Bại 👑)`, xp: 500, icon: '👑' });
+        xpGained += 20; // deflated from 500
+        bonusBreakdown.push({ label: `Chuỗi ${profile.perfectStreak} Điểm 10 (Bất Bại 👑)`, xp: 20, icon: '👑' });
       }
     } else {
       profile.perfectStreak = 0;
       if (result.totalScore >= 9.0) {
-        xpGained += 60;
-        bonusBreakdown.push({ label: 'Điểm Xuất Sắc (>=9.0)', xp: 60, icon: '✨' });
+        xpGained += 5; // deflated from 60
+        bonusBreakdown.push({ label: 'Điểm Xuất Sắc (>=9.0)', xp: 5, icon: '✨' });
       } else if (result.totalScore >= 8.0) {
-        xpGained += 30;
-        bonusBreakdown.push({ label: 'Điểm Giỏi (>=8.0)', xp: 30, icon: '📘' });
+        xpGained += 3; // deflated from 30
+        bonusBreakdown.push({ label: 'Điểm Giỏi (>=8.0)', xp: 3, icon: '📘' });
       }
     }
 
     if (result.tabSwitches === 0) {
-      xpGained += 25;
-      bonusBreakdown.push({ label: 'Chính Trực (0 lần rời tab)', xp: 25, icon: '🕊️' });
+      xpGained += 2; // deflated from 25
+      bonusBreakdown.push({ label: 'Chính Trực (0 lần rời tab)', xp: 2, icon: '🕊️' });
+    } else if (result.tabSwitches > 0) {
+      // Kỷ luật trừ điểm khi rời màn hình: -2 XP mỗi lần rời tab (tối đa -10 XP)
+      const cheatPenalty = Math.min(10, result.tabSwitches * 2);
+      xpGained = Math.max(0, xpGained - cheatPenalty);
+      bonusBreakdown.push({
+        label: `Kỷ luật rời màn hình (${result.tabSwitches} lần)`,
+        xp: -cheatPenalty,
+        icon: '⚠️'
+      });
+
+      // Lưu bản ghi vi phạm kỷ luật phòng thi vào Storage
+      const penaltyRecord = {
+        id: 'pen_cheat_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+        studentName: profile.name,
+        className: profile.className,
+        xpChange: -cheatPenalty,
+        reason: `Rời màn hình ${result.tabSwitches} lần khi thi đề [${result.quizTitle || result.quizId || 'Bài thi'}]`,
+        teacherNote: 'Hệ thống tự động ghi nhận cảnh báo rời màn hình',
+        createdAt: new Date().toISOString()
+      };
+      if (typeof StorageEngine !== 'undefined' && typeof StorageEngine.savePenalty === 'function') {
+        StorageEngine.savePenalty(penaltyRecord);
+      }
+      if (!profile.penalties) profile.penalties = [];
+      profile.penalties.unshift(penaltyRecord);
     }
 
     // Kiểm tra thần tốc
     const isSpeedy = result.timeTakenSeconds && result.timeLimitSeconds && (result.timeTakenSeconds <= result.timeLimitSeconds * 0.5) && (result.totalScore >= 8.0);
     if (isSpeedy) {
-      xpGained += 30;
-      bonusBreakdown.push({ label: 'Thần Tốc (≤ 50% thời gian)', xp: 30, icon: '⚡' });
+      xpGained += 3; // deflated from 30
+      bonusBreakdown.push({ label: 'Thần Tốc (≤ 50% thời gian)', xp: 3, icon: '⚡' });
+    }
+
+    if (hasActive2x) {
+      const baseEarned = xpGained;
+      xpGained *= 2;
+      bonusBreakdown.push({ label: '⚡ Kích hoạt 2x Booster (Nhân đôi XP)', xp: baseEarned, icon: '🌟' });
     }
 
     profile.xp = (profile.xp || 0) + xpGained;
@@ -827,8 +1140,8 @@ const GamificationEngine = {
     if (profile.streak >= 3) unlockBadge('streak_3');
     if (profile.streak >= 7) unlockBadge('streak_7');
     if (profile.examsCount >= 5) unlockBadge('quiz_master');
-    if (profile.xp >= 2000) unlockBadge('grand_master');
-    if (profile.xp >= 1000) unlockBadge('diamond_ranker');
+    if (profile.xp >= 500) unlockBadge('grand_master');
+    if (profile.xp >= 250) unlockBadge('diamond_ranker');
     if (profile.totalCorrectAnswers >= 50) unlockBadge('scholar_100_correct');
 
     const currentHour = new Date().getHours();
@@ -844,6 +1157,220 @@ const GamificationEngine = {
       bonusBreakdown,
       newlyUnlocked
     };
+  },
+
+  /* ================= 🎰 VÒNG QUAY MAY MẮN (LUCKY SPIN WHEEL) ================= */
+  spinLuckyWheel() {
+    const profile = this.getUserProfile();
+    const SPIN_COST = 20;
+    if ((profile.xp || 0) < SPIN_COST) {
+      return { success: false, error: `Bạn cần ít nhất ${SPIN_COST} XP để quay! Hãy làm thêm bài thi để tích lũy điểm.` };
+    }
+
+    // Trừ 20 XP
+    profile.xp -= SPIN_COST;
+
+    // Chọn phần thưởng theo tỉ lệ trọng số (weighted random)
+    const items = typeof LUCKY_WHEEL_ITEMS !== 'undefined' ? LUCKY_WHEEL_ITEMS : [];
+    const totalWeight = items.reduce((sum, it) => sum + (it.weight || 10), 0);
+    let randomNum = Math.random() * totalWeight;
+    let selectedIndex = 0;
+    for (let i = 0; i < items.length; i++) {
+      if (randomNum < items[i].weight) {
+        selectedIndex = i;
+        break;
+      }
+      randomNum -= items[i].weight;
+    }
+    const reward = items[selectedIndex] || items[0];
+
+    let rewardDetail = '';
+    if (reward.type === 'xp') {
+      profile.xp += reward.value;
+      rewardDetail = `+${reward.value} XP vào tài khoản!`;
+    } else if (reward.type === 'booster') {
+      if (!profile.boosters) profile.boosters = {};
+      if (reward.id === 'w_booster_2x') {
+        const curUntil = profile.boosters.xp2xUntil && profile.boosters.xp2xUntil > Date.now() ? profile.boosters.xp2xUntil : Date.now();
+        profile.boosters.xp2xUntil = curUntil + 24 * 60 * 60 * 1000;
+        rewardDetail = 'Kích hoạt nhân đôi XP (2x XP) trong 24 giờ tới!';
+      } else if (reward.id === 'w_shield') {
+        if (!profile.inventory) profile.inventory = [];
+        profile.inventory.push('shield_freeze');
+        rewardDetail = 'Nhận 1 Bùa Hộ Mệnh Chuỗi Streak vào Túi đồ!';
+      }
+    } else if (reward.type === 'frame') {
+      if (!profile.unlockedFrames) profile.unlockedFrames = [];
+      if (!profile.unlockedFrames.includes(reward.frameClass)) {
+        profile.unlockedFrames.push(reward.frameClass);
+      }
+      profile.frame = reward.frameClass;
+      rewardDetail = 'Đã mở khóa và trang bị Khung Sakura Tươi Thắm!';
+    } else if (reward.type === 'discount') {
+      if (!profile.vouchers) profile.vouchers = [];
+      const code = 'DISC-' + Math.floor(1000 + Math.random() * 9000);
+      const discVoucher = {
+        code,
+        itemId: 'voucher_discount_50',
+        name: 'Mã Giảm 50 XP Đổi Trà Sữa',
+        category: 'discount',
+        createdAt: new Date().toISOString(),
+        status: 'active',
+        value: 50,
+        desc: 'Được giảm trực tiếp 50 XP khi đổi Thẻ Trà Sữa Thầy Khiêm'
+      };
+      profile.vouchers.unshift(discVoucher);
+      rewardDetail = `Nhận mã giảm giá [${code}] giảm 50 XP khi đổi Trà Sữa!`;
+    }
+
+    this.saveUserProfile(profile);
+    return {
+      success: true,
+      reward,
+      rewardIndex: selectedIndex,
+      rewardDetail,
+      newXp: profile.xp,
+      profile
+    };
+  },
+
+  /* ================= 🛒 MUA & ĐỔI VẬT PHẨM (SHOP PURCHASE ENGINE) ================= */
+  buyShopItem(itemId, studentClass = '10') {
+    const profile = this.getUserProfile();
+    const item = SHOP_ITEMS.find(it => it.id === itemId);
+    if (!item) {
+      return { success: false, error: 'Vật phẩm không tồn tại trong hệ thống!' };
+    }
+
+    // Nếu mua thẻ trà sữa, tự động áp dụng mã giảm giá 50 XP nếu có
+    let effectivePrice = item.priceXp;
+    let appliedDiscount = null;
+    if (itemId === 'perk_milk_tea') {
+      const discIdx = (profile.vouchers || []).findIndex(v => v.category === 'discount' && v.status === 'active');
+      if (discIdx !== -1) {
+        appliedDiscount = profile.vouchers[discIdx];
+        effectivePrice = Math.max(10, item.priceXp - appliedDiscount.value);
+        profile.vouchers[discIdx].status = 'used';
+      }
+    }
+
+    if ((profile.xp || 0) < effectivePrice) {
+      return {
+        success: false,
+        error: `Bạn cần ${effectivePrice} XP để đổi món này (hiện có ${profile.xp || 0} XP)!`
+      };
+    }
+
+    // Trừ XP
+    profile.xp -= effectivePrice;
+    let voucher = null;
+    let message = '';
+
+    if (item.category === 'perks') {
+      const prefix = itemId === 'perk_no_homework' ? 'HW' : (itemId === 'perk_milk_tea' ? 'TS' : 'PLUS');
+      const code = `#${prefix}-${Math.floor(1000 + Math.random() * 9000)}`;
+      voucher = {
+        code,
+        itemId: item.id,
+        name: item.name,
+        icon: item.icon,
+        category: 'perks',
+        studentName: profile.name,
+        className: profile.className || studentClass,
+        costXp: effectivePrice,
+        createdAt: new Date().toISOString(),
+        status: 'pending', // pending -> teacher marks redeemed
+        desc: item.desc
+      };
+      if (!profile.vouchers) profile.vouchers = [];
+      profile.vouchers.unshift(voucher);
+
+      if (typeof StorageEngine !== 'undefined' && typeof StorageEngine.saveVoucher === 'function') {
+        StorageEngine.saveVoucher(voucher);
+      }
+      message = `Đổi thành công mã Voucher [${code}]! Xuất trình mã này cho Thầy Khiêm để nhận quà nhé.`;
+    } else if (item.category === 'boosters') {
+      if (!profile.boosters) profile.boosters = {};
+      if (item.id === 'booster_xp_2x') {
+        const curUntil = profile.boosters.xp2xUntil && profile.boosters.xp2xUntil > Date.now() ? profile.boosters.xp2xUntil : Date.now();
+        profile.boosters.xp2xUntil = curUntil + 24 * 60 * 60 * 1000;
+        message = 'Đã kích hoạt Thẻ 2x XP Booster trong 24 giờ tiếp theo!';
+      } else if (item.id === 'booster_streak_freeze') {
+        if (!profile.inventory) profile.inventory = [];
+        profile.inventory.push('shield_freeze');
+        message = 'Đã thêm Bùa Hộ Mệnh Chuỗi Streak vào Túi đồ!';
+      } else if (item.id === 'booster_deep_hint') {
+        profile.boosters.hasVdcHints = true;
+        message = 'Đã mở khóa Phân tích Mẹo giải Chuyên Sâu VDC!';
+      }
+    } else if (item.category === 'titles') {
+      if (!profile.unlockedTitles) profile.unlockedTitles = [];
+      if (!profile.unlockedTitles.includes(item.id)) {
+        profile.unlockedTitles.push(item.id);
+      }
+      profile.equippedTitle = item.id;
+      message = `Đã mở khóa và trang bị danh hiệu: ${item.titleText}!`;
+    } else if (item.category === 'frames') {
+      if (!profile.unlockedFrames) profile.unlockedFrames = [];
+      if (!profile.unlockedFrames.includes(item.cssClass)) {
+        profile.unlockedFrames.push(item.cssClass);
+      }
+      profile.frame = item.cssClass;
+      message = 'Đã mở khóa và trang bị Khung Avatar mới!';
+    }
+
+    this.saveUserProfile(profile);
+    return {
+      success: true,
+      item,
+      voucher,
+      effectivePrice,
+      message,
+      profile
+    };
+  },
+
+  equipTitle(titleId) {
+    const profile = this.getUserProfile();
+    if (!titleId) {
+      profile.equippedTitle = '';
+    } else if (profile.unlockedTitles && profile.unlockedTitles.includes(titleId)) {
+      profile.equippedTitle = titleId;
+    }
+    this.saveUserProfile(profile);
+    return profile;
+  },
+
+  /* ================= ⚖️ GIÁO VIÊN ĐIỀU CHỈNH / TRỪ / CỘNG ĐIỂM KỶ LUẬT ================= */
+  applyTeacherAdjustment(studentName, className, xpChange, reason, teacherNote = '') {
+    if (!studentName) return { success: false, error: 'Thiếu tên học sinh' };
+    const numChange = Number(xpChange);
+    if (isNaN(numChange) || numChange === 0) return { success: false, error: 'Điểm điều chỉnh không hợp lệ' };
+
+    const record = {
+      id: 'pen_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      studentName: studentName.trim(),
+      className: className || '10',
+      xpChange: numChange,
+      reason: reason || (numChange < 0 ? 'Kỷ luật trừ điểm' : 'Khen thưởng cộng điểm'),
+      teacherNote: teacherNote || '',
+      createdAt: new Date().toISOString()
+    };
+
+    if (typeof StorageEngine !== 'undefined' && typeof StorageEngine.savePenalty === 'function') {
+      StorageEngine.savePenalty(record);
+    }
+
+    // Nếu học sinh khớp với tài khoản cá nhân hiện tại, cập nhật ngay profile.xp
+    const profile = this.getUserProfile();
+    if (profile && profile.name && profile.name.trim().toLowerCase() === studentName.trim().toLowerCase()) {
+      profile.xp = Math.max(0, (profile.xp || 0) + numChange);
+      if (!profile.penalties) profile.penalties = [];
+      profile.penalties.unshift(record);
+      this.saveUserProfile(profile);
+    }
+
+    return { success: true, record, profile };
   },
 
   fireConfetti() {
@@ -863,6 +1390,7 @@ if (typeof window !== 'undefined') {
   window.WeeklyHonorEngine = WeeklyHonorEngine;
   window.WEEKLY_LEAGUES = WEEKLY_LEAGUES;
   window.SHOP_ITEMS = SHOP_ITEMS;
+  window.LUCKY_WHEEL_ITEMS = LUCKY_WHEEL_ITEMS;
   window.BADGES_DEFINITIONS = BADGES_DEFINITIONS;
   window.LEVEL_TIERS = LEVEL_TIERS;
 }

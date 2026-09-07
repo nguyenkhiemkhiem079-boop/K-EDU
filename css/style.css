@@ -3704,3 +3704,330 @@ tr:hover td { background: var(--bg-card-hover); }
   padding: 1px 5px;
   border-radius: 4px;
 }
+
+/* ================= 🎁 EXPANDED REWARD HUB & VOUCHERS SYSTEM ================= */
+.shop-cat-nav {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.shop-cat-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-weight: 800;
+  font-size: 0.88rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.shop-cat-btn:hover {
+  border-color: var(--indigo);
+  color: var(--indigo);
+  transform: translateY(-2px);
+}
+
+.shop-cat-btn.active {
+  background: linear-gradient(135deg, var(--indigo) 0%, #8b5cf6 100%);
+  color: #fff;
+  border-color: var(--indigo);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+}
+
+/* Category Badges on Item Cards */
+.shop-badge-tag {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  margin-bottom: 0.4rem;
+}
+
+/* Lucky Spin Wheel */
+.lucky-wheel-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 0.5rem;
+  position: relative;
+}
+
+.lucky-wheel-wrap {
+  position: relative;
+  width: 320px;
+  height: 320px;
+  max-width: 85vw;
+  max-height: 85vw;
+  margin: 1.5rem auto;
+}
+
+.lucky-wheel-canvas {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25), 0 0 0 8px #f59e0b, 0 0 0 12px #b45309;
+}
+
+.lucky-wheel-pointer {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 16px solid transparent;
+  border-right: 16px solid transparent;
+  border-top: 28px solid #ef4444;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4));
+  z-index: 10;
+}
+
+.lucky-wheel-center-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border: 4px solid #fff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  color: #fff;
+  font-weight: 900;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  z-index: 5;
+  transition: transform 0.15s ease;
+}
+
+.lucky-wheel-center-btn:hover:not(:disabled) {
+  transform: translate(-50%, -50%) scale(1.08);
+}
+
+.lucky-wheel-center-btn:active:not(:disabled) {
+  transform: translate(-50%, -50%) scale(0.95);
+}
+
+/* Vouchers in Student Wallet */
+.voucher-card {
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-tertiary) 100%);
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.voucher-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--indigo);
+}
+
+.voucher-serial-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 900;
+  font-size: 1.15rem;
+  letter-spacing: 1px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-color);
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Additional Avatar Frames */
+.avatar-with-frame.frame-sakura-bloom {
+  border-color: #f472b6 !important;
+  box-shadow: 0 0 0 4px rgba(244, 114, 182, 0.4), 0 0 16px rgba(236, 72, 153, 0.5) !important;
+  animation: sakuraPulse 3s infinite ease-in-out alternate;
+}
+
+@keyframes sakuraPulse {
+  0% { box-shadow: 0 0 0 3px rgba(244, 114, 182, 0.4), 0 0 12px rgba(236, 72, 153, 0.4); }
+  100% { box-shadow: 0 0 0 6px rgba(244, 114, 182, 0.7), 0 0 24px rgba(236, 72, 153, 0.8); }
+}
+
+.avatar-with-frame.frame-cosmic-galaxy {
+  border-color: #a855f7 !important;
+  box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.5), 0 0 22px rgba(124, 58, 237, 0.7) !important;
+}
+
+.avatar-with-frame.frame-neon-cyber {
+  border-color: #06b6d4 !important;
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.5), 0 0 20px rgba(14, 165, 233, 0.8) !important;
+}
+
+.avatar-with-frame.frame-royal-gold {
+  border-color: #fbbf24 !important;
+  box-shadow: 0 0 0 5px rgba(251, 191, 36, 0.6), 0 0 25px rgba(245, 158, 11, 0.8) !important;
+}
+
+/* Equipped Title Badge */
+.equipped-title-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--radius-full);
+  border: 1.5px solid;
+  background: var(--bg-card);
+}
+
+/* ================= DISCIPLINARY & PENALTY SYSTEM ================= */
+.penalty-modal-card {
+  max-width: 780px;
+  width: 95%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  border-radius: var(--radius-xl);
+  border: 3px solid var(--rose);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  animation: modalPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.quick-penalty-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+
+.penalty-preset-btn {
+  background: var(--bg-tertiary);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-full);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--text-primary);
+}
+
+.penalty-preset-btn:hover {
+  border-color: var(--rose);
+  background: rgba(244, 63, 94, 0.08);
+  transform: translateY(-1px);
+}
+
+.penalty-preset-btn.preset-reward:hover {
+  border-color: var(--primary);
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.badge-penalty {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.badge-penalty-negative {
+  background: rgba(244, 63, 94, 0.12);
+  color: var(--rose);
+  border: 1px solid var(--rose);
+}
+
+.badge-penalty-positive {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--primary-shadow);
+  border: 1px solid var(--primary);
+}
+
+.badge-penalty-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 900;
+  background: rgba(244, 63, 94, 0.15);
+  color: #e11d48;
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  cursor: help;
+}
+
+.penalty-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.penalty-history-table th {
+  background: var(--bg-tertiary);
+  padding: 0.6rem 0.75rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  text-align: left;
+  border-bottom: 1.5px solid var(--border-color);
+}
+
+.penalty-history-table td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+.student-disciplinary-card {
+  background: linear-gradient(135deg, rgba(244,63,94,0.06), rgba(251,191,36,0.04));
+  border: 2px solid rgba(244,63,94,0.3);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+/* DGNL Package Selector Cards */
+.dgnl-package-card {
+  cursor: pointer;
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  position: relative;
+  transition: all 0.25s ease;
+}
+
+.dgnl-package-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(99, 102, 241, 0.22) !important;
+}
+
+.dgnl-package-card.active {
+  border: 3px solid var(--indigo) !important;
+  background: var(--bg-card) !important;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.25) !important;
+}
+

@@ -456,9 +456,22 @@ const StorageEngine = {
     return true;
   },
 
+  _lastSubmitRecord: null,
+
   async saveResult(result) {
-    const resultKey = `result:${result.quizId}:${result.className}_${result.name}_${Date.now()}`;
+    const now = Date.now();
+    if (this._lastSubmitRecord &&
+        this._lastSubmitRecord.quizId === result.quizId &&
+        this._lastSubmitRecord.name === result.name &&
+        (now - this._lastSubmitRecord.time < 5000)) {
+      console.warn('[StorageEngine] Blocked rapid duplicate submission for:', result.name, result.quizId);
+      return this._lastSubmitRecord.resultKey;
+    }
+
+    const resultKey = `result:${result.quizId}:${result.className}_${result.name}_${now}`;
     result.id = resultKey;
+    this._lastSubmitRecord = { quizId: result.quizId, name: result.name, time: now, resultKey };
+
     if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
       await window.FirebaseEngine.saveResult(result);
     }
@@ -973,6 +986,93 @@ const StorageEngine = {
       console.error('☁️ [Sync] Lỗi khi đồng bộ lên Cloud:', e);
       throw e;
     }
+  },
+
+  // ================= 🎟️ VOUCHERS & REDEMPTIONS PERSISTENCE =================
+  saveVoucher(voucher) {
+    if (!voucher || !voucher.code) return;
+    const list = this.getAllVouchers();
+    const existingIndex = list.findIndex(v => v.code === voucher.code);
+    if (existingIndex >= 0) {
+      list[existingIndex] = { ...list[existingIndex], ...voucher };
+    } else {
+      list.unshift(voucher);
+    }
+    localStorage.setItem(STORAGE_PREFIX + 'vouchers', JSON.stringify(list));
+    if (this.channel) {
+      this.channel.postMessage({ type: 'voucher_updated', voucher });
+    }
+    return voucher;
+  },
+
+  getAllVouchers() {
+    try {
+      const raw = localStorage.getItem(STORAGE_PREFIX + 'vouchers');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  updateVoucherStatus(code, status, note = '') {
+    const list = this.getAllVouchers();
+    const target = list.find(v => v.code === code);
+    if (target) {
+      target.status = status;
+      target.updatedAt = new Date().toISOString();
+      if (note) target.teacherNote = note;
+      localStorage.setItem(STORAGE_PREFIX + 'vouchers', JSON.stringify(list));
+      if (this.channel) {
+        this.channel.postMessage({ type: 'voucher_updated', voucher: target });
+      }
+      return target;
+    }
+    return null;
+  },
+
+  // ================= ⚖️ PENALTIES & DISCIPLINARY LOG PERSISTENCE =================
+  savePenalty(record) {
+    if (!record) return null;
+    const list = this.getAllPenalties();
+    if (!record.id) {
+      record.id = 'pen_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+    }
+    if (!record.createdAt) {
+      record.createdAt = new Date().toISOString();
+    }
+    list.unshift(record);
+    localStorage.setItem(STORAGE_PREFIX + 'penalties', JSON.stringify(list));
+    if (this.channel) {
+      this.channel.postMessage({ type: 'penalty_updated', record });
+    }
+    return record;
+  },
+
+  getAllPenalties() {
+    try {
+      const raw = localStorage.getItem(STORAGE_PREFIX + 'penalties');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  deletePenalty(penaltyId) {
+    const list = this.getAllPenalties();
+    const target = list.find(p => p.id === penaltyId);
+    if (!target) return null;
+    const filtered = list.filter(p => p.id !== penaltyId);
+    localStorage.setItem(STORAGE_PREFIX + 'penalties', JSON.stringify(filtered));
+    if (this.channel) {
+      this.channel.postMessage({ type: 'penalty_deleted', penaltyId });
+    }
+    return target;
+  },
+
+  getPenaltiesByStudent(studentName) {
+    if (!studentName) return [];
+    const clean = studentName.trim().toLowerCase();
+    return this.getAllPenalties().filter(p => p.studentName && p.studentName.trim().toLowerCase() === clean);
   }
 };
 

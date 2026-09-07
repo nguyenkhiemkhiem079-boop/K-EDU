@@ -1058,10 +1058,357 @@ const GradeEngines = {
     ];
   },
 
+  getDgnlTemplates(type = 'mcq', level = 'TH') {
+    return [
+      // === PHẦN 1: TƯ DUY LOGIC & SUY LUẬN (dgnl_logic) ===
+      makeTemplate({ topic: 'dgnl_logic', level: 'VD' }, (idx) => {
+        const names = ['An', 'Bình', 'Cường', 'Dũng', 'Giang', 'Huy'];
+        const p1 = names[idx % names.length];
+        const p2 = names[(idx + 1) % names.length];
+        const p3 = names[(idx + 2) % names.length];
+        const p4 = names[(idx + 3) % names.length];
+        return {
+          id: `DGNL_L1_${idx}`, grade: "DGNL", level: "VD", type: "mcq", topic: "dgnl_logic",
+          question: `Trong một cuộc thi Robocon có 4 thí sinh ${p1}, ${p2}, ${p3}, ${p4}. Giám khảo đưa ra các phát biểu:\n(1) Nếu ${p1} đạt giải Nhất thì ${p2} không đạt giải Nhì.\n(2) Nếu ${p3} đạt giải Ba thì ${p2} đạt giải Nhì.\n(3) Thực tế ${p3} đạt giải Ba.\nKhẳng định nào sau đây CHẮC CHẮN ĐÚNG?`,
+          options: [
+            `${p1} không đạt giải Nhất`,
+            `${p1} đạt giải Nhất`,
+            `${p2} không đạt giải Nhì`,
+            `${p4} đạt giải Nhất`
+          ],
+          correctAnswer: "A",
+          explanation: `Từ (3), ${p3} đạt giải Ba. Kết hợp với (2) suy ra ${p2} đạt giải Nhì. Giả thiết (1) là: '${p1} giải Nhất $\\to$ ${p2} không giải Nhì'. Vì ${p2} đạt giải Nhì (phủ định kết luận) nên theo quy tắc phản đảo (Modus Tollens), ${p1} không đạt giải Nhất.`
+        };
+      }),
+
+      makeTemplate({ topic: 'dgnl_logic', level: 'VD' }, (idx) => {
+        const letters = ['A', 'B', 'C', 'D', 'E'];
+        return {
+          id: `DGNL_L2_${idx}`, grade: "DGNL", level: "VD", type: "mcq", topic: "dgnl_logic",
+          question: `Có 5 chiếc xe ${letters.join(', ')} đỗ thành một hàng dọc trong bãi xe. Biết rằng:\n- Xe A đỗ trước xe B nhưng sau xe C.\n- Xe D đỗ trước xe C.\n- Xe E đỗ ngay sau xe A và không đỗ ở cuối hàng.\nThứ tự các xe đỗ từ đầu hàng đến cuối hàng là:`,
+          options: [
+            `D, C, A, E, B`,
+            `D, A, E, C, B`,
+            `C, D, A, E, B`,
+            `D, C, E, A, B`
+          ],
+          correctAnswer: "A",
+          explanation: `Từ 'A đỗ sau C' và 'D đỗ trước C' suy ra thứ tự: $D \\to C \\to A$. Lại có 'E đỗ ngay sau A' và 'A đỗ trước B' suy ra $A \\to E \\to B$. Ghép lại ta được thứ tự duy nhất thỏa mãn: $D - C - A - E - B$.`
+        };
+      }),
+
+      makeTemplate({ topic: 'dgnl_logic', level: 'TH' }, (idx) => {
+        const a = (idx % 5) + 3;
+        const b = a * 2 + 1;
+        const c = b * 2 + 1;
+        const d = c * 2 + 1;
+        const ans = d * 2 + 1;
+        return {
+          id: `DGNL_L3_${idx}`, grade: "DGNL", level: "TH", type: "mcq", topic: "dgnl_logic",
+          question: `Cho dãy số quy luật logic sau: $${a}, ${b}, ${c}, ${d}, \\dots$ Số hạng tiếp theo của dãy số là:`,
+          options: [`$${ans}$`, `$${ans + 2}$`, `$${ans - 4}$`, `$${ans + 6}$`],
+          correctAnswer: "A",
+          explanation: `Quy luật của dãy số là $u_{n+1} = 2u_n + 1$. Cụ thể: $2 \\times ${d} + 1 = ${ans}$.`
+        };
+      }),
+
+      makeTemplate({ topic: 'dgnl_logic', level: 'VDC' }, (idx) => {
+        const n = 6 + (idx % 3);
+        const handshakes = (n * (n - 1)) / 2;
+        return {
+          id: `DGNL_L4_${idx}`, grade: "DGNL", level: "VDC", type: "mcq", topic: "dgnl_logic",
+          question: `Trong một buổi hội thảo có ${n} nhà khoa học. Mỗi người bắt tay chào hỏi với tất cả những người còn lại đúng 1 lần. Hỏi có tổng cộng bao nhiêu cái bắt tay đã diễn ra?`,
+          options: [`$${handshakes}$`, `$${handshakes * 2}$`, `$${handshakes - n}$`, `$${n * (n - 2)}$`],
+          correctAnswer: "A",
+          explanation: `Mỗi cái bắt tay là một cặp gồm 2 người được chọn từ ${n} người, tương ứng tổ hợp $C_{${n}}^2 = \\dfrac{${n} \\times ${n - 1}}{2} = ${handshakes}$ cái bắt tay.`
+        };
+      }),
+
+      makeTemplate({ topic: 'dgnl_logic', level: 'VD' }, (idx) => {
+        const total = 40 + (idx % 10);
+        const math = 25;
+        const eng = 20;
+        const both = 12;
+        const onlyMath = math - both;
+        return {
+          id: `DGNL_L5_${idx}`, grade: "DGNL", level: "VD", type: "mcq", topic: "dgnl_logic",
+          question: `Một lớp học có ${total} học sinh, trong đó có ${math} bạn tham gia CLB Toán, ${eng} bạn tham gia CLB Tiếng Anh và ${both} bạn tham gia cả 2 CLB. Số học sinh CHỈ tham gia CLB Toán (không tham gia CLB Tiếng Anh) là:`,
+          options: [`$${onlyMath}$ học sinh`, `$${math}$ học sinh`, `$${total - both}$ học sinh`, `$${eng - both}$ học sinh`],
+          correctAnswer: "A",
+          explanation: `Số học sinh chỉ tham gia CLB Toán = (Tổng số bạn CLB Toán) - (Số bạn tham gia cả 2 CLB) = $${math} - ${both} = ${onlyMath}$ bạn.`
+        };
+      }),
+
+      makeTemplate({ topic: 'dgnl_logic', level: 'VDC' }, (idx) => {
+        return {
+          id: `DGNL_L6_${idx}`, grade: "DGNL", level: "VDC", type: "mcq", topic: "dgnl_logic",
+          question: `Trên một hòn đảo kỳ bí, cư dân chỉ gồm hai nhóm: Hiệp sĩ (luôn nói thật) và Kẻ nói dối (luôn nói dối). Bạn gặp hai người A và B. Người A phát biểu: "Ít nhất một trong hai chúng tôi là Kẻ nói dối". Kết luận nào sau đây là ĐÚNG?`,
+          options: [
+            `A là Hiệp sĩ và B là Kẻ nói dối`,
+            `Cả A và B đều là Hiệp sĩ`,
+            `Cả A và B đều là Kẻ nói dối`,
+            `A là Kẻ nói dối và B là Hiệp sĩ`
+          ],
+          correctAnswer: "A",
+          explanation: `Nếu A là Kẻ nói dối thì câu nói của A phải sai $\\Rightarrow$ cả A và B đều không phải Kẻ nói dối (tức cả hai là Hiệp sĩ), mâu thuẫn với việc A là Kẻ nói dối. Do đó A chắc chắn là Hiệp sĩ (nói thật). Vì câu nói của A là thật và A là Hiệp sĩ, nên người còn lại là B bắt buộc phải là Kẻ nói dối.`
+        };
+      }),
+
+      makeTemplate({ topic: 'dgnl_logic', level: 'TH' }, (idx) => {
+        const familyPairs = [
+          { a: 'Ông Nam', b: 'Bà Hoa', c: 'Minh', d: 'Lan', rel: 'cháu nội' },
+          { a: 'Bác Hùng', b: 'Cô Mai', c: 'Tuấn', d: 'Hà', rel: 'cháu ruột' }
+        ];
+        const pair = familyPairs[idx % familyPairs.length];
+        return {
+          id: `DGNL_L7_${idx}`, grade: "DGNL", level: "TH", type: "mcq", topic: "dgnl_logic",
+          question: `Biết rằng ${pair.a} là cha của ${pair.c}, còn ${pair.d} là con gái ruột của ${pair.c}. Hỏi ${pair.d} có mối quan hệ họ hàng như thế nào đối với ${pair.a}?`,
+          options: [
+            `${pair.d} là ${pair.rel} của ${pair.a}`,
+            `${pair.d} là con gái của ${pair.a}`,
+            `${pair.d} là cô của ${pair.a}`,
+            `${pair.d} là chị của ${pair.a}`
+          ],
+          correctAnswer: "A",
+          explanation: `${pair.a} là cha của ${pair.c}, và ${pair.c} là cha của ${pair.d}. Như vậy ${pair.a} là ông nội của ${pair.d}, hay nói cách khác ${pair.d} là ${pair.rel} của ${pair.a}.`
+        };
+      }),
+
+      makeTemplate({ topic: 'dgnl_logic', level: 'VD' }, (idx) => {
+        return {
+          id: `DGNL_L8_${idx}`, grade: "DGNL", level: "VD", type: "mcq", topic: "dgnl_logic",
+          question: `Năm nhân viên An, Bình, Cường, Dũng, Em trực văn phòng từ Thứ Hai đến Thứ Sáu (mỗi ngày đúng một người trực). Biết:\n- An trực trước Bình đúng 1 ngày.\n- Cường trực vào Thứ Tư.\n- Dũng không trực vào Thứ Hai và trực sau Em.\nNgười trực vào Thứ Hai là:`,
+          options: [`Em`, `An`, `Bình`, `Dũng`],
+          correctAnswer: "A",
+          explanation: `Thứ Tư đã có Cường trực. Vì An trực trước Bình đúng 1 ngày, nên cặp (An, Bình) chỉ có thể trực Thứ Hai-Thứ Ba hoặc Thứ Năm-Thứ Sáu. Nếu (An, Bình) trực Thứ Hai-Thứ Ba thì Dũng và Em phải trực Thứ Năm-Thứ Sáu; mà Dũng trực sau Em nên Em trực Thứ Năm, Dũng trực Thứ Sáu $\\Rightarrow$ hợp lý. Còn nếu (An, Bình) trực Thứ Năm-Thứ Sáu thì Em hoặc Dũng phải trực Thứ Hai; mà Dũng không trực Thứ Hai nên Em trực Thứ Hai, Dũng trực Thứ Ba (trước Cường, sau Em) $\\Rightarrow$ Trong mọi trường hợp thỏa mãn yêu cầu, người trực Thứ Hai là Em.`
+        };
+      }),
+
+      // === PHẦN 2: XỬ LÝ & PHÂN TÍCH SỐ LIỆU (dgnl_data) ===
+      makeTemplate({ topic: 'dgnl_data', level: 'TH' }, (idx) => {
+        const base = 100 + (idx % 5) * 20;
+        const pct = 25;
+        const val = Math.round(base * 0.25);
+        return {
+          id: `DGNL_D1_${idx}`, grade: "DGNL", level: "TH", type: "mcq", topic: "dgnl_data",
+          question: `Biểu đồ tròn thể hiện cơ cấu doanh thu của một doanh nghiệp trong năm 2025 có tổng doanh thu là $${base}$ tỷ đồng. Trong đó mảng Thương mại điện tử chiếm $${pct}\\%$, mảng Dịch vụ số chiếm $40\\%$, còn lại là Bán lẻ. Doanh thu của mảng Thương mại điện tử là:`,
+          options: [`$${val}$ tỷ đồng`, `$${val + 10}$ tỷ đồng`, `$${val - 5}$ tỷ đồng`, `$${Math.round(base * 0.35)}$ tỷ đồng`],
+          correctAnswer: "A",
+          explanation: `Doanh thu mảng Thương mại điện tử: $${base} \\times ${pct}\\% = ${base} \\times 0{,}25 = ${val}$ tỷ đồng.`
+        };
+      }),
+
+      makeTemplate({ topic: 'dgnl_data', level: 'VD' }, (idx) => {
+        const y1 = 200 + (idx % 4) * 20;
+        const y2 = Math.round(y1 * 1.25);
+        const growth = 25;
+        return {
+          id: `DGNL_D2_${idx}`, grade: "DGNL", level: "VD", type: "mcq", topic: "dgnl_data",
+          question: `Bảng thống kê kim ngạch xuất khẩu nông sản của một tỉnh năm 2023 đạt $${y1}$ triệu USD, năm 2024 đạt $${y2}$ triệu USD. Tốc độ tăng trưởng kim ngạch xuất khẩu của tỉnh đó năm 2024 so với năm 2023 là:`,
+          options: [`$${growth}\\%$`, `$${growth + 5}\\%$`, `$${growth - 5}\\%$`, `$${growth - 10}\\%$`],
+          correctAnswer: "A",
+          explanation: `Tốc độ tăng trưởng: $\\dfrac{${y2} - ${y1}}{${y1}} \\times 100\\% = \\dfrac{${y2 - y1}}{${y1}} \\times 100\\% = ${growth}\\%$.`
+        };
+      }),
+
+      makeTemplate({ topic: 'dgnl_data', level: 'VD' }, (idx) => {
+        const s1 = 7, s2 = 8, s3 = 9, s4 = 10;
+        const avg = ((s1 + s2 + s3 + s4) / 4).toFixed(1);
+        return {
+          id: `DGNL_D3_${idx}`, grade: "DGNL", level: "VD", type: "mcq", topic: "dgnl_data",
+          question: `Điểm kiểm tra của một học sinh trong 4 bài thi định kỳ lần lượt là $${s1}, ${s2}, ${s3}, ${s4}$. Điểm số trung bình cộng của 4 bài thi trên là:`,
+          options: [`$${avg}$ điểm`, `$${(parseFloat(avg) + 0.5).toFixed(1)}$ điểm`, `$${(parseFloat(avg) - 0.5).toFixed(1)}$ điểm`, `$8{,}0$ điểm`],
+          correctAnswer: "A",
+          explanation: `Điểm trung bình cộng: $\\bar{x} = \\dfrac{${s1} + ${s2} + ${s3} + ${s4}}{4} = \\dfrac{${s1 + s2 + s3 + s4}}{4} = ${avg}$.`
+        };
+      }),
+
+      makeTemplate({ topic: 'dgnl_data', level: 'VDC' }, (idx) => {
+        const count5 = 5;
+        const avg5 = 20 + (idx % 5);
+        const sum5 = count5 * avg5;
+        const targetAvg = avg5 + 2;
+        const x6 = (6 * targetAvg) - sum5;
+        return {
+          id: `DGNL_D4_${idx}`, grade: "DGNL", level: "VDC", type: "mcq", topic: "dgnl_data",
+          question: `Cho biết trung bình cộng của 5 số nguyên dương đầu tiên là $${avg5}$. Nếu bổ sung thêm số thứ sáu là $x$ thì trung bình cộng của cả 6 số tăng lên thành $${targetAvg}$. Giá trị của $x$ là:`,
+          options: [`$${x6}$`, `$${x6 + 4}$`, `$${x6 - 6}$`, `$${avg5 + 5}$`],
+          correctAnswer: "A",
+          explanation: `Tổng 5 số đầu là: $5 \\times ${avg5} = ${sum5}$. Tổng 6 số mới là: $6 \\times ${targetAvg} = ${6 * targetAvg}$. Số thứ sáu cần thêm: $x = ${6 * targetAvg} - ${sum5} = ${x6}$.`
+        };
+      }),
+
+      makeTemplate({ topic: 'dgnl_data', level: 'TH' }, (idx) => {
+        const total = 500;
+        const pass = 425;
+        const pct = 85;
+        return {
+          id: `DGNL_D5_${idx}`, grade: "DGNL", level: "TH", type: "mcq", topic: "dgnl_data",
+          question: `Một trường THPT tổ chức kỳ thi thử ĐGNL cho $${total}$ thí sinh. Kết quả có $${pass}$ thí sinh đạt từ $700/1200$ điểm trở lên. Tỉ lệ thí sinh đạt yêu cầu là:`,
+          options: [`$${pct}\\%$`, `$80\\%$`, `$88\\%$`, `$75\\%$`],
+          correctAnswer: "A",
+          explanation: `Tỉ lệ thí sinh đạt yêu cầu: $\\dfrac{${pass}}{${total}} \\times 100\\% = 0{,}85 \\times 100\\% = ${pct}\\%$.`
+        };
+      }),
+
+      makeTemplate({ topic: 'dgnl_data', level: 'VD' }, (idx) => {
+        const totalPhones = 1000 + (idx % 5) * 200;
+        const shareA = 35; // %
+        const shareB = 25; // %
+        const diff = Math.round(totalPhones * (shareA - shareB) / 100);
+        return {
+          id: `DGNL_D6_${idx}`, grade: "DGNL", level: "VD", type: "mcq", topic: "dgnl_data",
+          question: `Thống kê thị phần bán ra của hai thương hiệu điện thoại A và B trong tháng tại một chuỗi siêu thị (tổng bán $${totalPhones}$ chiếc): Thương hiệu A chiếm $${shareA}\\%$, Thương hiệu B chiếm $${shareB}\\%$. Số lượng máy thương hiệu A bán nhiều hơn thương hiệu B là:`,
+          options: [`$${diff}$ máy`, `$${diff + 20}$ máy`, `$${diff - 15}$ máy`, `$${Math.round(totalPhones * 0.15)}$ máy`],
+          correctAnswer: "A",
+          explanation: `Chênh lệch thị phần: $${shareA}\\% - ${shareB}\\% = 10\\%$. Số lượng máy chênh lệch: $${totalPhones} \\times 10\\% = ${diff}$ máy.`
+        };
+      }),
+
+      makeTemplate({ topic: 'dgnl_data', level: 'TH' }, (idx) => {
+        const q1 = 120, q2 = 150, q3 = 180, q4 = 210;
+        return {
+          id: `DGNL_D7_${idx}`, grade: "DGNL", level: "TH", type: "mcq", topic: "dgnl_data",
+          question: `Biểu đồ đường thể hiện lượng khách du lịch (nghìn lượt) đến một thành phố qua 4 quý trong năm lần lượt là: Quý I ($${q1}$), Quý II ($${q2}$), Quý III ($${q3}$), Quý IV ($${q4}$). Quý có lượng khách tăng nhiều nhất so với Quý liền trước là:`,
+          options: [`Các Quý tăng đều nhau ($30$ nghìn lượt)`, `Quý IV`, `Quý III`, `Quý II`],
+          correctAnswer: "A",
+          explanation: `Mức tăng giữa các quý liên tiếp: Quý II - Quý I = $${q2 - q1}$, Quý III - Quý II = $${q3 - q2}$, Quý IV - Quý III = $${q4 - q3}$. Tất cả đều tăng đều đúng $30$ nghìn lượt khách.`
+        };
+      }),
+
+      makeTemplate({ topic: 'dgnl_data', level: 'VDC' }, (idx) => {
+        const scores = [6, 7, 8, 9, 10];
+        const freqs = [5, 10, 15, 12, 8];
+        const totalStudents = freqs.reduce((a, b) => a + b, 0); // 50
+        const highScorers = freqs[2] + freqs[3] + freqs[4]; // 15 + 12 + 8 = 35
+        const pctHigh = Math.round((highScorers / totalStudents) * 100);
+        return {
+          id: `DGNL_D8_${idx}`, grade: "DGNL", level: "VDC", type: "mcq", topic: "dgnl_data",
+          question: `Bảng phân bố tần số điểm thi môn Tư duy định lượng của 50 sinh viên:\nĐiểm 6 (5 SV), Điểm 7 (10 SV), Điểm 8 (15 SV), Điểm 9 (12 SV), Điểm 10 (8 SV).\nTỉ lệ sinh viên đạt điểm Giỏi và Xuất sắc (từ 8 điểm trở lên) là:`,
+          options: [`$${pctHigh}\\%$`, `$60\\%$`, `$75\\%$`, `$80\\%$`],
+          correctAnswer: "A",
+          explanation: `Số sinh viên đạt từ 8 điểm trở lên: $15 + 12 + 8 = ${highScorers}$ sinh viên. Tỉ lệ: $\\dfrac{${highScorers}}{${totalStudents}} \\times 100\\% = ${pctHigh}\\%$.`
+        };
+      }),
+
+      // === PHẦN 3: TOÁN ỨNG DỤNG & ĐỊNH LƯỢNG THỰC TIỄN (dgnl_quant) ===
+      makeTemplate({ topic: 'dgnl_quant', level: 'VD' }, (idx) => {
+        const p = 100 + (idx % 5) * 20; // Vốn ban đầu (triệu đồng)
+        const r = 6; // %/năm
+        const earned = Math.round(p * 0.06);
+        return {
+          id: `DGNL_Q1_${idx}`, grade: "DGNL", level: "VD", type: "mcq", topic: "dgnl_quant",
+          question: `Một khách hàng gửi tiết kiệm vào ngân hàng số tiền $${p}$ triệu đồng với lãi suất $${r}\\%$/năm theo phương thức lãi đơn. Sau 1 năm, tổng số tiền lãi khách hàng nhận được là:`,
+          options: [`$${earned}$ triệu đồng`, `$${earned + 2}$ triệu đồng`, `$${earned - 2}$ triệu đồng`, `$${p + earned}$ triệu đồng`],
+          correctAnswer: "A",
+          explanation: `Số tiền lãi sau 1 năm theo lãi đơn: $I = P \\times r = ${p} \\times 6\\% = ${earned}$ triệu đồng.`
+        };
+      }),
+
+      makeTemplate({ topic: 'dgnl_quant', level: 'VD' }, (idx) => {
+        const perimeter = 80 + (idx % 4) * 20;
+        const side = perimeter / 4;
+        const maxArea = side * side;
+        return {
+          id: `DGNL_Q2_${idx}`, grade: "DGNL", level: "VD", type: "mcq", topic: "dgnl_quant",
+          question: `Bác nông dân có đoạn lưới thép dài $${perimeter}\\text{ m}$ để rào một khu vườn hình chữ nhật. Để diện tích khu vườn đạt giá trị lớn nhất, diện tích lớn nhất đó bằng:`,
+          options: [`$${maxArea}\\text{ m}^2$`, `$${maxArea - 50}\\text{ m}^2$`, `$${maxArea + 100}\\text{ m}^2$`, `$${perimeter * 2}\\text{ m}^2$`],
+          correctAnswer: "A",
+          explanation: `Nửa chu vi hình chữ nhật: $x + y = ${perimeter / 2}$. Theo bất đẳng thức Cauchy: $x y \\le \\left(\\dfrac{x + y}{2}\\right)^2 = \\left(\\dfrac{${perimeter / 2}}{2}\\right)^2 = ${side}^2 = ${maxArea}\\text{ m}^2$. Dấu '=' xảy ra khi khu vườn là hình vuông có cạnh $${side}\\text{ m}$.`
+        };
+      }),
+
+      makeTemplate({ topic: 'dgnl_quant', level: 'VDC' }, (idx) => {
+        const v = 60 + (idx % 3) * 10;
+        const t = 2.5;
+        const dist = v * t;
+        return {
+          id: `DGNL_Q3_${idx}`, grade: "DGNL", level: "VDC", type: "mcq", topic: "dgnl_quant",
+          question: `Một ô tô khởi hành từ thành phố A đi thành phố B với vận tốc không đổi $${v}\\text{ km/h}$. Sau $2$ giờ $30$ phút xe đến nơi. Khoảng cách giữa hai thành phố A và B là:`,
+          options: [`$${dist}\\text{ km}$`, `$${dist + 25}\\text{ km}$`, `$${dist - 30}\\text{ km}$`, `$${v * 2}\\text{ km}$`],
+          correctAnswer: "A",
+          explanation: `Đổi $2$ giờ $30$ phút = $2{,}5$ giờ. Quãng đường $S = v \\times t = ${v} \\times 2{,}5 = ${dist}\\text{ km}$.`
+        };
+      }),
+
+      makeTemplate({ topic: 'dgnl_quant', level: 'TH' }, (idx) => {
+        const price = 200000;
+        const discount = 20;
+        const finalP = price * (100 - discount) / 100;
+        return {
+          id: `DGNL_Q4_${idx}`, grade: "DGNL", level: "TH", type: "mcq", topic: "dgnl_quant",
+          question: `Một cuốn sách tham khảo luyện thi ĐGNL có giá bìa là $${price.toLocaleString('vi-VN')}$ đồng. Nhân dịp khai giảng, nhà sách giảm giá $${discount}\\%$. Số tiền người mua phải thanh toán sau khi giảm giá là:`,
+          options: [`$${finalP.toLocaleString('vi-VN')}$ đồng`, `$180.000$ đồng`, `$150.000$ đồng`, `$170.000$ đồng`],
+          correctAnswer: "A",
+          explanation: `Số tiền sau giảm giá: $${price.toLocaleString('vi-VN')} \\times (1 - 0{,}20) = ${finalP.toLocaleString('vi-VN')}$ đồng.`
+        };
+      }),
+
+      makeTemplate({ topic: 'dgnl_quant', level: 'VD' }, (idx) => {
+        const v1 = 12, v2 = 8;
+        const sum = v1 + v2;
+        return {
+          id: `DGNL_Q5_${idx}`, grade: "DGNL", level: "VD", type: "mcq", topic: "dgnl_quant",
+          question: `Một bể nước có 2 vòi chảy vào. Vòi thứ nhất mỗi phút chảy được $${v1}$ lít nước, vòi thứ hai mỗi phút chảy được $${v2}$ lít nước. Nếu mở đồng thời cả hai vòi thì sau $15$ phút, lượng nước chảy vào bể là:`,
+          options: [`$${sum * 15}$ lít`, `$${sum * 12}$ lít`, `$${sum * 20}$ lít`, `$250$ lít`],
+          correctAnswer: "A",
+          explanation: `Mỗi phút cả 2 vòi chảy được: $${v1} + ${v2} = ${sum}$ lít. Sau 15 phút: $${sum} \\times 15 = ${sum * 15}$ lít.`
+        };
+      }),
+
+      makeTemplate({ topic: 'dgnl_quant', level: 'VD' }, (idx) => {
+        const m1 = 200; // g dung dịch
+        const c1 = 15; // %
+        const mWater = 100; // g nước thêm vào
+        const mTotal = m1 + mWater; // 300g
+        const mSolute = m1 * (c1 / 100); // 30g
+        const cNew = Math.round((mSolute / mTotal) * 100); // 10%
+        return {
+          id: `DGNL_Q6_${idx}`, grade: "DGNL", level: "VD", type: "mcq", topic: "dgnl_quant",
+          question: `Có $${m1}\\text{ g}$ dung dịch muối nồng độ $${c1}\\%$. Thêm tiếp $${mWater}\\text{ g}$ nước cất vào dung dịch đó. Nồng độ phần trăm của dung dịch mới thu được là:`,
+          options: [`$${cNew}\\%$`, `$12\\%$`, `$8\\%$`, `$7{,}5\\%$`],
+          correctAnswer: "A",
+          explanation: `Khối lượng muối nguyên chất: $${m1} \\times 15\\% = ${mSolute}\\text{ g}$. Khối lượng dung dịch sau khi thêm nước: $${m1} + ${mWater} = ${mTotal}\\text{ g}$. Nồng độ mới: $\\dfrac{${mSolute}}{${mTotal}} \\times 100\\% = ${cNew}\\%$.`
+        };
+      }),
+
+      makeTemplate({ topic: 'dgnl_quant', level: 'VDC' }, (idx) => {
+        const red = 4, blue = 6;
+        const totalBalls = red + blue; // 10
+        const totalWays = (totalBalls * (totalBalls - 1)) / 2; // 45
+        const redWays = (red * (red - 1)) / 2; // 6
+        const blueWays = (blue * (blue - 1)) / 2; // 15
+        const sameWays = redWays + blueWays; // 21
+        return {
+          id: `DGNL_Q7_${idx}`, grade: "DGNL", level: "VDC", type: "mcq", topic: "dgnl_quant",
+          question: `Trong một hộp kín có $${red}$ viên bi đỏ và $${blue}$ viên bi xanh cùng kích thước. Lấy ngẫu nhiên đồng thời $2$ viên bi. Xác suất để lấy được $2$ viên bi cùng màu là:`,
+          options: [`$\\dfrac{${sameWays}}{${totalWays}}$`, `$\\dfrac{24}{45}$`, `$\\dfrac{1}{2}$`, `$\\dfrac{2}{5}$`],
+          correctAnswer: "A",
+          explanation: `Số cách chọn 2 viên bất kì: $C_{10}^2 = \\dfrac{10 \\times 9}{2} = 45$. Số cách chọn 2 bi đỏ: $C_4^2 = 6$. Số cách chọn 2 bi xanh: $C_6^2 = 15$. Xác suất 2 bi cùng màu: $P = \\dfrac{6 + 15}{45} = \\dfrac{${sameWays}}{${totalWays}} = \\dfrac{7}{15}$.`
+        };
+      }),
+
+      makeTemplate({ topic: 'dgnl_quant', level: 'TH' }, (idx) => {
+        const chickens = 20 + (idx % 6);
+        const dogs = 15;
+        const totalAnimals = chickens + dogs;
+        const totalLegs = chickens * 2 + dogs * 4;
+        return {
+          id: `DGNL_Q8_${idx}`, grade: "DGNL", level: "TH", type: "mcq", topic: "dgnl_quant",
+          question: `Một nông trại nuôi gà và chó. Đếm được tất cả có $${totalAnimals}$ con và tổng cộng có $${totalLegs}$ cái chân. Hỏi nông trại có bao nhiêu con gà?`,
+          options: [`$${chickens}$ con gà`, `$${dogs}$ con gà`, `$${chickens + 4}$ con gà`, `$${chickens - 4}$ con gà`],
+          correctAnswer: "A",
+          explanation: `Gọi số gà là $x$, số chó là $y$. Hệ phương trình: $x + y = ${totalAnimals}$ và $2x + 4y = ${totalLegs}$. Suy ra: $2x + 2y = ${totalAnimals * 2} \\Rightarrow 2y = ${totalLegs - totalAnimals * 2} \\Rightarrow y = ${dogs}$ (chó) $\\Rightarrow x = ${totalAnimals} - ${dogs} = ${chickens}$ (gà).`
+        };
+      })
+    ];
+  },
+
   getTemplates(grade, type = 'mcq', level = 'TH', topic = 'all') {
     const g = grade ? grade.toString() : '10';
     let rawTemplates = [];
-    if (g === '6') rawTemplates = this.getGrade6Templates(type, level);
+    if (g === 'DGNL') rawTemplates = this.getDgnlTemplates(type, level);
+    else if (g === '6') rawTemplates = this.getGrade6Templates(type, level);
     else if (g === '7') rawTemplates = this.getGrade7Templates(type, level);
     else if (g === '8') rawTemplates = this.getGrade8Templates(type, level);
     else if (g === '9' || g === 'TS10') rawTemplates = this.getGrade9Templates(type, level);
@@ -1121,6 +1468,104 @@ const MathEngine = {
   },
 
   /**
+   * Sinh bộ đề thi Đánh Giá Năng Lực (ĐGNL) độc lập:
+   * - Mini Test: 100 câu (40 Định lượng, 30 Logic, 30 Số liệu - 90 phút)
+   * - Full Test: 200 câu (80 Định lượng, 60 Logic, 60 Số liệu - 150 phút)
+   * 100% trắc nghiệm chuẩn hóa, không pha trộn Toán phổ thông SGK
+   */
+  generateDgnlExam(config = {}) {
+    const {
+      packageType = 'mini', // 'mini' (100 câu) | 'full' (200 câu)
+      targetExam = 'HCM',    // 'HCM' | 'HSA' | 'TSA'
+      timeLimit = (packageType === 'full' ? 150 : 90),
+      title = ''
+    } = config;
+
+    const totalQuestions = packageType === 'full' ? 200 : 100;
+    // Chuẩn ma trận ĐGNL: 40% Định lượng, 30% Logic, 30% Phân tích số liệu
+    const quantCount = Math.round(totalQuestions * 0.4); // 40 hoặc 80
+    const logicCount = Math.round(totalQuestions * 0.3); // 30 hoặc 60
+    const dataCount = totalQuestions - quantCount - logicCount; // 30 hoặc 60
+
+    const targetNames = {
+      HCM: 'ĐHQG TP.HCM',
+      HSA: 'ĐHQG Hà Nội (HSA)',
+      TSA: 'ĐHBK Hà Nội (TSA)'
+    };
+    const targetLabel = targetNames[targetExam] || 'ĐHQG TP.HCM';
+    const packageLabel = packageType === 'full' ? 'Full Test (200 Câu Toàn Diện)' : 'Mini Test (100 Câu Chuẩn Hóa)';
+    const examTitle = title || `Đề Thi Thử Đánh Giá Năng Lực ${targetLabel} — ${packageLabel}`;
+
+    const rawTemplates = GradeEngines.getDgnlTemplates('mcq', 'all');
+    const quantPool = rawTemplates.filter(t => t.topic === 'dgnl_quant');
+    const logicPool = rawTemplates.filter(t => t.topic === 'dgnl_logic');
+    const dataPool = rawTemplates.filter(t => t.topic === 'dgnl_data');
+
+    const selectedMcq = [];
+    const seenSignatures = new Set();
+
+    const generateGroupQuestions = (pool, count, groupLabel) => {
+      let chosen = 0;
+      let cycle = 0;
+      while (chosen < count) {
+        cycle++;
+        const tIndex = chosen % pool.length;
+        const generator = pool[tIndex];
+        const candidate = generator(chosen + cycle * 7);
+        const signature = candidate.question.trim().replace(/\s+/g, ' ');
+        if (!seenSignatures.has(signature) || cycle > count * 2) {
+          seenSignatures.add(signature);
+          candidate.source = `Ngân hàng đề ĐGNL ${targetLabel} — Phần ${groupLabel}`;
+          selectedMcq.push(candidate);
+          chosen++;
+        }
+      }
+    };
+
+    generateGroupQuestions(quantPool, quantCount, 'Tư Duy Định Lượng');
+    generateGroupQuestions(logicPool, logicCount, 'Tư Duy Logic');
+    generateGroupQuestions(dataPool, dataCount, 'Xử Lý Số Liệu');
+
+    const scorePerQ = Math.round((10.0 / totalQuestions) * 100) / 100;
+    const answerKeys = selectedMcq.map((q, idx) => {
+      const shuffledQ = this.shuffleQuestionOptions(q);
+      let topicName = 'ĐGNL Định Lượng';
+      if (q.topic === 'dgnl_logic') topicName = 'ĐGNL Logic';
+      else if (q.topic === 'dgnl_data') topicName = 'ĐGNL Số Liệu';
+
+      return {
+        num: idx + 1,
+        type: 'mcq',
+        topic: topicName,
+        level: q.level || 'TH',
+        source: q.source || `ĐGNL ${targetLabel}`,
+        correct: shuffledQ.correctAnswer,
+        score: scorePerQ,
+        content: shuffledQ.question,
+        diagram: shuffledQ.diagram || null,
+        options: shuffledQ.options,
+        explanation: shuffledQ.explanation
+      };
+    });
+
+    const examHtml = this.renderExamToHtml(examTitle, answerKeys, timeLimit, 'Đánh Giá Năng Lực');
+
+    return {
+      title: examTitle,
+      term: 'DGNL',
+      grade: 'DGNL',
+      timeLimit,
+      totalQuestions: answerKeys.length,
+      mcqCount: answerKeys.length,
+      essayCount: 0,
+      answerKeys,
+      examHtml,
+      packageType,
+      targetExam
+    };
+  },
+
+  /**
    * Sinh bộ đề thi chuẩn 100% TOANMATH với ANTI-DUPLICATE GUARD & TÍCH HỢP KHO TÀI LIỆU
    */
   generateExam(config = {}) {
@@ -1138,6 +1583,16 @@ const MathEngine = {
     } = config;
 
     const gStr = (track && track.startsWith('dgnl')) ? 'DGNL' : grade.toString();
+    if (gStr === 'DGNL') {
+      const pkg = mcqCount >= 150 ? 'full' : 'mini';
+      return this.generateDgnlExam({
+        packageType: pkg,
+        targetExam: track === 'dgnl_hn' ? 'HSA' : (track === 'dgnl_bk' ? 'TSA' : 'HCM'),
+        timeLimit: timeLimit || (pkg === 'full' ? 150 : 90),
+        title
+      });
+    }
+
     let warningMsg = null;
 
     let mcqTemplates = GradeEngines.getTemplates(gStr, 'mcq', 'TH', topic);

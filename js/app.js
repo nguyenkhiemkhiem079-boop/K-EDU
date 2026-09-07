@@ -624,7 +624,7 @@ function escapeHtml(str) {
 /* ================= TEACHER SUB-TAB NAVIGATION ================= */
 function switchTeacherSubtab(subtabName) {
   AppState.activeTeacherSubtab = subtabName;
-  const subtabs = ['create', 'manage', 'analytics', 'settings'];
+  const subtabs = ['create', 'manage', 'analytics', 'vouchers', 'settings'];
   subtabs.forEach(name => {
     const btn = document.getElementById(`btnTeacherSubtab_${name}`);
     const view = document.getElementById(`teacherSubtabView_${name}`);
@@ -637,8 +637,11 @@ function switchTeacherSubtab(subtabName) {
   if (subtabName === 'manage') {
     renderTeacherQuizManager();
     renderTeacherRosterManager();
+    renderTeacherPenaltyManagerSection();
   } else if (subtabName === 'analytics') {
     renderTeacherAnalyticsDashboard();
+  } else if (subtabName === 'vouchers') {
+    renderTeacherVouchersManager('all');
   }
 }
 
@@ -717,6 +720,7 @@ async function renderTeacherRosterManager() {
                 <td><strong style="color:var(--text-primary);font-size:1rem;">${escapeHtml(s.name)}</strong></td>
                 <td><span class="badge-status badge-pass">Lớp ${escapeHtml(s.className)}</span></td>
                 <td>
+                  <button type="button" class="btn btn-warning btn-sm" onclick="openTeacherPenaltyModal('${escapeHtml(s.name)}')" style="margin-right:4px;">⚖️ Kỷ Luật</button>
                   <button type="button" class="btn btn-danger btn-sm" onclick="deleteRosterStudent(${idx})">🗑️ Xóa</button>
                 </td>
               </tr>
@@ -903,6 +907,299 @@ async function deleteRosterStudent(idx) {
   }
 }
 
+/* ================= DISCIPLINARY & PENALTY MANAGEMENT (SỔ KỶ LUẬT & TRỪ ĐIỂM) ================= */
+function openTeacherPenaltyModal(studentName = '') {
+  const modal = document.getElementById('modalTeacherPenalty');
+  const studentSelect = document.getElementById('penaltyStudentSelect');
+  const classInput = document.getElementById('penaltyClassInput');
+  const xpInput = document.getElementById('penaltyXpInput');
+  const reasonInput = document.getElementById('penaltyReasonInput');
+  const noteInput = document.getElementById('penaltyNoteInput');
+
+  if (!modal) return;
+
+  const roster = AppState.studentRoster || [];
+  if (studentSelect) {
+    studentSelect.innerHTML = `
+      <option value="">-- Chọn học sinh từ danh bạ --</option>
+      ${roster.map(s => `<option value="${escapeHtml(s.name)}" data-class="${escapeHtml(s.className || '10')}">${escapeHtml(s.name)} (Lớp ${escapeHtml(s.className)})</option>`).join('')}
+    `;
+
+    if (studentName) {
+      studentSelect.value = studentName;
+      const opt = studentSelect.options[studentSelect.selectedIndex];
+      if (opt && classInput) {
+        classInput.value = opt.dataset.class || '10';
+      }
+    } else if (roster.length && classInput) {
+      studentSelect.selectedIndex = 1;
+      const opt = studentSelect.options[1];
+      if (opt) classInput.value = opt.dataset.class || '10';
+    }
+  }
+
+  if (xpInput) xpInput.value = '-5';
+  if (reasonInput) reasonInput.value = 'Đi học muộn / Mất trật tự trong giờ';
+  if (noteInput) noteInput.value = '';
+
+  renderTeacherPenaltyHistory();
+  modal.classList.remove('hidden');
+  SoundEngine.playClick();
+}
+
+function closeTeacherPenaltyModal() {
+  const modal = document.getElementById('modalTeacherPenalty');
+  if (modal) modal.classList.add('hidden');
+}
+
+function onPenaltyStudentSelected() {
+  const studentSelect = document.getElementById('penaltyStudentSelect');
+  const classInput = document.getElementById('penaltyClassInput');
+  if (!studentSelect || !classInput) return;
+
+  const opt = studentSelect.options[studentSelect.selectedIndex];
+  if (opt && opt.dataset.class) {
+    classInput.value = opt.dataset.class;
+  }
+}
+
+function applyQuickPenaltyPreset(xp, reason) {
+  const xpInput = document.getElementById('penaltyXpInput');
+  const reasonInput = document.getElementById('penaltyReasonInput');
+  if (xpInput) {
+    xpInput.value = xp;
+    xpInput.style.color = xp < 0 ? 'var(--rose)' : 'var(--primary-shadow)';
+  }
+  if (reasonInput) reasonInput.value = reason;
+  SoundEngine.playClick();
+}
+
+async function submitTeacherPenaltyForm() {
+  const studentSelect = document.getElementById('penaltyStudentSelect');
+  const classInput = document.getElementById('penaltyClassInput');
+  const xpInput = document.getElementById('penaltyXpInput');
+  const reasonInput = document.getElementById('penaltyReasonInput');
+  const noteInput = document.getElementById('penaltyNoteInput');
+
+  const studentName = (studentSelect?.value || '').trim();
+  const className = (classInput?.value || '').trim();
+  const xpChange = parseInt(xpInput?.value || '0', 10);
+  const reason = (reasonInput?.value || '').trim();
+  const teacherNote = (noteInput?.value || '').trim();
+
+  if (!studentName) {
+    showToast('⚠️ Vui lòng chọn học sinh!', 'warn');
+    return;
+  }
+  if (!reason) {
+    showToast('⚠️ Vui lòng nhập lý do trừ/cộng điểm!', 'warn');
+    return;
+  }
+  if (isNaN(xpChange) || xpChange === 0) {
+    showToast('⚠️ Vui lòng nhập số điểm thay đổi khác 0!', 'warn');
+    return;
+  }
+
+  GamificationEngine.applyTeacherAdjustment(studentName, className, xpChange, reason, teacherNote);
+
+  renderTeacherPenaltyHistory();
+  renderTeacherPenaltyManagerSection();
+  renderWeeklyLeaderboard();
+  renderGamificationTab();
+
+  if (xpChange < 0) {
+    showToast(`⚖️ Đã trừ ${Math.abs(xpChange)} XP của [${studentName}]: ${reason}`, 'warn');
+  } else {
+    showToast(`🌟 Đã thưởng +${xpChange} XP cho [${studentName}]: ${reason}`, 'success');
+    SoundEngine.playFanfare();
+  }
+}
+
+async function handleDeletePenalty(penaltyId) {
+  if (!confirm('Bạn có chắc muốn xóa bản ghi kỷ luật này?')) return;
+
+  await StorageEngine.deletePenalty(penaltyId);
+  renderTeacherPenaltyHistory();
+  renderTeacherPenaltyManagerSection();
+  renderWeeklyLeaderboard();
+  renderGamificationTab();
+  showToast('🗑️ Đã xóa bản ghi kỷ luật thành công.', 'success');
+  SoundEngine.playClick();
+}
+
+function renderTeacherPenaltyHistory() {
+  const tbody = document.getElementById('penaltyHistoryTableBody');
+  const countBadge = document.getElementById('penaltyHistoryCountBadge');
+  if (!tbody) return;
+
+  const penalties = StorageEngine.getAllPenalties();
+  if (countBadge) countBadge.textContent = `${penalties.length} bản ghi`;
+
+  if (!penalties.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align:center;padding:1.5rem;color:var(--text-muted);font-weight:700;">
+          Chưa có ghi nhận kỷ luật hoặc trừ/thưởng điểm nào.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = penalties.map(p => {
+    const isNeg = (p.xpChange || 0) < 0;
+    const dateStr = p.createdAt ? new Date(p.createdAt).toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }) : '—';
+    return `
+      <tr>
+        <td style="font-size:0.8rem;color:var(--text-muted);">${dateStr}</td>
+        <td><strong style="color:var(--text-primary);">${escapeHtml(p.studentName)}</strong></td>
+        <td><span class="badge-status badge-pass">Lớp ${escapeHtml(p.className || 'Chung')}</span></td>
+        <td>
+          <span class="badge-penalty ${isNeg ? 'badge-penalty-negative' : 'badge-penalty-positive'}">
+            ${isNeg ? '' : '+'}${p.xpChange} XP
+          </span>
+        </td>
+        <td style="font-size:0.85rem;font-weight:700;">${escapeHtml(p.reason || '—')}</td>
+        <td style="font-size:0.8rem;color:var(--text-secondary);font-style:italic;">${escapeHtml(p.teacherNote || '—')}</td>
+        <td>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="handleDeletePenalty('${p.id}')" style="padding:0.2rem 0.5rem;font-size:0.75rem;" title="Xóa bản ghi này">
+            🗑️ Xóa
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderTeacherPenaltyManagerSection() {
+  const wrap = document.getElementById('teacherPenaltyManagerWrap');
+  if (!wrap) return;
+
+  const penalties = StorageEngine.getAllPenalties();
+  if (!penalties.length) {
+    wrap.innerHTML = `
+      <div style="text-align:center;padding:1.75rem 1rem;background:var(--bg-tertiary);border:2px dashed var(--border-color);border-radius:var(--radius-lg);">
+        <p style="font-weight:700;color:var(--text-secondary);margin-bottom:0.75rem;">Sổ kỷ luật hiện đang sạch sẽ. Chưa có học sinh nào bị trừ điểm nề nếp.</p>
+        <button type="button" class="btn btn-danger btn-sm" onclick="openTeacherPenaltyModal()">➕ Thêm Ghi Nhận Kỷ Luật / Trừ Điểm</button>
+      </div>
+    `;
+    return;
+  }
+
+  wrap.innerHTML = `
+    <div style="margin-bottom:0.75rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
+      <span style="font-weight:800;color:var(--text-primary);">Tổng số ghi nhận: <strong style="color:var(--rose);font-size:1.1rem;">${penalties.length}</strong></span>
+      <button type="button" class="btn btn-danger btn-sm" onclick="openTeacherPenaltyModal()">➕ Trừ / Thưởng Điểm</button>
+    </div>
+    <div class="table-responsive" style="max-height:300px;overflow-y:auto;">
+      <table class="penalty-history-table">
+        <thead>
+          <tr>
+            <th>Thời Gian</th>
+            <th>Học Sinh</th>
+            <th>Lớp</th>
+            <th>Mức Điểm</th>
+            <th>Lý Do Vi Phạm / Thưởng</th>
+            <th>Ghi Chú</th>
+            <th>Hành Động</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${penalties.map(p => {
+            const isNeg = (p.xpChange || 0) < 0;
+            const dateStr = p.createdAt ? new Date(p.createdAt).toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }) : '—';
+            return `
+              <tr>
+                <td style="font-size:0.8rem;color:var(--text-muted);">${dateStr}</td>
+                <td><strong style="color:var(--text-primary);">${escapeHtml(p.studentName)}</strong></td>
+                <td><span class="badge-status badge-pass">Lớp ${escapeHtml(p.className || 'Chung')}</span></td>
+                <td>
+                  <span class="badge-penalty ${isNeg ? 'badge-penalty-negative' : 'badge-penalty-positive'}">
+                    ${isNeg ? '' : '+'}${p.xpChange} XP
+                  </span>
+                </td>
+                <td style="font-size:0.85rem;font-weight:700;">${escapeHtml(p.reason || '—')}</td>
+                <td style="font-size:0.8rem;color:var(--text-secondary);font-style:italic;">${escapeHtml(p.teacherNote || '—')}</td>
+                <td>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="handleDeletePenalty('${p.id}')" style="padding:0.2rem 0.5rem;font-size:0.75rem;">
+                    🗑️ Xóa
+                  </button>
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderStudentDisciplinaryStatus() {
+  const wrap = document.getElementById('studentDisciplinaryWrap');
+  if (!wrap) return;
+
+  const profile = GamificationEngine.getUserProfile();
+  const penalties = StorageEngine.getPenaltiesByStudent(profile.name);
+
+  if (!penalties.length) {
+    wrap.innerHTML = `
+      <div class="card" style="border-left:5px solid var(--primary);background:linear-gradient(135deg, rgba(16,185,129,0.05), var(--bg-card));margin-top:1.5rem;">
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <span style="font-size:2rem;">🌟</span>
+          <div>
+            <div style="font-weight:900;font-size:1.05rem;color:var(--primary-shadow);">Nề Nếp & Ý Thức Học Tập Xuất Sắc</div>
+            <div style="font-size:0.85rem;color:var(--text-secondary);font-weight:700;">Bạn không có điểm trừ kỷ luật nào! Hãy tiếp tục duy trì tinh thần học tập chính trực nhé.</div>
+          </div>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  const totalDeducted = penalties.filter(p => (p.xpChange || 0) < 0).reduce((sum, p) => sum + Math.abs(p.xpChange), 0);
+  const totalBonus = penalties.filter(p => (p.xpChange || 0) > 0).reduce((sum, p) => sum + p.xpChange, 0);
+
+  wrap.innerHTML = `
+    <div class="card student-disciplinary-card" style="margin-top:1.5rem;">
+      <div class="card-header" style="flex-wrap:wrap;gap:0.5rem;">
+        <div style="display:flex;align-items:center;gap:0.5rem;">
+          <span style="font-size:1.6rem;">⚖️</span>
+          <div>
+            <h3 style="margin:0;font-size:1.15rem;color:var(--rose);">Sổ Ghi Nhận Nề Nếp & Kỷ Luật Của Bạn</h3>
+            <p class="card-subtitle" style="margin:0;">Chi tiết các lần nhắc nhở vi phạm hoặc khen thưởng từ Thầy Cô & Hệ Thống:</p>
+          </div>
+        </div>
+        <div style="display:flex;gap:0.5rem;align-items:center;">
+          ${totalDeducted > 0 ? `<span class="badge-penalty badge-penalty-negative">Tổng trừ: -${totalDeducted} XP</span>` : ''}
+          ${totalBonus > 0 ? `<span class="badge-penalty badge-penalty-positive">Tổng thưởng: +${totalBonus} XP</span>` : ''}
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:0.6rem;margin-top:1rem;">
+        ${penalties.map(p => {
+          const isNeg = (p.xpChange || 0) < 0;
+          const dateStr = p.createdAt ? new Date(p.createdAt).toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }) : '—';
+          return `
+            <div style="padding:0.75rem 1rem;background:var(--bg-card);border:1.5px solid ${isNeg ? 'rgba(244,63,94,0.3)' : 'rgba(16,185,129,0.3)'};border-radius:var(--radius-md);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
+              <div style="display:flex;align-items:center;gap:0.6rem;">
+                <span style="font-size:1.3rem;">${isNeg ? '⚠️' : '🌟'}</span>
+                <div>
+                  <div style="font-weight:800;font-size:0.9rem;color:var(--text-primary);">${escapeHtml(p.reason || 'Điều chỉnh điểm')}</div>
+                  ${p.teacherNote ? `<div style="font-size:0.8rem;color:var(--text-secondary);font-style:italic;">💬 Lời nhắn: "${escapeHtml(p.teacherNote)}"</div>` : ''}
+                  <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;">${dateStr}</div>
+                </div>
+              </div>
+              <span class="badge-penalty ${isNeg ? 'badge-penalty-negative' : 'badge-penalty-positive'}" style="font-size:0.9rem;padding:0.25rem 0.65rem;">
+                ${isNeg ? '' : '+'}${p.xpChange} XP
+              </span>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
 function renderAssignTargetsSelector() {
   const typeSelect = document.getElementById('assignTypeSelect');
   if (!typeSelect) return;
@@ -1041,6 +1338,59 @@ async function lookupParentChildReport() {
         <div class="metric-sub">${metrics.totalTabSwitches === 0 ? '✅ Học tập nghiêm túc tuyệt đối' : '⚠️ Cần nhắc nhở tập trung hơn'}</div>
       </div>
     </div>
+
+    <!-- Student Disciplinary & Conduct Log in Parent View -->
+    ${(() => {
+      const childPenalties = typeof StorageEngine !== 'undefined' && typeof StorageEngine.getPenaltiesByStudent === 'function'
+        ? StorageEngine.getPenaltiesByStudent(name)
+        : [];
+      if (!childPenalties.length) {
+        return `
+          <div class="card" style="border-left:5px solid var(--primary);background:linear-gradient(135deg, rgba(16,185,129,0.05), var(--bg-card));margin-bottom:1.25rem;">
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+              <span style="font-size:2rem;">🌟</span>
+              <div>
+                <div style="font-weight:900;font-size:1rem;color:var(--primary-shadow);">Nề Nếp Học Tập & Ý Thức Của Con: Xuất Sắc</div>
+                <div style="font-size:0.85rem;color:var(--text-secondary);font-weight:700;">Học sinh không có bất kỳ vi phạm hay điểm trừ kỷ luật nào. Con luôn tự giác và trung thực khi làm bài!</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      const negSum = childPenalties.filter(p => (p.xpChange || 0) < 0).reduce((s, p) => s + Math.abs(p.xpChange), 0);
+      const posSum = childPenalties.filter(p => (p.xpChange || 0) > 0).reduce((s, p) => s + p.xpChange, 0);
+      return `
+        <div class="card" style="border-left:5px solid var(--rose);margin-bottom:1.25rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.75rem;">
+            <div style="font-weight:900;font-size:1.05rem;color:var(--text-primary);display:flex;align-items:center;gap:0.4rem;">
+              <span>⚖️</span> <span>Sổ Theo Dõi Nề Nếp & Kỷ Luật Của Con (${childPenalties.length} lần ghi nhận)</span>
+            </div>
+            <div style="display:flex;gap:0.5rem;">
+              ${negSum > 0 ? `<span class="badge-penalty badge-penalty-negative">Tổng trừ: -${negSum} XP</span>` : ''}
+              ${posSum > 0 ? `<span class="badge-penalty badge-penalty-positive">Tổng thưởng: +${posSum} XP</span>` : ''}
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:0.5rem;">
+            ${childPenalties.map(p => {
+              const isNeg = (p.xpChange || 0) < 0;
+              const dateStr = p.createdAt ? new Date(p.createdAt).toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }) : '—';
+              return `
+                <div style="padding:0.6rem 0.85rem;background:var(--bg-tertiary);border-radius:var(--radius-md);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.4rem;">
+                  <div>
+                    <strong style="color:var(--text-primary);font-size:0.9rem;">${isNeg ? '⚠️' : '🌟'} ${escapeHtml(p.reason || '')}</strong>
+                    ${p.teacherNote ? `<div style="font-size:0.8rem;color:var(--text-secondary);font-style:italic;margin-top:2px;">💬 Nhận xét của Thầy: "${escapeHtml(p.teacherNote)}"</div>` : ''}
+                    <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;">${dateStr}</div>
+                  </div>
+                  <span class="badge-penalty ${isNeg ? 'badge-penalty-negative' : 'badge-penalty-positive'}">
+                    ${isNeg ? '' : '+'}${p.xpChange} XP
+                  </span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    })()}
 
     <!-- Question Accuracy Breakdown Bar -->
     <div class="card" style="margin-bottom:1.25rem;">
@@ -1890,6 +2240,245 @@ function updateTotalExamPointsCalculation() {
 }
 
 /* ================= SMART MATH AUTO-GENERATOR CONTROLLER ================= */
+function switchMathGenMode(mode = 'standard') {
+  const btnStandard = document.getElementById('tabMathModeStandard');
+  const btnDgnl = document.getElementById('tabMathModeDgnl');
+  const panelStandard = document.getElementById('mathGenStandardPanel');
+  const panelDgnl = document.getElementById('mathGenDgnlPanel');
+
+  if (mode === 'dgnl') {
+    if (btnDgnl) {
+      btnDgnl.className = 'btn btn-primary';
+      btnDgnl.style.boxShadow = '0 3px 10px rgba(99,102,241,0.25)';
+    }
+    if (btnStandard) {
+      btnStandard.className = 'btn btn-secondary';
+      btnStandard.style.boxShadow = 'none';
+    }
+    if (panelStandard) panelStandard.classList.add('hidden');
+    if (panelDgnl) panelDgnl.classList.remove('hidden');
+    showToast('🧠 Đã chuyển sang chế độ tạo đề Đánh Giá Năng Lực (Mini 100 / Full 200)!', 'info');
+  } else {
+    if (btnStandard) {
+      btnStandard.className = 'btn btn-primary';
+      btnStandard.style.boxShadow = '0 3px 10px rgba(99,102,241,0.25)';
+    }
+    if (btnDgnl) {
+      btnDgnl.className = 'btn btn-secondary';
+      btnDgnl.style.boxShadow = 'none';
+    }
+    if (panelStandard) panelStandard.classList.remove('hidden');
+    if (panelDgnl) panelDgnl.classList.add('hidden');
+    showToast('📐 Đã chuyển sang chế độ tạo đề Toán Phổ Thông (Lớp 6 - 12)!', 'info');
+  }
+}
+
+function selectDgnlPackage(pkg = 'mini') {
+  const radioMini = document.getElementById('dgnlPackageMini');
+  const radioFull = document.getElementById('dgnlPackageFull');
+  const cardMini = document.getElementById('cardDgnlMini');
+  const cardFull = document.getElementById('cardDgnlFull');
+  const timeInput = document.getElementById('dgnlTimeLimitInput');
+  const btn = document.getElementById('btnGenerateDgnlExam');
+
+  if (pkg === 'full') {
+    if (radioFull) radioFull.checked = true;
+    if (cardFull) {
+      cardFull.style.border = '2.5px solid #7c3aed';
+      cardFull.style.opacity = '1';
+      cardFull.style.boxShadow = '0 4px 14px rgba(124,58,237,0.2)';
+    }
+    if (cardMini) {
+      cardMini.style.border = '2px solid var(--border-color)';
+      cardMini.style.opacity = '0.85';
+      cardMini.style.boxShadow = 'none';
+    }
+    if (timeInput) timeInput.value = 150;
+    if (btn) btn.innerHTML = '🚀 TẠO ĐỀ ĐÁNH GIÁ NĂNG LỰC FULL TEST (200 CÂU — 150 PHÚT)';
+  } else {
+    if (radioMini) radioMini.checked = true;
+    if (cardMini) {
+      cardMini.style.border = '2.5px solid var(--indigo)';
+      cardMini.style.opacity = '1';
+      cardMini.style.boxShadow = '0 4px 14px rgba(99,102,241,0.2)';
+    }
+    if (cardFull) {
+      cardFull.style.border = '2px solid var(--border-color)';
+      cardFull.style.opacity = '0.85';
+      cardFull.style.boxShadow = 'none';
+    }
+    if (timeInput) timeInput.value = 90;
+    if (btn) btn.innerHTML = '🚀 TẠO ĐỀ ĐÁNH GIÁ NĂNG LỰC MINI TEST (100 CÂU — 90 PHÚT)';
+  }
+}
+
+async function triggerAutoGenerateDgnlExam() {
+  if (typeof MathEngine === 'undefined' || !MathEngine.generateDgnlExam) {
+    showToast('⚠️ Bộ sinh đề ĐGNL chưa sẵn sàng, vui lòng thử lại.', 'warn');
+    return;
+  }
+
+  try {
+    const isFull = document.getElementById('dgnlPackageFull')?.checked;
+    const packageType = isFull ? 'full' : 'mini';
+    const targetExam = document.getElementById('dgnlTargetExamSelect')?.value || 'HCM';
+    const timeLimit = parseInt(document.getElementById('dgnlTimeLimitInput')?.value || (isFull ? '150' : '90'), 10) || (isFull ? 150 : 90);
+
+    const targetLabels = {
+      HCM: 'ĐHQG TP.HCM',
+      HSA: 'ĐHQG Hà Nội',
+      TSA: 'ĐHBK Hà Nội'
+    };
+    const targetName = targetLabels[targetExam] || 'ĐHQG TP.HCM';
+
+    showToast(`⏳ Đang tự động sinh đề ĐGNL ${targetName} (${packageType === 'full' ? '200' : '100'} câu)...`, 'info');
+
+    const generated = MathEngine.generateDgnlExam({
+      packageType,
+      targetExam,
+      timeLimit
+    });
+
+    if (!generated) {
+      showToast('⚠️ Không thể sinh đề ĐGNL, vui lòng thử lại.', 'warn');
+      return;
+    }
+
+    // 1. Cập nhật biểu mẫu giáo viên
+    const titleInput = document.getElementById('teacherExamTitleInput');
+    const gradeSelect = document.getElementById('teacherExamGradeSelect');
+    const termSelect = document.getElementById('teacherExamTermSelect');
+    const timeLimitInput = document.getElementById('teacherExamTimeLimitInput');
+    if (titleInput) titleInput.value = generated.title;
+    if (gradeSelect) gradeSelect.value = 'DGNL';
+    if (termSelect) termSelect.value = 'DGNL';
+    if (timeLimitInput) timeLimitInput.value = generated.timeLimit;
+    syncExamTimeLimits(generated.timeLimit);
+
+    const customKeyCb = document.getElementById('toggleCustomAnswerKeyCheckbox');
+    if (customKeyCb) {
+      customKeyCb.checked = true;
+      toggleCustomAnswerKeySection();
+    }
+
+    // 2. Nạp khóa đáp án
+    AppState.teacherMcqKeys = (generated.answerKeys || []).map(k => ({ ...k }));
+    AppState.teacherEssayKeys = [];
+
+    // 3. Tạo preview HTML
+    const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(generated.examHtml || '');
+    AppState.teacherPdfData = dataUrl;
+    AppState.teacherFileName = `${(generated.title || 'De_DGNL').replace(/\s+/g, '_')}.html`;
+
+    const previewWrap = document.getElementById('teacherPdfPreviewWrapper');
+    const previewFrame = document.getElementById('teacherPdfPreviewFrame');
+    const clearBtn = document.getElementById('clearPdfBtn');
+    const nameBadge = document.getElementById('teacherPdfFileNameBadge');
+
+    if (previewWrap) previewWrap.classList.remove('hidden');
+    if (previewFrame) previewFrame.src = dataUrl;
+    if (clearBtn) clearBtn.classList.remove('hidden');
+    if (nameBadge) {
+      nameBadge.classList.remove('hidden');
+      nameBadge.innerHTML = `📄 <strong>Đề thi ĐGNL đã sinh:</strong> ${escapeHtml(generated.title)}`;
+    }
+
+    // 4. Lưu và phát hành đề thi lên hệ thống
+    const newQuizId = generateQuizCode();
+    const autoQuiz = {
+      id: newQuizId,
+      title: generated.title,
+      targetClass: 'DGNL',
+      examTerm: 'DGNL',
+      timeLimit: generated.timeLimit,
+      totalQuestions: generated.answerKeys.length,
+      mcqCount: generated.mcqCount,
+      essayCount: 0,
+      examMode: 'split_pdf',
+      examHtml: generated.examHtml,
+      pdfFileName: AppState.teacherFileName,
+      pdfDataUrl: dataUrl,
+      assignType: 'all',
+      assignedClasses: [],
+      assignedStudents: [],
+      showLeaderboard: true,
+      antiCheat: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      answerKeys: generated.answerKeys
+    };
+
+    await StorageEngine.saveQuiz(autoQuiz);
+    AppState.editingQuizId = newQuizId;
+
+    renderTeacherMcqGrid();
+    renderTeacherEssayGrid();
+    updateTotalExamPointsCalculation();
+    updatePersonalizedExamFeed();
+    renderTeacherQuizManager();
+    renderTeacherAnalyticsDashboard();
+
+    const resBox = document.getElementById('mathGenResultBox');
+    if (resBox) {
+      resBox.classList.remove('hidden');
+      resBox.innerHTML = `
+        <div style="background:var(--primary-light);border:2px solid var(--primary);border-radius:var(--radius-lg);padding:1.15rem 1.35rem;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.75rem;">
+            <div>
+              <h4 style="color:var(--primary-shadow);margin-bottom:0.35rem;font-size:1.15rem;">🎉 ĐÃ PHÁT HÀNH THÀNH CÔNG ĐỀ ĐÁNH GIÁ NĂNG LỰC!</h4>
+              <p style="color:var(--primary-shadow);font-size:0.92rem;font-weight:700;margin-bottom:0.4rem;">
+                <strong>${escapeHtml(generated.title)}</strong>
+              </p>
+              <div style="font-size:0.875rem;font-weight:700;color:var(--emerald-shadow);">
+                🧠 100% Trắc nghiệm chuẩn hóa (${generated.mcqCount} câu) · Thời gian: ${generated.timeLimit} phút · Mã đề: <strong>${newQuizId}</strong>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <span class="code-badge" style="font-size:1.3rem;padding:0.35rem 0.85rem;">${newQuizId}</span>
+              <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:2px;">MÃ ĐỀ THI ĐGNL</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin-top:1rem;">
+            <button type="button" class="btn btn-sky" onclick="loadSampleToStudent('${newQuizId}')">🚀 Vào Thi Thử Ngay [${newQuizId}]</button>
+            <button type="button" class="btn btn-secondary" onclick="previewDgnlExamDocument()">👁️ Xem Bản In KaTeX</button>
+            <button type="button" class="btn btn-primary" onclick="copyQuizCode('${newQuizId}')">📋 Sao Chép Mã Đề</button>
+          </div>
+        </div>
+      `;
+    }
+
+    if (typeof SoundEngine !== 'undefined' && SoundEngine.playFanfare) SoundEngine.playFanfare();
+    if (typeof GamificationEngine !== 'undefined' && GamificationEngine.fireConfetti) GamificationEngine.fireConfetti();
+    showToast(`🎉 Đã tạo và phát hành đề ĐGNL [${newQuizId}] thành công!`, 'success');
+  } catch (err) {
+    console.error('Lỗi khi sinh đề ĐGNL:', err);
+    showToast(`❌ Không thể sinh đề ĐGNL: ${err.message || err}`, 'error');
+  }
+}
+
+function previewDgnlExamDocument() {
+  const isFull = document.getElementById('dgnlPackageFull')?.checked;
+  const packageType = isFull ? 'full' : 'mini';
+  const targetExam = document.getElementById('dgnlTargetExamSelect')?.value || 'HCM';
+  const timeLimit = parseInt(document.getElementById('dgnlTimeLimitInput')?.value || (isFull ? '150' : '90'), 10) || (isFull ? 150 : 90);
+
+  if (typeof MathEngine === 'undefined' || !MathEngine.generateDgnlExam) {
+    showToast('⚠️ Không thể xem trước đề ĐGNL.', 'warn');
+    return;
+  }
+  const generated = MathEngine.generateDgnlExam({ packageType, targetExam, timeLimit });
+  if (!generated || !generated.examHtml) {
+    showToast('⚠️ Không thể tạo bản in đề ĐGNL.', 'warn');
+    return;
+  }
+  const w = window.open('', '_blank');
+  if (w) {
+    w.document.open();
+    w.document.write(generated.examHtml);
+    w.document.close();
+  }
+}
+
 function handleTrackChange(trackVal) {
   const gradeSelect = document.getElementById('mathGenGradeSelect');
   const termSelect = document.getElementById('mathGenTermSelect');
@@ -1897,12 +2486,9 @@ function handleTrackChange(trackVal) {
   const topicSelect = document.getElementById('mathGenTopicSelect');
 
   if (trackVal && trackVal.startsWith('dgnl')) {
-    if (gradeSelect) gradeSelect.value = 'DGNL';
-    if (termSelect) termSelect.value = 'DGNL';
-    if (countSelect) countSelect.value = '30';
-    if (topicSelect) topicSelect.value = 'all';
-    showToast(`🎯 Đã chọn ma trận đề Đánh Giá Năng Lực (${trackVal.toUpperCase()}) chuẩn hóa!`, 'info');
+    switchMathGenMode('dgnl');
   } else {
+    switchMathGenMode('standard');
     if (gradeSelect && gradeSelect.value === 'DGNL') gradeSelect.value = '12';
     if (termSelect && termSelect.value === 'DGNL') termSelect.value = 'THPT';
   }
@@ -1910,6 +2496,10 @@ function handleTrackChange(trackVal) {
 
 if (typeof window !== 'undefined') {
   window.handleTrackChange = handleTrackChange;
+  window.switchMathGenMode = switchMathGenMode;
+  window.selectDgnlPackage = selectDgnlPackage;
+  window.triggerAutoGenerateDgnlExam = triggerAutoGenerateDgnlExam;
+  window.previewDgnlExamDocument = previewDgnlExamDocument;
 }
 
 function updateMathGenEssaySummary() {
@@ -4562,87 +5152,167 @@ function parseFraction(str) {
 
 /* Submit Exam */
 async function submitStudentExam(isAuto = false) {
-  if (AppState.timerInterval) clearInterval(AppState.timerInterval);
-  if (AppState.leaderboardTimer) clearInterval(AppState.leaderboardTimer);
-
-  // Xóa phiên tạm dừng cho bài thi này
-  clearPausedExamSession(AppState.studentName, AppState.currentQuizId);
-
-  const quiz = AppState.currentQuiz || {};
-  const isDocumentOnly = quiz.examMode === 'document_view' || !quiz.answerKeys || quiz.answerKeys.length === 0;
-
-  let totalEarnedScore = 0;
-  let correctCount = 0;
-  let total = 0;
-  let reviewData = [];
-
-  if (isDocumentOnly) {
-    totalEarnedScore = 10;
-    correctCount = 1;
-    total = 1;
-    reviewData = [{
-      num: 1,
-      type: 'document_submission',
-      level: 'VD',
-      category: 'Đề thi gốc',
-      subject: 'Toán học',
-      content: 'Bài nộp hoàn thành từ đề thi gốc.',
-      explanation: 'Học sinh đã xem đề và hoàn thành bài thi. Giáo viên sẽ chấm và nhận xét bài làm trực tiếp.',
-      pitfall: 'Không có điểm trừ hệ thống cho đề thi tự luận trực tiếp.',
-      keyFormula: 'Hoàn thành bài thi',
-      maxScore: 10,
-      earnedScore: 10,
-      given: 'Đã hoàn thành và nộp bài',
-      correctAnswer: 'Đã nộp bài cho giáo viên',
-      isCorrect: true
-    }];
-  } else {
-    const gradeResult = ExamVault.grade(AppState.currentQuizId, AppState.studentAnswers);
-    totalEarnedScore = gradeResult.totalEarnedScore;
-    correctCount = gradeResult.correctCount;
-    total = gradeResult.total;
-    reviewData = gradeResult.reviewData;
+  // ================= CHỐNG BẤM NỘP BÀI NHIỀU LẦN (IDEMPOTENCY GUARD) =================
+  if (AppState.isSubmitting) {
+    console.warn('[submitStudentExam] Đã chặn lần nhấn nộp bài trùng lặp khi đang xử lý.');
+    return;
   }
+  AppState.isSubmitting = true;
 
-  const finalScore10 = Math.round(totalEarnedScore * 10) / 10;
-  const scorePct = total ? Math.round((correctCount / total) * 100) : 0;
-  const timeTakenSeconds = AppState.totalExamSeconds - AppState.secondsLeft;
+  // Vô hiệu hóa nút nộp bài ngay lập tức để ngăn chặn double-click / spam click
+  const submitBtns = [
+    document.getElementById('btnSubmitStudentExam'),
+    document.getElementById('btnSubmitDocExam')
+  ].filter(Boolean);
 
-  const resultRecord = {
-    quizId: AppState.currentQuizId,
-    quizTitle: quiz.title,
-    name: AppState.studentName,
-    className: AppState.studentClass,
-    avatar: AppState.studentAvatar || '🦊',
-    correct: correctCount,
-    total,
-    totalScore: finalScore10,
-    scorePct,
-    timeTakenSeconds,
-    tabSwitches: AppState.tabSwitches,
-    isAuto,
-    isDocumentOnly,
-    submittedAt: new Date().toISOString(),
-    review: reviewData
-  };
+  submitBtns.forEach(btn => {
+    btn.disabled = true;
+    btn.dataset.prevHtml = btn.innerHTML;
+    btn.innerHTML = '⏳ Đang chấm & lưu kết quả...';
+  });
 
-  const savedKey = await StorageEngine.saveResult(resultRecord);
-  resultRecord.key = savedKey;
+  try {
+    if (AppState.timerInterval) clearInterval(AppState.timerInterval);
+    if (AppState.leaderboardTimer) clearInterval(AppState.leaderboardTimer);
 
-  const rewards = GamificationEngine.awardExamRewards(resultRecord);
-  updateGamifyBar();
+    // Xóa phiên tạm dừng cho bài thi này
+    clearPausedExamSession(AppState.studentName, AppState.currentQuizId);
 
-  document.body.classList.remove('in-exam-session');
-  document.getElementById('studentExamSection').classList.add('hidden');
-  document.getElementById('studentResultSection').classList.remove('hidden');
+    const quiz = AppState.currentQuiz || {};
+    const isDocumentOnly = quiz.examMode === 'document_view' || !quiz.answerKeys || quiz.answerKeys.length === 0;
 
-  renderExamResultHero(resultRecord, rewards);
-  renderExamReviewList(reviewData, isDocumentOnly);
+    let totalEarnedScore = 0;
+    let correctCount = 0;
+    let total = 0;
+    let reviewData = [];
 
-  SoundEngine.playFanfare();
-  GamificationEngine.fireConfetti();
+    if (isDocumentOnly) {
+      totalEarnedScore = 10;
+      correctCount = 1;
+      total = 1;
+      reviewData = [{
+        num: 1,
+        type: 'document_submission',
+        level: 'VD',
+        category: 'Đề thi gốc',
+        subject: 'Toán học',
+        content: 'Bài nộp hoàn thành từ đề thi gốc.',
+        explanation: 'Học sinh đã xem đề và hoàn thành bài thi. Giáo viên sẽ chấm và nhận xét bài làm trực tiếp.',
+        pitfall: 'Không có điểm trừ hệ thống cho đề thi tự luận trực tiếp.',
+        keyFormula: 'Hoàn thành bài thi',
+        maxScore: 10,
+        earnedScore: 10,
+        given: 'Đã hoàn thành và nộp bài',
+        correctAnswer: 'Đã nộp bài cho giáo viên',
+        isCorrect: true
+      }];
+    } else {
+      const gradeResult = ExamVault.grade(AppState.currentQuizId, AppState.studentAnswers);
+      totalEarnedScore = gradeResult.totalEarnedScore;
+      correctCount = gradeResult.correctCount;
+      total = gradeResult.total;
+      reviewData = gradeResult.reviewData;
+    }
 
-  ExamVault.clear(AppState.currentQuizId);
+    const finalScore10 = Math.round(totalEarnedScore * 10) / 10;
+    const scorePct = total ? Math.round((correctCount / total) * 100) : 0;
+    const timeTakenSeconds = AppState.totalExamSeconds - AppState.secondsLeft;
+
+    // Kiểm tra xem bài thi này học sinh đã từng nộp trước đó chưa (Retake)
+    const isRetake = await StorageEngine.hasSubmitted(AppState.currentQuizId, AppState.studentClass, AppState.studentName);
+
+    const resultRecord = {
+      quizId: AppState.currentQuizId,
+      quizTitle: quiz.title,
+      name: AppState.studentName,
+      className: AppState.studentClass,
+      avatar: AppState.studentAvatar || '🦊',
+      correct: correctCount,
+      total,
+      totalScore: finalScore10,
+      scorePct,
+      timeTakenSeconds,
+      tabSwitches: AppState.tabSwitches,
+      isAuto,
+      isDocumentOnly,
+      isRetake,
+      submittedAt: new Date().toISOString(),
+      review: reviewData
+    };
+
+    const savedKey = await StorageEngine.saveResult(resultRecord);
+    resultRecord.key = savedKey;
+
+    const rewards = GamificationEngine.awardExamRewards(resultRecord);
+    updateGamifyBar();
+
+    document.body.classList.remove('in-exam-session');
+    document.getElementById('studentExamSection').classList.add('hidden');
+    document.getElementById('studentResultSection').classList.remove('hidden');
+
+    renderExamResultHero(resultRecord, rewards);
+    renderExamReviewList(reviewData, isDocumentOnly);
+
+    SoundEngine.playFanfare();
+    GamificationEngine.fireConfetti();
+
+    ExamVault.clear(AppState.currentQuizId);
+  } finally {
+    AppState.isSubmitting = false;
+    submitBtns.forEach(btn => {
+      btn.disabled = false;
+      if (btn.dataset.prevHtml) btn.innerHTML = btn.dataset.prevHtml;
+    });
+  }
+}
+
+/**
+ * Tự động dọn dẹp các bản ghi nộp bài trùng lặp (do spam bấm nộp trước đó trong vòng 5 giây)
+ */
+async function sanitizeDuplicateSubmissions() {
+  try {
+    const all = await StorageEngine.getAllResults();
+    if (!all || all.length <= 1) return 0;
+
+    const groups = {};
+    all.forEach(r => {
+      if (!r || !r.quizId || !r.name) return;
+      const k = `${r.quizId}_${r.name.trim().toLowerCase()}`;
+      if (!groups[k]) groups[k] = [];
+      groups[k].push(r);
+    });
+
+    let removedCount = 0;
+    for (const k in groups) {
+      const list = groups[k];
+      if (list.length <= 1) continue;
+
+      list.sort((a, b) => new Date(a.submittedAt || 0) - new Date(b.submittedAt || 0));
+
+      for (let i = 1; i < list.length; i++) {
+        const prev = list[i - 1];
+        const curr = list[i];
+        const diffMs = Math.abs(new Date(curr.submittedAt || 0) - new Date(prev.submittedAt || 0));
+        // Trùng cùng người, cùng đề trong vòng 5s -> xóa bản ghi dư thừa
+        if (diffMs < 5000 && curr.totalScore === prev.totalScore) {
+          const deleteKey = curr.id || curr.key;
+          if (deleteKey) {
+            console.log('[Sanitize] Đã xóa bài nộp trùng lặp:', deleteKey);
+            await StorageEngine.deleteResult(deleteKey);
+            removedCount++;
+          }
+        }
+      }
+    }
+    return removedCount;
+  } catch (err) {
+    console.warn('[Sanitize] Lỗi dọn dẹp bài trùng lặp:', err);
+    return 0;
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.sanitizeDuplicateSubmissions = sanitizeDuplicateSubmissions;
 }
 
 function renderExamResultHero(result, rewards) {
@@ -4671,7 +5341,7 @@ function renderExamResultHero(result, rewards) {
           ${rewards.bonusBreakdown.map(b => `
             <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:700;">
               <span>${b.icon || '✨'} ${escapeHtml(b.label)}</span>
-              <span style="color:var(--indigo);">+${b.xp} XP</span>
+              <span style="color:${b.xp >= 0 ? 'var(--indigo)' : 'var(--rose);font-weight:900'};">${b.xp > 0 ? '+' : ''}${b.xp} XP</span>
             </div>
           `).join('')}
         </div>
@@ -5358,7 +6028,11 @@ async function renderGamificationTab() {
   const xpTextEl = document.getElementById('gamifyXpText');
   const xpProgEl = document.getElementById('gamifyXpProgress');
 
-  if (nameEl) nameEl.textContent = profile.name || 'Học Sinh';
+  if (nameEl) {
+    const titleObj = typeof SHOP_ITEMS !== 'undefined' ? SHOP_ITEMS.find(it => it.id === profile.equippedTitle) : null;
+    const titleHtml = titleObj ? ` <span class="equipped-title-badge" style="border-color:${titleObj.titleColor};color:${titleObj.titleColor};">${titleObj.titleText}</span>` : '';
+    nameEl.innerHTML = `${escapeHtml(profile.name || 'Học Sinh')}${titleHtml}`;
+  }
   if (levelNameEl) levelNameEl.textContent = `Cấp ${levelInfo.level}: ${levelInfo.name}`;
   if (userLeagueBadge) {
     userLeagueBadge.innerHTML = `${currentLeague.icon} ${currentLeague.name}`;
@@ -5406,7 +6080,8 @@ async function renderGamificationTab() {
     periodSubEl.textContent = 'Tổng hợp toàn bộ thành tích từ trước đến nay';
   }
 
-  // 3. Lấy dữ liệu thật từ Storage
+  // 3. Tự động dọn dẹp các bản ghi trùng lặp và lấy dữ liệu thật từ Storage
+  await sanitizeDuplicateSubmissions();
   const roster = await StorageEngine.getStudentRoster();
   const allResults = await StorageEngine.getAllResults();
   const availableQuizzes = await StorageEngine.getAllQuizzes();
@@ -5460,6 +6135,9 @@ async function renderGamificationTab() {
 
   // Huy hiệu
   renderBadgesShowcase(profile);
+
+  // Kỷ luật & nề nếp
+  renderStudentDisciplinaryStatus();
 }
 
 /* 🎯 RENDER NHIỆM VỤ TUẦN */
@@ -5719,9 +6397,16 @@ function renderWeeklyHallOfFameTable(rankings) {
                     </div>
                     <span style="font-size:0.75rem;font-weight:800;">${s.completionRate || 0}%</span>
                   </div>
+                <td>
+                  <div style="display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;">
+                    <strong style="color:var(--indigo);font-size:1.05rem;">⭐ ${s.honorXp} XP</strong>
+                    ${s.penaltiesCount > 0 && s.penaltiesTotalXp < 0 ? `
+                      <span class="badge-penalty-count" title="${s.penaltiesCount} lần ghi nhận kỷ luật tuần này (${(s.penaltiesList || []).map(p => p.reason).join('; ')})">
+                        ⚠️ ${s.penaltiesTotalXp} XP
+                      </span>
+                    ` : ''}
+                  </div>
                 </td>
-                <td><strong style="color:var(--indigo);font-size:1.05rem;">⭐ ${s.honorXp} XP</strong></td>
-                <td style="text-align:center;">
                   <button type="button" class="btn btn-secondary btn-sm" onclick="openHonorCertificateForStudent('${escapeHtml(s.name)}', '${s.rank === 1 ? 'QUÁN QUÂN TUẦN' : 'CHIẾN BINH XUẤT SẮC'}')" style="padding:0.3rem 0.6rem;font-size:0.8rem;border-radius:var(--radius-full);" title="Xem Bằng Khen">
                     📜 In
                   </button>
@@ -5780,39 +6465,143 @@ function renderClassBattle(classBattle) {
   `;
 }
 
-/* 🎁 RENDER CỬA HÀNG ĐỔI THƯỞNG XP */
+/* ================= 🎁 REWARD SHOP & CATEGORIES CONTROLLER ================= */
+let activeShopCategory = 'perks';
+let isWheelSpinning = false;
+let wheelCurrentRotation = 0;
+
+function switchShopCategory(cat) {
+  activeShopCategory = cat;
+
+  // Toggle active category button
+  ['perks', 'boosters', 'cosmetics', 'wheel', 'wallet'].forEach(c => {
+    const btn = document.getElementById(`btnShopCat_${c}`);
+    if (btn) btn.classList.toggle('active', c === cat);
+  });
+
+  const standardWrap = document.getElementById('shopStandardItemsWrap');
+  const wheelWrap = document.getElementById('shopLuckyWheelWrap');
+  const walletWrap = document.getElementById('shopStudentWalletWrap');
+
+  if (standardWrap) standardWrap.classList.toggle('hidden', cat === 'wheel' || cat === 'wallet');
+  if (wheelWrap) wheelWrap.classList.toggle('hidden', cat !== 'wheel');
+  if (walletWrap) walletWrap.classList.toggle('hidden', cat !== 'wallet');
+
+  if (cat === 'wheel') {
+    initLuckyWheelCanvas();
+  } else if (cat === 'wallet') {
+    renderStudentWallet();
+  } else {
+    renderShopCategoryItems(cat);
+  }
+}
+
 function renderRewardShop() {
   const profile = GamificationEngine.getUserProfile();
   const xpBadge = document.getElementById('shopUserXpVal');
   if (xpBadge) xpBadge.textContent = `${profile.xp || 0} XP`;
 
+  // Check 2x booster
+  const boosterPill = document.getElementById('shopActiveBoosterPill');
+  if (boosterPill) {
+    if (profile.boosters && profile.boosters.xp2xUntil && profile.boosters.xp2xUntil > Date.now()) {
+      const remainingHours = Math.ceil((profile.boosters.xp2xUntil - Date.now()) / (1000 * 60 * 60));
+      boosterPill.classList.remove('hidden');
+      boosterPill.innerHTML = `⚡ 2x XP: Còn ${remainingHours}h`;
+    } else {
+      boosterPill.classList.add('hidden');
+    }
+  }
+
+  switchShopCategory(activeShopCategory || 'perks');
+}
+
+function renderShopCategoryItems(category) {
   const container = document.getElementById('shopItemsGrid');
   if (!container) return;
 
-  const inv = profile.inventory || [];
+  const profile = GamificationEngine.getUserProfile();
+  const userXp = profile.xp || 0;
 
-  container.innerHTML = SHOP_ITEMS.map(item => {
-    const isOwned = inv.includes(item.id);
-    const canAfford = (profile.xp || 0) >= item.priceXp;
+  // Filter items: if 'cosmetics', include both 'titles' and 'frames'
+  let items = [];
+  if (category === 'cosmetics') {
+    items = SHOP_ITEMS.filter(it => it.category === 'titles' || it.category === 'frames');
+  } else {
+    items = SHOP_ITEMS.filter(it => it.category === category);
+  }
+
+  container.innerHTML = items.map(item => {
+    // Check ownership
+    const isTitle = item.type === 'title';
+    const isFrame = item.type === 'frame';
+    const isOwned = (isTitle && (profile.unlockedTitles || []).includes(item.id)) ||
+                    (isFrame && (profile.unlockedFrames || []).includes(item.cssClass)) ||
+                    (item.type === 'booster' && item.id === 'booster_deep_hint' && profile.boosters?.hasVdcHints);
+    const isEquipped = (isTitle && profile.equippedTitle === item.id) ||
+                       (isFrame && profile.frame === item.cssClass);
+
+    // Calculate effective price (for milk tea with discount)
+    let effectivePrice = item.priceXp;
+    let discNote = '';
+    if (item.id === 'perk_milk_tea') {
+      const disc = (profile.vouchers || []).find(v => v.category === 'discount' && v.status === 'active');
+      if (disc) {
+        effectivePrice = Math.max(10, item.priceXp - disc.value);
+        discNote = `<div style="font-size:0.75rem;color:#10b981;font-weight:800;margin-top:2px;">🎉 Áp dụng mã giảm -50 XP!</div>`;
+      }
+    }
+
+    const canAfford = userXp >= effectivePrice;
 
     return `
       <div class="shop-item-card">
         <div>
-          <div style="font-size:3rem;margin-bottom:0.5rem;">${item.icon}</div>
-          <div style="font-weight:800;font-size:1.05rem;color:var(--text-primary);margin-bottom:0.3rem;">${escapeHtml(item.name)}</div>
-          <div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.4;margin-bottom:0.75rem;">${escapeHtml(item.desc)}</div>
-        </div>
-        <div>
-          <div style="font-weight:900;font-size:1.1rem;color:var(--amber);margin-bottom:0.6rem;">
-            ⭐ ${item.priceXp} XP
+          ${item.badgeText ? `
+            <div style="text-align:right;">
+              <span class="shop-badge-tag" style="background:#e0e7ff;color:var(--indigo);">${item.badgeText}</span>
+            </div>
+          ` : (item.category === 'perks' ? `
+            <div style="text-align:right;">
+              <span class="shop-badge-tag" style="background:#fef3c7;color:#b45309;">VOUCHER ĐỔI QUÀ 🎟️</span>
+            </div>
+          ` : '')}
+          
+          <div style="font-size:3rem;margin:0.25rem 0;">${item.icon}</div>
+          <div style="font-weight:800;font-size:1.05rem;color:var(--text-primary);margin-bottom:0.3rem;">
+            ${escapeHtml(item.name)}
           </div>
-          ${isOwned ? `
-            <button type="button" class="btn btn-secondary btn-sm" onclick="equipShopItem('${item.id}', '${item.type}')" style="width:100%;font-weight:800;">
-              ${profile.frame === item.cssClass ? '✅ Đang Trang Bị' : '⚡ Trang Bị Ngay'}
-            </button>
-          ` : `
-            <button type="button" class="btn btn-primary btn-sm" onclick="buyShopItem('${item.id}')" ${!canAfford ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''} style="width:100%;font-weight:800;">
-              🛒 Đổi Vật Phẩm
+          <div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.4;margin-bottom:0.75rem;">
+            ${escapeHtml(item.desc)}
+          </div>
+        </div>
+
+        <div>
+          <div style="margin-bottom:0.6rem;">
+            <div style="font-weight:900;font-size:1.15rem;color:var(--amber);">
+              ⭐ ${effectivePrice} XP
+              ${effectivePrice < item.priceXp ? `<span style="text-decoration:line-through;font-size:0.85rem;color:var(--text-muted);">${item.priceXp} XP</span>` : ''}
+            </div>
+            ${discNote}
+          </div>
+
+          ${isOwned ? (
+            isTitle ? `
+              <button type="button" class="btn ${isEquipped ? 'btn-secondary' : 'btn-primary'} btn-sm" onclick="handleEquipShopTitle('${item.id}')" style="width:100%;font-weight:800;">
+                ${isEquipped ? '✅ Đang Đeo Danh Hiệu' : '⚡ Đeo Danh Hiệu Này'}
+              </button>
+            ` : (isFrame ? `
+              <button type="button" class="btn ${isEquipped ? 'btn-secondary' : 'btn-primary'} btn-sm" onclick="equipShopItem('${item.id}', 'frame')" style="width:100%;font-weight:800;">
+                ${isEquipped ? '✅ Đang Trang Bị Khung' : '⚡ Trang Bị Khung Này'}
+              </button>
+            ` : `
+              <button type="button" class="btn btn-secondary btn-sm" disabled style="width:100%;font-weight:800;opacity:0.8;">
+                ✓ Đã Kích Hoạt
+              </button>
+            `)
+          ) : `
+            <button type="button" class="btn btn-primary btn-sm" onclick="handleBuyShopItem('${item.id}')" ${!canAfford ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''} style="width:100%;font-weight:800;">
+              ${item.category === 'perks' ? '🎟️ Đổi Voucher Ngay' : '🛒 Mở Khóa Ngay'}
             </button>
           `}
         </div>
@@ -5821,30 +6610,30 @@ function renderRewardShop() {
   }).join('');
 }
 
-function buyShopItem(itemId) {
-  const item = SHOP_ITEMS.find(i => i.id === itemId);
-  if (!item) return;
-
-  const profile = GamificationEngine.getUserProfile();
-  if ((profile.xp || 0) < item.priceXp) {
-    SoundEngine.playWarning();
-    showToast('⚠️ Bạn chưa đủ điểm XP để đổi vật phẩm này! Hãy làm thêm bài thi nhé.', 'warn');
+function handleBuyShopItem(itemId) {
+  const res = GamificationEngine.buyShopItem(itemId, AppState.selectedClass || '10');
+  if (!res.success) {
+    SoundEngine.playWarning ? SoundEngine.playWarning() : null;
+    showToast(`⚠️ ${res.error}`, 'warn');
     return;
   }
 
-  profile.xp -= item.priceXp;
-  if (!profile.inventory) profile.inventory = [];
-  profile.inventory.push(itemId);
-
-  if (item.type === 'frame') {
-    profile.frame = item.cssClass;
-  }
-
-  GamificationEngine.saveUserProfile(profile);
   GamificationEngine.fireConfetti();
-  SoundEngine.playFanfare();
-  showToast(`🎉 Mở khóa thành công: ${item.name}!`, 'success');
+  SoundEngine.playFanfare ? SoundEngine.playFanfare() : null;
+  showToast(res.message, 'success');
 
+  renderGamificationTab();
+}
+
+function handleEquipShopTitle(titleId) {
+  const profile = GamificationEngine.getUserProfile();
+  if (profile.equippedTitle === titleId) {
+    GamificationEngine.equipTitle('');
+    showToast('Đã gỡ danh hiệu khỏi tên bạn.', 'info');
+  } else {
+    GamificationEngine.equipTitle(titleId);
+    showToast('Đã trang bị danh hiệu trước tên bạn!', 'success');
+  }
   renderGamificationTab();
 }
 
@@ -5858,9 +6647,395 @@ function equipShopItem(itemId, itemType) {
   }
 
   GamificationEngine.saveUserProfile(profile);
-  SoundEngine.playClick();
+  SoundEngine.playClick ? SoundEngine.playClick() : null;
   showToast(`✨ Đã trang bị: ${item.name}!`, 'success');
   renderGamificationTab();
+}
+
+/* ================= 🎰 LUCKY WHEEL DRAWING & ANIMATION ================= */
+function initLuckyWheelCanvas() {
+  const canvas = document.getElementById('luckyWheelCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const items = typeof LUCKY_WHEEL_ITEMS !== 'undefined' ? LUCKY_WHEEL_ITEMS : [];
+  if (items.length === 0) return;
+
+  const width = canvas.width;
+  const height = canvas.height;
+  const center = width / 2;
+  const radius = center - 6;
+  const numSegments = items.length;
+  const anglePerSegment = (2 * Math.PI) / numSegments;
+
+  ctx.clearRect(0, 0, width, height);
+
+  for (let i = 0; i < numSegments; i++) {
+    const item = items[i];
+    const startAngle = i * anglePerSegment;
+    const endAngle = startAngle + anglePerSegment;
+
+    // Draw slice
+    ctx.beginPath();
+    ctx.moveTo(center, center);
+    ctx.arc(center, center, radius, startAngle, endAngle);
+    ctx.closePath();
+    ctx.fillStyle = item.color || '#6366f1';
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Draw text & icon
+    ctx.save();
+    ctx.translate(center, center);
+    ctx.rotate(startAngle + anglePerSegment / 2);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 12px "Plus Jakarta Sans", sans-serif';
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 4;
+    ctx.fillText(`${item.icon} ${item.name.slice(0, 14)}`, radius - 18, 5);
+    ctx.restore();
+  }
+}
+
+function handleSpinLuckyWheel() {
+  if (isWheelSpinning) return;
+
+  const profile = GamificationEngine.getUserProfile();
+  if ((profile.xp || 0) < 20) {
+    SoundEngine.playWarning ? SoundEngine.playWarning() : null;
+    showToast('⚠️ Bạn cần ít nhất 20 XP để quay vòng may mắn! Hãy hoàn thành thêm bài thi nhé.', 'warn');
+    return;
+  }
+
+  const canvas = document.getElementById('luckyWheelCanvas');
+  const btn = document.getElementById('btnSpinWheel');
+  const banner = document.getElementById('luckyWheelResultBanner');
+  if (!canvas || !btn) return;
+
+  isWheelSpinning = true;
+  btn.disabled = true;
+  if (banner) banner.classList.add('hidden');
+
+  // Trigger spin engine
+  const result = GamificationEngine.spinLuckyWheel();
+  if (!result.success) {
+    isWheelSpinning = false;
+    btn.disabled = false;
+    showToast(result.error, 'warn');
+    return;
+  }
+
+  // Calculate target rotation
+  const items = typeof LUCKY_WHEEL_ITEMS !== 'undefined' ? LUCKY_WHEEL_ITEMS : [];
+  const numSegments = items.length;
+  const segmentDegrees = 360 / numSegments;
+  const chosenIndex = result.rewardIndex;
+
+  // Pointer is at the top (270 degrees in canvas coords where 0 is 3 o'clock)
+  const targetOffset = 270 - (chosenIndex * segmentDegrees + segmentDegrees / 2);
+  const extraSpins = 360 * 5;
+  wheelCurrentRotation = wheelCurrentRotation + extraSpins + ((targetOffset - (wheelCurrentRotation % 360) + 360) % 360);
+
+  canvas.style.transition = 'transform 4s cubic-bezier(0.15, 0.9, 0.2, 1)';
+  canvas.style.transform = `rotate(${wheelCurrentRotation}deg)`;
+
+  SoundEngine.playClick ? SoundEngine.playClick() : null;
+
+  setTimeout(() => {
+    isWheelSpinning = false;
+    btn.disabled = false;
+
+    GamificationEngine.fireConfetti();
+    SoundEngine.playFanfare ? SoundEngine.playFanfare() : null;
+
+    if (banner) {
+      banner.classList.remove('hidden');
+      const titleEl = document.getElementById('luckyWheelResultTitle');
+      const descEl = document.getElementById('luckyWheelResultDesc');
+      if (titleEl) titleEl.innerHTML = `🎉 Trúng: ${result.reward.icon} ${result.reward.name}!`;
+      if (descEl) descEl.textContent = result.rewardDetail;
+    }
+
+    // Refresh UI
+    const xpBadge = document.getElementById('shopUserXpVal');
+    if (xpBadge) xpBadge.textContent = `${result.newXp} XP`;
+    renderGamificationTab();
+  }, 4200);
+}
+
+/* ================= 🎒 STUDENT WALLET & BACKPACK ================= */
+function renderStudentWallet() {
+  const container = document.getElementById('studentWalletContent');
+  if (!container) return;
+
+  const profile = GamificationEngine.getUserProfile();
+  const vouchers = profile.vouchers || [];
+  const inv = profile.inventory || [];
+  const boosters = profile.boosters || {};
+
+  const has2x = boosters.xp2xUntil && boosters.xp2xUntil > Date.now();
+  const streakShieldCount = inv.filter(i => i === 'shield_freeze').length;
+
+  container.innerHTML = `
+    <!-- Top Active Boosters Overview -->
+    <div style="background:var(--bg-tertiary);border-radius:var(--radius-lg);padding:1.25rem;border:1.5px solid var(--border-color);margin-bottom:1.5rem;">
+      <h3 style="margin:0 0 0.75rem;font-size:1.15rem;color:var(--text-primary);display:flex;align-items:center;gap:0.4rem;">
+        <span>⚡</span> Các Hiệu Ứng Bổ Trợ Đang Kích Hoạt
+      </h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:0.75rem;">
+        <div style="background:var(--bg-card);padding:0.85rem;border-radius:var(--radius-md);border:1.5px solid ${has2x ? 'var(--indigo)' : 'var(--border-color)'};">
+          <div style="font-size:1.5rem;margin-bottom:0.25rem;">🌟</div>
+          <div style="font-weight:800;color:var(--text-primary);">Thẻ Nhân Đôi XP (2x Booster)</div>
+          <div style="font-size:0.8rem;color:${has2x ? 'var(--indigo)' : 'var(--text-muted)'};font-weight:700;margin-top:0.2rem;">
+            ${has2x ? `Đang kích hoạt · Còn ${Math.ceil((boosters.xp2xUntil - Date.now()) / (1000 * 60 * 60))} giờ` : 'Chưa kích hoạt'}
+          </div>
+        </div>
+
+        <div style="background:var(--bg-card);padding:0.85rem;border-radius:var(--radius-md);border:1.5px solid ${streakShieldCount > 0 ? '#0ea5e9' : 'var(--border-color)'};">
+          <div style="font-size:1.5rem;margin-bottom:0.25rem;">🛡️</div>
+          <div style="font-weight:800;color:var(--text-primary);">Bùa Hộ Mệnh Chuỗi Streak</div>
+          <div style="font-size:0.8rem;color:${streakShieldCount > 0 ? '#0284c7' : 'var(--text-muted)'};font-weight:700;margin-top:0.2rem;">
+            ${streakShieldCount > 0 ? `Đang sở hữu: ${streakShieldCount} bùa hộ mệnh` : 'Không có trong túi đồ'}
+          </div>
+        </div>
+
+        <div style="background:var(--bg-card);padding:0.85rem;border-radius:var(--radius-md);border:1.5px solid ${boosters.hasVdcHints ? '#f59e0b' : 'var(--border-color)'};">
+          <div style="font-size:1.5rem;margin-bottom:0.25rem;">💡</div>
+          <div style="font-weight:800;color:var(--text-primary);">Mẹo Lời Giải VDC Điểm 10</div>
+          <div style="font-size:0.8rem;color:${boosters.hasVdcHints ? '#b45309' : 'var(--text-muted)'};font-weight:700;margin-top:0.2rem;">
+            ${boosters.hasVdcHints ? 'Đã mở khóa vĩnh viễn' : 'Chưa sở hữu'}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vouchers & Coupons List -->
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;">
+        <h3 style="margin:0;font-size:1.15rem;color:var(--text-primary);display:flex;align-items:center;gap:0.4rem;">
+          <span>🎟️</span> Kho Voucher & Phiếu Đổi Quà Của Bạn (${vouchers.length})
+        </h3>
+        <span style="font-size:0.8rem;color:var(--text-secondary);font-weight:600;">Xuất trình mã này cho Thầy Khiêm trong buổi học để nhận quà!</span>
+      </div>
+
+      ${vouchers.length === 0 ? `
+        <div style="text-align:center;padding:2rem;color:var(--text-muted);border:2px dashed var(--border-color);border-radius:var(--radius-lg);">
+          <div style="font-size:2.5rem;margin-bottom:0.4rem;">📭</div>
+          <div style="font-weight:800;color:var(--text-primary);">Bạn chưa có Voucher nào trong túi đồ!</div>
+          <div style="font-size:0.85rem;font-weight:600;margin-top:0.2rem;">Hãy tích lũy điểm XP từ bài thi để đổi Thẻ Miễn BTVN, Trà Sữa Thầy Khiêm hoặc quay thưởng nhé.</div>
+        </div>
+      ` : `
+        <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:1rem;">
+          ${vouchers.map(v => {
+            const isPending = v.status === 'pending';
+            const isRedeemed = v.status === 'redeemed' || v.status === 'used';
+            const isCancelled = v.status === 'cancelled';
+            const isDiscount = v.category === 'discount';
+
+            let statusPill = `<span class="badge-status badge-pass" style="font-size:0.75rem;">✅ ĐÃ SỬ DỤNG</span>`;
+            if (isPending) {
+              statusPill = `<span class="user-league-pill" style="padding:0.2rem 0.6rem;font-size:0.72rem;border-color:#f59e0b;color:#b45309;">⏳ CHỜ THẦY DUYỆT</span>`;
+            } else if (isDiscount) {
+              statusPill = `<span class="user-league-pill" style="padding:0.2rem 0.6rem;font-size:0.72rem;border-color:#8b5cf6;color:#7c3aed;">🎉 MÃ GIẢM GIÁ</span>`;
+            } else if (isCancelled) {
+              statusPill = `<span class="badge-status badge-fail" style="font-size:0.75rem;">❌ ĐÃ HOÀN ĐIỂM</span>`;
+            }
+
+            return `
+              <div class="voucher-card">
+                <div>
+                  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem;">
+                    <div style="font-size:2.2rem;">${v.icon || '🎟️'}</div>
+                    ${statusPill}
+                  </div>
+                  <div style="font-weight:900;font-size:1.05rem;color:var(--text-primary);margin-bottom:0.3rem;">
+                    ${escapeHtml(v.name)}
+                  </div>
+                  <div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.85rem;line-height:1.4;">
+                    ${escapeHtml(v.desc || '')}
+                  </div>
+                </div>
+
+                <div style="border-top:1.5px dashed var(--border-color);padding-top:0.75rem;display:flex;justify-content:space-between;align-items:center;">
+                  <div>
+                    <div style="font-size:0.7rem;color:var(--text-secondary);font-weight:700;">MÃ SERIAL:</div>
+                    <code class="voucher-serial-code" style="font-size:0.95rem;padding:2px 8px;">${escapeHtml(v.code)}</code>
+                  </div>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('${v.code}'); showToast('📋 Đã sao chép mã voucher ${v.code}!', 'success');" style="padding:0.3rem 0.6rem;font-size:0.78rem;">
+                    📋 Chép Mã
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `}
+    </div>
+  `;
+}
+
+/* ================= 🎟️ TEACHER VOUCHER MANAGEMENT ================= */
+async function renderTeacherVouchersManager(filter = 'all') {
+  const wrap = document.getElementById('teacherVouchersTableWrap');
+  if (!wrap) return;
+
+  // Update filter buttons
+  ['all', 'pending', 'redeemed'].forEach(f => {
+    const btn = document.getElementById(`btnVoucherFilter_${f}`);
+    if (btn) {
+      btn.classList.toggle('active', f === filter);
+      btn.classList.toggle('btn-primary', f === filter);
+      btn.classList.toggle('btn-secondary', f !== filter);
+    }
+  });
+
+  // Pull vouchers from storage & student profile
+  let vouchers = StorageEngine.getAllVouchers() || [];
+
+  // Sync any student profile vouchers not yet in storage
+  const profile = GamificationEngine.getUserProfile();
+  if (profile && Array.isArray(profile.vouchers)) {
+    profile.vouchers.forEach(pv => {
+      if (!vouchers.some(v => v.code === pv.code)) {
+        vouchers.unshift(pv);
+        StorageEngine.saveVoucher(pv);
+      }
+    });
+  }
+
+  // Filter
+  if (filter === 'pending') {
+    vouchers = vouchers.filter(v => v.status === 'pending');
+  } else if (filter === 'redeemed') {
+    vouchers = vouchers.filter(v => v.status === 'redeemed' || v.status === 'used');
+  }
+
+  if (vouchers.length === 0) {
+    wrap.innerHTML = `
+      <div style="text-align:center;padding:2.5rem 1rem;color:var(--text-muted);border:2px dashed var(--border-color);border-radius:var(--radius-lg);margin-top:1rem;">
+        <div style="font-size:3rem;margin-bottom:0.5rem;">🎟️</div>
+        <div style="font-size:1.1rem;font-weight:800;color:var(--text-primary);">Chưa có yêu cầu đổi thưởng nào!</div>
+        <div style="font-size:0.875rem;font-weight:600;margin-top:0.25rem;">Khi học sinh dùng điểm XP đổi Voucher (Thẻ Trà Sữa, Miễn BTVN, Điểm cộng), yêu cầu sẽ xuất hiện tại đây để Thầy phê duyệt.</div>
+      </div>
+    `;
+    return;
+  }
+
+  wrap.innerHTML = `
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Mã Serial</th>
+            <th>Học Sinh</th>
+            <th>Lớp</th>
+            <th>Phần Thưởng</th>
+            <th>Chi Phí XP</th>
+            <th>Thời Gian</th>
+            <th>Trạng Thái</th>
+            <th style="text-align:center;">Hành Động</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${vouchers.map(v => {
+            const isPending = v.status === 'pending';
+            const isRedeemed = v.status === 'redeemed' || v.status === 'used';
+            const isCancelled = v.status === 'cancelled';
+            const timeStr = v.createdAt ? new Date(v.createdAt).toLocaleString('vi-VN') : '—';
+
+            let statusBadge = '<span class="badge-status badge-pass">✅ Đã Trao Quà</span>';
+            if (isPending) {
+              statusBadge = '<span class="user-league-pill" style="padding:0.2rem 0.6rem;font-size:0.75rem;border-color:#f59e0b;color:#b45309;">⏳ Chờ Thầy Duyệt</span>';
+            } else if (isCancelled) {
+              statusBadge = '<span class="badge-status badge-fail">❌ Đã Hoàn Điểm</span>';
+            }
+
+            return `
+              <tr>
+                <td><code class="voucher-serial-code" style="font-size:0.95rem;padding:2px 8px;">${escapeHtml(v.code || '—')}</code></td>
+                <td><strong>${escapeHtml(v.studentName || 'Học sinh')}</strong></td>
+                <td><span class="badge-status badge-pass">Lớp ${escapeHtml(v.className || '10')}</span></td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:0.4rem;">
+                    <span style="font-size:1.3rem;">${v.icon || '🎁'}</span>
+                    <div>
+                      <strong style="color:var(--text-primary);">${escapeHtml(v.name || 'Voucher')}</strong>
+                      <div style="font-size:0.75rem;color:var(--text-secondary);">${escapeHtml(v.desc || '')}</div>
+                    </div>
+                  </div>
+                </td>
+                <td><strong style="color:var(--amber);font-size:1rem;">⭐ ${v.costXp || 0} XP</strong></td>
+                <td style="font-size:0.8rem;color:var(--text-secondary);">${timeStr}</td>
+                <td>${statusBadge}</td>
+                <td style="text-align:center;">
+                  ${isPending ? `
+                    <div style="display:flex;gap:0.4rem;justify-content:center;">
+                      <button type="button" class="btn btn-primary btn-sm" onclick="handleTeacherApproveVoucher('${v.code}')" style="padding:0.3rem 0.65rem;font-size:0.78rem;font-weight:800;">
+                        ✅ Duyệt & Trao Quà
+                      </button>
+                      <button type="button" class="btn btn-danger btn-sm" onclick="handleTeacherRefundVoucher('${v.code}')" style="padding:0.3rem 0.65rem;font-size:0.78rem;font-weight:800;">
+                        ↩️ Hoàn XP
+                      </button>
+                    </div>
+                  ` : (isRedeemed ? `
+                    <span style="font-size:0.8rem;color:var(--text-muted);font-weight:700;">Đã xác nhận</span>
+                  ` : `
+                    <span style="font-size:0.8rem;color:var(--rose);font-weight:700;">Đã hoàn điểm</span>
+                  `)}
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function handleTeacherApproveVoucher(code) {
+  if (!confirm(`Xác nhận trao quà / áp dụng voucher [${code}] cho học sinh?`)) return;
+
+  const updated = StorageEngine.updateVoucherStatus(code, 'redeemed', 'Thầy Khiêm đã xác nhận trao quà');
+  
+  // Also update in student profile if matching
+  const profile = GamificationEngine.getUserProfile();
+  if (profile && Array.isArray(profile.vouchers)) {
+    const v = profile.vouchers.find(item => item.code === code);
+    if (v) {
+      v.status = 'redeemed';
+      GamificationEngine.saveUserProfile(profile);
+    }
+  }
+
+  SoundEngine.playFanfare ? SoundEngine.playFanfare() : null;
+  showToast(`🎉 Đã duyệt và xác nhận trao voucher [${code}] thành công!`, 'success');
+  renderTeacherVouchersManager(document.querySelector('#teacherVoucherFilterGroup .active')?.id?.replace('btnVoucherFilter_', '') || 'all');
+}
+
+function handleTeacherRefundVoucher(code) {
+  if (!confirm(`Hủy voucher [${code}] và hoàn trả số điểm XP đã trừ cho học sinh?`)) return;
+
+  const list = StorageEngine.getAllVouchers();
+  const target = list.find(v => v.code === code);
+  const cost = target ? (target.costXp || 0) : 0;
+
+  StorageEngine.updateVoucherStatus(code, 'cancelled', 'Đã hủy và hoàn trả điểm XP');
+
+  // Refund XP to student
+  const profile = GamificationEngine.getUserProfile();
+  if (profile) {
+    if (Array.isArray(profile.vouchers)) {
+      const v = profile.vouchers.find(item => item.code === code);
+      if (v) v.status = 'cancelled';
+    }
+    profile.xp = (profile.xp || 0) + cost;
+    GamificationEngine.saveUserProfile(profile);
+  }
+
+  showToast(`↩️ Đã hủy voucher [${code}] và hoàn lại ${cost} XP cho học sinh!`, 'info');
+  renderTeacherVouchersManager(document.querySelector('#teacherVoucherFilterGroup .active')?.id?.replace('btnVoucherFilter_', '') || 'all');
 }
 
 /* 🏅 RENDER HUY HIỆU & THÀNH TỰU KÈM KHUNG VIỀN AVATAR */
