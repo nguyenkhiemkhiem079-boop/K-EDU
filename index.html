@@ -39,7 +39,6 @@
           <button type="button" class="btn btn-secondary" onclick="closeTeacherAuthModal()">Hủy Bỏ</button>
           <button type="submit" class="btn btn-primary btn-lg" style="flex:1;">Mở Khóa 🔓</button>
         </div>
-        <div style="margin-top:1rem;font-size:0.8rem;color:var(--text-muted);font-weight:700;">(Mã PIN mặc định ban đầu: <code>123456</code>)</div>
       </form>
     </div>
   </div>
@@ -65,8 +64,7 @@
           <button type="button" class="btn btn-secondary" onclick="closeMasterTeacherAuthModal()">Hủy Bỏ</button>
           <button type="submit" class="btn btn-primary btn-lg" style="flex:1;background:linear-gradient(135deg, #f59e0b, #8b5cf6);border:none;font-weight:900;">👑 Mở Khóa Master</button>
         </div>
-        <div style="margin-top:1.1rem;display:flex;justify-content:space-between;align-items:center;font-size:0.8rem;color:var(--text-muted);">
-          <span>Mật khẩu mặc định: <code>khiem123</code></span>
+        <div style="margin-top:1.1rem;display:flex;justify-content:flex-end;align-items:center;font-size:0.8rem;">
           <a href="#" onclick="promptChangeMasterPassword(); return false;" style="color:var(--indigo);font-weight:700;text-decoration:none;">Đổi Mật Khẩu 🔑</a>
         </div>
       </form>
@@ -194,6 +192,33 @@ GIANG, 8"></textarea>
     </div>
   </div>
 
+  <!-- ================= 📋 MODAL XEM LẠI & XÁC NHẬN TRÍCH XUẤT PDF ================= -->
+  <div id="pdfExtractionConfirmModal" class="roster-modal-backdrop hidden">
+    <div class="roster-modal-card" style="max-width:560px;">
+      <div class="duo-modal-header">
+        <h3 style="color:var(--primary);margin:0;font-size:1.25rem;display:flex;align-items:center;gap:0.5rem;">
+          <span>🔍</span> <span>Kết Quả Trích Xuất Câu Hỏi Từ PDF</span>
+        </h3>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closePdfExtractionModal()">✕ Đóng</button>
+      </div>
+
+      <div id="pdfExtractionSummaryContent" style="margin-bottom:1.25rem;line-height:1.6;font-size:0.95rem;">
+        <!-- Nội dung tổng kết số lượng câu sẽ được render tại đây -->
+      </div>
+
+      <div class="duo-modal-tip">
+        💡 <strong>Lưu ý:</strong> Khi bấm "Áp Dụng", danh sách câu hỏi và đáp án sẽ được điền vào phiếu bên dưới để thầy cô rà soát. Đề thi <strong>CHƯA</strong> được lưu hay phát hành tự động cho đến khi thầy cô bấm nút "Lưu & Xuất Bản Đề Thi".
+      </div>
+
+      <div class="duo-modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closePdfExtractionModal()">Hủy Bỏ</button>
+        <button type="button" class="btn btn-primary" id="btnConfirmApplyExtracted" onclick="applyExtractedQuestionsToForm()">
+          ✅ Áp Dụng Vào Phiếu Đáp Án
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= TOP NAVBAR ================= -->
   <header class="navbar">
     <div class="nav-container">
@@ -204,19 +229,19 @@ GIANG, 8"></textarea>
 
       <nav class="nav-tabs">
         <button type="button" class="nav-tab-btn active" data-tab="student" onclick="switchTab('student')">
-          <span>🎒</span> Học Sinh
+          <span class="nav-icon">🎒</span> <span class="nav-label">Bài Học</span>
         </button>
         <button type="button" class="nav-tab-btn" data-tab="parent" onclick="switchTab('parent')">
-          <span>👨‍👩‍👧</span> Phụ Huynh
+          <span class="nav-icon">👨‍👩‍👧</span> <span class="nav-label">Phụ Huynh</span>
         </button>
         <button type="button" class="nav-tab-btn" data-tab="teacher" onclick="switchTab('teacher')">
-          <span>👨‍🏫</span> Giáo Viên & Quản Trị
+          <span class="nav-icon">👨‍🏫</span> <span class="nav-label">Giáo Viên</span>
         </button>
         <button type="button" class="nav-tab-btn" data-tab="results" onclick="switchTab('results')">
-          <span>📊</span> Bảng Điểm
+          <span class="nav-icon">📊</span> <span class="nav-label">Bảng Điểm</span>
         </button>
         <button type="button" class="nav-tab-btn" data-tab="gamification" onclick="switchTab('gamification')">
-          <span>🏆</span> Vinh Danh
+          <span class="nav-icon">🏆</span> <span class="nav-label">Vinh Danh</span>
         </button>
       </nav>
 
@@ -235,7 +260,7 @@ GIANG, 8"></textarea>
         </div>
 
         <!-- Role Master Khiem Badge -->
-        <div id="masterTeacherNavBadge" class="hidden" onclick="switchTab('teacher')" title="Role Thầy Khiêm: Master Creator (Click mở bàn Giáo Viên)" style="background:linear-gradient(135deg, #f59e0b, #8b5cf6);color:#fff;font-weight:900;font-size:0.8rem;padding:0.35rem 0.85rem;border-radius:var(--radius-full);cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;box-shadow:0 3px 10px rgba(245,158,11,0.35);white-space:nowrap;">
+        <div id="masterTeacherNavBadge" class="duo-master-nav-badge hidden" onclick="switchTab('teacher')" title="Role Thầy Khiêm: Master Creator (Click mở bàn Giáo Viên)">
           <span>👑</span> <span>THẦY KHIÊM (ADMIN)</span>
         </div>
 
@@ -257,20 +282,20 @@ GIANG, 8"></textarea>
         <!-- Active Paused Exam Banner (Hidden by default) -->
         <div id="activePausedExamBanner" class="hidden" style="max-width:720px;margin:0 auto 1.25rem;"></div>
 
-        <div class="card" style="max-width:720px;margin:0 auto 1.5rem;background:linear-gradient(180deg, var(--bg-card) 0%, var(--bg-primary) 100%);">
-          <div style="text-align:center;margin-bottom:1.25rem;">
-            <div style="font-size:3rem;margin-bottom:0.25rem;">🦊 ⚡ 📚</div>
-            <h2 style="font-size:1.85rem;color:var(--text-primary);margin-bottom:0.4rem;">Phòng Học & Luyện Thi Trực Tuyến</h2>
-            <p style="color:var(--text-secondary);font-size:0.95rem;font-weight:600;">Nhập Tên và Lớp học của bạn để xem danh sách bài thi được giao:</p>
+        <div class="card duo-hero-card">
+          <div class="duo-hero-header">
+            <div class="duo-hero-icons">🦊 ⚡ 📚</div>
+            <h2 class="duo-hero-title">Phòng Học & Luyện Thi Trực Tuyến</h2>
+            <p class="duo-hero-desc">Nhập Tên và Lớp học của bạn để xem danh sách bài thi được giao:</p>
           </div>
 
           <form onsubmit="handleStudentFormSubmit(); return false;">
             <!-- Special Master Role Shortcut Bar -->
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;background:linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(139, 92, 246, 0.12));border:1.5px dashed #f59e0b;padding:0.6rem 1rem;border-radius:var(--radius-lg);flex-wrap:wrap;gap:0.5rem;">
+            <div class="duo-master-shortcut">
               <div style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;font-weight:800;color:var(--text-primary);">
                 <span>👑</span> <span>Dành cho Giáo viên:</span>
               </div>
-              <button type="button" class="btn btn-sm" onclick="handleMasterTeacherActivation()" style="background:linear-gradient(135deg, #f59e0b, #8b5cf6);color:#fff;border:none;font-weight:900;border-radius:var(--radius-full);padding:0.4rem 1rem;box-shadow:0 3px 10px rgba(245, 158, 11, 0.35);cursor:pointer;display:inline-flex;align-items:center;gap:0.4rem;">
+              <button type="button" class="duo-master-btn" onclick="handleMasterTeacherActivation()">
                 <span>👨‍🏫</span> <span>Kích Hoạt Role Thầy Khiêm (Cần Pass 🔑)</span>
               </button>
             </div>
@@ -287,7 +312,7 @@ GIANG, 8"></textarea>
             </div>
 
             <!-- Role Master Khiem Active Banner -->
-            <div id="masterTeacherDetectedPill" class="hidden" style="margin-bottom:0.85rem;padding:0.65rem 1rem;background:linear-gradient(90deg, #fef3c7, #f3e8ff);border:1.5px solid #f59e0b;border-radius:var(--radius-md);color:#92400e;font-weight:800;font-size:0.85rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;">
+            <div id="masterTeacherDetectedPill" class="duo-master-banner hidden">
               <span>👑 Đang hoạt động: <strong>Role Thầy Khiêm (Master Creator)</strong> — Đã mở khóa 100% đặc quyền & Khung Viền Hoàng Kim!</span>
               <div style="display:flex;gap:0.4rem;">
                 <button type="button" class="btn btn-sm btn-secondary" onclick="switchTab('teacher')" style="font-size:0.75rem;padding:0.25rem 0.65rem;border-radius:var(--radius-full);">Vào Bàn Giáo Viên ➔</button>
@@ -301,12 +326,12 @@ GIANG, 8"></textarea>
             </div>
 
             <!-- Direct Quiz Code Entry -->
-            <div style="margin-top:1.1rem;padding:0.9rem 1.1rem;background:var(--bg-tertiary);border-radius:var(--radius-lg);border:1.5px dashed var(--primary);display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+            <div class="duo-code-box">
               <div style="font-weight:700;color:var(--text-primary);font-size:0.9rem;display:flex;align-items:center;gap:0.4rem;">
                 <span>🔑</span> <span>Vào Đề Thi Bằng Mã:</span>
               </div>
               <div style="display:flex;gap:0.5rem;flex:1;min-width:220px;">
-                <input type="text" id="directQuizCodeInput" placeholder="Nhập mã 6 ký tự (VD: AB3X9K)" style="text-transform:uppercase;font-weight:800;letter-spacing:1.5px;text-align:center;" maxlength="10">
+                <input type="text" id="directQuizCodeInput" class="duo-code-input" placeholder="Nhập mã 6 ký tự (VD: AB3X9K)" maxlength="10">
                 <button type="button" class="btn btn-primary" onclick="handleJoinByDirectCode()" style="white-space:nowrap;">🚀 Vào Thi</button>
               </div>
             </div>
@@ -315,13 +340,13 @@ GIANG, 8"></textarea>
         </div>
 
         <!-- Direct Exam Feed List -->
-        <div class="card" style="max-width:720px;margin:0 auto;">
+        <div class="card duo-feed-card">
           <div class="card-header">
             <h2><span id="studentFeedHeaderTitle">📚 Danh Sách Đề Thi Của Bạn</span></h2>
           </div>
 
           <!-- Grade / Class Filter Bar -->
-          <div class="time-filter-bar" style="margin:0.25rem 0 0.5rem;justify-content:center;flex-wrap:wrap;gap:0.35rem;">
+          <div class="time-filter-bar center">
             <button type="button" class="time-filter-btn active" id="gradeBtn_all" onclick="filterExamFeedByGrade('all')">🌐 Tất Cả Khối Lớp</button>
             <button type="button" class="time-filter-btn" id="gradeBtn_6" onclick="filterExamFeedByGrade('6')">🎒 Lớp 6</button>
             <button type="button" class="time-filter-btn" id="gradeBtn_7" onclick="filterExamFeedByGrade('7')">📘 Lớp 7</button>
@@ -334,7 +359,7 @@ GIANG, 8"></textarea>
           </div>
 
           <!-- ToanMath Semester / Term Filter Bar -->
-          <div class="time-filter-bar" style="margin:0.25rem 0 1rem;justify-content:center;flex-wrap:wrap;gap:0.35rem;">
+          <div class="time-filter-bar center">
             <button type="button" class="time-filter-btn active" id="termBtn_all" onclick="filterExamFeedByTerm('all')">♾️ Tất Cả Kỳ</button>
             <button type="button" class="time-filter-btn" id="termBtn_GK1" onclick="filterExamFeedByTerm('GK1')">🍂 Giữa HK1</button>
             <button type="button" class="time-filter-btn" id="termBtn_CK1" onclick="filterExamFeedByTerm('CK1')">❄️ Cuối HK1</button>
@@ -389,11 +414,20 @@ GIANG, 8"></textarea>
           <!-- LEFT PANE: Original PDF Document -->
           <div class="pdf-viewer-pane">
             <div class="pdf-toolbar">
-              <div style="font-weight:800;font-size:1rem;color:var(--text-primary);display:flex;align-items:center;gap:0.5rem;">
+              <div style="font-weight:800;font-size:1rem;color:var(--text-primary);display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
                 <span>📄</span> <span id="splitExamExamTitle">Đề Thi Gốc</span>
               </div>
-              <div style="display:flex;align-items:center;gap:0.5rem;">
-                <span class="badge-status badge-pass" style="font-size:0.75rem;">Chuẩn 100% Gốc</span>
+              <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+                <!-- Document-Only Mode Controls (Student only sees exam and submits) -->
+                <div id="documentOnlyControls" class="hidden" style="display:flex;align-items:center;gap:0.6rem;">
+                  <div class="timer-box" id="docExamTimerBox" style="font-size:0.9rem;padding:4px 10px;">⏱️ 00:00</div>
+                  <button type="button" class="btn btn-success btn-sm" onclick="submitStudentExam()" style="font-weight:800;padding:0.45rem 1.1rem;box-shadow:0 4px 12px rgba(16,185,129,0.35);">
+                    🚀 Nộp Bài Thi
+                  </button>
+                </div>
+                <div id="standardExamBadge" style="display:flex;align-items:center;gap:0.5rem;">
+                  <span class="badge-status badge-pass" style="font-size:0.75rem;">Chuẩn 100% Gốc</span>
+                </div>
               </div>
             </div>
             <iframe id="studentPdfViewerFrame" class="pdf-render-frame" title="Đề thi gốc"></iframe>
@@ -507,11 +541,19 @@ GIANG, 8"></textarea>
         </div>
 
         <!-- Detailed Review Card -->
-        <div class="card">
-          <div class="card-header">
-            <h2><span>📋</span> Chi Tiết Đáp Án & Điểm Số Từng Câu</h2>
+        <div class="card" id="studentExamReviewCard" style="border-top:5px solid var(--indigo);margin-top:1.5rem;">
+          <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;">
+            <h2><span>📖</span> Cổng Tra Cứu & Giải Thích Chi Tiết Đề Thi (Review Portal)</h2>
+            <span class="badge-status badge-pass" style="font-size:0.85rem;padding:4px 10px;">✨ Kèm Lời Giải KaTeX & Phân Tích Bẫy Đề</span>
           </div>
-          <div id="examReviewContainer"></div>
+          <div id="examReviewContainer">
+            <div class="hidden" style="display:none;">
+              <button type="button" id="btnFilterAll"></button>
+              <button type="button" id="btnFilterWrong"></button>
+              <button type="button" id="btnFilterCorrect"></button>
+              <button type="button" id="btnFilterUnanswered"></button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -568,455 +610,251 @@ GIANG, 8"></textarea>
         </div>
       </div>
 
-      <!-- Firebase Cloud Config Panel -->
-      <div class="card" style="border-left: 6px solid var(--rose); background: linear-gradient(180deg, var(--bg-card) 0%, rgba(254, 242, 242, 0.3) 100%);">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.4rem;">
-          <h2 style="margin:0;font-size:1.35rem;color:var(--rose);display:flex;align-items:center;gap:0.5rem;">
-            <span>☁️</span> Cấu Hình Đồng Bộ Đám Mây Cloud Sync (Firebase)
-          </h2>
-          <span class="badge-status badge-fail" id="firebaseConnectionBadge">Đang Chạy Offline 📴</span>
-        </div>
-        <p class="card-subtitle">
-          Đồng bộ danh sách học sinh, điểm số trực tuyến và lưu trữ file PDF đề thi không giới hạn thông qua Firebase. Nhấn để mở bảng cấu hình:
-        </p>
-
-        <div style="margin-top:0.75rem;">
-          <button type="button" class="btn btn-secondary btn-sm" id="btnToggleFirebaseForm" onclick="toggleFirebaseConfigForm()">⚙️ Cấu Hình Firebase API Credentials</button>
-        </div>
-
-        <div id="firebaseConfigFormWrapper" class="hidden" style="margin-top:1.25rem;border-top:1px dashed var(--border-color);padding-top:1.25rem;">
-          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:0.75rem;margin-bottom:1rem;">
-            <div class="form-group">
-              <label>API Key</label>
-              <input type="text" id="fbApiKey" placeholder="AIzaSy..." autocomplete="off" spellcheck="false">
-            </div>
-            <div class="form-group">
-              <label>Project ID</label>
-              <input type="text" id="fbProjectId" placeholder="khiemedu-xxxx">
-            </div>
-            <div class="form-group">
-              <label>Storage Bucket</label>
-              <input type="text" id="fbStorageBucket" placeholder="khiemedu-xxxx.appspot.com">
-            </div>
-            <div class="form-group">
-              <label>Auth Domain</label>
-              <input type="text" id="fbAuthDomain" placeholder="khiemedu-xxxx.firebaseapp.com">
-            </div>
-            <div class="form-group">
-              <label>App ID</label>
-              <input type="text" id="fbAppId" placeholder="1:xxxxxx:web:xxxxxx">
-            </div>
-            <div class="form-group">
-              <label>Messaging Sender ID (Tùy chọn)</label>
-              <input type="text" id="fbSenderId" placeholder="xxxxxxxxx">
-            </div>
-          </div>
-
-          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
-            <button type="button" class="btn btn-primary" onclick="handleSaveFirebaseConfig()">💾 Lưu & Kết Nối Cloud ⚡</button>
-            <button type="button" class="btn btn-secondary" onclick="handleResetFirebaseDefaultConfig()">🔄 Khôi Phục Cấu Hình Gốc</button>
-            <button type="button" class="btn btn-secondary" onclick="handleTestFirebaseConnection()">🩺 Kiểm Tra Kết Nối Cloud</button>
-            <button type="button" class="btn btn-sky" onclick="handleSyncLocalToFirebase()">☁️ Đồng Bộ Dữ Liệu Lên Cloud</button>
-            <button type="button" class="btn btn-secondary" onclick="handleDisableFirebase()">📴 Chạy Offline (Tạm ngắt)</button>
-            <button type="button" class="btn btn-danger btn-sm" onclick="handleClearFirebaseConfig()">🗑️ Xóa Credentials</button>
-          </div>
-          <div id="firebaseConnectionStatusBox" style="margin-top:0.75rem;font-size:0.875rem;"></div>
-        </div>
+      <!-- Teacher Sleek Sub-Tab Navigation Bar -->
+      <div class="teacher-subnav-bar">
+        <button type="button" class="teacher-subtab-btn active" id="btnTeacherSubtab_create" onclick="switchTeacherSubtab('create')">
+          <span>📝 Tạo & Phát Hành Đề</span>
+        </button>
+        <button type="button" class="teacher-subtab-btn" id="btnTeacherSubtab_manage" onclick="switchTeacherSubtab('manage')">
+          <span>📂 Quản Lý Đề & Lớp</span>
+        </button>
+        <button type="button" class="teacher-subtab-btn" id="btnTeacherSubtab_analytics" onclick="switchTeacherSubtab('analytics')">
+          <span>📈 Thống Kê & Phân Tích</span>
+        </button>
+        <button type="button" class="teacher-subtab-btn" id="btnTeacherSubtab_settings" onclick="switchTeacherSubtab('settings')">
+          <span>⚙️ Cài Đặt & Cloud</span>
+        </button>
       </div>
 
-      <!-- Section 0: REAL METRICS & ANALYTICS DASHBOARD FOR TEACHERS -->
-      <div class="card" style="border-left: 6px solid var(--indigo);background:linear-gradient(180deg, var(--bg-card) 0%, rgba(240, 244, 255, 0.4) 100%);">
-        <div class="card-header">
-          <h2><span>📈</span> Trung Tâm Thống Kê & Phân Tích Số Liệu Thực Tế (Analytics Dashboard)</h2>
-        </div>
-        <p class="card-subtitle">
-          Thống kê chi tiết số câu đúng, số câu không giải được, thang điểm trung bình và biểu đồ tiến độ học lực theo Ngày / Tuần / Tháng:
-        </p>
-        <div id="teacherAnalyticsDashboardWrap"></div>
-      </div>
-
-      <!-- Section 1: Student & Class Roster Manager -->
-      <div class="card" style="border-left: 6px solid var(--primary);">
-        <div class="card-header">
-          <h2><span>👥</span> Quản Lý Danh Bạ Học Sinh & Lớp Học</h2>
-        </div>
-        <p class="card-subtitle">
-          Danh sách học sinh được phân chia theo từng lớp. Dùng để phân quyền giao đề theo lớp hoặc giao đích danh cho từng bạn:
-        </p>
-        <div id="teacherRosterManagerWrap"></div>
-      </div>
-
-      <!-- Section 2: Manage & Delete Quizzes -->
-      <div class="card" style="border-left: 6px solid var(--indigo);">
-        <div class="card-header">
-          <h2><span>📂</span> Quản Lý Đề Thi Hiện Có (Admin Desk)</h2>
-        </div>
-        <p class="card-subtitle">
-          Danh sách toàn bộ các đề thi trên hệ thống. Bạn có thể xem bảng điểm, thi thử hoặc xóa đề cũ:
-        </p>
-        <div id="teacherQuizManagerWrap"></div>
-      </div>
-
-      <!-- Section 3: BATCH EXAM PUBLISHING -->
-      <div class="card" style="border-left: 6px solid var(--sky);background: linear-gradient(180deg, var(--bg-card) 0%, rgba(224, 242, 254, 0.2) 100%);">
-        <div class="card-header">
-          <h2><span>⚡</span> Tải Lên & Phát Hành Hàng Loạt Nhiều Đề Thi (Batch Upload)</h2>
-          <span class="badge-status badge-pass" id="batchQueueCountBadge">0 đề</span>
-        </div>
-        <p class="card-subtitle">
-          Tải lên cùng lúc nhiều file đề (PDF / Ảnh), thiết lập cấu hình chung và phát hành hàng loạt chỉ trong 1 cú nhấp chuột!
-        </p>
-
-        <div class="form-row" style="background:var(--bg-tertiary);padding:1rem 1.25rem;border-radius:var(--radius-lg);border:2px solid var(--border-color);margin-bottom:1.25rem;">
-          <div class="form-group">
-            <label>⏱️ Thời Gian Mặc Định Cho Mỗi Đề (Phút)</label>
-            <input type="number" id="batchCommonTimeLimitInput" value="45" min="1" max="180">
-          </div>
-          <div class="form-group">
-            <label>📝 Số Câu Hỏi Mặc Định</label>
-            <select id="batchCommonQuestionCountSelect" style="font-weight:700;">
-              <option value="10">10 Câu</option>
-              <option value="12" selected>12 Câu</option>
-              <option value="15">15 Câu</option>
-              <option value="20">20 Câu</option>
-              <option value="30">30 Câu</option>
-              <option value="40">40 Câu</option>
-              <option value="50">50 Câu</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>🎯 Đối Tượng Giao Chung</label>
-            <select id="batchCommonAssignTypeSelect" style="font-weight:700;">
-              <option value="all" selected>🌍 Công khai toàn bộ</option>
-              <option value="classes">🏫 Giao theo Lớp</option>
-            </select>
-          </div>
-        </div>
-
-        <div style="margin-bottom:1.25rem;">
-          <label style="font-weight:800;color:var(--text-primary);display:block;margin-bottom:0.4rem;">📁 Chọn nhiều file đề thi cùng lúc (Giữ phím Ctrl hoặc Shift để chọn nhiều file PDF / Ảnh):</label>
-          <input type="file" id="batchExamFilesInput" accept="application/pdf,image/*" multiple onchange="handleBatchFilesSelect()">
-        </div>
-
-        <div id="batchQueueTableWrap"></div>
-      </div>
-
-      <!-- Section 3.5: AI & SMART MATH AUTO-GENERATOR -->
-      <div class="card" style="border-left: 6px solid #8b5cf6;background: linear-gradient(180deg, var(--bg-card) 0%, rgba(243, 232, 255, 0.3) 100%);">
-        <div class="card-header">
-          <h2><span>📐</span> Tự Động Sinh Đề & Câu Hỏi Trắc Nghiệm Toán (Math Auto-Generator)</h2>
-          <span class="badge-status" style="background:#ede9fe;color:#6d28d9;font-weight:800;">LaTeX & KaTeX Chuẩn</span>
-        </div>
-        <p class="card-subtitle">
-          Tự động tạo ngay bộ đề Toán học hoàn chỉnh kèm công thức LaTeX, phương trình và ma trận đáp án chuẩn chỉ trong 1 cú nhấp chuột (Lớp 6 - 12 & Luyện Thi Vào 10):
-        </p>
-
-        <!-- General Configuration Row -->
-        <div class="form-row" style="background:var(--bg-tertiary);padding:1rem 1.25rem;border-radius:var(--radius-lg);border:2px solid var(--border-color);margin-bottom:1rem;">
-          <div class="form-group">
-            <label>🏫 Khối Lớp</label>
-            <select id="mathGenGradeSelect" style="font-weight:700;">
-              <option value="6">Toán 6</option>
-              <option value="7">Toán 7</option>
-              <option value="8">Toán 8</option>
-              <option value="9">Toán 9</option>
-              <option value="10" selected>Toán 10</option>
-              <option value="11">Toán 11</option>
-              <option value="12">Toán 12</option>
-              <option value="TS10">Luyện Thi Vào 10</option>
-              <option value="all">Tổng Hợp Đa Dạng (Tất cả)</option>
-            </select>
+      <!-- ================= SUB-TAB 1: TẠO & PHÁT HÀNH ĐỀ THI ================= -->
+      <div id="teacherSubtabView_create">
+        
+        <!-- Section 1A: TẢI LÊN FILE ĐỀ THI GỐC (PDF / ẢNH) - TINH GỌN SIÊU TỐC -->
+        <div class="card" id="singleExamCreatorSection" style="border-left: 6px solid var(--indigo);">
+          <div class="card-header">
+            <h2><span id="creatorCardHeaderIcon">📁</span> <span id="creatorCardHeaderTitle">Tải Lên File Đề Thi Gốc (PDF / Ảnh) — Tinh Gọn Siêu Tốc</span></h2>
+            <span class="badge-status badge-pass" id="teacherTotalScoreCalculationBadge">Chế độ Tinh Gọn (Không cần nhập đáp án)</span>
           </div>
 
-          <div class="form-group">
-            <label>📅 Kỳ Thi / Định Dạng (ToanMath)</label>
-            <select id="mathGenTermSelect" style="font-weight:700;">
-              <option value="GK1" selected>🍂 Giữa Học Kỳ 1 (GK1)</option>
-              <option value="CK1">❄️ Cuối Học Kỳ 1 (CK1)</option>
-              <option value="GK2">🌸 Giữa Học Kỳ 2 (GK2)</option>
-              <option value="CK2">☀️ Cuối Học Kỳ 2 (CK2)</option>
-              <option value="TS10">🎓 Tuyển Sinh Vào 10</option>
-              <option value="THPT">🏛️ Thi Tốt Nghiệp THPT</option>
-              <option value="all">Tổng Hợp Cả Năm</option>
-            </select>
+          <!-- Edit Mode Indicator Banner -->
+          <div id="teacherExamEditorModeBanner" class="hidden" style="margin-bottom:1.25rem;padding:0.85rem 1.25rem;background:var(--amber-light);border:2px solid var(--amber);border-radius:var(--radius-lg);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;">
+            <div style="font-weight:800;color:var(--amber-shadow);font-size:0.95rem;">
+              <span>✏️</span> <strong>CHẾ ĐỘ CHỈNH SỬA:</strong> Đang sửa đề <code id="editingExamIdText" style="background:var(--bg-card);padding:2px 6px;border-radius:4px;">...</code> — <span id="editingExamTitleText">...</span>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="cancelTeacherQuizEdit()">❌ Hủy Sửa / Tạo Đề Mới</button>
           </div>
 
-          <div class="form-group">
-            <label>📚 Chủ Đề Trắc Nghiệm</label>
-            <select id="mathGenTopicSelect" style="font-weight:700;">
-              <option value="all" selected>Tất cả chủ đề</option>
-              <option value="Số học">Số học & Tập hợp</option>
-              <option value="Đại số">Đại số & Phương trình</option>
-              <option value="Hình học">Hình học & Đo lường</option>
-              <option value="Hàm số">Hàm số & Parabol</option>
-              <option value="Vectơ">Vectơ & Tọa độ Oxy</option>
-            </select>
+          <!-- Step 1: Upload File -->
+          <div style="margin-bottom:1.25rem;">
+            <label style="font-size:1.05rem;font-weight:800;color:var(--text-primary);display:block;margin-bottom:0.35rem;">
+              Bước 1 — Chọn File Đề Thi (PDF hoặc File Ảnh):
+            </label>
+            <p style="font-size:0.875rem;color:var(--text-secondary);margin-bottom:0.75rem;">
+              💡 <strong>Học sinh sẽ xem toàn bộ đề bài toàn màn hình và nộp bài hoàn thành. Bạn không cần mất thời gian nhập từng câu hỏi hay đáp án!</strong> Toàn bộ công thức Toán, hình vẽ được giữ nguyên 100% độ sắc nét.
+            </p>
+            <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+              <input type="file" id="teacherPdfFileInput" accept="application/pdf,image/*" onchange="handleTeacherPdfSelect()">
+              <button type="button" class="btn btn-secondary btn-sm hidden" id="clearPdfBtn" onclick="clearTeacherPdf()">🗑️ Gỡ Bỏ File Đề</button>
+            </div>
+            <div id="teacherPdfFileNameBadge" style="margin-top:0.4rem;font-size:0.85rem;font-weight:700;color:var(--indigo);" class="hidden"></div>
+            
+            <div id="teacherPdfPreviewWrapper" class="hidden" style="margin-top:1rem;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;flex-wrap:wrap;gap:0.5rem;">
+                <label style="font-weight:800;">Bản xem trước đề thi đã tải:</label>
+                <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+                  <button type="button" class="btn btn-sky btn-sm" id="btnExtractPdfQuestions" onclick="handleExtractPdfQuestions()">
+                    🔍 Trích Xuất Câu Hỏi Từ File Này
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-sm" id="btnToggleAiExtraction" onclick="toggleAiExtractionSettings()">
+                    ⚙️ Tùy chọn AI
+                  </button>
+                </div>
+              </div>
+
+              <!-- Collapsible AI extraction settings with red warning -->
+              <div id="aiExtractionSettingsBox" class="hidden" style="margin-bottom:0.75rem;padding:0.85rem 1rem;background:var(--bg-secondary);border:1.5px solid var(--border-color);border-radius:var(--radius-md);">
+                <div style="font-size:0.82rem;color:var(--rose);font-weight:700;margin-bottom:0.5rem;">
+                  ⚠️ API key sẽ được gọi trực tiếp từ trình duyệt của bạn, không nên dùng key có giới hạn chi phí cao ở môi trường công khai.
+                </div>
+                <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;">
+                  <div style="flex:1;min-width:180px;">
+                    <label style="font-size:0.78rem;font-weight:800;display:block;margin-bottom:0.2rem;">Phương thức trích xuất:</label>
+                    <select id="pdfAiProviderSelect" style="font-size:0.82rem;padding:0.35rem 0.5rem;width:100%;">
+                      <option value="offline" selected>⚡ Offline (Miễn phí, Regex thông minh, không cần API Key)</option>
+                      <option value="gemini">Google Gemini AI (Cần API Key)</option>
+                      <option value="claude">Anthropic Claude AI (Cần API Key)</option>
+                    </select>
+                  </div>
+                  <div style="flex:1.5;min-width:200px;">
+                    <label style="font-size:0.78rem;font-weight:800;display:block;margin-bottom:0.2rem;">API Key (Nếu dùng Gemini/Claude):</label>
+                    <input type="password" id="pdfAiApiKeyInput" placeholder="Nhập API Key cá nhân của bạn..." style="font-size:0.82rem;padding:0.35rem 0.5rem;width:100%;">
+                  </div>
+                </div>
+              </div>
+
+              <iframe id="teacherPdfPreviewFrame" style="width:100%;height:320px;border:2px solid var(--border-color);border-radius:var(--radius-md);background:#fff;" title="Xem trước đề"></iframe>
+            </div>
           </div>
 
-          <div class="form-group">
-            <label>📝 Số Câu Trắc Nghiệm</label>
-            <select id="mathGenMcqCountSelect" style="font-weight:700;">
-              <option value="10">10 Câu trắc nghiệm</option>
-              <option value="12" selected>12 Câu trắc nghiệm</option>
-              <option value="15">15 Câu trắc nghiệm</option>
-              <option value="20">20 Câu trắc nghiệm</option>
-              <option value="30">30 Câu trắc nghiệm</option>
-              <option value="40">40 Câu trắc nghiệm</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- DETAILED ESSAY MATRIX SPECIFICATION WIDGET -->
-        <div class="card" style="background:#ffffff;border:2px solid #8b5cf6;padding:1.1rem 1.25rem;margin-bottom:1.25rem;border-radius:var(--radius-lg);">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem;">
-            <h4 style="margin:0;font-size:1.05rem;color:#6d28d9;display:flex;align-items:center;gap:0.4rem;">
-              <span>✍️</span> <strong>Quy Định Số Lượng & Mức Độ Chi Tiết Các Câu Tự Luận (Essay Matrix)</strong>
+          <!-- Step 2: Cấu Hình Nhanh Đề Thi & Phân Quyền -->
+          <div style="background:var(--bg-tertiary);padding:1.1rem 1.25rem;border-radius:var(--radius-lg);border:1.5px solid var(--border-color);margin-bottom:1.25rem;">
+            <h4 style="margin:0 0 0.85rem;font-size:0.95rem;color:var(--indigo);font-weight:900;text-transform:uppercase;letter-spacing:0.5px;">
+              Bước 2 — Cấu Hình & Phân Quyền Giao Đề:
             </h4>
-            <span class="badge-status" id="mathGenTotalEssaySummaryBadge" style="background:#ede9fe;color:#6d28d9;font-weight:800;">
-              Tổng: 3 câu tự luận (TH: 1 · VD: 1 · VDC: 1)
-            </span>
-          </div>
-
-          <div class="form-row" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:0.75rem;margin-bottom:0;">
-            <!-- Level 1: TH (Thông hiểu) -->
-            <div style="background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:8px;padding:0.75rem 0.85rem;">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;">
-                <span style="font-weight:800;color:#0369a1;font-size:0.88rem;">💡 Thông Hiểu (TH)</span>
-                <select id="mathGenCountTHSelect" onchange="updateMathGenEssaySummary()" style="width:70px;padding:2px 6px;font-weight:800;border:1.5px solid #0284c7;border-radius:6px;">
-                  <option value="0">0 câu</option>
-                  <option value="1" selected>1 câu</option>
-                  <option value="2">2 câu</option>
-                  <option value="3">3 câu</option>
-                </select>
-              </div>
-              <div style="font-size:0.75rem;color:#0284c7;line-height:1.35;">
-                Rút gọn biểu thức, tính giá trị phân số, giải PT cơ bản.
-              </div>
-            </div>
-
-            <!-- Level 2: VD (Vận dụng) -->
-            <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:8px;padding:0.75rem 0.85rem;">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;">
-                <span style="font-weight:800;color:#b45309;font-size:0.88rem;">🧠 Vận Dụng (VD)</span>
-                <select id="mathGenCountVDSelect" onchange="updateMathGenEssaySummary()" style="width:70px;padding:2px 6px;font-weight:800;border:1.5px solid #d97706;border-radius:6px;">
-                  <option value="0">0 câu</option>
-                  <option value="1" selected>1 câu</option>
-                  <option value="2">2 câu</option>
-                  <option value="3">3 câu</option>
-                  <option value="4">4 câu</option>
-                </select>
-              </div>
-              <div style="font-size:0.75rem;color:#b45309;line-height:1.35;">
-                Hệ thức Vi-ét, toán thực tế lập PT, hình học phẳng & không gian.
-              </div>
-            </div>
-
-            <!-- Level 3: VDC (Vận dụng cao) -->
-            <div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:8px;padding:0.75rem 0.85rem;">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;">
-                <span style="font-weight:800;color:#b91c1c;font-size:0.88rem;">🔥 Vận Dụng Cao (VDC)</span>
-                <select id="mathGenCountVDCSelect" onchange="updateMathGenEssaySummary()" style="width:70px;padding:2px 6px;font-weight:800;border:1.5px solid #dc2626;border-radius:6px;">
-                  <option value="0">0 câu</option>
-                  <option value="1" selected>1 câu</option>
-                  <option value="2">2 câu</option>
-                  <option value="3">3 câu</option>
-                </select>
-              </div>
-              <div style="font-size:0.75rem;color:#b91c1c;line-height:1.35;">
-                Bất đẳng thức Cauchy, cực trị hình học, tham số m (Câu điểm 10).
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
-          <button type="button" class="btn btn-primary btn-lg" onclick="triggerAutoGenerateMathExam()" style="background:linear-gradient(135deg, #6366f1, #8b5cf6);">
-            ⚡ TỰ ĐỘNG SINH ĐỀ TOÁN & NẠP VÀO PHIẾU ĐÁP ÁN 🚀
-          </button>
-          <button type="button" class="btn btn-secondary btn-lg" onclick="previewGeneratedMathExamDocument()">
-            👁️ Xem Trước Bản In Đề Toán (LaTeX)
-          </button>
-        </div>
-
-        <div id="mathGenResultBox" class="hidden" style="margin-top:1rem;"></div>
-      </div>
-
-      <!-- Section 4: SEPARATED SINGLE EXAM CREATOR (MCQ & ESSAY) -->
-      <div class="card" id="singleExamCreatorSection">
-        <div class="card-header">
-          <h2><span id="creatorCardHeaderIcon">➕</span> <span id="creatorCardHeaderTitle">Tạo & Thiết Lập 1 Đề Thi Riêng Biệt</span></h2>
-          <span class="badge-status badge-pass" id="teacherTotalScoreCalculationBadge">Tổng: 12 câu (10/10đ)</span>
-        </div>
-
-        <!-- Edit Mode Indicator Banner -->
-        <div id="teacherExamEditorModeBanner" class="hidden" style="margin-bottom:1.25rem;padding:0.85rem 1.25rem;background:var(--amber-light);border:2px solid var(--amber);border-radius:var(--radius-lg);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;">
-          <div style="font-weight:800;color:var(--amber-shadow);font-size:0.95rem;">
-            <span>✏️</span> <strong>CHẾ ĐỘ CHỈNH SỬA:</strong> Đang sửa đề <code id="editingExamIdText" style="background:var(--bg-card);padding:2px 6px;border-radius:4px;">...</code> — <span id="editingExamTitleText">...</span>
-          </div>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="cancelTeacherQuizEdit()">❌ Hủy Sửa / Tạo Đề Mới</button>
-        </div>
-
-        <!-- Step 1: Upload File -->
-        <div style="margin-bottom:1.5rem;">
-          <h3 style="font-size:1.1rem;color:var(--text-primary);margin-bottom:0.4rem;">Bước 1 — Tải Lên File Đề Thi (PDF / Ảnh Gốc)</h3>
-          <p style="font-size:0.875rem;color:var(--text-secondary);margin-bottom:0.75rem;">Giáo viên chỉ cần tải file đề gốc lên. Toàn bộ công thức Toán học và hình vẽ sẽ được giữ nguyên 100% độ sắc nét.</p>
-          <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
-            <input type="file" id="teacherPdfFileInput" accept="application/pdf,image/*" onchange="handleTeacherPdfSelect()">
-            <button type="button" class="btn btn-secondary btn-sm hidden" id="clearPdfBtn" onclick="clearTeacherPdf()">🗑️ Gỡ Bỏ File Đề</button>
-          </div>
-          <div id="teacherPdfFileNameBadge" style="margin-top:0.4rem;font-size:0.85rem;font-weight:700;color:var(--indigo);" class="hidden"></div>
-          
-          <div id="teacherPdfPreviewWrapper" class="hidden" style="margin-top:1rem;">
-            <label style="font-weight:800;display:block;margin-bottom:0.3rem;">Bản xem trước đề thi đã tải:</label>
-            <iframe id="teacherPdfPreviewFrame" style="width:100%;height:340px;border:2px solid var(--border-color);border-radius:var(--radius-md);background:#fff;" title="Xem trước đề"></iframe>
-          </div>
-        </div>
-
-        <hr style="border:1px solid var(--border-color);margin:1.5rem 0;"/>
-
-        <!-- Step 2A: PHẦN 1 - TRẮC NGHIỆM SIÊU TỐC 200 CÂU -->
-        <div class="card" style="background:var(--bg-tertiary);border:2px solid var(--indigo);margin-bottom:1.5rem;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;flex-wrap:wrap;gap:0.5rem;">
-            <h3 style="font-size:1.15rem;color:var(--indigo);margin:0;">🔵 PHẦN I: ĐÁP ÁN TRẮC NGHIỆM (HỖ TRỢ 10 ĐẾN 200+ CÂU)</h3>
-            <span class="badge-status badge-pass" id="teacherMcqCountBadge">10 câu trắc nghiệm</span>
-          </div>
-          <p style="font-size:0.875rem;color:var(--text-secondary);margin-bottom:0.75rem;">
-            💡 <strong>Không cần điền từng câu:</strong> Bạn chỉ cần Copy & Paste toàn bộ đáp án từ Word/Excel/PDF vào ô bên dưới, hoặc chọn file đáp án. Hệ thống sẽ tự nhận diện 100% trong 0.1 giây!
-          </p>
-
-          <!-- Ultra Smart Key Import Box -->
-          <div class="bulk-import-area">
-            <label style="font-weight:800;color:var(--indigo);display:block;margin-bottom:0.4rem;">
-              ⚡ Dán chuỗi đáp án (Chấp nhận mọi định dạng: <code>1A 2B 3C...</code> hoặc <code>1.A 2.B 3.C... 200.D</code> hoặc <code>ABCDABCD...</code> hoặc Bảng Excel):
-            </label>
-            <textarea id="massiveKeyTextarea" class="bulk-textarea" placeholder="Dán chuỗi đáp án vào đây... VD: 1A 2B 3C 4D 5A 6B 7C 8D 9A 10B ... 200A hoặc ABCDABCD..."></textarea>
             
-            <div style="display:flex;gap:0.6rem;margin-top:0.6rem;flex-wrap:wrap;align-items:center;justify-content:space-between;">
-              <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
-                <button type="button" class="btn btn-primary" onclick="parseMassiveKeyString()">⚡ TỰ ĐỘNG NHẬN DIỆN ĐÁP ÁN</button>
-                <label class="btn btn-secondary" style="cursor:pointer;margin:0;">
-                  📁 Nhập Từ File (.txt / .csv)
-                  <input type="file" accept=".txt,.csv" style="display:none;" onchange="handleKeyFileUpload(event)">
-                </label>
-                <button type="button" class="btn btn-sky btn-sm" onclick="autoBalance10Points()" title="Chia đều thang điểm 10">⚖️ Chia Đều Thang 10đ</button>
+            <div class="form-row">
+              <div class="form-group" style="flex: 2; min-width: 240px;">
+                <label>Tên Đề Thi</label>
+                <input type="text" id="teacherExamTitleInput" value="Đề Kiểm Tra — Môn Toán">
               </div>
-
-              <div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;">
-                <span style="font-size:0.8rem;font-weight:800;color:var(--text-muted);">Điền mẫu nhanh:</span>
-                <button type="button" class="btn btn-sm" style="padding:2px 8px;font-size:0.75rem;" onclick="quickFillAllKeys('A')">All A</button>
-                <button type="button" class="btn btn-sm" style="padding:2px 8px;font-size:0.75rem;" onclick="quickFillAllKeys('B')">All B</button>
-                <button type="button" class="btn btn-sm" style="padding:2px 8px;font-size:0.75rem;" onclick="quickRandomizeKeys()">🎲 Random</button>
+              <div class="form-group" style="flex: 1; min-width: 140px;">
+                <label>🏫 Khối / Lớp</label>
+                <select id="teacherExamGradeSelect" style="font-weight:700;">
+                  <option value="6">Lớp 6</option>
+                  <option value="7">Lớp 7</option>
+                  <option value="8">Lớp 8</option>
+                  <option value="9">Lớp 9</option>
+                  <option value="TS10">🎓 Tuyển Sinh Vào 10</option>
+                  <option value="10" selected>Lớp 10</option>
+                  <option value="11">Lớp 11</option>
+                  <option value="12">Lớp 12 / THPT</option>
+                  <option value="DGNL">🏛️ Đánh Giá Năng Lực (ĐGNL/TSA)</option>
+                </select>
+              </div>
+              <div class="form-group" style="flex: 1.2; min-width: 170px;">
+                <label>📅 Kỳ Thi / Phân Loại</label>
+                <select id="teacherExamTermSelect" style="font-weight:700;">
+                  <option value="GK1" selected>🍂 Giữa Học Kỳ 1 (GK1)</option>
+                  <option value="CK1">❄️ Cuối Học Kỳ 1 (CK1)</option>
+                  <option value="GK2">🌸 Giữa Học Kỳ 2 (GK2)</option>
+                  <option value="CK2">☀️ Cuối Học Kỳ 2 (CK2)</option>
+                  <option value="TS10">🎓 Tuyển Sinh Vào 10</option>
+                  <option value="THPT">🏛️ Thi Tốt Nghiệp THPT</option>
+                  <option value="DGNL">🧠 Đánh Giá Năng Lực</option>
+                  <option value="regular">📝 Kiểm Tra Thường Xuyên</option>
+                </select>
+              </div>
+              <div class="form-group" style="flex: 0.8; min-width: 120px;">
+                <label>Thời Gian (Phút)</label>
+                <input type="number" id="teacherExamTimeLimitInput" value="45" min="1" max="180" oninput="syncExamTimeLimits(this.value, 'teacher')">
               </div>
             </div>
-          </div>
 
-          <!-- Quick presets for question count -->
-          <div style="margin-bottom:0.85rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
-            <span style="font-size:0.85rem;font-weight:800;color:var(--text-secondary);">Tạo nhanh số lượng câu:</span>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="setCustomQuestionCount(20)">20 Câu</button>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="setCustomQuestionCount(40)">40 Câu</button>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="setCustomQuestionCount(50)">50 Câu</button>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="setCustomQuestionCount(100)">100 Câu</button>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="setCustomQuestionCount(200)">200 Câu 🚀</button>
-            
-            <div style="display:inline-flex;align-items:center;gap:0.3rem;margin-left:auto;">
-              <span style="font-size:0.8rem;font-weight:700;color:var(--text-muted);">Tùy chỉnh:</span>
-              <input type="number" id="customCountInput" style="width:75px;padding:0.25rem 0.4rem;font-size:0.85rem;text-align:center;font-weight:800;" placeholder="Số câu" min="1" max="500">
-              <button type="button" class="btn btn-primary btn-sm" onclick="setCustomQuestionCount(document.getElementById('customCountInput').value)">Tạo</button>
-            </div>
-          </div>
-
-          <!-- Compact Ma Trận Grid -->
-          <div id="teacherMcqGridContainer"></div>
-        </div>
-
-        <!-- Step 2B: PHẦN 2 - TỰ LUẬN ĐIỀN SỐ TOÁN HỌC RIÊNG BIỆT -->
-        <div class="card" style="background:var(--bg-tertiary);border:2px solid var(--amber);margin-bottom:1.5rem;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;flex-wrap:wrap;gap:0.5rem;">
-            <h3 style="font-size:1.15rem;color:var(--amber-shadow);margin:0;">✍️ PHẦN II: ĐÁP ÁN TỰ LUẬN ĐIỀN ĐÁP SỐ (TOÁN HỌC)</h3>
-            <div style="display:flex;gap:0.5rem;align-items:center;">
-              <span class="badge-status" style="background:var(--amber-light);color:var(--amber-shadow);font-weight:800;" id="teacherEssayCountBadge">2 câu tự luận</span>
-              <button type="button" class="btn btn-primary btn-sm" onclick="addOneTeacherEssayQuestion()">+ Thêm Câu Tự Luận</button>
-            </div>
-          </div>
-          <p style="font-size:0.875rem;color:var(--text-secondary);margin-bottom:0.75rem;">
-            Nhập đáp số chuẩn (hỗ trợ phân số, số thập phân, biến số, nhiều cách viết ngăn cách bằng dấu <code style="background:var(--bg-card);padding:2px 6px;border-radius:4px;">|</code>) kèm công cụ chấm thử trực tiếp:
-          </p>
-
-          <div id="teacherEssayGridContainer"></div>
-        </div>
-
-        <hr style="border:1px solid var(--border-color);margin:1.5rem 0;"/>
-
-        <!-- Step 3: Publish Settings & Targeted Access Control -->
-        <div>
-          <h3 style="font-size:1.1rem;color:var(--text-primary);margin-bottom:1rem;">Bước 3 — Cấu Hình & Phân Quyền Giao Đề</h3>
-          
-          <div class="form-row">
-            <div class="form-group" style="flex: 2; min-width: 240px;">
-              <label>Tên Đề Thi</label>
-              <input type="text" id="teacherExamTitleInput" value="Đề Kiểm Tra Giữa Kì I — Môn Toán">
-            </div>
-            <div class="form-group" style="flex: 1; min-width: 140px;">
-              <label>🏫 Khối / Lớp</label>
-              <select id="teacherExamGradeSelect" style="font-weight:700;">
-                <option value="6">Lớp 6</option>
-                <option value="7">Lớp 7</option>
-                <option value="8">Lớp 8</option>
-                <option value="9">Lớp 9</option>
-                <option value="TS10">🎓 Tuyển Sinh Vào 10</option>
-                <option value="10" selected>Lớp 10</option>
-                <option value="11">Lớp 11</option>
-                <option value="12">Lớp 12 / THPT</option>
+            <div class="form-group" style="margin-top:0.5rem;">
+              <label style="color:var(--indigo);font-size:0.95rem;font-weight:800;">🎯 Đối tượng giao đề (Ai được làm đề này?):</label>
+              
+              <select id="assignTypeSelect" style="margin-top:0.4rem;font-weight:700;" onchange="renderAssignTargetsSelector()">
+                <option value="all">🌍 Công khai toàn bộ (Mọi học sinh đều làm được)</option>
+                <option value="classes">🏫 Giao theo Lớp học cụ thể (Chỉ lớp được chọn mới được làm)</option>
+                <option value="students">👤 Giao đích danh từng Học sinh (Chỉ những học sinh được tick mới được làm)</option>
               </select>
+
+              <div id="assignClassesBox" class="hidden" style="margin-top:0.85rem;">
+                <span style="font-size:0.85rem;font-weight:800;color:var(--text-secondary);display:block;margin-bottom:0.4rem;">Tick chọn các Lớp được phép làm bài:</span>
+                <div id="assignClassCheckboxes" style="display:flex;gap:0.5rem;flex-wrap:wrap;"></div>
+              </div>
+
+              <div id="assignStudentsBox" class="hidden" style="margin-top:0.85rem;">
+                <span style="font-size:0.85rem;font-weight:800;color:var(--text-secondary);display:block;margin-bottom:0.4rem;">Tick chọn danh sách Học sinh được giao đề:</span>
+                <div id="assignStudentCheckboxes" style="display:flex;gap:0.5rem;flex-wrap:wrap;max-height:160px;overflow-y:auto;padding:0.4rem 0;"></div>
+              </div>
             </div>
-            <div class="form-group" style="flex: 1.2; min-width: 170px;">
-              <label>📅 Kỳ Thi / Phân Loại (ToanMath)</label>
-              <select id="teacherExamTermSelect" style="font-weight:700;">
-                <option value="GK1" selected>🍂 Giữa Học Kỳ 1 (GK1)</option>
-                <option value="CK1">❄️ Cuối Học Kỳ 1 (CK1)</option>
-                <option value="GK2">🌸 Giữa Học Kỳ 2 (GK2)</option>
-                <option value="CK2">☀️ Cuối Học Kỳ 2 (CK2)</option>
-                <option value="TS10">🎓 Tuyển Sinh Vào 10</option>
-                <option value="THPT">🏛️ Thi Tốt Nghiệp THPT</option>
-                <option value="regular">📝 Kiểm Tra Thường Xuyên</option>
-              </select>
-            </div>
-            <div class="form-group" style="flex: 0.8; min-width: 120px;">
-              <label>Thời Gian (Phút)</label>
-              <input type="number" id="teacherExamTimeLimitInput" value="45" min="1" max="180">
+
+            <div class="form-group" style="margin-top:0.75rem;">
+              <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;font-weight:700;">
+                <input type="checkbox" id="teacherShowLeaderboardToggle" checked style="width:auto;width:18px;height:18px;">
+                <span>Hiển thị bảng xếp hạng trực tiếp cho học sinh đã nộp bài</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;font-weight:700;margin-top:0.5rem;">
+                <input type="checkbox" id="teacherAntiCheatToggle" checked style="width:auto;width:18px;height:18px;">
+                <span>Kích hoạt giám sát chống gian lận (đếm số lần rời trang & chặn copy)</span>
+              </label>
             </div>
           </div>
 
-          <div class="form-group" style="background:var(--bg-tertiary);padding:1.1rem 1.25rem;border-radius:var(--radius-lg);border:2px solid var(--border-color);">
-            <label style="color:var(--indigo);font-size:1rem;">🎯 PHÂN QUYỀN ĐỐI TƯỢNG GIAO ĐỀ (Ai được làm đề này?):</label>
-            
-            <select id="assignTypeSelect" style="margin-top:0.4rem;font-weight:700;" onchange="renderAssignTargetsSelector()">
-              <option value="all">🌍 Công khai toàn bộ (Mọi học sinh đều làm được)</option>
-              <option value="classes">🏫 Giao theo Lớp học cụ thể (Chỉ lớp được chọn mới được làm)</option>
-              <option value="students">👤 Giao đích danh từng Học sinh (Chỉ những học sinh được tick mới được làm)</option>
-            </select>
-
-            <div id="assignClassesBox" class="hidden" style="margin-top:0.85rem;">
-              <span style="font-size:0.85rem;font-weight:800;color:var(--text-secondary);display:block;margin-bottom:0.4rem;">Tick chọn các Lớp được phép làm bài:</span>
-              <div id="assignClassCheckboxes" style="display:flex;gap:0.5rem;flex-wrap:wrap;"></div>
-            </div>
-
-            <div id="assignStudentsBox" class="hidden" style="margin-top:0.85rem;">
-              <span style="font-size:0.85rem;font-weight:800;color:var(--text-secondary);display:block;margin-bottom:0.4rem;">Tick chọn danh sách Học sinh được giao đề:</span>
-              <div id="assignStudentCheckboxes" style="display:flex;gap:0.5rem;flex-wrap:wrap;max-height:160px;overflow-y:auto;padding:0.4rem 0;"></div>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;font-weight:700;">
-              <input type="checkbox" id="teacherShowLeaderboardToggle" checked style="width:auto;width:20px;height:20px;">
-              <span>Hiển thị bảng xếp hạng trực tiếp cho học sinh đã nộp bài</span>
+          <!-- OPTIONAL: BẢNG ĐÁP ÁN CHẤM TỰ ĐỘNG (BỎ QUA MẶC ĐỊNH CHO ĐỀ UPLOAD) -->
+          <div style="margin-bottom:1.25rem;border:1.5px dashed var(--border-color);border-radius:var(--radius-lg);padding:0.85rem 1.1rem;background:var(--bg-card);">
+            <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;font-weight:800;color:var(--text-secondary);margin:0;" id="toggleCustomAnswerKeyLabel">
+              <input type="checkbox" id="toggleCustomAnswerKeyCheckbox" onchange="toggleCustomAnswerKeySection()" style="width:auto;width:18px;height:18px;">
+              <span>⚙️ Cấu hình bảng đáp án để chấm điểm tự động (Tùy chọn nâng cao — Mặc định bỏ qua cho đề tải lên)</span>
             </label>
-            <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;font-weight:700;margin-top:0.6rem;">
-              <input type="checkbox" id="teacherAntiCheatToggle" checked style="width:auto;width:20px;height:20px;">
-              <span>Kích hoạt giám sát chống gian lận (đếm số lần rời trang & chặn copy)</span>
-            </label>
+            <p style="margin:0.35rem 0 0 1.8rem;font-size:0.8rem;color:var(--text-muted);">
+              Nếu bỏ qua, học sinh chỉ xem đề gốc toàn màn hình và bấm nộp bài hoàn thành. Bạn có thể bật tùy chọn này nếu muốn tạo phiếu tô trắc nghiệm A/B/C/D.
+            </p>
+
+            <div id="customAnswerKeySectionWrap" class="hidden" style="margin-top:1rem;border-top:1px solid var(--border-color);padding-top:1rem;">
+              <!-- Step 2A: PHẦN 1 - TRẮC NGHIỆM SIÊU TỐC 200 CÂU -->
+              <div class="card" style="background:var(--bg-tertiary);border:2px solid var(--indigo);margin-bottom:1.5rem;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;flex-wrap:wrap;gap:0.5rem;">
+                  <h3 style="font-size:1.15rem;color:var(--indigo);margin:0;">🔵 PHẦN I: ĐÁP ÁN TRẮC NGHIỆM (HỖ TRỢ 10 ĐẾN 200+ CÂU)</h3>
+                  <span class="badge-status badge-pass" id="teacherMcqCountBadge">10 câu trắc nghiệm</span>
+                </div>
+                <p style="font-size:0.875rem;color:var(--text-secondary);margin-bottom:0.75rem;">
+                  💡 <strong>Không cần điền từng câu:</strong> Bạn chỉ cần Copy & Paste toàn bộ đáp án từ Word/Excel/PDF vào ô bên dưới, hoặc chọn file đáp án. Hệ thống sẽ tự nhận diện 100% trong 0.1 giây!
+                </p>
+
+                <!-- Ultra Smart Key Import Box -->
+                <div class="bulk-import-area">
+                  <label style="font-weight:800;color:var(--indigo);display:block;margin-bottom:0.4rem;">
+                    ⚡ Dán chuỗi đáp án (Chấp nhận mọi định dạng: <code>1A 2B 3C...</code> hoặc <code>1.A 2.B 3.C... 200.D</code> hoặc <code>ABCDABCD...</code> hoặc Bảng Excel):
+                  </label>
+                  <textarea id="massiveKeyTextarea" class="bulk-textarea" placeholder="Dán chuỗi đáp án vào đây... VD: 1A 2B 3C 4D 5A 6B 7C 8D 9A 10B ... 200A hoặc ABCDABCD..."></textarea>
+                  
+                  <div style="display:flex;gap:0.6rem;margin-top:0.6rem;flex-wrap:wrap;align-items:center;justify-content:space-between;">
+                    <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+                      <button type="button" class="btn btn-primary" onclick="parseMassiveKeyString()">⚡ TỰ ĐỘNG NHẬN DIỆN ĐÁP ÁN</button>
+                      <label class="btn btn-secondary" style="cursor:pointer;margin:0;">
+                        📁 Nhập Từ File (.txt / .csv)
+                        <input type="file" accept=".txt,.csv" style="display:none;" onchange="handleKeyFileUpload(event)">
+                      </label>
+                      <button type="button" class="btn btn-sky btn-sm" onclick="autoBalance10Points()" title="Chia đều thang điểm 10">⚖️ Chia Đều Thang 10đ</button>
+                    </div>
+
+                    <div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;">
+                      <span style="font-size:0.8rem;font-weight:800;color:var(--text-muted);">Điền mẫu nhanh:</span>
+                      <button type="button" class="btn btn-sm" style="padding:2px 8px;font-size:0.75rem;" onclick="quickFillAllKeys('A')">All A</button>
+                      <button type="button" class="btn btn-sm" style="padding:2px 8px;font-size:0.75rem;" onclick="quickFillAllKeys('B')">All B</button>
+                      <button type="button" class="btn btn-sm" style="padding:2px 8px;font-size:0.75rem;" onclick="quickRandomizeKeys()">🎲 Random</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Quick presets for question count -->
+                <div style="margin-bottom:0.85rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                  <span style="font-size:0.85rem;font-weight:800;color:var(--text-secondary);">Tạo nhanh số lượng câu:</span>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="setCustomQuestionCount(20)">20 Câu</button>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="setCustomQuestionCount(40)">40 Câu</button>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="setCustomQuestionCount(50)">50 Câu</button>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="setCustomQuestionCount(100)">100 Câu</button>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="setCustomQuestionCount(200)">200 Câu 🚀</button>
+                  
+                  <div style="display:inline-flex;align-items:center;gap:0.3rem;margin-left:auto;">
+                    <span style="font-size:0.8rem;font-weight:700;color:var(--text-muted);">Tùy chỉnh:</span>
+                    <input type="number" id="customCountInput" style="width:75px;padding:0.25rem 0.4rem;font-size:0.85rem;text-align:center;font-weight:800;" placeholder="Số câu" min="1" max="500">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="setCustomQuestionCount(document.getElementById('customCountInput').value)">Tạo</button>
+                  </div>
+                </div>
+
+                <!-- Compact Ma Trận Grid -->
+                <div id="teacherMcqGridContainer"></div>
+              </div>
+
+              <!-- Step 2B: PHẦN 2 - TỰ LUẬN ĐIỀN SỐ TOÁN HỌC RIÊNG BIỆT -->
+              <div class="card" style="background:var(--bg-tertiary);border:2px solid var(--amber);margin-bottom:1.5rem;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;flex-wrap:wrap;gap:0.5rem;">
+                  <h3 style="font-size:1.15rem;color:var(--amber-shadow);margin:0;">✍️ PHẦN II: ĐÁP ÁN TỰ LUẬN ĐIỀN ĐÁP SỐ (TOÁN HỌC)</h3>
+                  <div style="display:flex;gap:0.5rem;align-items:center;">
+                    <span class="badge-status" style="background:var(--amber-light);color:var(--amber-shadow);font-weight:800;" id="teacherEssayCountBadge">2 câu tự luận</span>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="addOneTeacherEssayQuestion()">+ Thêm Câu Tự Luận</button>
+                  </div>
+                </div>
+                <p style="font-size:0.875rem;color:var(--text-secondary);margin-bottom:0.75rem;">
+                  Nhập đáp số chuẩn (hỗ trợ phân số, số thập phân, biến số, nhiều cách viết ngăn cách bằng dấu <code style="background:var(--bg-card);padding:2px 6px;border-radius:4px;">|</code>) kèm công cụ chấm thử trực tiếp:
+                </p>
+
+                <div id="teacherEssayGridContainer"></div>
+              </div>
+            </div>
           </div>
 
           <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;margin-top:1.25rem;">
@@ -1028,6 +866,390 @@ GIANG, 8"></textarea>
             </button>
           </div>
           <div id="publishSuccessResult"></div>
+        </div>
+
+        <!-- Section 1B: TỰ ĐỘNG SINH ĐỀ & CÂU HỎI TRẮC NGHIỆM TOÁN & ĐGNL -->
+        <div class="card" style="border-left: 6px solid #8b5cf6;background: linear-gradient(180deg, var(--bg-card) 0%, rgba(243, 232, 255, 0.3) 100%);">
+          <div class="card-header">
+            <h2><span>📐</span> Tự Động Sinh Đề & Câu Hỏi Toán & ĐGNL (Math Auto-Generator)</h2>
+            <span class="badge-status" style="background:#ede9fe;color:#6d28d9;font-weight:800;">LaTeX & KaTeX Chuẩn</span>
+          </div>
+          <p class="card-subtitle">
+            Tự động sinh bộ đề kèm công thức LaTeX, phương trình và ma trận đáp án giải thích chi tiết (Toán 6 - 12 & Đánh Giá Năng Lực):
+          </p>
+
+          <div class="form-row" style="background:var(--bg-tertiary);padding:1rem 1.25rem;border-radius:var(--radius-lg);border:2px solid var(--border-color);margin-bottom:1rem;">
+            <div class="form-group">
+              <label>🎯 Định Hướng Đề Thi</label>
+              <select id="mathGenTrackSelect" onchange="handleTrackChange(this.value)" style="font-weight:700;">
+                <option value="toan" selected>📐 Toán Phổ Thông (Lớp 6 - 12)</option>
+                <option value="dgnl_qg">🧠 ĐGNL ĐHQG (Định Lượng & Logic)</option>
+                <option value="dgnl_hn">⚡ ĐGTD Bách Khoa / ĐHQGHN</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>🏫 Khối Lớp / Hệ Thi</label>
+              <select id="mathGenGradeSelect" style="font-weight:700;">
+                <option value="6">Toán 6</option>
+                <option value="7">Toán 7</option>
+                <option value="8">Toán 8</option>
+                <option value="9">Toán 9</option>
+                <option value="10" selected>Toán 10</option>
+                <option value="11">Toán 11</option>
+                <option value="12">Toán 12</option>
+                <option value="TS10">Luyện Thi Vào 10</option>
+                <option value="DGNL">🧠 ĐGNL (ĐHQG & TSA)</option>
+                <option value="all">Tổng Hợp Đa Dạng</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>📅 Kỳ Thi / Phân Loại</label>
+              <select id="mathGenTermSelect" style="font-weight:700;">
+                <option value="GK1" selected>🍂 Giữa Học Kỳ 1 (GK1)</option>
+                <option value="CK1">❄️ Cuối Học Kỳ 1 (CK1)</option>
+                <option value="GK2">🌸 Giữa Học Kỳ 2 (GK2)</option>
+                <option value="CK2">☀️ Cuối Học Kỳ 2 (CK2)</option>
+                <option value="TS10">🎓 Tuyển Sinh Vào 10</option>
+                <option value="THPT">🏛️ Thi Tốt Nghiệp THPT</option>
+                <option value="DGNL">🧠 Đánh Giá Năng Lực</option>
+                <option value="all">Tổng Hợp Cả Năm</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>📖 Chủ Đề Trắc Nghiệm</label>
+              <select id="mathGenTopicSelect" style="font-weight:700;">
+                <option value="all" selected>Tất cả chủ đề</option>
+                <option value="Số học">Số học & Tập hợp</option>
+                <option value="Đại số">Đại số & Phương trình</option>
+                <option value="Hình học">Hình học & Đo lường</option>
+                <option value="Hàm số">Hàm số & Parabol</option>
+                <option value="Vectơ">Vectơ & Tọa độ Oxy</option>
+                <option value="DGNL_Logic">ĐGNL: Logic & Suy Luận</option>
+                <option value="DGNL_Data">ĐGNL: Xử Lý Số Liệu</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="min-width: 140px;">
+              <label style="font-weight:800;color:var(--indigo);">⏱️ Thời Gian Làm Bài (Phút)</label>
+              <input type="number" id="mathGenTimeLimitInput" value="45" min="1" max="180" oninput="syncExamTimeLimits(this.value, 'mathGen')" style="font-weight:800;border:2px solid var(--indigo);border-radius:var(--radius-md);padding:0.45rem 0.65rem;background:var(--bg-tertiary);width:100%;">
+            </div>
+
+            <div class="form-group">
+              <label>📝 Số Câu Trắc Nghiệm</label>
+              <select id="mathGenMcqCountSelect" style="font-weight:700;">
+                <option value="12" selected>12 Câu trắc nghiệm (Chuẩn Bộ GD)</option>
+                <option value="0">0 Câu (Chỉ Tự Luận 100%)</option>
+                <option value="10">10 Câu trắc nghiệm</option>
+                <option value="15">15 Câu trắc nghiệm</option>
+                <option value="20">20 Câu trắc nghiệm</option>
+                <option value="30">30 Câu trắc nghiệm</option>
+                <option value="40">40 Câu trắc nghiệm</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>📚 Nguồn Đề Thi & Trích Dẫn</label>
+              <select id="mathGenSourceSelect" style="font-weight:700;border:1.5px solid var(--primary);background:var(--primary-light);color:var(--primary-shadow);">
+                <option value="document" selected>📚 Trích Xuất Trực Tiếp Từ Kho TÀI LIỆU (ĐGNL & Chuyên Đề)</option>
+                <option value="hybrid">🔀 Kết Hợp (Kho Tài Liệu + Sinh Số Ngẫu Nhiên)</option>
+                <option value="synthetic">⚙️ Sinh Ngẫu Nhiên Thuần Túy (MathEngine Parametric)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- DETAILED ESSAY MATRIX SPECIFICATION WIDGET -->
+          <div class="card" style="background:#ffffff;border:2px solid #8b5cf6;padding:1.1rem 1.25rem;margin-bottom:1.25rem;border-radius:var(--radius-lg);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem;">
+              <h4 style="margin:0;font-size:1.05rem;color:#6d28d9;display:flex;align-items:center;gap:0.4rem;">
+                <span>✍️</span> <strong>Quy Định Số Lượng & Mức Độ Chi Tiết Các Câu Tự Luận (Essay Matrix)</strong>
+              </h4>
+              <span class="badge-status" id="mathGenTotalEssaySummaryBadge" style="background:#ede9fe;color:#6d28d9;font-weight:800;">
+                Tổng: 3 câu tự luận (TH: 1 · VD: 1 · VDC: 1)
+              </span>
+            </div>
+
+            <div class="form-row" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:0.75rem;margin-bottom:0;">
+              <!-- Level 1: TH -->
+              <div style="background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:8px;padding:0.75rem 0.85rem;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;">
+                  <span style="font-weight:800;color:#0369a1;font-size:0.88rem;">💡 Thông Hiểu (TH)</span>
+                  <select id="mathGenCountTHSelect" onchange="updateMathGenEssaySummary()" style="width:70px;padding:2px 6px;font-weight:800;border:1.5px solid #0284c7;border-radius:6px;">
+                    <option value="0">0 câu</option>
+                    <option value="1" selected>1 câu</option>
+                    <option value="2">2 câu</option>
+                    <option value="3">3 câu</option>
+                  </select>
+                </div>
+                <div style="font-size:0.75rem;color:#0284c7;line-height:1.35;">
+                  Rút gọn biểu thức, tính giá trị phân số, giải PT cơ bản.
+                </div>
+              </div>
+
+              <!-- Level 2: VD -->
+              <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:8px;padding:0.75rem 0.85rem;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;">
+                  <span style="font-weight:800;color:#b45309;font-size:0.88rem;">🧠 Vận Dụng (VD)</span>
+                  <select id="mathGenCountVDSelect" onchange="updateMathGenEssaySummary()" style="width:70px;padding:2px 6px;font-weight:800;border:1.5px solid #d97706;border-radius:6px;">
+                    <option value="0">0 câu</option>
+                    <option value="1" selected>1 câu</option>
+                    <option value="2">2 câu</option>
+                    <option value="3">3 câu</option>
+                    <option value="4">4 câu</option>
+                  </select>
+                </div>
+                <div style="font-size:0.75rem;color:#b45309;line-height:1.35;">
+                  Hệ thức Vi-ét, toán thực tế lập PT, hình học phẳng & không gian.
+                </div>
+              </div>
+
+              <!-- Level 3: VDC -->
+              <div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:8px;padding:0.75rem 0.85rem;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;">
+                  <span style="font-weight:800;color:#b91c1c;font-size:0.88rem;">🔥 Vận Dụng Cao (VDC)</span>
+                  <select id="mathGenCountVDCSelect" onchange="updateMathGenEssaySummary()" style="width:70px;padding:2px 6px;font-weight:800;border:1.5px solid #dc2626;border-radius:6px;">
+                    <option value="0">0 câu</option>
+                    <option value="1" selected>1 câu</option>
+                    <option value="2">2 câu</option>
+                    <option value="3">3 câu</option>
+                  </select>
+                </div>
+                <div style="font-size:0.75rem;color:#b91c1c;line-height:1.35;">
+                  Bất đẳng thức Cauchy, cực trị hình học, tham số m (Câu điểm 10).
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- BATCH EXAM GENERATION CONFIGURATION WIDGET -->
+          <div class="card" style="background:var(--bg-card);border:2px solid var(--indigo);padding:1.15rem 1.25rem;margin-bottom:1.25rem;border-radius:var(--radius-lg);box-shadow:0 4px 0 var(--indigo-shadow);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem;">
+              <h4 style="margin:0;font-size:1.05rem;color:var(--indigo);display:flex;align-items:center;gap:0.4rem;">
+                <span>⚡</span> <strong>Tùy Chọn Tạo Hàng Loạt Nhiều Đề Thi (Batch Auto-Generator)</strong>
+              </h4>
+              <span class="badge-status" id="mathGenBatchStatusBadge" style="background:var(--indigo-light);color:var(--indigo-shadow);font-weight:800;">
+                🛡️ Chế độ: Đảm bảo 100% không trùng lặp câu hỏi
+              </span>
+            </div>
+
+            <div class="form-row" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:0.85rem;margin-bottom:0.75rem;">
+              <!-- Số Lượng Đề Cần Sinh -->
+              <div class="form-group" style="margin-bottom:0;">
+                <label style="font-weight:800;color:var(--text-primary);display:flex;align-items:center;gap:0.35rem;">
+                  🔢 Số Lượng Đề Cần Tạo Một Lần
+                </label>
+                <select id="mathGenBatchCountSelect" onchange="updateMathGenBatchButtonText()" style="font-weight:800;border:2px solid var(--indigo);border-radius:var(--radius-md);padding:0.6rem 0.85rem;background:var(--bg-tertiary);width:100%;">
+                  <option value="1">1 Đề thi (Đơn lẻ tiêu chuẩn)</option>
+                  <option value="2">2 Đề thi khác nhau</option>
+                  <option value="3">3 Đề thi khác nhau</option>
+                  <option value="5" selected>⭐ 5 Đề thi (Khuyên dùng — Không trùng câu hỏi)</option>
+                  <option value="10">🚀 10 Đề thi (Không trùng lặp)</option>
+                  <option value="20">🔥 20 Đề thi (Ngân hàng đề lớn)</option>
+                </select>
+              </div>
+
+              <!-- Cơ Chế Chống Trùng Lặp -->
+              <div class="form-group" style="margin-bottom:0;">
+                <label style="font-weight:800;color:var(--text-primary);display:flex;align-items:center;gap:0.35rem;">
+                  🛡️ Cơ Chế Xử Lý Trùng Lặp
+                </label>
+                <select id="mathGenDeduplicatePolicySelect" onchange="updateMathGenBatchPolicyNotice()" style="font-weight:800;border:2px solid var(--primary);border-radius:var(--radius-md);padding:0.6rem 0.85rem;background:var(--primary-light);color:var(--primary-shadow);width:100%;">
+                  <option value="disjoint" selected>🛡️ 100% Độc Lập — Không Trùng Câu Hỏi (Disjoint Questions)</option>
+                  <option value="variant_shuffle">🔀 Đảo Mã Đề Chuẩn Bộ GD (Mã 101, 102... Hoán Vị Câu & A-B-C-D)</option>
+                </select>
+              </div>
+
+              <!-- Tiền Tố Đặt Tên Đề -->
+              <div class="form-group" style="margin-bottom:0;">
+                <label style="font-weight:800;color:var(--text-primary);display:flex;align-items:center;gap:0.35rem;">
+                  🏷️ Tiền Tố Tên Bộ Đề (Tùy chọn)
+                </label>
+                <input type="text" id="mathGenBatchTitlePrefixInput" placeholder="VD: Khảo Sát Toán 10 (Để trống tự đặt)..." style="font-weight:700;border:2px solid var(--border-color);border-radius:var(--radius-md);padding:0.6rem 0.85rem;width:100%;">
+              </div>
+            </div>
+
+            <div id="mathGenBatchNotice" style="font-size:0.84rem;color:var(--text-secondary);background:var(--bg-tertiary);padding:0.6rem 0.9rem;border-radius:var(--radius-sm);border-left:4px solid var(--indigo);">
+              💡 <strong>Chế độ 100% Độc Lập:</strong> Hệ thống tự động theo dõi và khóa chữ ký câu hỏi trên toàn bộ 5/10 đề. Mỗi câu hỏi trong đề 2, 3, 4, 5... đảm bảo khác biệt hoàn toàn với các đề trước, kết hợp giữa ngân hàng câu hỏi thực tế và bộ sinh tham số ngẫu nhiên.
+            </div>
+          </div>
+
+          <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+            <button type="button" id="btnAutoGenerateMathExam" class="btn btn-primary btn-lg" onclick="triggerAutoGenerateMathExam()" style="background:linear-gradient(135deg, #6366f1, #8b5cf6);">
+              ⚡ TỰ ĐỘNG SINH 5 ĐỀ TOÁN (KHÔNG TRÙNG LẶP) & NẠP HỆ THỐNG 🚀
+            </button>
+            <button type="button" class="btn btn-secondary btn-lg" onclick="previewGeneratedMathExamDocument()">
+              👁️ Xem Trước Bản In Đề Toán (LaTeX)
+            </button>
+          </div>
+
+          <div id="mathGenResultBox" class="hidden" style="margin-top:1rem;"></div>
+        </div>
+
+        <!-- Section 1C: BATCH EXAM PUBLISHING -->
+        <div class="card" style="border-left: 6px solid var(--sky);background: linear-gradient(180deg, var(--bg-card) 0%, rgba(224, 242, 254, 0.2) 100%);">
+          <div class="card-header">
+            <h2><span>⚡</span> Tải Lên & Phát Hành Hàng Loạt Nhiều Đề Thi (Batch Upload)</h2>
+            <span class="badge-status badge-pass" id="batchQueueCountBadge">0 đề</span>
+          </div>
+          <p class="card-subtitle">
+            Tải lên cùng lúc nhiều file đề (PDF / ảnh), thiết lập cấu hình chung và phát hành hàng loạt chỉ trong 1 cú nhấp chuột!
+          </p>
+
+          <div class="form-row" style="background:var(--bg-tertiary);padding:1rem 1.25rem;border-radius:var(--radius-lg);border:2px solid var(--border-color);margin-bottom:1.25rem;">
+            <div class="form-group">
+              <label>⏱️ Thời Gian Mặc Định Cho Mỗi Đề (Phút)</label>
+              <input type="number" id="batchCommonTimeLimitInput" value="45" min="1" max="180" oninput="syncExamTimeLimits(this.value, 'batch')">
+            </div>
+            <div class="form-group">
+              <label>📝 Số Câu Hỏi Mặc Định</label>
+              <select id="batchCommonQuestionCountSelect" style="font-weight:700;">
+                <option value="10">10 Câu</option>
+                <option value="12" selected>12 Câu</option>
+                <option value="15">15 Câu</option>
+                <option value="20">20 Câu</option>
+                <option value="30">30 Câu</option>
+                <option value="40">40 Câu</option>
+                <option value="50">50 Câu</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>🎯 Đối Tượng Giao Chung</label>
+              <select id="batchCommonAssignTypeSelect" style="font-weight:700;">
+                <option value="all" selected>🌍 Công khai toàn bộ</option>
+                <option value="classes">🏫 Giao theo Lớp</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-bottom:1.25rem;">
+            <label style="font-weight:800;color:var(--text-primary);display:block;margin-bottom:0.4rem;">📁 Chọn nhiều file đề thi cùng lúc (Giữ phím Ctrl hoặc Shift để chọn nhiều file PDF / ảnh):</label>
+            <input type="file" id="batchExamFilesInput" accept="application/pdf,image/*" multiple onchange="handleBatchFilesSelect()">
+          </div>
+
+          <div id="batchQueueTableWrap"></div>
+        </div>
+
+      </div>
+
+      <!-- ================= SUB-TAB 2: QUẢN LÝ ĐỀ & LỚP ================= -->
+      <div id="teacherSubtabView_manage" class="hidden">
+        
+        <!-- Section 2A: Manage & Delete Quizzes -->
+        <div class="card" style="border-left: 6px solid var(--indigo);">
+          <div class="card-header">
+            <h2><span>📂</span> Quản Lý Đề Thi Hiện Có (Admin Desk)</h2>
+          </div>
+          <p class="card-subtitle">
+            Danh sách toàn bộ các đề thi trên hệ thống. Bạn có thể xem bảng điểm, thi thử hoặc xóa đề cũ:
+          </p>
+          <div id="teacherQuizManagerWrap"></div>
+        </div>
+
+        <!-- Section 2B: Student & Class Roster Manager -->
+        <div class="card" style="border-left: 6px solid var(--primary);">
+          <div class="card-header">
+            <h2><span>👥</span> Quản Lý Danh Bạ Học Sinh & Lớp Học</h2>
+          </div>
+          <p class="card-subtitle">
+            Danh sách học sinh được phân chia theo từng lớp. Dùng để phân quyền giao đề theo lớp hoặc giao đích danh cho từng bạn:
+          </p>
+          <div id="teacherRosterManagerWrap"></div>
+        </div>
+
+      </div>
+
+      <!-- ================= SUB-TAB 3: THỐNG KÊ & PHÂN TÍCH ================= -->
+      <div id="teacherSubtabView_analytics" class="hidden">
+        
+        <!-- Section 3A: REAL METRICS & ANALYTICS DASHBOARD FOR TEACHERS -->
+        <div class="card" style="border-left: 6px solid var(--indigo);background:linear-gradient(180deg, var(--bg-card) 0%, rgba(240, 244, 255, 0.4) 100%);">
+          <div class="card-header">
+            <h2><span>📈</span> Trung Tâm Thống Kê & Phân Tích Số Liệu Thực Tế (Analytics Dashboard)</h2>
+          </div>
+          <p class="card-subtitle">
+            Thống kê chi tiết số câu đúng, số câu không giải được, thang điểm trung bình và biểu đồ tiến độ học lực theo Ngày / Tuần / Tháng:
+          </p>
+          <div id="teacherAnalyticsDashboardWrap"></div>
+        </div>
+
+      </div>
+
+      <!-- ================= SUB-TAB 4: CÀI ĐẶT & CLOUD ================= -->
+      <div id="teacherSubtabView_settings" class="hidden">
+        
+        <!-- Firebase Cloud Config Panel -->
+        <div class="card" style="border-left: 6px solid var(--rose); background: linear-gradient(180deg, var(--bg-card) 0%, rgba(254, 242, 242, 0.3) 100%);">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.4rem;">
+            <h2 style="margin:0;font-size:1.35rem;color:var(--rose);display:flex;align-items:center;gap:0.5rem;">
+              <span>☁️</span> Cấu Hình Đồng Bộ Đám Mây Cloud Sync (Firebase)
+            </h2>
+            <span class="badge-status badge-fail" id="firebaseConnectionBadge">Đang Chạy Offline 📴</span>
+          </div>
+          <p class="card-subtitle">
+            Đồng bộ danh sách học sinh, điểm số trực tuyến và lưu trữ file PDF đề thi không giới hạn thông qua Firebase. Nhấn để mở bảng cấu hình:
+          </p>
+
+          <div style="margin-top:0.75rem;">
+            <button type="button" class="btn btn-secondary btn-sm" id="btnToggleFirebaseForm" onclick="toggleFirebaseConfigForm()">⚙️ Cấu Hình Firebase API Credentials</button>
+          </div>
+
+          <div id="firebaseConfigFormWrapper" class="hidden" style="margin-top:1.25rem;border-top:1px dashed var(--border-color);padding-top:1.25rem;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:0.75rem;margin-bottom:1rem;">
+              <div class="form-group">
+                <label>API Key</label>
+                <input type="text" id="fbApiKey" placeholder="AIzaSy..." autocomplete="off" spellcheck="false">
+              </div>
+              <div class="form-group">
+                <label>Project ID</label>
+                <input type="text" id="fbProjectId" placeholder="khiemedu-xxxx">
+              </div>
+              <div class="form-group">
+                <label>Storage Bucket</label>
+                <input type="text" id="fbStorageBucket" placeholder="khiemedu-xxxx.appspot.com">
+              </div>
+              <div class="form-group">
+                <label>Auth Domain</label>
+                <input type="text" id="fbAuthDomain" placeholder="khiemedu-xxxx.firebaseapp.com">
+              </div>
+              <div class="form-group">
+                <label>App ID</label>
+                <input type="text" id="fbAppId" placeholder="1:xxxxxx:web:xxxxxx">
+              </div>
+              <div class="form-group">
+                <label>Messaging Sender ID (Tùy chọn)</label>
+                <input type="text" id="fbSenderId" placeholder="xxxxxxxxx">
+              </div>
+            </div>
+
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
+              <button type="button" class="btn btn-primary" onclick="handleSaveFirebaseConfig()">💾 Lưu & Kết Nối Cloud ⚡</button>
+              <button type="button" class="btn btn-secondary" onclick="handleResetFirebaseDefaultConfig()">🔄 Khôi Phục Cấu Hình Gốc</button>
+              <button type="button" class="btn btn-secondary" onclick="handleTestFirebaseConnection()">🩺 Kiểm Tra Kết Nối Cloud</button>
+              <button type="button" class="btn btn-sky" onclick="handleSyncLocalToFirebase()">☁️ Đồng Bộ Dữ Liệu Lên Cloud</button>
+              <button type="button" class="btn btn-secondary" onclick="handleDisableFirebase()">📴 Chạy Offline (Tạm ngắt)</button>
+              <button type="button" class="btn btn-danger btn-sm" onclick="handleClearFirebaseConfig()">🗑️ Xóa Credentials</button>
+            </div>
+            <div id="firebaseConnectionStatusBox" style="margin-top:0.75rem;font-size:0.875rem;"></div>
+          </div>
+        </div>
+
+        <!-- Security & Administration Controls -->
+        <div class="card" style="border-left: 6px solid var(--indigo);">
+          <div class="card-header">
+            <h2><span>🔒</span> Quản Trị & Bảo Mật Giáo Viên</h2>
+          </div>
+          <p class="card-subtitle">
+            Cài đặt bảo mật, đổi mã PIN quản trị và quản lý dữ liệu lưu trữ trên trình duyệt:
+          </p>
+
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
+            <button type="button" class="btn btn-secondary" onclick="promptChangeTeacherPin()">🔑 Đổi Mã PIN Đăng Nhập</button>
+            <button type="button" class="btn btn-secondary" onclick="exportPlatformDataBackup()">💾 Sao Lưu Toàn Bộ Dữ Liệu (Backup JSON)</button>
+            <button type="button" class="btn btn-warning" onclick="handleAdminClearAllTestResults()" style="background:var(--amber-light);color:var(--amber-shadow);border:1.5px solid var(--amber);" title="Xóa toàn bộ bài nộp thử nghiệm để reset biểu đồ sạch sẽ">🧹 Dọn Dẹp / Reset Dữ Liệu Bài Nộp Test</button>
+            <button type="button" class="btn btn-danger btn-sm" onclick="TeacherAuth.logout()">🔒 Khóa Tab & Đăng Xuất</button>
+          </div>
         </div>
 
       </div>
@@ -1079,16 +1301,21 @@ GIANG, 8"></textarea>
             </div>
           </div>
 
-          <!-- Time Period Pills -->
-          <div class="time-filter-bar" style="margin:0;">
-            <button type="button" class="time-filter-btn active" id="periodBtn_current" onclick="setWeeklyPeriod('current')">
-              <span>📅 Tuần Này</span>
-            </button>
-            <button type="button" class="time-filter-btn" id="periodBtn_previous" onclick="setWeeklyPeriod('previous')">
-              <span>⏮️ Tuần Trước</span>
-            </button>
-            <button type="button" class="time-filter-btn" id="periodBtn_all" onclick="setWeeklyPeriod('all')">
-              <span>🌟 Toàn Thời Gian</span>
+          <!-- Time Period Pills & Admin Reset Action -->
+          <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+            <div class="time-filter-bar" style="margin:0;">
+              <button type="button" class="time-filter-btn active" id="periodBtn_current" onclick="setWeeklyPeriod('current')">
+                <span>📅 Tuần Này</span>
+              </button>
+              <button type="button" class="time-filter-btn" id="periodBtn_previous" onclick="setWeeklyPeriod('previous')">
+                <span>⏮️ Tuần Trước</span>
+              </button>
+              <button type="button" class="time-filter-btn" id="periodBtn_all" onclick="setWeeklyPeriod('all')">
+                <span>🌟 Toàn Thời Gian</span>
+              </button>
+            </div>
+            <button type="button" class="btn btn-danger btn-sm" id="btnAdminResetVinhDanh" onclick="openResetVinhDanhModal()" title="Quyền Admin: Reset điểm số Bảng Vàng & Vinh Danh" style="display:inline-flex;align-items:center;gap:0.4rem;font-weight:800;border-radius:var(--radius-full);padding:0.45rem 1rem;font-size:0.85rem;white-space:nowrap;box-shadow:0 3px 0 #b91c1c;">
+              <span>🔄</span> <span>Reset Điểm Vinh Danh</span>
             </button>
           </div>
         </div>
@@ -1166,8 +1393,11 @@ GIANG, 8"></textarea>
 
         <!-- Full Detailed Table Card -->
         <div class="card">
-          <div class="card-header">
+          <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;">
             <h2><span>📋</span> Bảng Xếp Hạng Chi Tiết Hàng Tuần</h2>
+            <button type="button" class="btn btn-danger btn-sm" onclick="openResetVinhDanhModal()" title="Reset Điểm Bảng Vàng" style="display:inline-flex;align-items:center;gap:0.35rem;font-weight:800;border-radius:var(--radius-full);padding:0.35rem 0.85rem;font-size:0.8rem;box-shadow:0 2px 0 #b91c1c;">
+              <span>🔄</span> <span>Reset Điểm Bảng Vàng</span>
+            </button>
           </div>
           <div id="hallOfFameListWrap"></div>
         </div>
@@ -1268,13 +1498,156 @@ GIANG, 8"></textarea>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
 
+  <!-- PDF.js Library (Khớp version worker 3.11.174) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
   <!-- Main Scripts -->
   <script src="js/firebase.js?v=3.2"></script>
   <script src="js/storage.js?v=3.2"></script>
   <script src="js/sound.js?v=3.2"></script>
   <script src="js/gamification.js?v=3.2"></script>
-  <script src="js/pdfExtractor.js?v=3.2"></script>
-  <script src="js/mathGenerator.js?v=3.2"></script>
-  <script src="js/app.js?v=3.4"></script>
+  <script src="js/pdfExtractor.js?v=4.0"></script>
+  <script src="js/documentQuestionBank.js?v=4.0"></script>
+  <script src="js/mathGenerator.js?v=4.0"></script>
+  <script src="js/app.js?v=4.0"></script>
+  <!-- BATCH EXAM RESULTS MODAL -->
+  <div id="batchGenResultsModal" class="hidden" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.7);backdrop-filter:blur(4px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.25rem;">
+    <div style="background:var(--bg-card);border:2px solid var(--indigo);border-radius:var(--radius-xl);max-width:960px;width:100%;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 40px rgba(0,0,0,0.3);animation:bounceIn 0.25s ease-out;overflow:hidden;">
+      
+      <!-- Modal Header -->
+      <div style="padding:1.25rem 1.5rem;border-bottom:2px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.08));">
+        <div>
+          <h3 id="batchGenModalTitle" style="margin:0;font-size:1.25rem;color:var(--text-primary);display:flex;align-items:center;gap:0.5rem;">
+            <span>🎉</span> <span>ĐÃ SINH & LƯU THÀNH CÔNG BỘ ĐỀ THI KHÔNG TRÙNG LẶP!</span>
+          </h3>
+          <p id="batchGenModalSubtitle" style="margin:0.25rem 0 0;font-size:0.875rem;color:var(--text-secondary);font-weight:600;">
+            Tất cả các đề đã được cấp mã thi riêng biệt, lưu trữ bộ nhớ và đồng bộ sẵn sàng thi thử.
+          </p>
+        </div>
+        <button type="button" class="icon-btn" onclick="closeBatchGenResultsModal()" title="Đóng" style="font-size:1.2rem;line-height:1;">✕</button>
+      </div>
+
+      <!-- Modal Body / List of Exams -->
+      <div id="batchGenModalBody" style="padding:1.25rem 1.5rem;overflow-y:auto;flex:1;">
+        <!-- Populated via showBatchGenResultsModal() -->
+      </div>
+
+      <!-- Modal Footer -->
+      <div style="padding:1rem 1.5rem;border-top:2px solid var(--border-color);background:var(--bg-tertiary);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;">
+        <div style="font-size:0.875rem;color:var(--text-secondary);font-weight:700;" id="batchGenModalSummary">
+          Tổng cộng: 5 đề thi · 0 câu trùng lặp
+        </div>
+        <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+          <button type="button" class="btn btn-secondary" onclick="copyAllBatchQuizCodes()">
+            📋 Sao Chép Toàn Bộ Mã Đề
+          </button>
+          <button type="button" class="btn btn-primary" onclick="closeBatchGenResultsModal()">
+            ✓ Hoàn Tất & Xem Quản Lý Đề
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= MODAL ADMIN RESET ĐIỂM VINH DANH ================= -->
+  <div id="modalResetVinhDanh" class="hidden" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.7);backdrop-filter:blur(4px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.25rem;">
+    <div style="background:var(--bg-card);border:2px solid var(--rose);border-radius:var(--radius-xl);max-width:620px;width:100%;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 40px rgba(0,0,0,0.35);animation:bounceIn 0.25s ease-out;overflow:hidden;">
+      
+      <!-- Modal Header -->
+      <div style="padding:1.25rem 1.5rem;border-bottom:2px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg, rgba(244,63,94,0.1), rgba(239,68,68,0.06));">
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <span style="font-size:1.6rem;">🛡️</span>
+          <div>
+            <h3 style="margin:0;font-size:1.2rem;font-weight:900;color:var(--text-primary);">
+              QUYỀN ADMIN: RESET ĐIỂM VINH DANH
+            </h3>
+            <p style="margin:0.2rem 0 0;font-size:0.825rem;color:var(--text-secondary);font-weight:700;">
+              Làm mới Bảng Vàng thi đua hoặc đặt lại điểm số tích lũy của học sinh
+            </p>
+          </div>
+        </div>
+        <button type="button" class="icon-btn" onclick="closeResetVinhDanhModal()" title="Đóng" style="font-size:1.2rem;line-height:1;">✕</button>
+      </div>
+
+      <!-- Modal Body -->
+      <div style="padding:1.5rem;overflow-y:auto;flex:1;">
+        
+        <!-- PIN Verification if not logged in -->
+        <div id="resetVinhDanhPinGroup" style="margin-bottom:1.25rem;padding:1rem;background:var(--bg-tertiary);border-radius:var(--radius-md);border:1.5px dashed var(--border-color);">
+          <label style="display:block;font-size:0.85rem;font-weight:800;color:var(--text-primary);margin-bottom:0.4rem;">
+            🔐 Xác thực mã PIN Giáo Viên / Admin:
+          </label>
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <input type="password" id="adminResetVinhDanhPin" class="form-input" placeholder="Nhập mã PIN Quản Trị..." style="flex:1;font-weight:800;letter-spacing:2px;">
+          </div>
+        </div>
+
+        <p style="font-size:0.9rem;font-weight:800;color:var(--text-primary);margin-bottom:0.85rem;">
+          Chọn phạm vi muốn đặt lại điểm số:
+        </p>
+
+        <!-- Options Cards -->
+        <div style="display:flex;flex-direction:column;gap:0.85rem;">
+          
+          <!-- Option 1: Leaderboard -->
+          <div id="resetOptCard_leaderboard" onclick="selectResetVinhDanhOption('leaderboard')" style="padding:1rem;border:2px solid var(--rose);background:rgba(244,63,94,0.08);border-radius:var(--radius-lg);cursor:pointer;display:flex;gap:0.85rem;align-items:flex-start;transition:all 0.15s ease;">
+            <input type="radio" name="resetVinhDanhRadio" id="resetRadio_leaderboard" checked style="margin-top:0.25rem;cursor:pointer;">
+            <div style="flex:1;">
+              <div style="font-weight:900;font-size:0.95rem;color:var(--text-primary);display:flex;align-items:center;gap:0.4rem;">
+                <span>🏆</span> <span>Reset Bảng Vàng Vinh Danh (Toàn Hệ Thống)</span>
+                <span class="badge-status badge-pass" style="font-size:0.7rem;padding:2px 6px;">KHUYÊN DÙNG</span>
+              </div>
+              <div style="font-size:0.825rem;color:var(--text-secondary);margin-top:0.3rem;line-height:1.4;">
+                Xóa toàn bộ bài nộp thi thử, đưa điểm Bảng Vàng và thành tích các lớp về 0 để khởi động tuần thi đua mới.
+              </div>
+            </div>
+          </div>
+
+          <!-- Option 2: Profile -->
+          <div id="resetOptCard_profile" onclick="selectResetVinhDanhOption('profile')" style="padding:1rem;border:2px solid var(--border-color);background:var(--bg-card);border-radius:var(--radius-lg);cursor:pointer;display:flex;gap:0.85rem;align-items:flex-start;transition:all 0.15s ease;">
+            <input type="radio" name="resetVinhDanhRadio" id="resetRadio_profile" style="margin-top:0.25rem;cursor:pointer;">
+            <div style="flex:1;">
+              <div style="font-weight:900;font-size:0.95rem;color:var(--text-primary);display:flex;align-items:center;gap:0.4rem;">
+                <span>👤</span> <span>Reset Điểm XP & Cấp Độ Cá Nhân</span>
+              </div>
+              <div style="font-size:0.825rem;color:var(--text-secondary);margin-top:0.3rem;line-height:1.4;">
+                Đưa tài khoản người dùng hiện tại về Cấp 1, 0 XP, Streak 1 ngày và hoàn trả các vật phẩm cửa hàng.
+              </div>
+            </div>
+          </div>
+
+          <!-- Option 3: All -->
+          <div id="resetOptCard_all" onclick="selectResetVinhDanhOption('all')" style="padding:1rem;border:2px solid var(--border-color);background:var(--bg-card);border-radius:var(--radius-lg);cursor:pointer;display:flex;gap:0.85rem;align-items:flex-start;transition:all 0.15s ease;">
+            <input type="radio" name="resetVinhDanhRadio" id="resetRadio_all" style="margin-top:0.25rem;cursor:pointer;">
+            <div style="flex:1;">
+              <div style="font-weight:900;font-size:0.95rem;color:var(--text-primary);display:flex;align-items:center;gap:0.4rem;">
+                <span>⚡</span> <span>Reset Toàn Bộ (Cả Bảng Vàng & Điểm Cá Nhân)</span>
+              </div>
+              <div style="font-size:0.825rem;color:var(--text-secondary);margin-top:0.3rem;line-height:1.4;">
+                Khôi phục trạng thái hoàn toàn mới tinh cho cả Bảng Vàng lẫn tài khoản đang đăng nhập.
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div style="padding:1rem 1.5rem;border-top:2px solid var(--border-color);background:var(--bg-tertiary);display:flex;justify-content:flex-end;gap:0.75rem;align-items:center;">
+        <button type="button" class="btn btn-secondary" onclick="closeResetVinhDanhModal()">
+          ✕ Hủy Bỏ
+        </button>
+        <button type="button" class="btn btn-danger" onclick="executeAdminResetVinhDanh()" style="display:flex;align-items:center;gap:0.4rem;">
+          <span>⚡</span> <span>Xác Nhận Thực Hiện Reset</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="js/qa_driver.js"></script>
+  <div id="toastContainer" class="toast-container"></div>
 </body>
 </html>

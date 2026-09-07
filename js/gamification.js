@@ -495,7 +495,7 @@ const WeeklyHonorEngine = {
   calculateSpecialHonors(weeklyRankings, previousWeekRankings = []) {
     if (!weeklyRankings || weeklyRankings.length === 0) return {};
 
-    const titan = weeklyRankings.find(s => s.honorXp > 0) || weeklyRankings[0] || null;
+    const titan = weeklyRankings.find(s => (s.honorXp || 0) > 0) || null;
 
     let mostImproved = null;
     let maxDiff = 0;
@@ -676,6 +676,28 @@ const GamificationEngine = {
     localStorage.setItem('khiemedu_profile', JSON.stringify(profile));
   },
 
+  resetUserProfile(cleanStats = true) {
+    const current = this.getUserProfile();
+    const clean = {
+      name: current.name || 'Học Sinh K-EDU',
+      className: current.className || '10',
+      avatar: current.avatar || '🦊',
+      frame: 'frame-target',
+      xp: 0,
+      streak: 1,
+      perfectStreak: 0,
+      lastActiveDate: new Date().toISOString().slice(0, 10),
+      examsCount: 0,
+      perfectCount: 0,
+      totalCorrectAnswers: 0,
+      inventory: ['frame_target', 'frame-target'],
+      unlockedFrames: ['frame-target'],
+      unlockedBadges: []
+    };
+    this.saveUserProfile(clean);
+    return clean;
+  },
+
   equipAvatarFrame(frameCssClass) {
     const profile = this.getUserProfile();
     profile.frame = frameCssClass;
@@ -826,10 +848,11 @@ const GamificationEngine = {
 
   fireConfetti() {
     if (typeof confetti === 'function') {
-      confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
+      const colors = ['#58cc02', '#1cb0f6', '#ff9600', '#ce82ff', '#ff4b4b', '#ffd900'];
+      confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 }, colors });
       setTimeout(() => {
-        confetti({ particleCount: 70, angle: 60, spread: 60, origin: { x: 0 } });
-        confetti({ particleCount: 70, angle: 120, spread: 60, origin: { x: 1 } });
+        confetti({ particleCount: 70, angle: 60, spread: 60, origin: { x: 0 }, colors });
+        confetti({ particleCount: 70, angle: 120, spread: 60, origin: { x: 1 }, colors });
       }, 250);
     }
   }

@@ -103,11 +103,17 @@ const StorageEngine = {
     if (!this.db) await this.initIndexedDB();
     if (this.db) {
       return new Promise((resolve) => {
-        const tx = this.db.transaction([STORE_PDFS], 'readwrite');
-        const store = tx.objectStore(STORE_PDFS);
-        store.put(base64OrBlob, 'pdf_' + quizId);
-        tx.oncomplete = () => resolve(true);
-        tx.onerror = () => resolve(false);
+        const timer = setTimeout(() => resolve(false), 800);
+        try {
+          const tx = this.db.transaction([STORE_PDFS], 'readwrite');
+          const store = tx.objectStore(STORE_PDFS);
+          store.put(base64OrBlob, 'pdf_' + quizId);
+          tx.oncomplete = () => { clearTimeout(timer); resolve(true); };
+          tx.onerror = () => { clearTimeout(timer); resolve(false); };
+        } catch (e) {
+          clearTimeout(timer);
+          resolve(false);
+        }
       });
     }
     // Fallback only for small files
@@ -121,11 +127,17 @@ const StorageEngine = {
     if (!this.db) await this.initIndexedDB();
     if (this.db) {
       const localPdf = await new Promise((resolve) => {
-        const tx = this.db.transaction([STORE_PDFS], 'readonly');
-        const store = tx.objectStore(STORE_PDFS);
-        const req = store.get('pdf_' + quizId);
-        req.onsuccess = () => resolve(req.result || null);
-        req.onerror = () => resolve(null);
+        const timer = setTimeout(() => resolve(null), 800);
+        try {
+          const tx = this.db.transaction([STORE_PDFS], 'readonly');
+          const store = tx.objectStore(STORE_PDFS);
+          const req = store.get('pdf_' + quizId);
+          req.onsuccess = () => { clearTimeout(timer); resolve(req.result || null); };
+          req.onerror = () => { clearTimeout(timer); resolve(null); };
+        } catch (e) {
+          clearTimeout(timer);
+          resolve(null);
+        }
       });
       if (localPdf) return localPdf;
     }
@@ -460,22 +472,159 @@ const StorageEngine = {
     return !!sub;
   },
 
+  async deleteResult(resultId, quizId = null, className = null, name = null) {
+    // 1. Remove from LocalStorage
+    const cleanKey = resultId.replace(STORAGE_PREFIX, '');
+    await this.remove(cleanKey);
+    await this.remove(resultId);
+
+    // 2. Clear student submission lock so they can retake if needed
+    if (quizId && className && name) {
+      await this.remove(`submitted:${quizId}:${className}_${name}`);
+    } else {
+      // Parse info from resultId format: result:quizId:className_name_timestamp
+      const parts = cleanKey.split(':');
+      if (parts.length >= 3) {
+        const qId = parts[1];
+        const studentRaw = parts[2];
+        const lastUnder = studentRaw.lastIndexOf('_');
+        if (lastUnder > 0) {
+          const classAndName = studentRaw.substring(0, lastUnder);
+          await this.remove(`submitted:${qId}:${classAndName}`);
+        }
+      }
+    }
+
+    // 3. Mark in deleted tombstones to prevent resurrecting from Cloud sync
+    const deletedRes = this.getDeletedResultIds();
+    deletedRes.add(resultId);
+    deletedRes.add(cleanKey);
+    localStorage.setItem(STORAGE_PREFIX + 'deleted_results', JSON.stringify(Array.from(deletedRes)));
+
+    // 4. Delete from Firebase Firestore if connected
+    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
+      await window.FirebaseEngine.deleteResult(resultId);
+    }
+
+    if (this.channel) {
+      this.channel.postMessage({ type: 'results_updated', resultId });
+    }
+    return true;
+  },
+
+  async resetSubmissionForRetake(quizId, className, name) {
+    // Xóa khóa nộp bài để học sinh có thể làm lại bài thi từ đầu
+    await this.remove(`submitted:${quizId}:${className}_${name}`);
+    
+    // Tìm và xóa bài nộp tương ứng của học sinh này
+    const all = await this.getAllResults();
+    const matches = all.filter(r => 
+      r.quizId === quizId && 
+      (r.name || '').toLowerCase() === (name || '').toLowerCase() &&
+      (!className || (r.className || '').toLowerCase() === className.toLowerCase())
+    );
+
+    for (const m of matches) {
+      await this.deleteResult(m.id || m.key, quizId, className, name);
+    }
+    return true;
+  },
+
+  async penalizeCheatedSubmission(resultId, reason = 'Vi phạm chống gian lận (Rời màn hình nhiều lần)') {
+    // Đặt điểm về 0 và gắn cờ gian lận minh bạch
+    const cleanKey = resultId.replace(STORAGE_PREFIX, '');
+    let res = await this.get(cleanKey);
+    if (!res) res = await this.get(resultId);
+    if (!res) return false;
+
+    res.totalScore = 0;
+    res.score = 0;
+    res.isCheated = true;
+    res.cheatReason = reason;
+    res.penalizedAt = new Date().toISOString();
+
+    await this.set(cleanKey, res);
+    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
+      await window.FirebaseEngine.saveResult(res);
+    }
+    if (this.channel) {
+      this.channel.postMessage({ type: 'results_updated', resultId });
+    }
+    return true;
+  },
+
+  async clearResultsByQuiz(quizId) {
+    const keys = await this.list(`result:${quizId}:`);
+    for (const k of keys) {
+      await this.deleteResult(k, quizId);
+    }
+    const submittedKeys = await this.list(`submitted:${quizId}:`);
+    for (const sk of submittedKeys) {
+      await this.remove(sk);
+    }
+    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
+      await window.FirebaseEngine.deleteResultsByQuiz(quizId);
+    }
+    return true;
+  },
+
+  async clearAllTestResults() {
+    // Dọn dẹp sạch toàn bộ bài nộp thử nghiệm (reset thống kê về 0)
+    const keys = await this.list('result:');
+    for (const k of keys) {
+      await this.remove(k);
+    }
+    const submittedKeys = await this.list('submitted:');
+    for (const sk of submittedKeys) {
+      await this.remove(sk);
+    }
+    localStorage.removeItem(STORAGE_PREFIX + 'deleted_results');
+
+    if (window.FirebaseEngine && window.FirebaseEngine.isActive && typeof window.FirebaseEngine.deleteAllResults === 'function') {
+      try {
+        await window.FirebaseEngine.deleteAllResults();
+      } catch (err) {
+        console.warn('Firebase deleteAllResults error:', err);
+      }
+    }
+
+    if (this.channel) {
+      this.channel.postMessage({ type: 'results_updated', all: true });
+    }
+    return true;
+  },
+
+  getDeletedResultIds() {
+    try {
+      const raw = localStorage.getItem(STORAGE_PREFIX + 'deleted_results');
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch (e) {
+      return new Set();
+    }
+  },
+
   async getResultsByQuiz(quizId) {
+    const deletedRes = this.getDeletedResultIds();
+
     if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
       const cloudResults = await window.FirebaseEngine.getResultsByQuiz(quizId);
       if (cloudResults && cloudResults.length > 0) {
+        const validCloud = [];
         for (const r of cloudResults) {
+          if (deletedRes.has(r.id) || deletedRes.has(r.key)) continue;
           await this.set(r.id || `result:${r.quizId}:${r.className}_${r.name}_${Date.now()}`, r);
+          validCloud.push(r);
         }
-        return cloudResults;
+        return validCloud;
       }
     }
 
     const keys = await this.list(`result:${quizId}:`);
     const results = [];
     for (const key of keys) {
+      if (deletedRes.has(key)) continue;
       const r = await this.get(key);
-      if (r) {
+      if (r && !deletedRes.has(r.id)) {
         r.key = key;
         results.push(r);
       }
@@ -484,21 +633,27 @@ const StorageEngine = {
   },
 
   async getAllResults() {
+    const deletedRes = this.getDeletedResultIds();
+
     if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
       const cloudResults = await window.FirebaseEngine.getAllResults();
       if (cloudResults && cloudResults.length > 0) {
+        const validCloud = [];
         for (const r of cloudResults) {
+          if (deletedRes.has(r.id) || deletedRes.has(r.key)) continue;
           await this.set(r.id || `result:${r.quizId}:${r.className}_${r.name}_${Date.now()}`, r);
+          validCloud.push(r);
         }
-        return cloudResults;
+        return validCloud;
       }
     }
 
     const keys = await this.list('result:');
     const results = [];
     for (const key of keys) {
+      if (deletedRes.has(key)) continue;
       const r = await this.get(key);
-      if (r) {
+      if (r && !deletedRes.has(r.id)) {
         r.key = key;
         results.push(r);
       }

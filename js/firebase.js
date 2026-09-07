@@ -426,6 +426,53 @@ const FirebaseEngine = {
     }
   },
 
+  async deleteResult(resultId) {
+    if (!this.isActive) return false;
+    try {
+      await this.db.collection('results').doc(resultId).delete();
+      console.log('☁️ Result deleted from Firestore:', resultId);
+      return true;
+    } catch (e) {
+      console.error('Firestore deleteResult error:', e);
+      return false;
+    }
+  },
+
+  async deleteResultsByQuiz(quizId) {
+    if (!this.isActive) return false;
+    try {
+      const snapshot = await this.db.collection('results').where('quizId', '==', quizId).get();
+      const batch = this.db.batch();
+      snapshot.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+      console.log('☁️ All results for quiz deleted from Firestore:', quizId);
+      return true;
+    } catch (e) {
+      console.error('Firestore deleteResultsByQuiz error:', e);
+      return false;
+    }
+  },
+
+  async deleteAllResults() {
+    if (!this.isActive) return false;
+    try {
+      const snapshot = await this.db.collection('results').get();
+      if (snapshot.empty) return true;
+      const batch = this.db.batch();
+      snapshot.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+      console.log('☁️ All test results permanently deleted from Firestore');
+      return true;
+    } catch (e) {
+      console.error('Firestore deleteAllResults error:', e);
+      return false;
+    }
+  },
+
   async getResultsByQuiz(quizId) {
     if (!this.isActive) return [];
     try {
