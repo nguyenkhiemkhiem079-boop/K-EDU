@@ -1,0 +1,15 @@
+{
+  "name": "k-edu",
+  "version": "1.0.0",
+  "description": "**KhiemEdu** là nền tảng học tập, luyện thi trắc nghiệm & tự luận Toán học thông minh với cơ chế **Gamification** (tích điểm XP, Streak chuỗi ngày học, huy hiệu vinh danh) và hỗ trợ công thức Toán học **LaTeX/KaTeX** chuyên nghiệp.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "pdf-parse": "^2.4.5"
+  }
+}

@@ -1456,9 +1456,16 @@ const MathEngine = {
       [indices[i], indices[j]] = [indices[j], indices[i]];
     }
 
-    const correctOriginalIndex = 0; // Luôn coi lựa chọn đầu tiên là đáp án đúng trong template gốc
-    const newCorrectIdx = indices.indexOf(correctOriginalIndex);
     const letterMap = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+    // Nếu câu hỏi đã có sẵn correctAnswer chuẩn (ví dụ từ DocumentQuestionBank)
+    let correctOriginalIndex = 0;
+    if (q.correctAnswer && typeof q.correctAnswer === 'string') {
+      const foundIdx = letterMap.indexOf(q.correctAnswer.toUpperCase());
+      if (foundIdx !== -1 && foundIdx < q.options.length) {
+        correctOriginalIndex = foundIdx;
+      }
+    }
+    const newCorrectIdx = indices.indexOf(correctOriginalIndex);
 
     return {
       ...q,
@@ -1613,24 +1620,47 @@ const MathEngine = {
     const seenSignatures = batchSeenSignatures || new Set();
     const mcqDeck = [];
 
+    // Tải danh sách câu hỏi tài liệu đã dùng gần đây (Anti-Duplicate Guard)
+    let recentDocIds = new Set();
+    try {
+      if (typeof AppState !== 'undefined' && AppState.recentDocQuestionIds) {
+        recentDocIds = AppState.recentDocQuestionIds;
+      } else if (typeof localStorage !== 'undefined') {
+        const stored = JSON.parse(localStorage.getItem('khiemedu_recent_doc_question_ids') || '[]');
+        recentDocIds = new Set(stored);
+        if (typeof AppState !== 'undefined') AppState.recentDocQuestionIds = recentDocIds;
+      }
+    } catch (e) {}
+
     // BƯỚC 1: LẤY CÂU HỎI TRỰC TIẾP TỪ KHO TÀI LIỆU (NẾU sourceMode LÀ 'document' HOẶC 'hybrid')
     if (typeof DocumentQuestionBank !== 'undefined' && sourceMode !== 'synthetic') {
-      let docQuestions = DocumentQuestionBank.query({
-        grade: gStr,
-        topic: topic,
-        type: 'mcq'
-      });
+      let docQuestions = typeof DocumentQuestionBank.getQuestions === 'function' ?
+        DocumentQuestionBank.getQuestions(gStr, topic, 'all', 'mcq', mcqCount * 4) :
+        DocumentQuestionBank.query({ grade: gStr, topic: topic, type: 'mcq' });
 
-      // Lọc bỏ các câu đã xuất hiện trong batch
-      const availableDocQuestions = docQuestions.filter(q => !seenSignatures.has(q.question.trim().replace(/\s+/g, ' ')));
+      // Lọc bỏ các câu đã xuất hiện trong batch và câu vừa dùng gần đây
+      let availableDocQuestions = docQuestions.filter(q => 
+        !seenSignatures.has(q.question.trim().replace(/\s+/g, ' ')) &&
+        !recentDocIds.has(q.id)
+      );
 
-      // Giới hạn số câu lấy từ tài liệu theo chế độ
-      const maxDocToTake = sourceMode === 'hybrid' ? Math.ceil(mcqCount / 2) : mcqCount;
-      const takenFromDoc = availableDocQuestions.slice(0, maxDocToTake);
+      // Nếu sau khi lọc recentDocIds mà không đủ câu, tái sử dụng các câu cũ để tránh thiếu hụt
+      if (availableDocQuestions.length < mcqCount) {
+        const fallbackCandidates = docQuestions.filter(q => 
+          !seenSignatures.has(q.question.trim().replace(/\s+/g, ' ')) &&
+          !availableDocQuestions.some(aq => aq.id === q.id)
+        );
+        availableDocQuestions = [...availableDocQuestions, ...fallbackCandidates];
+      }
+
+      const totalDocAvailable = availableDocQuestions.length;
+      const targetDocCount = Math.min(mcqCount, totalDocAvailable);
+      const takenFromDoc = availableDocQuestions.slice(0, targetDocCount);
 
       takenFromDoc.forEach(q => {
         const sig = q.question.trim().replace(/\s+/g, ' ');
         seenSignatures.add(sig);
+        recentDocIds.add(q.id);
         selectedMcq.push({
           id: q.id,
           grade: q.grade,
@@ -1644,9 +1674,30 @@ const MathEngine = {
           explanation: q.explanation || ''
         });
       });
+
+      // Lưu lại recentDocIds (giữ tối đa 300 ID gần nhất)
+      try {
+        if (typeof localStorage !== 'undefined') {
+          const arr = Array.from(recentDocIds).slice(-300);
+          localStorage.setItem('khiemedu_recent_doc_question_ids', JSON.stringify(arr));
+        }
+      } catch (e) {}
+
+      // Xử lý cảnh báo số lượng câu hỏi theo yêu cầu Part B.2
+      if (sourceMode === 'document') {
+        if (takenFromDoc.length < mcqCount) {
+          warningMsg = `Ngân hàng tài liệu chỉ có ${takenFromDoc.length}/${mcqCount} câu phù hợp (đề thi được tạo với ${takenFromDoc.length} câu).`;
+        }
+      } else if (sourceMode === 'hybrid') {
+        if (takenFromDoc.length < mcqCount) {
+          const missing = mcqCount - takenFromDoc.length;
+          warningMsg = `Ngân hàng tài liệu chỉ có ${takenFromDoc.length}/${mcqCount} câu phù hợp — đã tự động bổ sung ${missing} câu sinh tự động.`;
+        }
+      }
     }
 
     // BƯỚC 2: BỔ SUNG BẰNG GENERATOR NẾU CHƯA ĐỦ SỐ LƯỢNG MCQ YÊU CẦU
+    // Chú ý: Nếu chọn thuần tài liệu ('document'), không tự ý bổ sung bằng generator để giữ đề thuần tài liệu
     const refillMcqDeck = () => {
       const arr = Array.from({ length: mcqTemplates.length }, (_, k) => k);
       for (let j = arr.length - 1; j > 0; j--) {
@@ -1656,7 +1707,7 @@ const MathEngine = {
       mcqDeck.push(...arr);
     };
 
-    const remainingMcqNeeded = mcqCount - selectedMcq.length;
+    const remainingMcqNeeded = (sourceMode === 'document') ? 0 : (mcqCount - selectedMcq.length);
     for (let i = 0; i < remainingMcqNeeded; i++) {
       let chosenQ = null;
       let attempts = 0;

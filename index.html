@@ -871,6 +871,26 @@ GIANG, 8"></textarea>
           <div id="publishSuccessResult"></div>
         </div>
 
+        <!-- WIDGET THỐNG KÊ NGÂN HÀNG CÂU HỎI TÀI LIỆU THẬT (DOCUMENT QUESTION BANK) -->
+        <div id="docBankStatsCard" class="card" style="margin-bottom:1.25rem;border:2px solid var(--primary);background:linear-gradient(135deg, rgba(99,102,241,0.06), rgba(139,92,246,0.06));border-radius:var(--radius-lg);padding:1.15rem 1.35rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.85rem;">
+            <div style="display:flex;align-items:center;gap:0.6rem;">
+              <span style="font-size:1.6rem;">📚</span>
+              <div>
+                <h3 style="margin:0;font-size:1.1rem;color:var(--text-primary);font-weight:800;">Ngân Hàng Câu Hỏi Tài Liệu Thật (Document Question Bank)</h3>
+                <p style="margin:2px 0 0;font-size:0.82rem;color:var(--text-secondary);">Trích xuất trực tiếp từ kho 147 file PDF chuyên đề & đề thi chuẩn hóa (773MB)</p>
+              </div>
+            </div>
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+              <span id="docBankTotalBadge" class="code-badge" style="font-size:1.1rem;padding:0.35rem 0.85rem;background:var(--primary);color:#fff;font-weight:800;">2,474 CÂU HỎI</span>
+              <span id="docBankSourcesBadge" class="badge-status" style="background:#e0e7ff;color:#4338ca;font-weight:800;">113 Nguồn Tài Liệu</span>
+            </div>
+          </div>
+          <div id="docBankStatsBreakdown" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(115px, 1fr));gap:0.5rem;">
+            <!-- Sẽ được nạp động từ DocumentQuestionBank.getStats() -->
+          </div>
+        </div>
+
         <!-- Section 1B: TỰ ĐỘNG SINH ĐỀ & CÂU HỎI TRẮC NGHIỆM TOÁN & ĐGNL -->
         <div class="card" style="border-left: 6px solid #8b5cf6;background: linear-gradient(180deg, var(--bg-card) 0%, rgba(243, 232, 255, 0.3) 100%);">
           <div class="card-header">
@@ -958,11 +978,11 @@ GIANG, 8"></textarea>
             </div>
 
             <div class="form-group">
-              <label>📚 Nguồn Đề Thi & Trích Dẫn</label>
+              <label>📚 Nguồn Câu Hỏi</label>
               <select id="mathGenSourceSelect" style="font-weight:700;border:1.5px solid var(--primary);background:var(--primary-light);color:var(--primary-shadow);">
-                <option value="document" selected>📚 Trích Xuất Trực Tiếp Từ Kho TÀI LIỆU (ĐGNL & Chuyên Đề)</option>
-                <option value="hybrid">🔀 Kết Hợp (Kho Tài Liệu + Sinh Số Ngẫu Nhiên)</option>
-                <option value="synthetic">⚙️ Sinh Ngẫu Nhiên Thuần Túy (MathEngine Parametric)</option>
+                <option value="synthetic">⚙️ Sinh tự động (công thức)</option>
+                <option value="document" selected>📚 Từ ngân hàng tài liệu thật</option>
+                <option value="hybrid">🔀 Trộn cả 2 (ưu tiên tài liệu thật, bổ sung bằng sinh tự động nếu thiếu)</option>
               </select>
             </div>
           </div>
@@ -1090,6 +1110,9 @@ GIANG, 8"></textarea>
               👁️ Xem Trước Bản In Đề Toán (LaTeX)
             </button>
           </div>
+
+          <!-- CẢNH BÁO NGUỒN CÂU HỎI TRỰC TIẾP TRÊN GIAO DIỆN -->
+          <div id="mathGenSourceAlert" class="hidden" style="margin-top:1rem;padding:0.85rem 1.15rem;border-radius:var(--radius-md);font-weight:700;font-size:0.92rem;line-height:1.45;background:#fffbeb;color:#92400e;border:1.5px solid #f59e0b;"></div>
           </div><!-- /mathGenStandardPanel -->
 
           <!-- PANEL 2: ĐÁNH GIÁ NĂNG LỰC (ĐGNL) ĐỘC LẬP (MINI 100 / FULL 200) -->

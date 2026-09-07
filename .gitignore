@@ -1,4 +1,4 @@
-﻿# Dependencies & Logs
+# Dependencies & Logs
 node_modules/
 dist/
 
@@ -9,6 +9,7 @@ lương/
 .DS_Store
 Thumbs.db
 *.log
+!tools/skipped-pdfs.log
 .env
 .env.local
 

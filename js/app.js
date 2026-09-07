@@ -543,6 +543,7 @@ function switchTab(tabId) {
   } else if (tabId === 'teacher') {
     switchTeacherSubtab(AppState.activeTeacherSubtab || 'create');
     renderAssignTargetsSelector();
+    renderDocumentBankStats();
   } else if (tabId === 'student') {
     updatePersonalizedExamFeed();
     checkAndRenderPausedExamBanner();
@@ -634,7 +635,9 @@ function switchTeacherSubtab(subtabName) {
 
   SoundEngine.playClick ? SoundEngine.playClick() : null;
 
-  if (subtabName === 'manage') {
+  if (subtabName === 'create') {
+    renderDocumentBankStats();
+  } else if (subtabName === 'manage') {
     renderTeacherQuizManager();
     renderTeacherRosterManager();
     renderTeacherPenaltyManagerSection();
@@ -2517,6 +2520,50 @@ function updateMathGenEssaySummary() {
 // Global state to store latest generated batch exams for preview and copy
 AppState.latestBatchGeneratedExams = [];
 
+/**
+ * Render widget thống kê từ DocumentQuestionBank.getStats()
+ */
+function renderDocumentBankStats() {
+  if (typeof DocumentQuestionBank === 'undefined' || typeof DocumentQuestionBank.getStats !== 'function') return;
+  const stats = DocumentQuestionBank.getStats();
+
+  const totalBadge = document.getElementById('docBankTotalBadge');
+  const sourcesBadge = document.getElementById('docBankSourcesBadge');
+  const container = document.getElementById('docBankStatsBreakdown');
+
+  if (totalBadge) totalBadge.textContent = `${(stats.total || 0).toLocaleString()} CÂU HỎI`;
+  if (sourcesBadge) sourcesBadge.textContent = `${stats.sourcesCount || 0} Nguồn Tài Liệu`;
+
+  if (!container) return;
+
+  const gradeOrder = ['DGNL', '12', '11', '10', '9', '8', '7', '6'];
+  const gradeLabels = {
+    'DGNL': '🧠 ĐGNL',
+    '12': '📐 Toán 12',
+    '11': '📐 Toán 11',
+    '10': '📐 Toán 10',
+    '9': '📐 Toán 9',
+    '8': '📐 Toán 8',
+    '7': '📐 Toán 7',
+    '6': '📐 Toán 6'
+  };
+
+  const html = gradeOrder.map(g => {
+    const count = (stats.byGrade && stats.byGrade[g]) || 0;
+    if (count === 0) return '';
+    return `
+      <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:0.6rem 0.5rem;text-align:center;">
+        <div style="font-size:0.75rem;font-weight:700;color:var(--text-secondary);">${gradeLabels[g] || 'Lớp ' + g}</div>
+        <div style="font-size:1.1rem;font-weight:900;color:var(--primary);margin-top:2px;">${count.toLocaleString()}</div>
+        <div style="font-size:0.68rem;color:var(--text-secondary);">câu hỏi</div>
+      </div>
+    `;
+  }).filter(Boolean).join('');
+
+  container.innerHTML = html;
+}
+window.renderDocumentBankStats = renderDocumentBankStats;
+
 function updateMathGenBatchButtonText() {
   const count = parseInt(document.getElementById('mathGenBatchCountSelect')?.value || '1', 10);
   const btn = document.getElementById('btnAutoGenerateMathExam');
@@ -2609,6 +2656,20 @@ async function triggerAutoGenerateMathExam() {
       if (!generatedList || !generatedList.length) {
         showToast('⚠️ Không thể sinh bộ đề thi, vui lòng thử lại.', 'warn');
         return;
+      }
+
+      const firstGen = generatedList[0];
+      const alertEl = document.getElementById('mathGenSourceAlert');
+      if (firstGen && firstGen.warning) {
+        if (alertEl) {
+          alertEl.classList.remove('hidden');
+          alertEl.style.display = 'block';
+          alertEl.innerHTML = `⚠️ <strong>Lưu ý nguồn câu hỏi:</strong> ${escapeHtml(firstGen.warning)}`;
+        }
+      } else if (alertEl) {
+        alertEl.classList.add('hidden');
+        alertEl.style.display = 'none';
+        alertEl.innerHTML = '';
       }
 
       const savePromises = generatedList.map(async (gen, i) => {
@@ -2743,8 +2804,18 @@ async function triggerAutoGenerateMathExam() {
       timeLimit: timeLimitVal
     });
 
+    const alertEl = document.getElementById('mathGenSourceAlert');
     if (generated && generated.warning) {
       showToast(`⚠️ ${generated.warning}`, 'warn');
+      if (alertEl) {
+        alertEl.classList.remove('hidden');
+        alertEl.style.display = 'block';
+        alertEl.innerHTML = `⚠️ <strong>Lưu ý nguồn câu hỏi:</strong> ${escapeHtml(generated.warning)}`;
+      }
+    } else if (alertEl) {
+      alertEl.classList.add('hidden');
+      alertEl.style.display = 'none';
+      alertEl.innerHTML = '';
     }
 
     // 1. Populate Creator form
@@ -7608,3 +7679,15 @@ async function handleQuickResetVinhDanh(type = 'all') {
     await executeAdminResetVinhDanh(type);
   }
 }
+
+// Khởi tạo hiển thị widget Thống kê Ngân hàng câu hỏi DocumentQuestionBank
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      renderDocumentBankStats();
+    });
+  } else {
+    setTimeout(renderDocumentBankStats, 300);
+  }
+}
+

@@ -80,6 +80,76 @@ document.addEventListener('DOMContentLoaded', async () => {
     const singleSec = document.getElementById('singleExamCreatorSection');
     if (singleSec) singleSec.style.display = 'none';
     window.scrollTo(0, 0);
+  } else if (qa === 'doc_bank') {
+    if (typeof TeacherAuth !== 'undefined') TeacherAuth.login();
+    AppState.isTeacherLoggedIn = true;
+    const authModal = document.getElementById('teacherAuthModal');
+    if (authModal) authModal.classList.add('hidden');
+    switchTab('teacher');
+    const authCard = document.getElementById('teacherAuthCard');
+    const dash = document.getElementById('teacherDashboard');
+    if (authCard) authCard.classList.add('hidden');
+    if (dash) dash.classList.remove('hidden');
+    switchTeacherSubtab('create');
+    const singleSec = document.getElementById('singleExamCreatorSection');
+    if (singleSec) singleSec.style.display = 'block';
+    if (typeof renderDocumentBankStats === 'function') renderDocumentBankStats();
+    const statsCard = document.getElementById('docBankStatsCard');
+    if (statsCard) statsCard.scrollIntoView({ behavior: 'instant', block: 'center' });
+  } else if (qa === 'doc_shortage') {
+    if (typeof TeacherAuth !== 'undefined') TeacherAuth.login();
+    AppState.isTeacherLoggedIn = true;
+    const authModal = document.getElementById('teacherAuthModal');
+    if (authModal) authModal.classList.add('hidden');
+    switchTab('teacher');
+    const authCard = document.getElementById('teacherAuthCard');
+    const dash = document.getElementById('teacherDashboard');
+    if (authCard) authCard.classList.add('hidden');
+    if (dash) dash.classList.remove('hidden');
+    switchTeacherSubtab('create');
+    if (typeof renderDocumentBankStats === 'function') renderDocumentBankStats();
+
+    const gradeSelect = document.getElementById('mathGenGradeSelect');
+    const countSelect = document.getElementById('mathGenMcqCountSelect');
+    const sourceSelect = document.getElementById('mathGenSourceSelect');
+    if (gradeSelect) gradeSelect.value = '6';
+    if (countSelect) countSelect.value = '20';
+    if (sourceSelect) sourceSelect.value = 'document';
+    const batchSelect = document.getElementById('mathGenBatchCountSelect');
+    if (batchSelect) batchSelect.value = '1';
+
+    if (typeof triggerAutoGenerateMathExam === 'function') {
+      await triggerAutoGenerateMathExam();
+    }
+    const alertEl = document.getElementById('mathGenSourceAlert');
+    if (alertEl) alertEl.scrollIntoView({ behavior: 'instant', block: 'center' });
+  } else if (qa === 'doc_gen') {
+    if (typeof TeacherAuth !== 'undefined') TeacherAuth.login();
+    AppState.isTeacherLoggedIn = true;
+    const authModal = document.getElementById('teacherAuthModal');
+    if (authModal) authModal.classList.add('hidden');
+    switchTab('teacher');
+    const authCard = document.getElementById('teacherAuthCard');
+    const dash = document.getElementById('teacherDashboard');
+    if (authCard) authCard.classList.add('hidden');
+    if (dash) dash.classList.remove('hidden');
+    switchTeacherSubtab('create');
+    if (typeof renderDocumentBankStats === 'function') renderDocumentBankStats();
+
+    const gradeSelect = document.getElementById('mathGenGradeSelect');
+    const countSelect = document.getElementById('mathGenMcqCountSelect');
+    const sourceSelect = document.getElementById('mathGenSourceSelect');
+    if (gradeSelect) gradeSelect.value = '10';
+    if (countSelect) countSelect.value = '12';
+    if (sourceSelect) sourceSelect.value = 'document';
+    const batchSelect = document.getElementById('mathGenBatchCountSelect');
+    if (batchSelect) batchSelect.value = '1';
+
+    if (typeof triggerAutoGenerateMathExam === 'function') {
+      await triggerAutoGenerateMathExam();
+    }
+    const gridEl = document.getElementById('teacherMcqGridContainer');
+    if (gridEl) gridEl.scrollIntoView({ behavior: 'instant', block: 'center' });
   } else if (qa === 'batch_modal') {
     if (typeof TeacherAuth !== 'undefined') TeacherAuth.login();
     AppState.isTeacherLoggedIn = true;
