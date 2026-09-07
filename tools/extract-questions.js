@@ -2,16 +2,13 @@
  * KhiemEdu Document Question Bank Extractor
  * Pipeline trích xuất câu hỏi THẬT từ 147 file PDF trong TÀI LIỆU
  *
- * Chế độ chạy:
- * 1. Chế độ Review (mặc định):
- *    node tools/extract-questions.js --dir "TÀI LIỆU"
- *    -> Xuất toàn bộ câu hỏi vào tools/extracted-review.json (gồm cả high & low confidence)
- *    -> Ghi log các file scan bỏ qua vào tools/skipped-pdfs.log
- *
- * 2. Chế độ Commit vào Ngân Hàng Câu Hỏi:
- *    node tools/extract-questions.js --dir "TÀI LIỆU" --commit
- *    -> Lọc các câu đạt confidence: 'high', định dạng ID chuẩn, append vào js/documentQuestionBank.js
- *    -> Bảo toàn nguyên vẹn 32 câu hỏi thủ công có sẵn
+ * SỬA TẬN GỐC THUẬT TOÁN:
+ * 1. Chặn hiện tượng nuốt nội dung câu khác / đoạn ngữ liệu chung vào option D.
+ * 2. Giới hạn cứng độ dài phương án (<= 220 ký tự cho mỗi phương án).
+ * 3. Dọn dẹp triệt để Watermark, PII (tác giả, giáo viên, SĐT, Zalo, mạng xã hội, số trang)
+ *    trên TẤT CẢ các trường: title, options (A-D), explanation.
+ * 4. Nhận diện công thức Toán bị vỡ / font MathType lỗi / nhiều ký tự tab (\t) -> confidence: 'low'.
+ * 5. Loại bỏ hoàn toàn ký tự tab (\t) khỏi dữ liệu câu hỏi.
  */
 
 const fs = require('fs');
@@ -31,7 +28,8 @@ const TARGET_DIR = getArgVal('--dir', 'TÀI LIỆU');
 const OUTPUT_REVIEW = getArgVal('--output', path.join('tools', 'extracted-review.json'));
 const LOG_SKIPPED = getArgVal('--log', path.join('tools', 'skipped-pdfs.log'));
 const DO_COMMIT = args.includes('--commit');
-const MAX_PER_FILE = parseInt(getArgVal('--max-per-file', '50'), 10); // Tối đa 50 câu/file để đảm bảo chất lượng tinh hoa
+const MAX_PER_FILE = parseInt(getArgVal('--max-per-file', '50'), 10);
+const RE_EXTRACT = args.includes('--re-extract') || !args.includes('--from-review');
 
 // ================= TIỆN ÍCH HỖ TRỢ =================
 function getAllPdfs(dir) {
@@ -58,6 +56,81 @@ function slugify(text) {
     .replace(/^_|_$/g, '')
     .toUpperCase()
     .slice(0, 16);
+}
+
+// ================= SỬA 2: BỘ DỌN DẸP WATERMARK & PII TOÀN DIỆN =================
+function stripWatermark(text) {
+  if (!text || typeof text !== 'string') return '';
+
+  let cleaned = text;
+
+  // 1. Loại bỏ các dòng chứa thông tin giáo viên, biên soạn, sưu tầm, tác giả
+  cleaned = cleaned.replace(/^[^\n]*(?:GV[\s.:]|Giáo\s+viên[\s.:]|Thầy[\s/]|Cô[\s/]|Sưu\s+tầm\s+và\s+biên\s+soạn|Biên\s+soạn\s+bởi|Biên\s+soạn[\s.:]|Tổng\s+hợp[\s.:]|Tác\s+giả[\s.:]|Chủ\s+biên[\s.:]|Hiệu\s+đính[\s.:])[^\n]*$/gmi, '');
+
+  // 2. Loại bỏ các dòng chứa số điện thoại, Zalo, Hotline, Phone
+  cleaned = cleaned.replace(/^[^\n]*(?:SĐT|Zalo|Hotline|Điện\s*thoại|Tel|Phone|Mobile)[\s.:]*[^\n]*$/gmi, '');
+  // Xóa số điện thoại Việt Nam độc lập (03x, 05x, 07x, 08x, 09x, +84)
+  cleaned = cleaned.replace(/(?:\+84|0)[35789]\d{8,9}\b/g, '');
+  cleaned = cleaned.replace(/\b\d{4}[.\s]\d{3}[.\s]\d{3}\b/g, '');
+
+  // 3. Mạng xã hội, Fanpage, Group, Website, Email
+  cleaned = cleaned.replace(/^[^\n]*(?:Fanpage|Group|Kênh|Website|Email)[\s.:][^\n]*$/gmi, '');
+  cleaned = cleaned.replace(/^[^\n]*(?:facebook\.com|fb\.com|zalo\.me|youtube\.com|drive\.google|t\.me)[^\n]*$/gmi, '');
+  cleaned = cleaned.replace(/https?:\/\/\S+/gi, '');
+  cleaned = cleaned.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '');
+
+  // 4. Tiêu đề tài liệu, watermark lặp lại đầu/cuối trang
+  cleaned = cleaned.replace(/^[^\n]*(?:CHINH\s+PHỤC\s+K[IÌ]\s+THI|LỚP\s+TOÁN|NGUYỄN\s+BẢO\s+VƯƠNG|TRẦN\s+ĐÌNH\s+CƯ|TÀI\s+LIỆU\s+ÔN\s+THI|BỘ\s+ĐỀ\s+THI|ĐỀ\s+THI\s+THỬ|CHUYÊN\s+ĐỀ)[^\n]*$/gmi, '');
+  cleaned = cleaned.replace(/^[^\n]*(?:Trang\s+\d+|Page\s+\d+|--\s*\d+\s*--|-\s*\d+\s*-|\b\d+\s*\/\s*\d+\b)[^\n]*$/gmi, '');
+
+  // 5. Chuỗi chấm lửng mục lục (. . . . hoặc .....)
+  cleaned = cleaned.replace(/\.{4,}/g, '');
+  cleaned = cleaned.replace(/(?:\.\s*){4,}/g, '');
+
+  // 6. Chuẩn hóa xuống dòng và khoảng trắng
+  cleaned = cleaned.replace(/\r\n/g, '\n');
+  cleaned = cleaned.replace(/[ \t]+\n/g, '\n');
+  cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+
+  return cleaned.trim();
+}
+
+/**
+ * Kiểm tra xem chuỗi còn sót watermark hoặc PII rò rỉ hay không
+ */
+function hasWatermarkOrPii(str) {
+  if (!str || typeof str !== 'string') return false;
+  // Số điện thoại Việt Nam
+  if (/(?:\+84|0)[35789]\d{8,9}\b/.test(str)) return true;
+  // Từ khóa PII / giáo viên / bản quyền
+  if (/(?:GV[\s.:]|Giáo\s+viên[\s.:]|Thầy[\s/]|Cô[\s/]|Zalo|SĐT|Hotline|Fanpage|facebook\.com|fb\.com|Chinh\s+phục\s+k[iì]\s+thi|LỚP\s+TOÁN|Nguyễn\s+Bảo\s+Vương|Trần\s+Đình\s+Cư)/i.test(str)) return true;
+  // Trang X
+  if (/(?:Trang\s+\d+|Page\s+\d+)/i.test(str)) return true;
+  return false;
+}
+
+// ================= SỬA 3: BỘ NHẬN DIỆN CÔNG THỨC TOÁN BỊ VỠ & TAB =================
+function isBrokenFormula(str) {
+  if (!str || typeof str !== 'string') return false;
+
+  // 1. Chứa từ 2 ký tự tab (\t) trở lên trong 1 trường
+  const tabCount = (str.match(/\t/g) || []).length;
+  if (tabCount >= 2) return true;
+
+  // 2. Chứa ký tự Unicode thuộc vùng Private Use Area (Font MathType / Symbol bị vỡ: , , , , , , , etc.)
+  if (/[\uE000-\uF8FF]/.test(str)) return true;
+
+  // 3. Mật độ chữ số + khoảng trắng + ký tự đặc biệt cao bất thường so với chữ cái
+  const letters = (str.match(/[a-zA-Zà-ỹÀ-Ỹ]/g) || []).length;
+  const digitsAndSpaces = (str.match(/[\d\s\t\-_=+\/*\\()\[\]{}^.,;]/g) || []).length;
+  if (str.length > 30 && letters > 0 && (digitsAndSpaces / letters) > 3.0) {
+    return true;
+  }
+
+  // 4. Chuỗi các chữ cái đơn lẻ cách nhau bởi khoảng trắng liên tiếp (vd: "y m x m x mx m", "a b c d e")
+  if (/(?:\b[a-zA-Z]\s+){4,}/.test(str)) return true;
+
+  return false;
 }
 
 // Suy ra Khối lớp (grade) và Chủ đề mặc định từ đường dẫn thư mục
@@ -117,7 +190,7 @@ function inferGradeAndTopic(filePath, text) {
   return { grade, topic, subtopic };
 }
 
-// ================= THUẬT TOÁN TRÍCH XUẤT CÂU HỎI & ĐÁP ÁN (PORTED & ENHANCED) =================
+// ================= THUẬT TOÁN TRÍCH XUẤT CÂU HỎI & ĐÁP ÁN ĐÃ NÂNG CẤP =================
 function parsePdfQuestions(rawText, filePath, fileName) {
   if (!rawText || rawText.trim().length < 30) return [];
 
@@ -127,10 +200,8 @@ function parsePdfQuestions(rawText, filePath, fileName) {
   text = text.replace(/^Trang\s+\d+(\/\d+)?.*$/gm, '');
   text = text.replace(/https?:\/\/[^\s]+/g, '');
 
-  // 2. Tách phần Bảng Đáp Án (chỉ quét phần cuối văn bản hoặc sau từ khóa chuyên biệt)
+  // 2. Tách phần Bảng Đáp Án
   const answerKeyMap = {};
-  
-  // Tìm marker bảng đáp án
   const keyMarkerRegex = /(?:^|\n)\s*(?:BẢNG\s+ĐÁP\s+ÁN|ĐÁP\s+ÁN\s*CHI\s+TIẾT|ĐÁP\s+ÁN\s*TRẮC\s+NGHIỆM|HƯỚNG\s+DẪN\s+GIẢI|LỜI\s+GIẢI\s+CHI\s+TIẾT|HƯỚNG\s+DẪN\s+CHẤM|PHẦN\s+ĐÁP\s+ÁN)\b/gi;
   let examBody = text;
   let keySection = '';
@@ -145,7 +216,6 @@ function parsePdfQuestions(rawText, filePath, fileName) {
     examBody = text.slice(0, lastMarkerIdx);
     keySection = text.slice(lastMarkerIdx);
   } else {
-    // Nếu không có header rõ ràng, lấy 25% cuối văn bản
     const cutoff = Math.floor(text.length * 0.75);
     keySection = text.slice(cutoff);
   }
@@ -161,10 +231,9 @@ function parsePdfQuestions(rawText, filePath, fileName) {
     }
   }
 
-  // 3. Loại bỏ phần header / mở đầu trước Câu 1 / Bài 1 đầu tiên (tránh nhận nhầm tiêu đề tài liệu làm câu hỏi)
+  // 3. Loại bỏ phần header / mở đầu trước Câu 1 / Bài 1 đầu tiên
   const firstQMatch = /(?:^|\n)\s*(?:Câu|Bài)\s*1[\s.:–-]/i.exec(examBody);
   if (!firstQMatch) {
-    // Thử tìm bất kỳ câu hỏi nào
     const anyQMatch = /(?:^|\n)\s*(?:Câu|Bài)\s*\d+[\s.:–-]/i.exec(examBody);
     if (!anyQMatch) return [];
     examBody = examBody.slice(anyQMatch.index);
@@ -198,7 +267,6 @@ function parsePdfQuestions(rawText, filePath, fileName) {
       questionPart = bodyWithoutHeader.slice(0, solIdx).trim();
       explanationPart = bodyWithoutHeader.slice(solIdx).trim();
 
-      // Tìm câu trả lời inline trong lời giải (ví dụ: "Chọn A", "Chọn B", "Đáp án A")
       const inlineMatch = /(?:Chọn\s+(?:đáp\s+án\s+)?|Đáp\s+án\s+là\s+|=>\s*Chọn\s+)([A-D])\b/i.exec(explanationPart);
       if (inlineMatch) {
         inlineAnswer = inlineMatch[1].toUpperCase();
@@ -209,6 +277,7 @@ function parsePdfQuestions(rawText, filePath, fileName) {
     let type = 'mcq';
     let options = [];
     let title = questionPart;
+    let hasOversizedOption = false;
 
     // Tìm vị trí của A, B, C, D
     const optRegA = /(?:^|[\n\s])A[\.\)]\s+/i;
@@ -225,27 +294,66 @@ function parsePdfQuestions(rawText, filePath, fileName) {
         matchA.index < matchB.index &&
         matchB.index < matchC.index &&
         matchC.index < matchD.index) {
-      
-      title = questionPart.slice(0, matchA.index).trim();
-      const rawA = questionPart.slice(matchA.index, matchB.index).trim().replace(/^[A-D][\.\)]\s*/i, '');
-      const rawB = questionPart.slice(matchB.index, matchC.index).trim().replace(/^[A-D][\.\)]\s*/i, '');
-      const rawC = questionPart.slice(matchC.index, matchD.index).trim().replace(/^[A-D][\.\)]\s*/i, '');
-      const rawD = questionPart.slice(matchD.index).trim().replace(/^[A-D][\.\)]\s*/i, '');
+
+      title = stripWatermark(questionPart.slice(0, matchA.index));
+      let rawA = stripWatermark(questionPart.slice(matchA.index, matchB.index).replace(/^[A-D][\.\)]\s*/i, ''));
+      let rawB = stripWatermark(questionPart.slice(matchB.index, matchC.index).replace(/^[A-D][\.\)]\s*/i, ''));
+      let rawC = stripWatermark(questionPart.slice(matchC.index, matchD.index).replace(/^[A-D][\.\)]\s*/i, ''));
+      let rawD = questionPart.slice(matchD.index).replace(/^[A-D][\.\)]\s*/i, '');
+
+      // ================= SỬA 1: CHẶN NUỐT NỘI DUNG CÂU KHÁC VÀO OPTION D =================
+      const cutPatterns = [
+        /(?:Dựa\s+vào|Căn\s+cứ\s+vào)\s+(?:thông\s+tin|dữ\s+liệu|đoạn\s+văn|bảng)\s+dưới\s+đây/i,
+        /trả\s+lời\s+(?:các\s+)?câu\s+(?:hỏi\s+)?(?:từ\s+)?\d+/i,
+        /đọc\s+(?:đoạn\s+)?thông\s+tin\s+(?:sau|dưới\s+đây)/i,
+        /sử\s+dụng\s+dữ\s+kiện\s+sau/i,
+        /(?:\n|[.\s;])(?:Câu|Bài)\s*\d+[\s.:–-]/i,
+        /(?:Lời\s+giải|Hướng\s+dẫn\s+giải)[:.\s]/i
+      ];
+
+      let cutIndex = -1;
+      for (const p of cutPatterns) {
+        const pMatch = p.exec(rawD);
+        if (pMatch && pMatch.index > 0) {
+          if (cutIndex === -1 || pMatch.index < cutIndex) {
+            cutIndex = pMatch.index;
+          }
+        }
+      }
+
+      if (cutIndex !== -1) {
+        rawD = rawD.slice(0, cutIndex);
+      }
+
+      // SỬA 2: Áp dụng stripWatermark cho option D sau khi cắt
+      rawD = stripWatermark(rawD);
+
+      // SỬA 1 (tiếp): Kiểm tra giới hạn cứng 220 ký tự cho từng option
+      const rawOptions = [rawA, rawB, rawC, rawD];
+      if (rawOptions.some(opt => opt.length > 220)) {
+        hasOversizedOption = true;
+      }
 
       if (rawA && rawB && rawC && rawD) {
-        options = [rawA, rawB, rawC, rawD];
+        options = rawOptions;
         type = 'mcq';
       }
     } else {
-      // 6. Nhận diện True/False: BẮT BUỘC có cấu trúc Đúng/Sai rõ ràng ngay sau câu hỏi
+      // 6. Nhận diện True/False
       const tfPattern = /(?:[\r\n]|\s{2,})(?:(?:A[.)\s]+)?Đúng[.)\s]+(?:B[.)\s]+)?Sai|(?:A[.)\s]+)?Sai[.)\s]+(?:B[.)\s]+)?Đúng|Đúng\s*[\/|\-]\s*Sai|\[\s*\]\s*Đúng\s*\[\s*\]\s*Sai)(?:\s*$|\s*[\r\n])/i;
       if (tfPattern.test(questionPart)) {
         type = 'truefalse';
         options = ['Đúng', 'Sai'];
-        title = questionPart.replace(tfPattern, '').trim();
+        title = stripWatermark(questionPart.replace(tfPattern, ''));
       } else {
         type = 'essay';
+        title = stripWatermark(questionPart);
       }
+    }
+
+    // SỬA 2: Áp dụng stripWatermark cho explanationPart
+    if (explanationPart) {
+      explanationPart = stripWatermark(explanationPart);
     }
 
     // Xác định đáp án đúng
@@ -254,21 +362,18 @@ function parsePdfQuestions(rawText, filePath, fileName) {
       correctAnswer = /sai|f/i.test(correctAnswer) ? 'Sai' : 'Đúng';
     }
 
-    // 7. Đánh giá độ tin cậy (Confidence Rating) chặt chẽ
+    // ================= SỬA 3: ĐÁNH GIÁ CONFIDENCE VÀ LOẠI BỎ TAB / BROKEN FORMULA =================
     let confidence = 'high';
 
-    // Bỏ các ký tự điều khiển lạ
+    // Bỏ các ký tự điều khiển lạ (trừ \n)
     title = title.replace(/[\u0000-\u0008\u000B-\u001F\u007F-\u009F]/g, '').trim();
-    if (explanationPart) {
-      explanationPart = explanationPart
-        .replace(/[\u0000-\u0008\u000B-\u001F\u007F-\u009F]/g, '')
-        .replace(/\.{4,}/g, '')
-        .replace(/^.*(?:GV:|Trang\s+\d+|LỚP TOÁN|THPT|Zalo|SĐT|0\d{9}).*$/gm, '')
-        .trim();
-    }
 
-    // Điều kiện đánh dấu 'low':
-    const hasBadChars = /[\uFFFD\u0000]|\?\?\?/.test(title);
+    // Kiểm tra tab, công thức vỡ, PII trên tất cả các trường
+    const allFields = [title, ...options];
+    const hasTabs = allFields.some(f => (f.match(/\t/g) || []).length >= 2);
+    const hasCorruptedMath = allFields.some(f => isBrokenFormula(f));
+    const hasResidualPii = allFields.some(f => hasWatermarkOrPii(f));
+    const hasBadChars = /[\uFFFD\u0000]|\?\?\?|[\uE000-\uF8FF]/.test(title) || options.some(opt => /[\uFFFD\u0000]|\?\?\?|[\uE000-\uF8FF]/.test(opt));
     const isTableOfContents = /mục\s+lục|tóm\s+tắt\s+lý\s+thuyết|bài\s+tập\s+tự\s+luyện\s*\.{3,}/i.test(title);
 
     if (!correctAnswer || correctAnswer === '') {
@@ -276,7 +381,6 @@ function parsePdfQuestions(rawText, filePath, fileName) {
     } else if (isTableOfContents) {
       confidence = 'low';
     } else if (['A', 'B', 'C', 'D'].includes(correctAnswer) && options.length !== 4) {
-      // Nếu có đáp án A-D nhưng không tách đủ 4 phương án -> Đánh dấu 'low'
       confidence = 'low';
     } else if (type === 'mcq' && options.length !== 4) {
       confidence = 'low';
@@ -284,9 +388,21 @@ function parsePdfQuestions(rawText, filePath, fileName) {
       confidence = 'low';
     } else if (hasBadChars) {
       confidence = 'low';
+    } else if (hasOversizedOption) {
+      confidence = 'low';
+    } else if (hasTabs) {
+      confidence = 'low';
+    } else if (hasCorruptedMath) {
+      confidence = 'low';
+    } else if (hasResidualPii) {
+      confidence = 'low';
     } else if (type === 'mcq' && options.some(opt => !opt || opt.trim().length === 0)) {
       confidence = 'low';
     }
+
+    // SỬA 3 (tiếp): Dọn sạch 100% ký tự tab \t bằng khoảng trắng (kể cả câu low confidence)
+    title = title.replace(/\t/g, ' ').replace(/[ ]{2,}/g, ' ').trim();
+    options = options.map(opt => opt.replace(/\t/g, ' ').replace(/[ ]{2,}/g, ' ').trim());
 
     // Suy luận chủ đề & lớp
     const { grade, topic, subtopic } = inferGradeAndTopic(filePath, title);
@@ -312,16 +428,16 @@ function parsePdfQuestions(rawText, filePath, fileName) {
 // ================= HÀM CHÍNH THỰC THI PIPELINE =================
 async function runPipeline() {
   console.log('================================================================');
-  console.log('🚀 KHIEMEDU DOCUMENT QUESTION BANK EXTRACTION PIPELINE');
+  console.log('🚀 KHIEMEDU DOCUMENT QUESTION BANK EXTRACTION PIPELINE (CLEAN V2)');
   console.log(`📁 Thư mục nguồn: ${TARGET_DIR}`);
   console.log(`📑 File review: ${OUTPUT_REVIEW}`);
   console.log(`⚠️ File log bỏ qua: ${LOG_SKIPPED}`);
   console.log(`🔒 Chế độ Commit: ${DO_COMMIT ? 'BẬT (Ghi vào documentQuestionBank.js)' : 'TẮT (Chỉ xuất file review)'}`);
   console.log('================================================================\n');
 
-  // Nếu người dùng yêu cầu commit và file review đã tồn tại (không có cờ --re-extract)
-  if (DO_COMMIT && fs.existsSync(OUTPUT_REVIEW) && (args.includes('--from-review') || !args.includes('--re-extract'))) {
-    console.log(`⚡ Đã tìm thấy dữ liệu trích xuất sẵn trong "${OUTPUT_REVIEW}". Đang thực hiện commit...`);
+  // Nếu người dùng yêu cầu commit từ review đã có sẵn bằng cờ --from-review
+  if (DO_COMMIT && !RE_EXTRACT && fs.existsSync(OUTPUT_REVIEW)) {
+    console.log(`⚡ Đang thực hiện commit từ file review có sẵn "${OUTPUT_REVIEW}"...`);
     const cachedQuestions = JSON.parse(fs.readFileSync(OUTPUT_REVIEW, 'utf8'));
     await commitHighConfidenceQuestions(cachedQuestions);
     return;
@@ -345,7 +461,7 @@ async function runPipeline() {
       await parser.load();
       const info = await parser.getInfo();
       const text = (await parser.getText()).text || '';
-      await parser.destroy(); // Giải phóng bộ nhớ ngay lập tức
+      await parser.destroy();
 
       const numPages = info.total || 1;
       const cleanLen = text.trim().length;
@@ -368,7 +484,6 @@ async function runPipeline() {
 
       console.log(`[${i + 1}/${allPdfs.length}] ✅ ${fileName} | Trang: ${numPages} | Trích xuất: ${docQuestions.length} câu (High: ${highCount}, Low: ${lowCount})`);
 
-      // Thêm vào danh sách tổng hợp (giới hạn MAX_PER_FILE câu high confidence mỗi file nếu cần)
       if (MAX_PER_FILE > 0) {
         const highQs = docQuestions.filter(q => q.confidence === 'high').slice(0, MAX_PER_FILE);
         const lowQs = docQuestions.filter(q => q.confidence === 'low').slice(0, 20);
@@ -406,7 +521,7 @@ async function runPipeline() {
   console.log(`✅ File trích xuất thành công: ${processedSuccess}`);
   console.log(`⏭️ File scan/ảnh bỏ qua an toàn: ${skippedList.length} (Xem log: ${LOG_SKIPPED})`);
   console.log(`📝 Tổng số câu hỏi trích xuất: ${allExtractedQuestions.length}`);
-  console.log(`   - 🟢 High Confidence: ${totalHigh} câu`);
+  console.log(`   - 🟢 High Confidence (ĐÃ LỌC SẠCH PII & LỖI): ${totalHigh} câu`);
   console.log(`   - 🟡 Low Confidence (cần duyệt tay): ${totalLow} câu`);
   console.log(`💾 Đã lưu toàn bộ vào: ${OUTPUT_REVIEW}`);
   console.log('==========================================================\n');
@@ -428,8 +543,19 @@ async function commitHighConfidenceQuestions(extractedQuestions) {
     return;
   }
 
-  const highQuestions = extractedQuestions.filter(q => q.confidence === 'high');
-  console.log(`🔒 Đang chuẩn bị commit ${highQuestions.length} câu hỏi đạt chuẩn 'high confidence'...`);
+  // Lọc strictly chỉ các câu đạt chuẩn high confidence
+  const highQuestions = extractedQuestions.filter(q => {
+    if (q.confidence !== 'high') return false;
+    // Kiểm tra an toàn tuyệt đối lần cuối trước khi commit
+    const all = [q.question, ...(q.options || [])];
+    if (all.some(f => f.includes('\t'))) return false;
+    if (all.some(f => hasWatermarkOrPii(f))) return false;
+    if ((q.options || []).some(opt => opt.length > 220)) return false;
+    if (all.some(f => isBrokenFormula(f))) return false;
+    return true;
+  });
+
+  console.log(`🔒 Đang chuẩn bị commit ${highQuestions.length} câu hỏi đạt chuẩn 'high confidence' đã kiểm định...`);
 
   // Đọc nội dung hiện tại của bank
   const currentContent = fs.readFileSync(bankFilePath, 'utf8');
@@ -461,6 +587,7 @@ async function commitHighConfidenceQuestions(extractedQuestions) {
       level: q.level,
       type: q.type,
       source: q.source,
+      sourceFile: q.sourceFile,
       question: q.question,
       options: q.options,
       correctAnswer: q.correctAnswer,
@@ -468,7 +595,7 @@ async function commitHighConfidenceQuestions(extractedQuestions) {
     };
   });
 
-  // Tìm vị trí đóng của mảng questions trong file:
+  // Tìm vị trí đóng của mảng questions trong file
   // Cấu trúc: questions: [ ... \n  ],
   const insertMarker = /\n\s*\],\s*\n\s*\/\*\*\s*\n\s*\* Truy vấn câu hỏi/;
   const match = insertMarker.exec(currentContent);
@@ -480,7 +607,7 @@ async function commitHighConfidenceQuestions(extractedQuestions) {
 
   const insertIndex = match.index;
   const jsonStringBlock = ',\n\n    // =========================================================================\n' +
-    '    // CÂU HỎI TRÍCH XUẤT TỰ ĐỘNG TỪ 147 FILE PDF KHO TÀI LIỆU (HIGH CONFIDENCE)\n' +
+    '    // CÂU HỎI TRÍCH XUẤT TỰ ĐỘNG TỪ 147 FILE PDF KHO TÀI LIỆU (HIGH CONFIDENCE - ĐÃ DỌN SẠCH)\n' +
     '    // =========================================================================\n' +
     newQuestionObjects.map(obj => '    ' + JSON.stringify(obj, null, 2).replace(/\n/g, '\n    ')).join(',\n');
 
@@ -502,7 +629,7 @@ async function commitHighConfidenceQuestions(extractedQuestions) {
   }
 
   fs.writeFileSync(bankFilePath, updatedContent, 'utf8');
-  console.log(`🎉 ĐÃ APPEND THÀNH CÔNG ${newQuestionObjects.length} CÂU HỎI THẬT VÀO: ${bankFilePath}!`);
+  console.log(`🎉 ĐÃ COMMIT THÀNH CÔNG ${newQuestionObjects.length} CÂU HỎI SẠCH VÀO: ${bankFilePath}!`);
 }
 
 // Chạy pipeline
