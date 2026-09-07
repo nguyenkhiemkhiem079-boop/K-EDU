@@ -2117,6 +2117,7 @@ const MathEngine = {
   
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/mhchem.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 
   <style>
@@ -2298,3 +2299,8 @@ if (typeof window !== 'undefined') {
   window.GradeEngines = GradeEngines;
   window.MathEngine = MathEngine;
 }
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = MathEngine;
+}
+

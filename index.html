@@ -931,23 +931,25 @@ GIANG, 8"></textarea>
               </div>
             </div>
 
-            <!-- PANEL THÔNG BÁO KHTN (ẨN MẶC ĐỊNH - hiện khi chọn KHTN) -->
-            <div id="khtnComingSoonPanel" class="hidden" style="background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(5,150,105,0.06));border:2px solid #10b981;border-radius:var(--radius-lg);padding:1.15rem 1.4rem;margin-bottom:1rem;">
-              <div style="display:flex;align-items:flex-start;gap:0.85rem;">
-                <span style="font-size:2rem;line-height:1;">🔬</span>
-                <div>
-                  <h4 style="margin:0 0 0.3rem;font-size:1.05rem;color:#065f46;font-weight:800;">Khoa học Tự nhiên (KHTN) — Đang xây dựng nội dung</h4>
-                  <p style="margin:0 0 0.5rem;font-size:0.88rem;color:#047857;">Khung kiến trúc đa môn đã sẵn sàng. Bộ câu hỏi KHTN (Vật lý, Hóa học, Sinh học) đang được biên soạn và sẽ ra mắt trong thời gian tới.</p>
-                  <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                    <span style="background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;">🧪 Vật lý — Sắp ra mắt</span>
-                    <span style="background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;">⚗️ Hóa học — Sắp ra mắt</span>
-                    <span style="background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;">🌿 Sinh học — Sắp ra mắt</span>
+            <!-- THÔNG TIN ĐẶC TRƯNG MÔN KHTN (CHỈ HIỆN KHI CHỌN KHTN) -->
+            <div id="khtnInfoBanner" class="hidden" style="background:linear-gradient(135deg,rgba(16,185,129,0.12),rgba(5,150,105,0.06));border:2px solid #10b981;border-radius:var(--radius-lg);padding:0.9rem 1.25rem;margin-bottom:1rem;">
+              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+                <div style="display:flex;align-items:center;gap:0.65rem;">
+                  <span style="font-size:1.6rem;line-height:1;">🔬</span>
+                  <div>
+                    <strong style="color:#065f46;font-size:0.98rem;">Khoa học Tự nhiên (KHTN) — Chương trình GDPT 2018</strong>
+                    <div style="font-size:0.82rem;color:#047857;">Tích hợp 3 phân môn Vật lý · Hóa học · Sinh học (Lớp 6–9) kèm bộ sinh công thức & tài liệu chuẩn.</div>
                   </div>
+                </div>
+                <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+                  <span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:12px;font-size:0.75rem;font-weight:700;">🧪 Vật lý</span>
+                  <span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:12px;font-size:0.75rem;font-weight:700;">⚗️ Hóa học</span>
+                  <span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:12px;font-size:0.75rem;font-weight:700;">🌿 Sinh học</span>
                 </div>
               </div>
             </div>
 
-            <!-- KHU VỰC ĐIỀU KHIỂN SINH ĐỀ TOÁN (ẨN KHI CHỌN KHTN) -->
+            <!-- KHU VỰC ĐIỀU KHIỂN SINH ĐỀ (DÙNG CHUNG CHO CẢ TOÁN VÀ KHTN) -->
             <div id="mathGenControlsContainer">
               <div class="form-row" style="background:var(--bg-tertiary);padding:1rem 1.25rem;border-radius:var(--radius-lg);border:2px solid var(--border-color);margin-bottom:1rem;">
                 <div class="form-group">
@@ -1754,8 +1756,9 @@ GIANG, 8"></textarea>
 
   </main>
 
-  <!-- KaTeX Math Rendering Scripts -->
+  <!-- KaTeX Math & Chemistry (mhchem) Rendering Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/mhchem.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 
   <!-- Firebase App & Services (Compat version for script tags) -->
@@ -1774,6 +1777,7 @@ GIANG, 8"></textarea>
   <script src="js/pdfExtractor.js?v=4.0"></script>
   <script src="js/documentQuestionBank.js?v=4.0"></script>
   <script src="js/mathGenerator.js?v=4.0"></script>
+  <script src="js/khtnGenerator.js?v=4.0"></script>
   <script src="js/app.js?v=4.0"></script>
   <!-- BATCH EXAM RESULTS MODAL -->
   <div id="batchGenResultsModal" class="hidden" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.7);backdrop-filter:blur(4px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.25rem;">

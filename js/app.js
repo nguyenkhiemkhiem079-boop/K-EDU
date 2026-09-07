@@ -2518,29 +2518,93 @@ const SUBJECT_LABELS = {
 };
 
 function handleExamSubjectChange(subjectVal) {
-  const khtnPanel = document.getElementById('khtnComingSoonPanel');
+  const khtnBanner = document.getElementById('khtnInfoBanner');
   const mathGenControls = document.getElementById('mathGenControlsContainer');
-  const trackSelect = document.getElementById('mathGenTrackSelect');
+  const trackGroup = document.getElementById('mathGenTrackSelect')?.closest('.form-group');
+  const gradeSelect = document.getElementById('mathGenGradeSelect');
+  const topicSelect = document.getElementById('mathGenTopicSelect');
+  const btnAuto = document.getElementById('btnAutoGenerateMathExam');
   const titleInput = document.getElementById('teacherExamTitleInput');
 
-  // Hiện / ẩn panel thông báo KHTN & form sinh đề toán
-  if (khtnPanel) {
-    if (subjectVal === 'khtn') {
-      khtnPanel.classList.remove('hidden');
-      if (mathGenControls) mathGenControls.classList.add('hidden');
-    } else {
-      khtnPanel.classList.add('hidden');
-      if (mathGenControls) mathGenControls.classList.remove('hidden');
-    }
-  }
+  // Đảm bảo khung điều khiển luôn hiển thị
+  if (mathGenControls) mathGenControls.classList.remove('hidden');
 
-  // Cập nhật tiêu đề mặc định (chỉ khi người dùng chưa sửa tay hoặc đang mang giá trị mặc định môn cũ)
-  if (titleInput) {
-    const subjectLabel = SUBJECT_LABELS[subjectVal] || subjectVal;
-    // Nếu tiêu đề đang là một trong các giá trị mặc định, cập nhật tự động
-    const defaultTitles = Object.values(SUBJECT_LABELS).map(l => `Đề Kiểm Tra — Môn ${l}`);
-    if (defaultTitles.includes(titleInput.value) || titleInput.value === 'Đề Kiểm Tra — Môn Toán') {
-      titleInput.value = `Đề Kiểm Tra — Môn ${subjectLabel}`;
+  if (subjectVal === 'khtn') {
+    if (khtnBanner) khtnBanner.classList.remove('hidden');
+    if (trackGroup) trackGroup.style.display = 'none';
+
+    // Đổi options khối lớp KHTN (Lớp 6 - 9, GDPT 2018)
+    if (gradeSelect) {
+      gradeSelect.innerHTML = `
+        <option value="6">KHTN 6</option>
+        <option value="7">KHTN 7</option>
+        <option value="8" selected>KHTN 8</option>
+        <option value="9">KHTN 9</option>
+        <option value="all">Tổng Hợp KHTN (6-9)</option>
+      `;
+    }
+
+    // Đổi options phân môn KHTN
+    if (topicSelect) {
+      topicSelect.innerHTML = `
+        <option value="all" selected>Tất cả phân môn (Tổng hợp)</option>
+        <option value="vat_ly">Vật lý</option>
+        <option value="hoa_hoc">Hóa học</option>
+        <option value="sinh_hoc">Sinh học</option>
+      `;
+    }
+
+    if (btnAuto) {
+      btnAuto.innerHTML = `⚡ TỰ ĐỘNG SINH 5 ĐỀ KHTN (KHÔNG TRÙNG LẶP) & NẠP HỆ THỐNG 🚀`;
+      btnAuto.style.background = 'linear-gradient(135deg, #059669, #10b981)';
+    }
+
+    if (titleInput) {
+      const defaultTitles = Object.values(SUBJECT_LABELS).map(l => `Đề Kiểm Tra — Môn ${l}`);
+      if (defaultTitles.includes(titleInput.value) || titleInput.value === 'Đề Kiểm Tra — Môn Toán') {
+        titleInput.value = 'Đề Kiểm Tra — Môn Khoa học Tự nhiên';
+      }
+    }
+  } else {
+    // Khôi phục giao diện Toán học chuẩn
+    if (khtnBanner) khtnBanner.classList.add('hidden');
+    if (trackGroup) trackGroup.style.display = '';
+
+    if (gradeSelect) {
+      gradeSelect.innerHTML = `
+        <option value="6">Toán 6</option>
+        <option value="7">Toán 7</option>
+        <option value="8">Toán 8</option>
+        <option value="9">Toán 9</option>
+        <option value="10" selected>Toán 10</option>
+        <option value="11">Toán 11</option>
+        <option value="12">Toán 12</option>
+        <option value="TS10">Luyện Thi Tuyển Sinh Vào 10</option>
+        <option value="all">Tổng Hợp Đa Dạng Khối</option>
+      `;
+    }
+
+    if (topicSelect) {
+      topicSelect.innerHTML = `
+        <option value="all" selected>Tất cả chủ đề</option>
+        <option value="Số học">Số học & Tập hợp</option>
+        <option value="Đại số">Đại số & Phương trình</option>
+        <option value="Hình học">Hình học & Đo lường</option>
+        <option value="Hàm số">Hàm số & Parabol</option>
+        <option value="Vectơ">Vectơ & Tọa độ Oxy</option>
+      `;
+    }
+
+    if (btnAuto) {
+      btnAuto.innerHTML = `⚡ TỰ ĐỘNG SINH 5 ĐỀ TOÁN (KHÔNG TRÙNG LẶP) & NẠP HỆ THỐNG 🚀`;
+      btnAuto.style.background = 'linear-gradient(135deg, #6366f1, #8b5cf6)';
+    }
+
+    if (titleInput) {
+      const defaultTitles = Object.values(SUBJECT_LABELS).map(l => `Đề Kiểm Tra — Môn ${l}`);
+      if (defaultTitles.includes(titleInput.value) || titleInput.value === 'Đề Kiểm Tra — Môn Khoa học Tự nhiên') {
+        titleInput.value = 'Đề Kiểm Tra — Môn Toán';
+      }
     }
   }
 }
@@ -2656,14 +2720,21 @@ function syncExamTimeLimits(newVal, source = '') {
 }
 
 async function triggerAutoGenerateMathExam() {
-  if (typeof MathEngine === 'undefined') {
-    showToast('⚠️ Bộ sinh đề toán chưa sẵn sàng, vui lòng thử lại.', 'warn');
+  const currentSubject = document.getElementById('examSubjectSelect')?.value || 'toan';
+  const isKhtn = (currentSubject === 'khtn');
+  const activeEngine = isKhtn 
+    ? (typeof KhtnEngine !== 'undefined' ? KhtnEngine : null)
+    : (typeof MathEngine !== 'undefined' ? MathEngine : null);
+  const subjectDisplayName = isKhtn ? 'Khoa học Tự nhiên' : 'Toán';
+
+  if (!activeEngine) {
+    showToast(`⚠️ Bộ sinh đề ${subjectDisplayName} chưa sẵn sàng, vui lòng thử lại.`, 'warn');
     return;
   }
 
   try {
-    const track = document.getElementById('mathGenTrackSelect')?.value || 'toan';
-    const grade = document.getElementById('mathGenGradeSelect')?.value || '10';
+    const track = isKhtn ? 'khtn' : (document.getElementById('mathGenTrackSelect')?.value || 'toan');
+    const grade = document.getElementById('mathGenGradeSelect')?.value || (isKhtn ? '8' : '10');
     const term = document.getElementById('mathGenTermSelect')?.value || 'GK1';
     const topic = document.getElementById('mathGenTopicSelect')?.value || 'all';
     const sourceMode = document.getElementById('mathGenSourceSelect')?.value || 'document';
@@ -2687,8 +2758,8 @@ async function triggerAutoGenerateMathExam() {
 
     // ================= TRƯỜNG HỢP 1: TẠO HÀNG LOẠT N ĐỀ THI (5, 10, 20 ĐỀ...) =================
     if (batchCount > 1) {
-      showToast(`⏳ Đang tự động sinh ${batchCount} đề thi không trùng lặp (${timeLimitVal} phút)...`, 'info');
-      const generatedList = MathEngine.generateBatchExams({
+      showToast(`⏳ Đang tự động sinh ${batchCount} đề thi ${subjectDisplayName} không trùng lặp (${timeLimitVal} phút)...`, 'info');
+      const generatedList = activeEngine.generateBatchExams({
         track,
         grade,
         term,
@@ -2703,7 +2774,7 @@ async function triggerAutoGenerateMathExam() {
       });
 
       if (!generatedList || !generatedList.length) {
-        showToast('⚠️ Không thể sinh bộ đề thi, vui lòng thử lại.', 'warn');
+        showToast(`⚠️ Không thể sinh bộ đề thi ${subjectDisplayName}, vui lòng thử lại.`, 'warn');
         return;
       }
 
@@ -2724,7 +2795,7 @@ async function triggerAutoGenerateMathExam() {
       const savePromises = generatedList.map(async (gen, i) => {
         const newQuizId = generateQuizCode();
         const examDataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(gen.examHtml || '');
-        const fileName = `${(gen.title || `De_Toan_${gen.examCode || i+1}`).replace(/\s+/g, '_')}.html`;
+        const fileName = `${(gen.title || `De_${isKhtn ? 'KHTN' : 'Toan'}_${gen.examCode || i+1}`).replace(/\s+/g, '_')}.html`;
 
         const autoQuiz = {
           id: newQuizId,
@@ -2747,7 +2818,9 @@ async function triggerAutoGenerateMathExam() {
           createdAt: new Date(Date.now() + i * 1000).toISOString(),
           updatedAt: new Date(Date.now() + i * 1000).toISOString(),
           answerKeys: gen.answerKeys,
-          examCode: gen.examCode || (100 + i + 1).toString()
+          examCode: gen.examCode || (100 + i + 1).toString(),
+          subject: isKhtn ? 'khtn' : 'toan',
+          subjectLabel: isKhtn ? 'Khoa học Tự nhiên' : 'Toán học'
         };
 
         await StorageEngine.saveQuiz(autoQuiz);
@@ -2790,7 +2863,7 @@ async function triggerAutoGenerateMathExam() {
       if (clearBtn) clearBtn.classList.remove('hidden');
       if (nameBadge) {
         nameBadge.classList.remove('hidden');
-        nameBadge.innerHTML = `📄 <strong>Bộ đề ${batchCount} đề đã sinh (Đang mở Đề 1):</strong> ${escapeHtml(firstGen.title || '')}`;
+        nameBadge.innerHTML = `📄 <strong>Bộ đề ${batchCount} đề ${subjectDisplayName} đã sinh (Đang mở Đề 1):</strong> ${escapeHtml(firstGen.title || '')}`;
       }
 
       renderTeacherMcqGrid();
@@ -2810,7 +2883,7 @@ async function triggerAutoGenerateMathExam() {
               <div>
                 <h4 style="color:var(--primary-shadow);margin-bottom:0.35rem;font-size:1.15rem;">🎉 ĐÃ TỰ ĐỘNG SINH & PHÁT HÀNH ${savedExams.length} ĐỀ THI KHÔNG TRÙNG LẶP!</h4>
                 <p style="color:var(--primary-shadow);font-size:0.92rem;font-weight:700;margin-bottom:0.4rem;">
-                  Chế độ: <strong>${deduplicatePolicy === 'disjoint' ? '🛡️ 100% Độc lập (Không trùng câu hỏi)' : '🔀 Đảo mã đề hoán vị (101, 102...)'}</strong> · ${savedExams.length} Đề thi riêng biệt
+                  Môn: <strong>${subjectDisplayName}</strong> · Chế độ: <strong>${deduplicatePolicy === 'disjoint' ? '🛡️ 100% Độc lập (Không trùng câu hỏi)' : '🔀 Đảo mã đề hoán vị (101, 102...)'}</strong> · ${savedExams.length} Đề thi riêng biệt
                 </p>
                 <div style="font-size:0.875rem;font-weight:700;color:var(--emerald-shadow);">
                   ☁️ Tất cả ${savedExams.length} đề đã được lưu vào hệ thống và sẵn sàng thi hoặc in ấn.
@@ -2836,12 +2909,12 @@ async function triggerAutoGenerateMathExam() {
 
       if (typeof SoundEngine !== 'undefined' && SoundEngine.playFanfare) SoundEngine.playFanfare();
       if (typeof GamificationEngine !== 'undefined' && GamificationEngine.fireConfetti) GamificationEngine.fireConfetti();
-      showToast(`⚡ Đã tự động sinh và lưu thành công bộ ${savedExams.length} đề thi!`, 'success');
+      showToast(`⚡ Đã tự động sinh và lưu thành công bộ ${savedExams.length} đề thi ${subjectDisplayName}!`, 'success');
       return;
     }
 
     // ================= TRƯỜNG HỢP 2: TẠO 1 ĐỀ THI ĐƠN LẺ TIÊU CHUẨN =================
-    const generated = MathEngine.generateExam({
+    const generated = activeEngine.generateExam({
       track,
       grade,
       term,
@@ -2896,7 +2969,7 @@ async function triggerAutoGenerateMathExam() {
     // 3. Create preview HTML as standalone Data URL for PDF/iframe viewer
     const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(generated.examHtml || '');
     AppState.teacherPdfData = dataUrl;
-    AppState.teacherFileName = `${(generated.title || 'De_Toan').replace(/\s+/g, '_')}.html`;
+    AppState.teacherFileName = `${(generated.title || `De_${isKhtn ? 'KHTN' : 'Toan'}`).replace(/\s+/g, '_')}.html`;
 
     // Render preview frame
     const previewWrap = document.getElementById('teacherPdfPreviewWrapper');
@@ -2909,7 +2982,7 @@ async function triggerAutoGenerateMathExam() {
     if (clearBtn) clearBtn.classList.remove('hidden');
     if (nameBadge) {
       nameBadge.classList.remove('hidden');
-      nameBadge.innerHTML = `📄 <strong>Tài liệu đề Toán đã sinh:</strong> ${escapeHtml(generated.title || '')}`;
+      nameBadge.innerHTML = `📄 <strong>Tài liệu đề ${subjectDisplayName} đã sinh:</strong> ${escapeHtml(generated.title || '')}`;
     }
 
     // 4. TỰ ĐỘNG LƯU VÀ PHÁT HÀNH ĐỀ THI LÊN CẢ LOCAL VÀ CLOUD NGAY LẬP TỨC
@@ -2934,7 +3007,9 @@ async function triggerAutoGenerateMathExam() {
       antiCheat: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      answerKeys: generated.answerKeys
+      answerKeys: generated.answerKeys,
+      subject: isKhtn ? 'khtn' : 'toan',
+      subjectLabel: isKhtn ? 'Khoa học Tự nhiên' : 'Toán học'
     };
 
     const saveRes = await StorageEngine.saveQuiz(autoQuiz);
@@ -4539,15 +4614,21 @@ async function renderSampleQuizzes(filterName = '', filterClass = '') {
           qCountDisplay = `<span>📝 <strong>${q.totalQuestions || 0} câu hỏi</strong></span>`;
         }
 
+        const isKhtnQuiz = (q.subject === 'khtn' || (q.subjectLabel && q.subjectLabel.includes('Tự nhiên')) || (q.title && q.title.includes('KHTN')));
+        const subjectBadge = isKhtnQuiz
+          ? `<span class="badge-status" style="background:#ecfdf5;color:#065f46;border:1.5px solid #10b981;font-weight:800;font-size:0.75rem;">🔬 KHTN</span>`
+          : `<span class="badge-status" style="background:#eef2ff;color:#3730a3;border:1.5px solid #6366f1;font-weight:800;font-size:0.75rem;">📐 Toán</span>`;
+
         return `
           <div class="path-milestone-node ${posClass}">
-            <div class="path-milestone-circle ${circleColorClass}" onclick="loadSampleToStudent('${q.id}')" title="Bắt đầu: ${escapeHtml(q.title)}">
-              <span class="milestone-icon">${hasCompleted ? '🏆' : icon}</span>
+            <div class="path-milestone-circle ${isKhtnQuiz ? 'circle-green' : circleColorClass}" onclick="loadSampleToStudent('${q.id}')" title="Bắt đầu: ${escapeHtml(q.title)}">
+              <span class="milestone-icon">${hasCompleted ? '🏆' : (isKhtnQuiz ? '🔬' : icon)}</span>
               <span class="path-milestone-badge">${hasCompleted ? '✓' : idx + 1}</span>
             </div>
 
-            <div class="path-lesson-card" style="${hasCompleted ? 'border-color:rgba(16,185,129,0.5);' : ''}">
+            <div class="path-lesson-card" style="${hasCompleted ? 'border-color:rgba(16,185,129,0.5);' : (isKhtnQuiz ? 'border-color:rgba(16,185,129,0.4);' : '')}">
               <div class="path-lesson-badges">
+                ${subjectBadge}
                 ${termBadge}
                 ${targetBadge}
                 ${completionBadgeHtml}
@@ -4690,7 +4771,10 @@ async function startExamWithQuizId(quizId) {
 
   setMobileExamView('pdf');
   updateMobileSheetBadges();
-  document.getElementById('splitExamExamTitle').textContent = quiz.title;
+
+  const isKhtnExam = (quiz.subject === 'khtn' || (quiz.subjectLabel && quiz.subjectLabel.includes('Tự nhiên')) || (quiz.title && quiz.title.includes('KHTN')));
+  const subjectIcon = isKhtnExam ? '🔬' : '📐';
+  document.getElementById('splitExamExamTitle').textContent = `${subjectIcon} ${quiz.title}`;
   document.getElementById('splitExamStudentInfo').textContent = `${name} — Lớp ${className}`;
 
   const frame = document.getElementById('studentPdfViewerFrame');
@@ -7272,7 +7356,7 @@ async function openHonorCertificateForStudent(studentName, customTitle = 'HỌC 
       <div class="certificate-seal">🏆</div>
       <div class="cert-school-name">HỆ THỐNG GIÁO DỤC K-EDU · TOÀN QUỐC</div>
       <div class="cert-title">GIẤY CHỨNG NHẬN VINH DANH</div>
-      <p style="font-style:italic;color:#78350f;margin-bottom:0.5rem;font-size:0.95rem;">Chứng nhận thành tích học tập và rèn luyện môn Toán xuất sắc:</p>
+      <p style="font-style:italic;color:#78350f;margin-bottom:0.5rem;font-size:0.95rem;">Chứng nhận thành tích học tập và rèn luyện xuất sắc tại K-EDU:</p>
 
       <div class="cert-student-name">${escapeHtml(st.name)}</div>
       <div style="font-size:1.1rem;font-weight:800;color:#4338ca;margin-bottom:0.5rem;">Học Sinh Lớp ${escapeHtml(st.className)}</div>
