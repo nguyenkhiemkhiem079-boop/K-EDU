@@ -339,6 +339,9 @@ GIANG, 8"></textarea>
           <div id="joinQuizStatus" style="margin-top:0.5rem;font-size:0.95rem;text-align:center;font-weight:700;"></div>
         </div>
 
+        <!-- Student Topic Feedback (Nhận Xét Của Em) In Lobby -->
+        <div id="studentLobbyTopicFeedbackWrap" style="margin-bottom:1.5rem;"></div>
+
         <!-- Direct Exam Feed List -->
         <div class="card duo-feed-card">
           <div class="card-header">
@@ -539,6 +542,9 @@ GIANG, 8"></textarea>
             <button type="button" class="btn btn-secondary" onclick="switchTab('gamification')">🏆 Xem Bảng Vinh Danh</button>
           </div>
         </div>
+
+        <!-- Student Topic Analytics Feedback Card (Nhận Xét Của Em Sau Khi Nộp Bài) -->
+        <div id="studentResultTopicFeedbackWrap" style="margin-top:1.5rem;"></div>
 
         <!-- Detailed Review Card -->
         <div class="card" id="studentExamReviewCard" style="border-top:5px solid var(--indigo);margin-top:1.5rem;">
@@ -1338,6 +1344,38 @@ GIANG, 8"></textarea>
           <div id="teacherAnalyticsDashboardWrap"></div>
         </div>
 
+        <!-- Section 3B: CLASS TOPIC ANALYTICS (Phân Tích Lớp Học) -->
+        <div class="card" id="teacherClassTopicAnalyticsCard" style="border-left:6px solid #8b5cf6;margin-top:1.5rem;background:linear-gradient(180deg, var(--bg-card) 0%, rgba(245, 243, 255, 0.4) 100%);">
+          <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;">
+            <h2><span>📊</span> Phân Tích Năng Lực Theo Chủ Đề Của Lớp Học (Class Topic Analytics)</h2>
+            <span class="badge-status badge-pass" style="font-size:0.85rem;padding:4px 10px;">🔒 Dữ Liệu Tổng Hợp Ẩn Danh Cá Nhân</span>
+          </div>
+          <p class="card-subtitle">
+            Tổng hợp tỷ lệ chính xác theo từng chủ đề giúp Thầy Cô có kế hoạch bồi dưỡng và củng cố trọng tâm. Dữ liệu tổng hợp ẩn danh bảo mật thông tin cá nhân của học sinh.
+          </p>
+
+          <!-- Class & Subject Filter Controls -->
+          <div class="form-row" style="margin-top:1rem;">
+            <div class="form-group" style="flex:1;min-width:200px;">
+              <label>🏫 Chọn Lớp Học:</label>
+              <select id="classTopicFilterClass" onchange="StudentAnalytics.handleClassTopicFilterChange()" style="font-weight:700;padding:0.5rem 0.8rem;border:2px solid var(--border-color);border-radius:var(--radius-md);width:100%;">
+                <option value="">-- Tất cả các lớp --</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex:1;min-width:200px;">
+              <label>📚 Chọn Môn Học:</label>
+              <select id="classTopicFilterSubject" onchange="StudentAnalytics.handleClassTopicFilterChange()" style="font-weight:700;padding:0.5rem 0.8rem;border:2px solid var(--border-color);border-radius:var(--radius-md);width:100%;">
+                <option value="">-- Tất cả môn học --</option>
+                <option value="toan">Toán học</option>
+                <option value="khtn">Khoa học tự nhiên (KHTN)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Table Container -->
+          <div id="teacherClassTopicAnalyticsTableWrap" style="margin-top:1.25rem;"></div>
+        </div>
+
       </div>
 
       <!-- ================= SUB-TAB 4: CÀI ĐẶT & CLOUD ================= -->
@@ -1779,6 +1817,7 @@ GIANG, 8"></textarea>
   <script src="js/mathGenerator.js?v=4.0"></script>
   <script src="js/khtnGenerator.js?v=4.0"></script>
   <script src="js/app.js?v=4.0"></script>
+  <script src="js/studentAnalytics.js?v=4.0"></script>
   <!-- BATCH EXAM RESULTS MODAL -->
   <div id="batchGenResultsModal" class="hidden" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.7);backdrop-filter:blur(4px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.25rem;">
     <div style="background:var(--bg-card);border:2px solid var(--indigo);border-radius:var(--radius-xl);max-width:960px;width:100%;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 40px rgba(0,0,0,0.3);animation:bounceIn 0.25s ease-out;overflow:hidden;">
@@ -2033,6 +2072,17 @@ GIANG, 8"></textarea>
 
       </div>
 
+    </div>
+  </div>
+
+  <!-- ================= TEACHER INDIVIDUAL STUDENT ANALYTICS MODAL ================= -->
+  <div id="teacherStudentDetailModal" class="roster-modal-backdrop hidden">
+    <div class="card" style="max-width:800px;width:95%;max-height:90vh;display:flex;flex-direction:column;border-radius:var(--radius-xl);overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,0.3);margin:auto;">
+      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding:1rem 1.25rem;">
+        <h2 style="margin:0;font-size:1.3rem;"><span>👤</span> Chi Tiết Năng Lực Theo Chủ Đề Của Học Sinh</h2>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="StudentAnalytics.closeStudentDetailModal()">✕ Đóng</button>
+      </div>
+      <div id="teacherStudentDetailModalBody" style="padding:1.25rem;overflow-y:auto;flex:1;"></div>
     </div>
   </div>
 

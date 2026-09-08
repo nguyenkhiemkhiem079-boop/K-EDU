@@ -57,7 +57,7 @@ const ExamVault = (function () {
         num: k.num,
         type: k.type,
         level: k.level || 'TH',
-        category: k.category || '',
+        category: k.topic || k.category || '',
         source: k.source || '',
         subject: k.subject || fallbackSubjectLabel,
         passage: k.passage !== undefined ? k.passage : null,
@@ -653,6 +653,9 @@ function switchTeacherSubtab(subtabName) {
     renderTeacherPenaltyManagerSection();
   } else if (subtabName === 'analytics') {
     renderTeacherAnalyticsDashboard();
+    if (typeof StudentAnalytics !== 'undefined' && StudentAnalytics.renderTeacherClassTopicAnalytics) {
+      StudentAnalytics.renderTeacherClassTopicAnalytics();
+    }
   } else if (subtabName === 'vouchers') {
     renderTeacherVouchersManager('all');
   }
@@ -1858,6 +1861,10 @@ async function renderTeacherAnalyticsDashboard() {
       </div>
     </div>
   `;
+
+  if (typeof StudentAnalytics !== 'undefined' && StudentAnalytics.renderTeacherClassTopicAnalytics) {
+    StudentAnalytics.renderTeacherClassTopicAnalytics();
+  }
 }
 
 function setTeacherAnalyticsScope(scope) {
@@ -4367,6 +4374,9 @@ function updatePersonalizedExamFeed() {
 
   renderSampleQuizzes(currentName, currentClass);
   checkAndRenderPausedExamBanner();
+  if (typeof StudentAnalytics !== 'undefined' && StudentAnalytics.renderStudentTopicFeedback) {
+    StudentAnalytics.renderStudentTopicFeedback(currentName, currentClass, 'studentLobbyTopicFeedbackWrap');
+  }
 }
 
 let isRepairRunning = false;
@@ -5464,6 +5474,9 @@ async function submitStudentExam(isAuto = false) {
 
     renderExamResultHero(resultRecord, rewards);
     renderExamReviewList(reviewData, isDocumentOnly);
+    if (typeof StudentAnalytics !== 'undefined' && StudentAnalytics.renderStudentTopicFeedback) {
+      StudentAnalytics.renderStudentTopicFeedback(resultRecord.name, resultRecord.className, 'studentResultTopicFeedbackWrap');
+    }
 
     SoundEngine.playFanfare();
     GamificationEngine.fireConfetti();

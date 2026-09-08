@@ -4031,3 +4031,188 @@ tr:hover td { background: var(--bg-card-hover); }
   box-shadow: 0 4px 16px rgba(99, 102, 241, 0.25) !important;
 }
 
+/* ================= STUDENT & TEACHER COMPETENCE ANALYTICS (STEP 2) ================= */
+.topic-feedback-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.topic-feedback-item {
+  background: var(--bg-primary);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.15rem 1.25rem;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.topic-feedback-item:hover {
+  border-color: var(--indigo);
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.1);
+}
+
+.topic-feedback-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
+}
+
+.topic-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: var(--text-primary);
+}
+
+.topic-subject-badge {
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.topic-subject-toan {
+  background: rgba(99, 102, 241, 0.12);
+  color: var(--indigo);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+.topic-subject-khtn {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+.topic-subject-other {
+  background: rgba(148, 163, 184, 0.15);
+  color: var(--text-secondary);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.topic-stat-meta {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.topic-progress-track {
+  width: 100%;
+  height: 12px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  position: relative;
+  margin: 0.5rem 0 0.75rem 0;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.topic-progress-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.topic-fill-mastery {
+  background: linear-gradient(90deg, #10b981, #059669);
+}
+
+.topic-fill-progressing {
+  background: linear-gradient(90deg, #3b82f6, #6366f1);
+}
+
+.topic-fill-review {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.topic-fill-insufficient {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--bg-tertiary),
+    var(--bg-tertiary) 8px,
+    rgba(148, 163, 184, 0.2) 8px,
+    rgba(148, 163, 184, 0.2) 16px
+  );
+  width: 100% !important;
+}
+
+.topic-comment-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+
+.topic-main-comment {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.topic-trend-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(16, 185, 129, 0.1);
+  color: #047857;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  font-weight: 800;
+  width: fit-content;
+}
+
+[data-theme="dark"] .topic-trend-line {
+  background: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+  border-color: rgba(52, 211, 153, 0.35);
+}
+
+/* Teacher Class Analytics Table */
+.teacher-topic-table-wrap {
+  overflow-x: auto;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+}
+
+.teacher-topic-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+  text-align: left;
+}
+
+.teacher-topic-table th {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-weight: 800;
+  padding: 0.85rem 1rem;
+  border-bottom: 2px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.teacher-topic-table td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+.teacher-topic-table tbody tr:hover {
+  background: rgba(99, 102, 241, 0.03);
+}
+
+.teacher-topic-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
