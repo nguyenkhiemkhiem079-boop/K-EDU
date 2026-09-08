@@ -581,6 +581,136 @@ const StorageEngine = {
     return true;
   },
 
+  /**
+   * Lấy thời điểm nộp bài mới nhất của một quiz (ms).
+   * Trả về null nếu đề chưa có bất kỳ bài nộp nào (đề chưa ai làm).
+   */
+  async getLastSubmissionTime(quizId) {
+    const keys = await this.list(`result:${quizId}:`);
+    if (!keys || keys.length === 0) return null;
+
+    let latest = 0;
+    for (const k of keys) {
+      const rec = await this.get(k);
+      if (!rec) continue;
+      let timeMs = 0;
+      if (rec.submittedAt) {
+        timeMs = new Date(rec.submittedAt).getTime();
+      } else if (rec.time) {
+        timeMs = typeof rec.time === 'number' ? rec.time : new Date(rec.time).getTime();
+      } else if (rec.createdAt) {
+        timeMs = typeof rec.createdAt === 'number' ? rec.createdAt : new Date(rec.createdAt).getTime();
+      } else {
+        const parts = k.split('_');
+        const lastPart = parts[parts.length - 1];
+        const parsed = parseInt(lastPart, 10);
+        if (!isNaN(parsed) && parsed > 1000000000) {
+          timeMs = parsed;
+        }
+      }
+      if (timeMs > latest) {
+        latest = timeMs;
+      }
+    }
+    return latest > 0 ? latest : null;
+  },
+
+  /**
+   * Quét và dọn dẹp các đề thi đã kết thúc trên 7 ngày kể từ lần nộp bài cuối cùng.
+   * - Nén kết quả: xóa các field nặng trong review[], giữ lại các field nhẹ cần cho StudentAnalytics.
+   * - Xóa đề gốc: quiz:{quizId} và pdf_{quizId}.
+   * - Không xóa quiz chưa từng có ai nộp bài.
+   * - Đồng bộ Firebase nếu active.
+   */
+  async runRetentionSweep() {
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    const allQuizzes = await this.getAllQuizzes();
+
+    let quizzesRemoved = 0;
+    let resultsCompacted = 0;
+    let bytesSaved = 0;
+
+    for (const quiz of allQuizzes) {
+      if (!quiz || !quiz.id) continue;
+
+      const lastSubmissionTime = await this.getLastSubmissionTime(quiz.id);
+      // Đề chưa có ai làm thì KHÔNG bao giờ bị đụng vào
+      if (lastSubmissionTime === null) continue;
+
+      // Kiểm tra mốc 7 ngày kể từ lần nộp bài cuối cùng
+      if (now - lastSubmissionTime > SEVEN_DAYS_MS) {
+        // 1. NÉN TỪNG BẢN GHI RESULT
+        const resultKeys = await this.list(`result:${quiz.id}:`);
+        for (const rKey of resultKeys) {
+          const rec = await this.get(rKey);
+          if (!rec) continue;
+          if (rec.compacted) continue; // Đã nén trước đó, bỏ qua để tránh xử lý lặp lại
+
+          const oldJson = JSON.stringify(rec);
+          const oldLen = oldJson.length;
+
+          // Cắt gọn review[] chỉ giữ lại field nhẹ
+          const rawReview = rec.review || rec.reviewData || [];
+          const cleanReview = Array.isArray(rawReview) ? rawReview.map(item => ({
+            num: item.num,
+            type: item.type,
+            level: item.level,
+            category: item.category,
+            subject: item.subject,
+            maxScore: item.maxScore,
+            earnedScore: item.earnedScore,
+            given: item.given,
+            correctAnswer: item.correctAnswer,
+            isCorrect: item.isCorrect
+          })) : [];
+
+          rec.review = cleanReview;
+          if (rec.reviewData) {
+            rec.reviewData = cleanReview;
+          }
+          rec.compacted = true;
+          rec.compactedAt = new Date().toISOString();
+
+          const newJson = JSON.stringify(rec);
+          bytesSaved += Math.max(0, oldLen - newJson.length);
+
+          await this.set(rKey, rec);
+          if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
+            try {
+              const docId = rec.id || rKey;
+              await window.FirebaseEngine.db.collection('results').doc(docId).set(rec);
+            } catch (e) {
+              console.warn('[RetentionSweep] Firebase updateResult error:', e);
+            }
+          }
+          resultsCompacted++;
+        }
+
+        // 2. XÓA ĐỀ GỐC VÀ FILE PDF
+        const quizRaw = await this.get('quiz:' + quiz.id);
+        if (quizRaw) {
+          bytesSaved += JSON.stringify(quizRaw).length;
+        }
+        await this.remove('quiz:' + quiz.id);
+        await this.removePdfBlob(quiz.id);
+
+        if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
+          try {
+            await window.FirebaseEngine.db.collection('quizzes').doc(quiz.id).delete();
+            await window.FirebaseEngine.deletePdf(quiz.id);
+          } catch (e) {
+            console.warn('[RetentionSweep] Firebase deleteQuiz error:', e);
+          }
+        }
+        quizzesRemoved++;
+      }
+    }
+
+    console.log(`[RetentionSweep] Hoàn tất: Đã xóa ${quizzesRemoved} đề, nén ${resultsCompacted} kết quả, tiết kiệm ~${Math.round(bytesSaved / 1024)}KB.`);
+    return { quizzesRemoved, resultsCompacted, bytesSaved };
+  },
+
   async clearAllTestResults() {
     // Dọn dẹp sạch toàn bộ bài nộp thử nghiệm (reset thống kê về 0)
     const keys = await this.list('result:');

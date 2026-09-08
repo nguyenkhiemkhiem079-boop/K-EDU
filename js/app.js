@@ -554,6 +554,7 @@ function switchTab(tabId) {
     switchTeacherSubtab(AppState.activeTeacherSubtab || 'create');
     renderAssignTargetsSelector();
     renderDocumentBankStats();
+    checkAndRunAutoRetentionSweep();
   } else if (tabId === 'student') {
     updatePersonalizedExamFeed();
     checkAndRenderPausedExamBanner();
@@ -5473,7 +5474,7 @@ async function submitStudentExam(isAuto = false) {
     document.getElementById('studentResultSection').classList.remove('hidden');
 
     renderExamResultHero(resultRecord, rewards);
-    renderExamReviewList(reviewData, isDocumentOnly);
+    renderExamReviewList(reviewData, isDocumentOnly, resultRecord);
     if (typeof StudentAnalytics !== 'undefined' && StudentAnalytics.renderStudentTopicFeedback) {
       StudentAnalytics.renderStudentTopicFeedback(resultRecord.name, resultRecord.className, 'studentResultTopicFeedbackWrap');
     }
@@ -5596,7 +5597,7 @@ function renderExamResultHero(result, rewards) {
   }
 }
 
-function renderExamReviewList(reviewData, isDocumentOnly = false) {
+function renderExamReviewList(reviewData, isDocumentOnly = false, resultRecord = null) {
   const reviewCard = document.getElementById('studentExamReviewCard');
   if (isDocumentOnly) {
     if (reviewCard) reviewCard.classList.add('hidden');
@@ -5607,6 +5608,34 @@ function renderExamReviewList(reviewData, isDocumentOnly = false) {
 
   const container = document.getElementById('examReviewContainer');
   if (!container) return;
+
+  // Xử lý khi xem lại kết quả đã nén sau 7 ngày
+  if (resultRecord && resultRecord.compacted) {
+    const total = resultRecord.total || (reviewData ? reviewData.length : 0);
+    const correctCount = resultRecord.correct || (reviewData ? reviewData.filter(r => r.isCorrect).length : 0);
+    const scoreVal = resultRecord.totalScore !== undefined ? resultRecord.totalScore : (resultRecord.score || 0);
+
+    container.innerHTML = `
+      <div class="review-portal-wrap" style="padding:2.5rem 1.5rem;text-align:center;background:var(--bg-card);border:2px dashed var(--indigo);border-radius:var(--radius-lg);margin-top:1rem;">
+        <div style="font-size:3.5rem;margin-bottom:0.75rem;">📦</div>
+        <div style="font-size:1.25rem;font-weight:800;color:var(--text-primary);margin-bottom:0.6rem;">
+          Đề thi này đã được dọn dẹp sau 7 ngày để tiết kiệm dung lượng
+        </div>
+        <p style="font-size:0.95rem;font-weight:600;color:var(--text-secondary);max-width:580px;margin:0 auto 1.5rem;line-height:1.5;">
+          Không thể xem lại nội dung câu hỏi chi tiết, nhưng điểm số và thống kê chủ đề vẫn được giữ nguyên.
+        </p>
+        <div style="display:inline-flex;gap:1.25rem;flex-wrap:wrap;justify-content:center;">
+          <div style="background:var(--bg-tertiary);border:1px solid var(--border-color);padding:0.75rem 1.5rem;border-radius:var(--radius-md);font-weight:800;">
+            Thang điểm: <span style="color:var(--primary);font-size:1.15rem;">${scoreVal}/10đ</span>
+          </div>
+          <div style="background:var(--bg-tertiary);border:1px solid var(--border-color);padding:0.75rem 1.5rem;border-radius:var(--radius-md);font-weight:800;">
+            Số câu đúng: <span style="color:var(--indigo);font-size:1.15rem;">${correctCount}/${total} câu</span>
+          </div>
+        </div>
+      </div>
+    `;
+    return;
+  }
 
   const total = reviewData.length;
   const correctCount = reviewData.filter(r => r.isCorrect).length;
@@ -5985,6 +6014,9 @@ async function loadTeacherResults() {
                   <td><span class="badge-status ${r.isCheated ? 'badge-fail' : ((r.isDocumentOnly || (r.totalScore || 0) >= 5) ? 'badge-pass' : 'badge-fail')}">${r.isCheated ? 'HỦY BÀI' : (r.isDocumentOnly ? 'ĐÃ NỘP' : ((r.totalScore || 0) >= 5 ? 'ĐẠT' : 'CHƯA ĐẠT'))}</span></td>
                   <td style="text-align:center;">
                     <div style="display:flex;gap:0.35rem;justify-content:center;flex-wrap:wrap;">
+                      <button type="button" class="btn btn-primary btn-sm" style="padding:0.25rem 0.5rem;font-size:0.75rem;" onclick="adminViewSubmissionReview('${escapeHtml(r.id || r.key || '')}')" title="Xem chi tiết bài làm & lời giải">
+                        👁️ Xem Bài
+                      </button>
                       <button type="button" class="btn btn-secondary btn-sm" style="padding:0.25rem 0.5rem;font-size:0.75rem;" onclick="adminResetStudentRetake('${escapeHtml(r.id || r.key || '')}', '${escapeHtml(code)}', '${escapeHtml(r.className || '')}', '${escapeHtml(r.name || '')}')" title="Xóa kết quả cũ, mở khóa để học sinh thi lại từ đầu">
                         🔄 Cho Thi Lại
                       </button>
@@ -7844,4 +7876,123 @@ if (typeof document !== 'undefined') {
     setTimeout(renderDocumentBankStats, 300);
   }
 }
+
+/* ================= STORAGE RETENTION & AUTO-COMPACTION ENGINE ================= */
+async function checkAndRunAutoRetentionSweep() {
+  try {
+    const lastSweepStr = localStorage.getItem('khiemedu_last_sweep_at');
+    const now = Date.now();
+    if (lastSweepStr) {
+      const elapsed = now - parseInt(lastSweepStr, 10);
+      if (elapsed < 24 * 60 * 60 * 1000) {
+        return; // Đã chạy trong vòng 24 giờ qua
+      }
+    }
+
+    localStorage.setItem('khiemedu_last_sweep_at', now.toString());
+    const stats = await StorageEngine.runRetentionSweep();
+    if (stats && (stats.quizzesRemoved > 0 || stats.resultsCompacted > 0)) {
+      console.log(`[AutoRetentionSweep] Đã tự động dọn ${stats.quizzesRemoved} đề, nén ${stats.resultsCompacted} kết quả, tiết kiệm ~${Math.round(stats.bytesSaved / 1024)}KB.`);
+    }
+  } catch (err) {
+    console.warn('[AutoRetentionSweep] Error running sweep:', err);
+  }
+}
+
+async function triggerManualRetentionSweep() {
+  const btn = document.getElementById('btnManualRetentionSweep');
+  if (btn) btn.disabled = true;
+
+  try {
+    showToast('⏳ Đang tiến hành quét và dọn dẹp đề thi quá 7 ngày...', 'info');
+    const stats = await StorageEngine.runRetentionSweep();
+    localStorage.setItem('khiemedu_last_sweep_at', Date.now().toString());
+
+    if (stats && (stats.quizzesRemoved > 0 || stats.resultsCompacted > 0)) {
+      const kb = Math.round(stats.bytesSaved / 1024);
+      showToast(`🧹 Đã dọn ${stats.quizzesRemoved} đề thi cũ, nén ${stats.resultsCompacted} bản ghi kết quả, tiết kiệm ~${kb}KB!`, 'success');
+      if (typeof renderTeacherQuizManager === 'function') renderTeacherQuizManager();
+    } else {
+      showToast('🎉 Hệ thống lưu trữ đã được tối ưu! Không có đề thi nào kết thúc quá 7 ngày cần dọn dẹp.', 'success');
+    }
+  } catch (err) {
+    console.error('triggerManualRetentionSweep error:', err);
+    showToast('⚠️ Có lỗi xảy ra trong quá trình dọn dẹp.', 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function adminViewSubmissionReview(resultId) {
+  const modal = document.getElementById('teacherSubmissionReviewModal');
+  const modalBody = document.getElementById('teacherSubmissionReviewModalBody');
+  const modalTitle = document.getElementById('teacherSubmissionReviewModalTitle');
+  if (!modal || !modalBody) return;
+
+  const cleanKey = resultId.replace(STORAGE_PREFIX, '');
+  let res = await StorageEngine.get(cleanKey);
+  if (!res) res = await StorageEngine.get(resultId);
+
+  if (!res) {
+    showToast('⚠️ Không tìm thấy bản ghi kết quả này.', 'warn');
+    return;
+  }
+
+  if (modalTitle) {
+    modalTitle.innerHTML = `<span>📖</span> Chi Tiết Bài Làm: ${escapeHtml(res.name)} (${escapeHtml(res.className)}) — Mã Đề: ${escapeHtml(res.quizId)}`;
+  }
+
+  if (res.compacted) {
+    const total = res.total || (res.review ? res.review.length : 0);
+    const correctCount = res.correct || (res.review ? res.review.filter(r => r.isCorrect).length : 0);
+    const scoreVal = res.totalScore !== undefined ? res.totalScore : (res.score || 0);
+
+    modalBody.innerHTML = `
+      <div style="padding:2.5rem 1.5rem;text-align:center;background:var(--bg-card);border:2px dashed var(--indigo);border-radius:var(--radius-lg);">
+        <div style="font-size:3.5rem;margin-bottom:0.75rem;">📦</div>
+        <div style="font-size:1.25rem;font-weight:800;color:var(--text-primary);margin-bottom:0.6rem;">
+          Đề thi này đã được dọn dẹp sau 7 ngày để tiết kiệm dung lượng
+        </div>
+        <p style="font-size:0.95rem;font-weight:600;color:var(--text-secondary);max-width:580px;margin:0 auto 1.5rem;line-height:1.5;">
+          Không thể xem lại nội dung câu hỏi chi tiết, nhưng điểm số và thống kê chủ đề vẫn được giữ nguyên.
+        </p>
+        <div style="display:inline-flex;gap:1.25rem;flex-wrap:wrap;justify-content:center;">
+          <div style="background:var(--bg-tertiary);border:1px solid var(--border-color);padding:0.75rem 1.5rem;border-radius:var(--radius-md);font-weight:800;">
+            Thang điểm: <span style="color:var(--primary);font-size:1.15rem;">${scoreVal}/10đ</span>
+          </div>
+          <div style="background:var(--bg-tertiary);border:1px solid var(--border-color);padding:0.75rem 1.5rem;border-radius:var(--radius-md);font-weight:800;">
+            Số câu đúng: <span style="color:var(--indigo);font-size:1.15rem;">${correctCount}/${total} câu</span>
+          </div>
+        </div>
+      </div>
+    `;
+  } else {
+    const reviewData = res.review || res.reviewData || [];
+    modalBody.innerHTML = `
+      <div style="margin-bottom:1rem;display:flex;gap:1rem;flex-wrap:wrap;">
+        <div class="stat-item" style="padding:0.5rem 1rem;"><div class="stat-val">${res.totalScore || 0}/10đ</div><div class="stat-lbl">Điểm số</div></div>
+        <div class="stat-item" style="padding:0.5rem 1rem;"><div class="stat-val">${res.correct || 0}/${res.total || reviewData.length}</div><div class="stat-lbl">Số câu đúng</div></div>
+        <div class="stat-item" style="padding:0.5rem 1rem;"><div class="stat-val">${Math.floor((res.timeTakenSeconds || 0)/60)}p ${(res.timeTakenSeconds || 0)%60}s</div><div class="stat-lbl">Thời gian làm</div></div>
+      </div>
+      <div class="review-cards-list">
+        ${reviewData.map((r, i) => `
+          <div class="review-qcard ${r.isCorrect ? 'status-correct' : 'status-wrong'}" style="margin-bottom:1rem;padding:1rem;background:var(--bg-card);border:1.5px solid var(--border-color);border-radius:var(--radius-md);">
+            <div style="font-weight:800;margin-bottom:0.5rem;">Câu ${r.num || (i + 1)}: ${r.isCorrect ? '✅ Đúng' : '❌ Sai'} (${escapeHtml(r.category || r.subject || 'Chủ đề')})</div>
+            ${r.content ? `<div style="margin-bottom:0.5rem;">${r.content}</div>` : ''}
+            <div style="font-size:0.9rem;">Học sinh chọn: <strong>${escapeHtml(r.given || '(chưa điền)')}</strong> | Đáp án đúng: <strong style="color:var(--primary);">${escapeHtml(r.correctAnswer || '')}</strong></div>
+            ${r.explanation ? `<div style="margin-top:0.5rem;font-size:0.85rem;color:var(--text-secondary);background:var(--bg-tertiary);padding:0.5rem;border-radius:var(--radius-sm);">💡 Lời giải: ${r.explanation}</div>` : ''}
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  modal.classList.remove('hidden');
+}
+
+function closeTeacherSubmissionReviewModal() {
+  const modal = document.getElementById('teacherSubmissionReviewModal');
+  if (modal) modal.classList.add('hidden');
+}
+
 
