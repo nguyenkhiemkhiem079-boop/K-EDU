@@ -6,7 +6,8 @@ service cloud.firestore {
     match /students/{uid} {
       allow read: if request.auth != null && (request.auth.uid == uid || request.auth.token.teacher == true);
       allow create: if request.auth != null && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['uid', 'email', 'name', 'className', 'role', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['uid', 'email', 'username', 'name', 'className', 'role', 'createdAt'])
+        && request.resource.data.username is string && request.resource.data.username.size() >= 3 && request.resource.data.username.size() <= 40
         && request.resource.data.uid == uid && request.resource.data.email == request.auth.token.email
         && request.resource.data.role == 'student'
         && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 100

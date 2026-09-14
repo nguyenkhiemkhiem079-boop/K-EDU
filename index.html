@@ -288,7 +288,7 @@ GIANG, 8"></textarea>
             </div>
             <form onsubmit="StudentAccounts.submit(); return false;">
               <div class="form-row">
-                <div class="form-group"><label for="studentAccountEmail">Email đăng nhập</label><input id="studentAccountEmail" type="email" autocomplete="username" placeholder="Email của học sinh hoặc phụ huynh" required></div>
+                <div class="form-group"><label for="studentAccountUsername">Tên đăng nhập</label><input id="studentAccountUsername" type="text" minlength="3" maxlength="40" autocomplete="username" placeholder="Ví dụ: an.nguyen hoặc Nguyễn Văn An" required></div>
                 <div class="form-group"><label for="studentAccountPassword">Mật khẩu</label><input id="studentAccountPassword" type="password" autocomplete="current-password" required></div>
                 <div class="form-group hidden" id="studentAccountConfirmGroup"><label for="studentAccountConfirm">Nhập lại mật khẩu</label><input id="studentAccountConfirm" type="password" autocomplete="new-password"></div>
               </div>
@@ -300,7 +300,6 @@ GIANG, 8"></textarea>
                 <button type="submit" class="btn btn-primary" id="studentAccountLoginButton" data-account-action>Đăng nhập</button>
                 <button type="button" class="btn btn-primary hidden" id="studentAccountRegisterButton" data-account-action onclick="StudentAccounts.register()">Tạo tài khoản</button>
                 <button type="button" class="btn btn-primary hidden" id="studentCompleteProfileButton" data-account-action onclick="StudentAccounts.completeProfile()">Hoàn thiện hồ sơ</button>
-                <button type="button" class="btn btn-secondary" data-account-action onclick="StudentAccounts.resetPassword()">Quên mật khẩu</button>
               </div>
             </form>
           </div>
@@ -1917,7 +1916,7 @@ GIANG, 8"></textarea>
   <script src="js/question-bank/stats.js?v=5.2"></script>
   <script src="js/mathGenerator.js?v=5.2"></script>
   <script src="js/khtnGenerator.js?v=5.2"></script>
-  <script src="js/studentAccounts.js?v=6.0"></script>
+  <script src="js/studentAccounts.js?v=6.2"></script>
   <script src="js/teacherWorkspace.js?v=6.0"></script>
   <script src="js/app.js?v=6.1"></script>
   <script src="js/studentAnalytics.js?v=5.0"></script>

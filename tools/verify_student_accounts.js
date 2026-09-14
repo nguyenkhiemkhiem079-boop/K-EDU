@@ -32,11 +32,18 @@ function node(hidden = false) {
     return { doc(uid) { return { async get() { return { exists: profiles.has(uid), data: () => profiles.get(uid) }; },
       async set(value) { if (failWrite) throw { code: 'permission-denied' }; profiles.set(uid, value); } }; } };
   } } };
-  const ctx = vm.createContext({ window: { FirebaseEngine: firebase, firebase: { auth: authFunction } },
+  const ctx = vm.createContext({ crypto: require('node:crypto').webcrypto, TextEncoder, window: { FirebaseEngine: firebase, firebase: { auth: authFunction } },
     document: { getElementById: get, querySelectorAll: () => [], addEventListener() {} } });
   vm.runInContext(read('js/studentAccounts.js'), ctx);
   const accounts = ctx.window.StudentAccounts;
-  get('studentAccountEmail').value = user.email;
+  get('studentAccountUsername').value = 'Nguyễn Văn An';
+  const username = accounts.readUsername();
+  const address = await accounts.loginAddress(username);
+  user.email = address;
+  assert.match(address, /^[a-f0-9]{40}@students\.kedu\.invalid$/);
+  get('studentAccountUsername').value = '  NGUYỄN   VĂN AN  ';
+  assert.equal(await accounts.loginAddress(accounts.readUsername()), address);
+  assert.notEqual(await accounts.loginAddress('nguyen van an'), address);
   get('studentAccountName').value = 'An'; get('studentAccountClass').value = '10A1';
   get('studentAccountPassword').value = 'password123'; get('studentAccountConfirm').value = 'different';
   assert.equal(await accounts.register(), false);
@@ -52,8 +59,8 @@ function node(hidden = false) {
   get('studentCurrentPassword').value = 'password123'; get('studentNewPassword').value = 'newpassword123';
   assert.equal(await accounts.changePassword(), true);
   assert.equal(calls.at(-2)[0], 'reauth'); assert.equal(calls.at(-1)[0], 'change');
-  assert.equal(await accounts.resetPassword(), true);
-  assert.equal(calls.at(-1)[0], 'reset');
+  assert.equal(accounts.resetPassword(), false);
+  assert.equal(calls.some(call => call[0] === 'reset'), false);
   assert.equal(await accounts.logout(), true); assert.equal(accounts.ready, false);
   assert.equal(get('studentJoinName').value, '');
   get('studentAccountPassword').value = 'password123';

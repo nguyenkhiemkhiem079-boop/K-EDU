@@ -10,12 +10,12 @@
     },
     errorMessage(error) {
       const messages = {
-        'auth/operation-not-allowed': 'Đăng nhập email/mật khẩu chưa được bật trên Firebase.',
-        'auth/email-already-in-use': 'Email này đã có tài khoản. Hãy đăng nhập hoặc đặt lại mật khẩu.',
-        'auth/invalid-email': 'Email không hợp lệ.',
-        'auth/invalid-credential': 'Email hoặc mật khẩu không đúng.',
-        'auth/wrong-password': 'Email hoặc mật khẩu không đúng.',
-        'auth/user-not-found': 'Email hoặc mật khẩu không đúng.',
+        'auth/operation-not-allowed': 'Dịch vụ tài khoản chưa được bật. Vui lòng liên hệ giáo viên.',
+        'auth/email-already-in-use': 'Tên đăng nhập này đã được sử dụng. Hãy chọn tên khác.',
+        'auth/invalid-email': 'Tên đăng nhập không hợp lệ.',
+        'auth/invalid-credential': 'Tên đăng nhập hoặc mật khẩu không đúng.',
+        'auth/wrong-password': 'Tên đăng nhập hoặc mật khẩu không đúng.',
+        'auth/user-not-found': 'Tên đăng nhập hoặc mật khẩu không đúng.',
         'auth/weak-password': 'Mật khẩu chưa đáp ứng chính sách của hệ thống.',
         'auth/network-request-failed': 'Không kết nối được dịch vụ tài khoản. Kiểm tra mạng và thử lại.',
         'auth/too-many-requests': 'Có quá nhiều lần thử. Vui lòng thử lại sau.',
@@ -51,7 +51,7 @@
     render() {
       element('studentAccountCredentials')?.classList.toggle('hidden', this.ready);
       element('studentAccountSignedIn')?.classList.toggle('hidden', !this.ready);
-      if (element('studentAccountIdentity')) element('studentAccountIdentity').textContent = this.ready ? `${this.profile.name} · Lớp ${this.profile.className} · ${this.user.email}` : '';
+      if (element('studentAccountIdentity')) element('studentAccountIdentity').textContent = this.ready ? `${this.profile.name} · Lớp ${this.profile.className}` : '';
       for (const [id, value] of [['studentJoinName', this.profile?.name], ['studentJoinClass', this.profile?.className]]) {
         const input = element(id);
         if (input) { input.value = value || ''; input.readOnly = true; }
@@ -71,10 +71,21 @@
       element('studentAccountLoginButton')?.classList.toggle('hidden', mode === 'register');
       element('studentAccountConfirmGroup')?.classList.toggle('hidden', mode !== 'register');
       element('studentCompleteProfileButton')?.classList.add('hidden');
-      this.message(mode === 'register' ? 'Dùng email có thể nhận thư để khôi phục mật khẩu.' : 'Đăng nhập bằng email và mật khẩu của bạn.');
+      this.message(mode === 'register' ? 'Chọn tên đăng nhập riêng và mật khẩu ít nhất 8 ký tự.' : 'Đăng nhập bằng tên và mật khẩu của bạn.');
       if (element('studentAccountPassword')) element('studentAccountPassword').autocomplete = mode === 'register' ? 'new-password' : 'current-password';
     },
     submit() { return this.mode === 'register' ? this.register() : this.login(); },
+    readUsername() {
+      const username = (element('studentAccountUsername')?.value || '').normalize('NFC').trim().replace(/\s+/g, ' ').toLowerCase();
+      if (!/^[\p{L}\p{N}_. -]{3,40}$/u.test(username)) throw new Error('Tên đăng nhập cần 3–40 ký tự: chữ, số, dấu cách, dấu chấm, gạch dưới hoặc gạch ngang.');
+      return username;
+    },
+    async loginAddress(username) {
+      // Firebase uses a private deterministic identifier; students never enter an email.
+      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('kedu-username-v1:' + username));
+      const key = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('').slice(0, 40);
+      return key + '@students.kedu.invalid';
+    },
     readProfile() {
       const name = (element('studentAccountName')?.value || '').trim();
       const className = (element('studentAccountClass')?.value || '').trim();
@@ -95,9 +106,9 @@
     },
     async login() {
       return this.run(async () => {
-        const email = (element('studentAccountEmail')?.value || '').trim();
+        const email = await this.loginAddress(this.readUsername());
         const password = element('studentAccountPassword')?.value || '';
-        if (!email || !password) throw new Error('Nhập email và mật khẩu.');
+        if (!password) throw new Error('Nhập tên đăng nhập và mật khẩu.');
         const credential = await this.auth.signInWithEmailAndPassword(email, password);
         await this.restore(credential.user);
       });
@@ -105,9 +116,9 @@
     async register() {
       return this.run(async () => {
         const profile = this.readProfile();
-        const email = (element('studentAccountEmail')?.value || '').trim();
+        const email = await this.loginAddress(this.readUsername());
         const password = element('studentAccountPassword')?.value || '';
-        if (!email || password.length < 8) throw new Error('Nhập email và mật khẩu ít nhất 8 ký tự.');
+        if (password.length < 8) throw new Error('Nhập mật khẩu ít nhất 8 ký tự.');
         if (password !== element('studentAccountConfirm')?.value) throw new Error('Hai mật khẩu chưa khớp.');
         const credential = await this.auth.createUserWithEmailAndPassword(email, password);
         this.user = credential.user;
@@ -118,7 +129,9 @@
     async saveProfile(profile) {
       const user = this.auth.currentUser;
       if (!user) throw new Error('Cần đăng nhập trước khi lưu hồ sơ.');
-      const data = { uid: user.uid, email: user.email, ...profile, role: 'student', createdAt: new Date().toISOString() };
+      const username = this.readUsername();
+      if (await this.loginAddress(username) !== user.email) throw new Error('Tên đăng nhập không khớp tài khoản hiện tại. Nhập lại tên bạn đã đăng ký.');
+      const data = { uid: user.uid, email: user.email, username, ...profile, role: 'student', createdAt: new Date().toISOString() };
       try { await window.FirebaseEngine.db.collection('students').doc(user.uid).set(data); }
       catch (error) {
         await this.restore(user).catch(() => {});
@@ -131,12 +144,8 @@
     },
     completeProfile() { return this.run(async () => this.saveProfile(this.readProfile())); },
     resetPassword() {
-      return this.run(async () => {
-        const email = (element('studentAccountEmail')?.value || '').trim();
-        if (!email) throw new Error('Nhập email để nhận thư đặt lại mật khẩu.');
-        await this.auth.sendPasswordResetEmail(email);
-        this.message('Nếu email có tài khoản, bạn sẽ nhận hướng dẫn đặt lại mật khẩu. Kiểm tra cả thư rác.');
-      });
+      this.message('Nếu quên mật khẩu, hãy liên hệ giáo viên. Tài khoản này không khôi phục bằng email.');
+      return false;
     },
     changePassword() {
       return this.run(async () => {
