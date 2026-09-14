@@ -4,7 +4,11 @@
   "description": "**KhiemEdu** là nền tảng học tập, luyện thi trắc nghiệm & tự luận Toán học thông minh với cơ chế **Gamification** (tích điểm XP, Streak chuỗi ngày học, huy hiệu vinh danh) và hỗ trợ công thức Toán học **LaTeX/KaTeX** chuyên nghiệp.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node tools/run-all-qa.js",
+    "bank:audit": "node tools/audit-bank.js",
+    "bank:extract:math": "node tools/extract-questions.js --dir \"TÀI LIỆU/TOÁN\" --max-per-file 0 --output tools/math-expanded-review.json",
+    "bank:prepare:math": "node tools/prepare-math-bank.js",
+    "bank:import:math": "node tools/extract-questions.js --commit --from-review --output tools/math-expanded-candidates.json && node tools/audit-bank.js"
   },
   "keywords": [],
   "author": "",

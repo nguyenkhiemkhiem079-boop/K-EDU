@@ -1,0 +1,72 @@
+[
+  {
+    "test": "verify_all_qa.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_bank_import.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_browser_bank.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_duplicates.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_project_integrity.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_retention_qa.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_runtime_regressions.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_step1.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_step2_analytics_qa.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_step2_qa.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_step3_qa.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_step4_final_qa.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_student_accounts.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_subject_difficulty.js",
+    "passed": true,
+    "error": null
+  }
+]

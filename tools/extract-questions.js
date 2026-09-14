@@ -28,7 +28,7 @@ const TARGET_DIR = getArgVal('--dir', 'TÀI LIỆU');
 const OUTPUT_REVIEW = getArgVal('--output', path.join('tools', 'extracted-review.json'));
 const LOG_SKIPPED = getArgVal('--log', path.join('tools', 'skipped-pdfs.log'));
 const DO_COMMIT = args.includes('--commit');
-const MAX_PER_FILE = parseInt(getArgVal('--max-per-file', '50'), 10);
+const MAX_PER_FILE = parseInt(getArgVal('--max-per-file', '0'), 10);
 const RE_EXTRACT = args.includes('--re-extract') || !args.includes('--from-review');
 
 // ================= TIỆN ÍCH HỖ TRỢ =================
@@ -243,6 +243,11 @@ function parsePdfQuestions(rawText, filePath, fileName) {
 
   // 4. Phân chia các khối câu hỏi theo Câu N / Bài N
   const qSplits = examBody.split(/(?=(?:^|\n)\s*(?:Câu|Bài)\s*\d+[\s.:–-])/i);
+  const numberCounts = new Map();
+  for (const chunk of qSplits) {
+    const match = /^\s*(?:Câu|Bài)\s*(\d+)[\s.:–-]/i.exec(chunk.trim());
+    if (match) numberCounts.set(Number(match[1]), (numberCounts.get(Number(match[1])) || 0) + 1);
+  }
   const questions = [];
   let currentQNum = 1;
 
@@ -280,10 +285,10 @@ function parsePdfQuestions(rawText, filePath, fileName) {
     let hasOversizedOption = false;
 
     // Tìm vị trí của A, B, C, D
-    const optRegA = /(?:^|[\n\s])A[\.\)]\s+/i;
-    const optRegB = /(?:^|[\n\s])B[\.\)]\s+/i;
-    const optRegC = /(?:^|[\n\s])C[\.\)]\s+/i;
-    const optRegD = /(?:^|[\n\s])D[\.\)]\s+/i;
+    const optRegA = /(?:^|[\n\s])A[\.\)]\s+/;
+    const optRegB = /(?:^|[\n\s])B[\.\)]\s+/;
+    const optRegC = /(?:^|[\n\s])C[\.\)]\s+/;
+    const optRegD = /(?:^|[\n\s])D[\.\)]\s+/;
 
     const matchA = optRegA.exec(questionPart);
     const matchB = optRegB.exec(questionPart);
@@ -296,10 +301,10 @@ function parsePdfQuestions(rawText, filePath, fileName) {
         matchC.index < matchD.index) {
 
       title = stripWatermark(questionPart.slice(0, matchA.index));
-      let rawA = stripWatermark(questionPart.slice(matchA.index, matchB.index).replace(/^[A-D][\.\)]\s*/i, ''));
-      let rawB = stripWatermark(questionPart.slice(matchB.index, matchC.index).replace(/^[A-D][\.\)]\s*/i, ''));
-      let rawC = stripWatermark(questionPart.slice(matchC.index, matchD.index).replace(/^[A-D][\.\)]\s*/i, ''));
-      let rawD = questionPart.slice(matchD.index).replace(/^[A-D][\.\)]\s*/i, '');
+      let rawA = stripWatermark(questionPart.slice(matchA.index, matchB.index).trim().replace(/^[A-D][\.\)]\s*/, ''));
+      let rawB = stripWatermark(questionPart.slice(matchB.index, matchC.index).trim().replace(/^[A-D][\.\)]\s*/, ''));
+      let rawC = stripWatermark(questionPart.slice(matchC.index, matchD.index).trim().replace(/^[A-D][\.\)]\s*/, ''));
+      let rawD = questionPart.slice(matchD.index).trim().replace(/^[A-D][\.\)]\s*/, '');
 
       // ================= SỬA 1: CHẶN NUỐT NỘI DUNG CÂU KHÁC VÀO OPTION D =================
       const cutPatterns = [
@@ -357,7 +362,8 @@ function parsePdfQuestions(rawText, filePath, fileName) {
     }
 
     // Xác định đáp án đúng
-    let correctAnswer = answerKeyMap[parsedNum] || inlineAnswer || '';
+    const tableAnswerIsScoped = lastMarkerIdx !== -1 && numberCounts.get(parsedNum) === 1;
+    let correctAnswer = inlineAnswer || (tableAnswerIsScoped ? answerKeyMap[parsedNum] : '') || '';
     if (type === 'truefalse' && correctAnswer) {
       correctAnswer = /sai|f/i.test(correctAnswer) ? 'Sai' : 'Đúng';
     }
@@ -418,7 +424,8 @@ function parsePdfQuestions(rawText, filePath, fileName) {
       options: options,
       correctAnswer: correctAnswer,
       explanation: explanationPart || `Trích từ tài liệu: ${fileName.replace(/\.pdf$/i, '')}`,
-      confidence
+      confidence,
+      answerEvidence: inlineAnswer ? 'inline_solution' : (tableAnswerIsScoped && correctAnswer ? 'scoped_answer_table' : 'unverified')
     });
   }
 
@@ -546,6 +553,11 @@ async function commitHighConfidenceQuestions(extractedQuestions) {
   // Lọc strictly chỉ các câu đạt chuẩn high confidence
   const highQuestions = extractedQuestions.filter(q => {
     if (q.confidence !== 'high') return false;
+    if (needsVisualContext(q.question) && !q.diagram && !q.passage) return false;
+    if (!['inline_solution', 'scoped_answer_table', 'manual_review'].includes(q.answerEvidence)) return false;
+    if (!q.question || !q.correctAnswer || !q.source) return false;
+    if (q.type === 'mcq' && (!/^[ABCD]$/.test(q.correctAnswer) || q.options?.length !== 4)) return false;
+    if (q.type === 'mcq' && new Set(q.options.map(o => o.normalize('NFC').trim().replace(/\s+/g, ' '))).size !== 4) return false;
     // Kiểm tra an toàn tuyệt đối lần cuối trước khi commit
     const all = [q.question, ...(q.options || [])];
     if (all.some(f => f.includes('\t'))) return false;
@@ -561,11 +573,13 @@ async function commitHighConfidenceQuestions(extractedQuestions) {
   const currentContent = fs.readFileSync(bankFilePath, 'utf8');
 
   // Deduplicate: lọc các câu hỏi có nội dung trùng lặp
-  const seenContent = new Set();
+  const existingBank = require(path.resolve(bankFilePath));
+  const seenContent = new Set(existingBank.questions.map(q => existingBank.signature(q.question)));
+  const usedIds = new Set(existingBank.questions.map(q => q.id));
   const uniqueHigh = [];
 
   for (const q of highQuestions) {
-    const norm = q.question.trim().replace(/\s+/g, ' ');
+    const norm = existingBank.signature(q.question);
     if (!seenContent.has(norm)) {
       seenContent.add(norm);
       uniqueHigh.push(q);
@@ -574,11 +588,17 @@ async function commitHighConfidenceQuestions(extractedQuestions) {
 
   console.log(`🎯 Sau khi lọc trùng lặp nội dung: còn ${uniqueHigh.length} câu hỏi độc nhất.`);
 
+  if (!uniqueHigh.length) return;
+
   // Định dạng danh sách câu hỏi mới thành code JavaScript
   const newQuestionObjects = uniqueHigh.map((q, idx) => {
     const gradePrefix = q.grade === 'DGNL' ? 'DGNL' : `TOAN${q.grade}`;
     const slug = slugify(q.source);
-    const id = `${gradePrefix}_${slug}_${String(idx + 1).padStart(3, '0')}`;
+    const baseId = `${gradePrefix}_${slug}_${String(idx + 1).padStart(3, '0')}`;
+    let id = baseId;
+    let suffix = 1;
+    while (usedIds.has(id)) id = `${baseId}_${suffix++}`;
+    usedIds.add(id);
 
     return {
       id,
@@ -588,12 +608,28 @@ async function commitHighConfidenceQuestions(extractedQuestions) {
       type: q.type,
       source: q.source,
       sourceFile: q.sourceFile,
+      answerEvidence: q.answerEvidence,
       question: q.question,
       options: q.options,
       correctAnswer: q.correctAnswer,
-      explanation: q.explanation
+      explanation: cleanExplanation(q.explanation)
     };
   });
+
+  if (typeof existingBank.registerQuestions === 'function') {
+    const directory = path.join('js', 'question-bank');
+    fs.mkdirSync(directory, { recursive: true });
+    for (const grade of new Set(newQuestionObjects.map(q => q.grade))) {
+      if (!/^(6|7|8|9|10|11|12|DGNL)$/.test(String(grade))) throw new Error('Unsupported grade: ' + grade);
+      const file = path.join(directory, `toan-${grade}.js`);
+      const existing = fs.existsSync(file) ? require(path.resolve(file)) : [];
+      const questions = [...existing, ...newQuestionObjects.filter(q => q.grade === grade)];
+      const code = '(function () {\n  const questions = ' + JSON.stringify(questions, null, 2) + ';\n  if (typeof module !== "undefined" && module.exports) module.exports = questions;\n  if (typeof window !== "undefined" && window.DocumentQuestionBank) window.DocumentQuestionBank.registerQuestions(questions);\n})();\n';
+      fs.writeFileSync(file, code);
+    }
+    console.log(`Added ${newQuestionObjects.length} unique questions to grade shards.`);
+    return;
+  }
 
   // Tìm vị trí đóng của mảng questions trong file
   // Cấu trúc: questions: [ ... \n  ],
@@ -633,7 +669,17 @@ async function commitHighConfidenceQuestions(extractedQuestions) {
 }
 
 // Chạy pipeline
-runPipeline().catch(err => {
+if (require.main === module) runPipeline().catch(err => {
   console.error('💥 Lỗi không xử lý được trong pipeline:', err);
   process.exit(1);
 });
+module.exports = { parsePdfQuestions, commitHighConfidenceQuestions };
+
+function cleanExplanation(text) {
+  const cleaned = stripWatermark(text || '').replace(/[\u0000-\u001F\u007F-\u009F]/g, ' ').trim();
+  return isBrokenFormula(cleaned) || hasWatermarkOrPii(cleaned) ? '' : cleaned;
+}
+
+function needsVisualContext(text) {
+  return /hình (vẽ|bên|sau)|đồ thị (sau|bên)|bảng (sau|dưới)|cho trong hình|theo hình/i.test(text || '');
+}

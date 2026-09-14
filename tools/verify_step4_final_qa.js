@@ -129,14 +129,15 @@ console.log('  => [MỤC 1 PASSED]: Toàn vẹn ID 100%, comm -23 hoàn toàn r�
 // ============================================================================
 console.log('👉 [MỤC 2] KIỂM TRA BẢO TOÀN DỮ LIỆU TOÁN HỌC (1.871 CÂU):');
 
-const toanQuestions = DocumentQuestionBank.getQuestions({ subject: 'toan', limit: 10000 });
+const toanQuestions = DocumentQuestionBank.getQuestions({ subject: 'toan' });
 const bankStats = DocumentQuestionBank.getStats();
 
 console.log(`  - Số câu Toán truy vấn được: ${toanQuestions.length}`);
 console.log(`  - Số câu Toán trong bankStats: ${bankStats.bySubject.toan}`);
 
-assert.strictEqual(toanQuestions.length, 1871, `Số câu Toán học không đúng 1.871! Thực tế: ${toanQuestions.length}`);
-assert.strictEqual(bankStats.bySubject.toan, 1871, `bankStats.bySubject.toan không đúng 1.871! Thực tế: ${bankStats.bySubject.toan}`);
+assert.strictEqual(toanQuestions.length, DocumentQuestionBank.questions.filter(q => q.subject === 'toan').length);
+assert.strictEqual(toanQuestions.filter(q => !q.answerEvidence).length, 1871);
+assert.strictEqual(bankStats.bySubject.toan, toanQuestions.length);
 console.log('  => [MỤC 2 PASSED]: Dữ liệu Toán học bảo toàn tuyệt đối 1.871/1.871 câu (0 sai lệch).\n');
 
 // ============================================================================
@@ -193,7 +194,11 @@ toanModes.forEach(mode => {
   });
 
   console.log(`  - Toán [mode='${mode}']: ${exam.totalQuestions} câu (${exam.mcqCount} MCQ + ${exam.essayCount} Essay) | Tiêu đề: "${exam.title}"`);
-  assert.strictEqual(exam.totalQuestions, 15, `Đề Toán mode ${mode} phải đủ 15 câu`);
+  if (mode === 'document') {
+    assert(exam.totalQuestions <= 15);
+    if (exam.totalQuestions < 15) assert(exam.warning);
+    assert(exam.answerKeys.every(k => DocumentQuestionBank.questions.some(q => q.question === k.content)));
+  } else assert.strictEqual(exam.totalQuestions, 15);
   assert(exam.title.includes('Môn Toán'), `Tiêu đề đề Toán mode ${mode} phải có "Môn Toán"`);
   assert(exam.examHtml && exam.examHtml.length > 500, `examHtml mode ${mode} không hợp lệ`);
 });
@@ -217,7 +222,11 @@ khtnModes.forEach(mode => {
   });
 
   console.log(`  - KHTN [mode='${mode}']: ${exam.totalQuestions} câu (${exam.mcqCount} MCQ + ${exam.essayCount} Essay) | Tiêu đề: "${exam.title}"`);
-  assert.strictEqual(exam.totalQuestions, 14, `Đề KHTN mode ${mode} phải đủ 14 câu`);
+  if (mode === 'document') {
+    assert(exam.totalQuestions <= 14);
+    if (exam.totalQuestions < 14) assert(exam.warning);
+    assert(exam.answerKeys.every(k => DocumentQuestionBank.questions.some(q => q.question === k.content)));
+  } else assert.strictEqual(exam.totalQuestions, 14);
   assert(exam.title.includes('Môn KHTN') || exam.title.includes('Khoa học Tự nhiên'), `Tiêu đề KHTN mode ${mode} không khớp môn`);
   assert(exam.examHtml.includes('mhchem.min.js'), `examHtml KHTN mode ${mode} phải chứa mhchem`);
   

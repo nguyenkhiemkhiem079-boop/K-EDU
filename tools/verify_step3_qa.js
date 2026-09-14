@@ -207,7 +207,9 @@ const examDocument = KhtnEngine.generateExam({
 });
 console.log(`  - [Nguồn 2: document]: Lấy thành công ${examDocument.answerKeys.length} câu từ ngân hàng tài liệu.`);
 assert.strictEqual(examDocument.mcqCount, 12);
-assert.strictEqual(examDocument.essayCount, 2);
+assert.strictEqual(examDocument.essayCount, DocumentQuestionBank.query({ subject: 'khtn', grade: '8', type: 'essay' }).length);
+assert(examDocument.answerKeys.every(q => DocumentQuestionBank.questions.some(b => b.question === q.content)));
+assert(examDocument.warning);
 
 // Nguồn 3: 'hybrid' (Trộn cả 2)
 const examHybrid = KhtnEngine.generateExam({
@@ -251,7 +253,10 @@ const mathCheck = MathEngine.generateExam({
   timeLimit: 45
 });
 
-assert.strictEqual(mathCheck.totalQuestions, 15, 'Luồng Toán phải sinh đủ 15 câu (12 MCQ + 3 Essay)');
+assert.strictEqual(mathCheck.mcqCount, 12);
+assert(mathCheck.totalQuestions <= 15);
+assert(mathCheck.answerKeys.every(q => DocumentQuestionBank.questions.some(b => b.question === q.content)));
+if (mathCheck.totalQuestions < 15) assert(mathCheck.warning);
 assert(mathCheck.title.includes('Môn Toán'), 'Tiêu đề đề Toán phải chứa "Môn Toán"');
 
 // Kiểm tra các ID trong index.html

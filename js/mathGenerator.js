@@ -1,3 +1,13 @@
+function mathAssignScores(keys) {
+  const essay = keys.filter(k => k.type === 'essay');
+  const mcq = keys.filter(k => k.type !== 'essay');
+  const assign = (items, cents) => items.forEach((k, i) => { k.score = (Math.floor(cents / items.length) + (i < cents % items.length ? 1 : 0)) / 100; });
+  assign(essay, essay.length ? (mcq.length ? 300 : 1000) : 0);
+  assign(mcq, essay.length ? 700 : 1000);
+}
+
+function mathQuestionSignature(text) { return String(text || '').normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s*\(Biến thể\s+\d+\)\s*$/iu, '').trim().replace(/\s+/g, ' '); }
+
 /**
  * KhiemEdu Math Engine & Dynamic Question Generator v2.0
  * Ngân hàng đề thi Toán học chuẩn TOANMATH (Đầy đủ khối lớp 6 - 12 & Tuyển sinh 10)
@@ -1481,11 +1491,16 @@ const MathEngine = {
    * 100% trắc nghiệm chuẩn hóa, không pha trộn Toán phổ thông SGK
    */
   generateDgnlExam(config = {}) {
+    const difficultyMode = config.difficultyMode || 'mixed';
+    if (!['basic', 'advanced', 'mixed'].includes(difficultyMode)) throw new Error('Chế độ độ khó không hợp lệ.');
+    if (difficultyMode === 'advanced') return this.generateExam({ ...config, track: 'dgnl', grade: 'DGNL', sourceMode: 'document', mcqCount: config.packageType === 'full' ? 200 : 100, essayMatrix: { TH: 0, VD: 0, VDC: 0 } });
+    const allowedLevel = q => difficultyMode === 'mixed' || (difficultyMode === 'basic' ? ['NB', 'TH'] : ['VD', 'VDC']).includes(String(q.level || '').toUpperCase());
     const {
       packageType = 'mini', // 'mini' (100 câu) | 'full' (200 câu)
       targetExam = 'HCM',    // 'HCM' | 'HSA' | 'TSA'
       timeLimit = (packageType === 'full' ? 150 : 90),
-      title = ''
+      title = '',
+      batchSeenSignatures = null
     } = config;
 
     const totalQuestions = packageType === 'full' ? 200 : 100;
@@ -1501,26 +1516,28 @@ const MathEngine = {
     };
     const targetLabel = targetNames[targetExam] || 'ĐHQG TP.HCM';
     const packageLabel = packageType === 'full' ? 'Full Test (200 Câu Toàn Diện)' : 'Mini Test (100 Câu Chuẩn Hóa)';
-    const examTitle = title || `Đề Thi Thử Đánh Giá Năng Lực ${targetLabel} — ${packageLabel}`;
+    const difficultyLabel = difficultyMode === 'advanced' ? 'Nâng cao' : difficultyMode === 'basic' ? 'Cơ bản' : '';
+    const examTitle = (title || `Đề Thi Thử Đánh Giá Năng Lực ${targetLabel} — ${packageLabel}`) + (difficultyLabel ? ` — ${difficultyLabel}` : '');
 
-    const rawTemplates = GradeEngines.getDgnlTemplates('mcq', 'all');
+    const rawTemplates = GradeEngines.getDgnlTemplates('mcq', 'all').filter(allowedLevel);
     const quantPool = rawTemplates.filter(t => t.topic === 'dgnl_quant');
     const logicPool = rawTemplates.filter(t => t.topic === 'dgnl_logic');
     const dataPool = rawTemplates.filter(t => t.topic === 'dgnl_data');
 
     const selectedMcq = [];
-    const seenSignatures = new Set();
+    const seenSignatures = batchSeenSignatures || new Set();
 
     const generateGroupQuestions = (pool, count, groupLabel) => {
       let chosen = 0;
       let cycle = 0;
-      while (chosen < count) {
+      while (chosen < count && pool.length && cycle < count * 100) {
         cycle++;
         const tIndex = chosen % pool.length;
         const generator = pool[tIndex];
         const candidate = generator(chosen + cycle * 7);
-        const signature = candidate.question.trim().replace(/\s+/g, ' ');
-        if (!seenSignatures.has(signature) || cycle > count * 2) {
+        if (!allowedLevel(candidate)) continue;
+        const signature = mathQuestionSignature(candidate.question);
+        if (!seenSignatures.has(signature)) {
           seenSignatures.add(signature);
           candidate.source = `Ngân hàng đề ĐGNL ${targetLabel} — Phần ${groupLabel}`;
           selectedMcq.push(candidate);
@@ -1555,10 +1572,13 @@ const MathEngine = {
       };
     });
 
+    mathAssignScores(answerKeys);
+
     const examHtml = this.renderExamToHtml(examTitle, answerKeys, timeLimit, 'Đánh Giá Năng Lực');
 
     return {
       title: examTitle,
+      difficultyMode,
       term: 'DGNL',
       grade: 'DGNL',
       timeLimit,
@@ -1568,6 +1588,7 @@ const MathEngine = {
       answerKeys,
       examHtml,
       packageType,
+      warning: answerKeys.length < totalQuestions ? 'Ngân hàng ĐGNL chưa đủ câu độc nhất; đề được tạo với số câu thực tế.' : null,
       targetExam
     };
   },
@@ -1576,6 +1597,18 @@ const MathEngine = {
    * Sinh bộ đề thi chuẩn 100% TOANMATH với ANTI-DUPLICATE GUARD & TÍCH HỢP KHO TÀI LIỆU
    */
   generateExam(config = {}) {
+    const difficultyMode = config.difficultyMode || 'mixed';
+    if (!['basic', 'advanced', 'mixed'].includes(difficultyMode)) throw new Error('Chế độ độ khó không hợp lệ.');
+    const specializedPolicy = typeof SpecializedBankPolicy !== 'undefined' ? SpecializedBankPolicy : (typeof require === 'function' ? require('./specializedBankPolicy') : null);
+    const allowedLevel = q => difficultyMode === 'advanced' ? !!specializedPolicy?.isApproved(q)
+      : difficultyMode === 'mixed' || ['NB', 'TH'].includes(String(q.level || '').toUpperCase());
+    if (difficultyMode === 'advanced') config = { ...config, sourceMode: 'document' };
+    if (difficultyMode !== 'mixed') {
+      const matrix = config.essayMatrix || { TH: 1, VD: 1, VDC: 1 };
+      config = { ...config, essayMatrix: difficultyMode === 'basic'
+        ? { TH: (matrix.TH || 0) + (matrix.VD || 0) + (matrix.VDC || 0), VD: 0, VDC: 0 }
+        : { TH: 0, VD: 0, VDC: (matrix.TH || 0) + (matrix.VD || 0) + (matrix.VDC || 0) } };
+    }
     const {
       track = 'toan',
       grade = '10',
@@ -1590,11 +1623,12 @@ const MathEngine = {
     } = config;
 
     const gStr = (track && track.startsWith('dgnl')) ? 'DGNL' : grade.toString();
-    if (gStr === 'DGNL') {
+    if (gStr === 'DGNL' && sourceMode === 'synthetic' && difficultyMode === 'mixed') {
       const pkg = mcqCount >= 150 ? 'full' : 'mini';
       return this.generateDgnlExam({
         packageType: pkg,
         targetExam: track === 'dgnl_hn' ? 'HSA' : (track === 'dgnl_bk' ? 'TSA' : 'HCM'),
+        batchSeenSignatures,
         timeLimit: timeLimit || (pkg === 'full' ? 150 : 90),
         title
       });
@@ -1615,6 +1649,8 @@ const MathEngine = {
       }
     }
 
+    mcqTemplates = mcqTemplates.filter(allowedLevel);
+
     // ================= ANTI-DUPLICATE GUARD CHO TRẮC NGHIỆM =================
     const selectedMcq = [];
     const seenSignatures = batchSeenSignatures || new Set();
@@ -1634,20 +1670,18 @@ const MathEngine = {
 
     // BƯỚC 1: LẤY CÂU HỎI TRỰC TIẾP TỪ KHO TÀI LIỆU (NẾU sourceMode LÀ 'document' HOẶC 'hybrid')
     if (typeof DocumentQuestionBank !== 'undefined' && sourceMode !== 'synthetic') {
-      let docQuestions = typeof DocumentQuestionBank.getQuestions === 'function' ?
-        DocumentQuestionBank.getQuestions(gStr, topic, 'all', 'mcq', mcqCount * 4) :
-        DocumentQuestionBank.query({ grade: gStr, topic: topic, type: 'mcq' });
+      let docQuestions = DocumentQuestionBank.query({ subject: 'toan', grade: gStr, topic: topic, type: 'mcq' }).filter(allowedLevel);
 
       // Lọc bỏ các câu đã xuất hiện trong batch và câu vừa dùng gần đây
       let availableDocQuestions = docQuestions.filter(q => 
-        !seenSignatures.has(q.question.trim().replace(/\s+/g, ' ')) &&
+        !seenSignatures.has(mathQuestionSignature(q.question)) &&
         !recentDocIds.has(q.id)
       );
 
       // Nếu sau khi lọc recentDocIds mà không đủ câu, tái sử dụng các câu cũ để tránh thiếu hụt
       if (availableDocQuestions.length < mcqCount) {
         const fallbackCandidates = docQuestions.filter(q => 
-          !seenSignatures.has(q.question.trim().replace(/\s+/g, ' ')) &&
+          !seenSignatures.has(mathQuestionSignature(q.question)) &&
           !availableDocQuestions.some(aq => aq.id === q.id)
         );
         availableDocQuestions = [...availableDocQuestions, ...fallbackCandidates];
@@ -1658,11 +1692,14 @@ const MathEngine = {
       const takenFromDoc = availableDocQuestions.slice(0, targetDocCount);
 
       takenFromDoc.forEach(q => {
-        const sig = q.question.trim().replace(/\s+/g, ' ');
+        if (seenSignatures.has(mathQuestionSignature(q.question))) return;
+        const sig = mathQuestionSignature(q.question);
         seenSignatures.add(sig);
         recentDocIds.add(q.id);
         selectedMcq.push({
           id: q.id,
+          sourceFile: q.sourceFile,
+          curation: q.curation,
           grade: q.grade,
           level: q.level || 'TH',
           type: 'mcq',
@@ -1678,7 +1715,7 @@ const MathEngine = {
       // Lưu lại recentDocIds (giữ tối đa 300 ID gần nhất)
       try {
         if (typeof localStorage !== 'undefined') {
-          const arr = Array.from(recentDocIds).slice(-300);
+          const arr = Array.from(recentDocIds).slice(-50000);
           localStorage.setItem('khiemedu_recent_doc_question_ids', JSON.stringify(arr));
         }
       } catch (e) {}
@@ -1709,6 +1746,7 @@ const MathEngine = {
 
     const remainingMcqNeeded = (sourceMode === 'document') ? 0 : (mcqCount - selectedMcq.length);
     for (let i = 0; i < remainingMcqNeeded; i++) {
+      if (!mcqTemplates.length) { warningMsg = 'Chưa đủ câu đúng mức độ đã chọn; không lấy câu ở mức độ khác để bù.'; break; }
       let chosenQ = null;
       let attempts = 0;
       const maxAttempts = 35;
@@ -1718,7 +1756,7 @@ const MathEngine = {
         if (!mcqDeck.length) refillMcqDeck();
         const templateIdx = mcqDeck.pop();
         const candidate = mcqTemplates[templateIdx](selectedMcq.length + 1);
-        const signature = candidate.question.trim().replace(/\s+/g, ' ');
+        const signature = mathQuestionSignature(candidate.question);
 
         if (!seenSignatures.has(signature)) {
           seenSignatures.add(signature);
@@ -1732,7 +1770,7 @@ const MathEngine = {
         for (let tIdx = 0; tIdx < mcqTemplates.length; tIdx++) {
           for (let retry = 0; retry < 5; retry++) {
             const candidate = mcqTemplates[tIdx](selectedMcq.length + 1);
-            const signature = candidate.question.trim().replace(/\s+/g, ' ');
+            const signature = mathQuestionSignature(candidate.question);
             if (!seenSignatures.has(signature)) {
               seenSignatures.add(signature);
               candidate.source = candidate.source || `Ngân hàng đề chuẩn TOANMATH — Khối ${gStr}`;
@@ -1745,29 +1783,15 @@ const MathEngine = {
       }
 
       if (!chosenQ) {
-        console.warn(`[MathEngine] Ngân hàng câu hỏi trắc nghiệm không đủ đa dạng cho số lượng ${mcqCount} câu.`);
-        const base = mcqTemplates[i % mcqTemplates.length](selectedMcq.length + 1);
-        let uniqSuffix = 1;
-        let candidateQuestion = base.question;
-        let sig = candidateQuestion.trim().replace(/\s+/g, ' ');
-        while (seenSignatures.has(sig)) {
-          uniqSuffix++;
-          candidateQuestion = `${base.question.replace(/\s*\(Biến thể\s+\d+\)/, '')} (Biến thể ${uniqSuffix})`;
-          sig = candidateQuestion.trim().replace(/\s+/g, ' ');
-        }
-        seenSignatures.add(sig);
-        chosenQ = {
-          ...base,
-          question: candidateQuestion,
-          source: base.source || `Ngân hàng đề chuẩn TOANMATH — Khối ${gStr}`
-        };
+        warningMsg = 'Không đủ câu hỏi độc nhất; đã dừng bổ sung để tránh trùng lặp.';
+        break;
       }
       selectedMcq.push(chosenQ);
     }
 
     // ================= ANTI-DUPLICATE GUARD CHO TỰ LUẬN =================
     const selectedEssay = [];
-    const seenEssaySignatures = batchSeenSignatures || new Set();
+    const seenEssaySignatures = seenSignatures;
 
     const targetLevels = [
       { level: 'TH', count: essayMatrix.TH || 0 },
@@ -1782,17 +1806,19 @@ const MathEngine = {
         topic: topic === 'all' ? undefined : topic,
         type: 'essay'
       });
-      const availableDocEssays = docEssays.filter(eq => !seenEssaySignatures.has(eq.question.trim().replace(/\s+/g, ' ')));
+      const availableDocEssays = docEssays.filter(eq => (eq.subject || 'toan') === 'toan' && allowedLevel(eq) && !seenEssaySignatures.has(mathQuestionSignature(eq.question)));
       availableDocEssays.forEach(eq => {
         const eqLevel = (eq.level || 'VD').toUpperCase();
         const levelConfig = targetLevels.find(t => t.level === eqLevel);
-        if (levelConfig && levelConfig.count > 0) {
+        if (levelConfig && levelConfig.count > 0 && !seenEssaySignatures.has(mathQuestionSignature(eq.question))) {
           const currentLevelCount = selectedEssay.filter(e => (e.level || '').toUpperCase() === eqLevel).length;
           if (currentLevelCount < levelConfig.count) {
-            const sig = eq.question.trim().replace(/\s+/g, ' ');
+            const sig = mathQuestionSignature(eq.question);
             seenEssaySignatures.add(sig);
             selectedEssay.push({
               id: eq.id,
+              sourceFile: eq.sourceFile,
+              curation: eq.curation,
               grade: eq.grade,
               level: eq.level || 'VD',
               type: 'essay',
@@ -1812,12 +1838,13 @@ const MathEngine = {
       // Số lượng câu tự luận cần bổ sung thêm cho cấp độ này
       const currentLevelCount = selectedEssay.filter(e => (e.level || '').toUpperCase() === level.toUpperCase()).length;
       const needed = Math.max(0, count - currentLevelCount);
-      if (needed <= 0) return;
+      if (needed <= 0 || sourceMode === 'document') return;
 
       let essayTemplates = GradeEngines.getTemplates(gStr, 'essay', level, topic);
       if (!essayTemplates || !essayTemplates.length) {
         essayTemplates = GradeEngines.getTemplates(gStr, 'essay', level, 'all');
       }
+      essayTemplates = (essayTemplates || []).filter(allowedLevel);
       if (!essayTemplates || !essayTemplates.length) return;
 
       const essayDeck = [];
@@ -1840,7 +1867,7 @@ const MathEngine = {
           if (!essayDeck.length) refillEssayDeck();
           const idx = essayDeck.pop();
           const candidate = essayTemplates[idx](essayIndex);
-          const sig = candidate.question.trim().replace(/\s+/g, ' ');
+          const sig = mathQuestionSignature(candidate.question);
           if (!seenEssaySignatures.has(sig)) {
             seenEssaySignatures.add(sig);
             candidate.source = candidate.source || `Chuyên đề tự luận Toán — Khối ${gStr}`;
@@ -1853,7 +1880,7 @@ const MathEngine = {
           for (let tIdx = 0; tIdx < essayTemplates.length; tIdx++) {
             for (let retry = 0; retry < 5; retry++) {
               const candidate = essayTemplates[tIdx](essayIndex);
-              const sig = candidate.question.trim().replace(/\s+/g, ' ');
+              const sig = mathQuestionSignature(candidate.question);
               if (!seenEssaySignatures.has(sig)) {
                 seenEssaySignatures.add(sig);
                 candidate.source = candidate.source || `Chuyên đề tự luận Toán — Khối ${gStr}`;
@@ -1866,22 +1893,8 @@ const MathEngine = {
         }
 
         if (!chosenEq) {
-          console.warn(`[MathEngine] Ngân hàng câu hỏi tự luận (${level}) không đủ đa dạng.`);
-          const base = essayTemplates[i % essayTemplates.length](essayIndex);
-          let uniqSuffix = 1;
-          let candidateQuestion = base.question;
-          let sig = candidateQuestion.trim().replace(/\s+/g, ' ');
-          while (seenEssaySignatures.has(sig)) {
-            uniqSuffix++;
-            candidateQuestion = `${base.question.replace(/\s*\(Biến thể\s+\d+\)/, '')} (Biến thể ${uniqSuffix})`;
-            sig = candidateQuestion.trim().replace(/\s+/g, ' ');
-          }
-          seenEssaySignatures.add(sig);
-          chosenEq = {
-            ...base,
-            question: candidateQuestion,
-            source: base.source || `Chuyên đề tự luận Toán — Khối ${gStr}`
-          };
+          warningMsg = 'Không đủ câu tự luận độc nhất; đã dừng bổ sung để tránh trùng lặp.';
+          break;
         }
 
         essayIndex++;
@@ -1889,10 +1902,14 @@ const MathEngine = {
       }
     });
 
+    if (selectedMcq.length < mcqCount || selectedEssay.length < Object.values(essayMatrix).reduce((sum, n) => sum + n, 0)) {
+      warningMsg = [warningMsg, 'Số câu thực tế ít hơn yêu cầu do ngân hàng chưa đủ câu độc nhất.'].filter(Boolean).join(' ');
+    }
+
     const totalEssays = selectedEssay.length;
-    const essayTotalScore = totalEssays > 0 ? 3.0 : 0;
+    const essayTotalScore = totalEssays > 0 ? (selectedMcq.length ? 3.0 : 10.0) : 0;
     const mcqTotalScore = 10.0 - essayTotalScore;
-    const mcqScore = mcqCount ? Math.round((mcqTotalScore / mcqCount) * 100) / 100 : 0;
+    const mcqScore = selectedMcq.length ? Math.round((mcqTotalScore / selectedMcq.length) * 100) / 100 : 0;
     const essayScore = totalEssays ? Math.round((essayTotalScore / totalEssays) * 100) / 100 : 0;
 
     const answerKeys = [];
@@ -1920,6 +1937,9 @@ const MathEngine = {
       answerKeys.push({
         num: idx + 1,
         type: 'mcq',
+        schoolName: q.curation?.schoolName,
+        sourcePage: q.curation?.sourcePage,
+        sourceFile: q.sourceFile,
         topic: resolveKeyTopic(q.topic),
         level: q.level || 'TH',
         source: q.source || '',
@@ -1936,6 +1956,9 @@ const MathEngine = {
       answerKeys.push({
         num: selectedMcq.length + idx + 1,
         type: 'essay',
+        schoolName: q.curation?.schoolName,
+        sourcePage: q.curation?.sourcePage,
+        sourceFile: q.sourceFile,
         topic: resolveKeyTopic(q.topic),
         level: q.level || 'VD',
         source: q.source || '',
@@ -1959,12 +1982,17 @@ const MathEngine = {
     const gradeLabel = gStr === 'TS10' ? 'Ôn Thi Vào 10' : (gStr === 'all' ? 'Tổng Hợp' : `Lớp ${gStr}`);
     const termLabel = termLabels[term] || 'Chuẩn Ma Trận';
     const essaySummaryStr = `${essayMatrix.TH || 0}TH + ${essayMatrix.VD || 0}VD + ${essayMatrix.VDC || 0}VDC`;
-    const examTitle = title || `Đề Kiểm Tra ${termLabel} — Môn Toán ${gradeLabel} (${essaySummaryStr})`;
+    const difficultyLabel = difficultyMode === 'advanced' ? 'Nâng cao' : difficultyMode === 'basic' ? 'Cơ bản' : '';
+    const examTitle = (title || `Đề Kiểm Tra ${termLabel} — Môn Toán ${gradeLabel} (${essaySummaryStr})`) + (difficultyLabel ? ` — ${difficultyLabel}` : '');
+
+    mathAssignScores(answerKeys);
 
     const examHtml = this.renderExamToHtml(examTitle, answerKeys, timeLimit, termLabel);
 
     return {
       title: examTitle,
+      difficultyMode,
+      specializedSourceOnly: difficultyMode === 'advanced',
       term,
       timeLimit,
       totalQuestions: answerKeys.length,
@@ -2231,7 +2259,7 @@ const MathEngine = {
       <div class="q-card">
         <div class="q-header">
           <span class="q-num">Câu ${item.num}:</span>
-          <span>${item.content}</span>
+          <span>${escapeMathHtml(item.content)}</span>
           <span class="level-badge level-${(item.level || 'th').toLowerCase()}">${item.level || 'TH'}</span>
           ${item.source ? `<span class="source-badge" style="display:inline-block;font-size:0.75rem;font-weight:700;padding:2px 8px;border-radius:4px;margin-left:0.5rem;background:#e0e7ff;color:#3730a3;border:1px solid #c7d2fe;">📚 Nguồn: ${escapeMathHtml(item.source)}</span>` : ''}
         </div>
@@ -2240,7 +2268,7 @@ const MathEngine = {
           ${item.options.map((opt, i) => `
             <div class="opt-box">
               <span class="opt-lbl">${['A', 'B', 'C', 'D', 'E', 'F'][i] || (i + 1)}.</span>
-              <span>${opt}</span>
+              <span>${escapeMathHtml(opt)}</span>
             </div>
           `).join('')}
         </div>
@@ -2256,7 +2284,7 @@ const MathEngine = {
       <div class="q-card" style="border-left:4px solid #f59e0b;">
         <div class="q-header">
           <span class="q-num" style="color:#b45309;">Câu ${item.num}:</span>
-          <span>${item.content}</span>
+          <span>${escapeMathHtml(item.content)}</span>
           <span class="level-badge level-${(item.level || 'vd').toLowerCase()}">${item.level || 'VD'}</span>
           ${item.source ? `<span class="source-badge" style="display:inline-block;font-size:0.75rem;font-weight:700;padding:2px 8px;border-radius:4px;margin-left:0.5rem;background:#fef3c7;color:#b45309;border:1px solid #fde68a;">📚 Nguồn: ${escapeMathHtml(item.source)}</span>` : ''}
         </div>
@@ -2303,4 +2331,3 @@ if (typeof window !== 'undefined') {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = MathEngine;
 }
-

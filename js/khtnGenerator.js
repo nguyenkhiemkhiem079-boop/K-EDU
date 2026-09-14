@@ -1,3 +1,13 @@
+function khtnAssignScores(keys) {
+  const essay = keys.filter(k => k.type === 'essay');
+  const mcq = keys.filter(k => k.type !== 'essay');
+  const assign = (items, cents) => items.forEach((k, i) => { k.score = (Math.floor(cents / items.length) + (i < cents % items.length ? 1 : 0)) / 100; });
+  assign(essay, essay.length ? (mcq.length ? 300 : 1000) : 0);
+  assign(mcq, essay.length ? 700 : 1000);
+}
+
+function khtnQuestionSignature(text) { return String(text || '').normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s*\(Biến thể\s+\d+\)\s*$/iu, '').trim().replace(/\s+/g, ' '); }
+
 /**
  * ============================================================================
  * K-EDU KHTN ENGINE — BỘ SINH ĐỀ THI KHOA HỌC TỰ NHIÊN (GDPT 2018)
@@ -699,6 +709,13 @@
      * Chuẩn format answerKeys như MathEngine.generateExam
      */
     generateExam(config = {}) {
+      const difficultyMode = config.difficultyMode || 'mixed';
+      const discipline = config.discipline || 'all';
+      if (!['basic', 'advanced', 'mixed'].includes(difficultyMode)) throw new Error('Chế độ độ khó không hợp lệ.');
+      if (!['all', 'vat_ly', 'hoa_hoc', 'sinh_hoc'].includes(discipline)) throw new Error('Phân môn không hợp lệ.');
+      const specializedPolicy = typeof SpecializedBankPolicy !== 'undefined' ? SpecializedBankPolicy : (typeof require === 'function' ? require('./specializedBankPolicy') : null);
+      const matches = q => (discipline === 'all' || q.topic === discipline) && (difficultyMode === 'advanced' ? !!specializedPolicy?.isApproved(q) : difficultyMode === 'mixed' || ['NB', 'TH'].includes(String(q.level || '').toUpperCase()));
+      if (difficultyMode === 'advanced') config = { ...config, sourceMode: 'document' };
       const {
         grade = '8',
         term = 'GK1',
@@ -715,8 +732,10 @@
       let warningMsg = null;
 
       // Danh sách các templates tính toán
-      const mcqTemplates = this.getCalculationTemplates(topic);
-      const essayTemplates = this.getEssayTemplates(topic);
+      const scopedTopic = discipline === 'all' ? topic : discipline;
+      // Metadata của mẫu được đọc từ câu sinh; ứng viên cũng được kiểm tra trước khi chọn.
+      const mcqTemplates = this.getCalculationTemplates(scopedTopic).filter(t => matches(t(0)));
+      const essayTemplates = this.getEssayTemplates(scopedTopic).filter(t => matches(t(0)));
 
       // ================= ANTI-DUPLICATE GUARD =================
       const selectedMcq = [];
@@ -748,31 +767,32 @@
       if (typeof DocumentQuestionBank !== 'undefined' && sourceMode !== 'synthetic') {
         const queryFilter = { subject: 'khtn', type: 'mcq' };
         if (gStr !== 'all') queryFilter.grade = gStr;
-        if (topic !== 'all') queryFilter.topic = topic;
+        if (scopedTopic !== 'all') queryFilter.topic = scopedTopic;
 
-        const docQuestions = DocumentQuestionBank.getQuestions(queryFilter);
+        const docQuestions = DocumentQuestionBank.getQuestions(queryFilter).filter(matches);
 
         // Lọc bỏ câu đã xuất hiện trong đợt sinh hoặc dùng gần đây
         let availableDocQuestions = docQuestions.filter(q =>
-          !seenSignatures.has(q.question.trim().replace(/\s+/g, ' ')) &&
+          !seenSignatures.has(khtnQuestionSignature(q.question)) &&
           !recentDocIds.has(q.id)
         );
 
         if (availableDocQuestions.length < mcqCount) {
           const fallbackCandidates = docQuestions.filter(q =>
-            !seenSignatures.has(q.question.trim().replace(/\s+/g, ' '))
+            !seenSignatures.has(khtnQuestionSignature(q.question))
           );
-          availableDocQuestions = fallbackCandidates;
+          availableDocQuestions = [...availableDocQuestions, ...fallbackCandidates.filter(q => !availableDocQuestions.includes(q))];
         }
 
-        const shuffledDocs = shuffleArray(availableDocQuestions);
+        const shuffledDocs = availableDocQuestions;
         const countToTake = (sourceMode === 'hybrid')
           ? Math.min(Math.ceil(mcqCount / 2), shuffledDocs.length)
           : Math.min(mcqCount, shuffledDocs.length);
 
         for (let i = 0; i < countToTake; i++) {
           const q = shuffledDocs[i];
-          const sig = q.question.trim().replace(/\s+/g, ' ');
+          if (seenSignatures.has(khtnQuestionSignature(q.question))) continue;
+          const sig = khtnQuestionSignature(q.question);
           seenSignatures.add(sig);
           recentDocIds.add(q.id);
           selectedMcq.push({ ...q });
@@ -780,7 +800,7 @@
 
         if (sourceMode === 'document' && selectedMcq.length < mcqCount) {
           const shortage = mcqCount - selectedMcq.length;
-          warningMsg = `Ngân hàng tài liệu KHTN hiện chỉ có ${selectedMcq.length} câu phù hợp với tiêu chí (yêu cầu ${mcqCount} câu). Hệ thống đã tự động bổ sung ${shortage} câu tính toán chuẩn hóa.`;
+          warningMsg = `Ngân hàng tài liệu KHTN hiện chỉ có ${selectedMcq.length} câu phù hợp với tiêu chí (yêu cầu ${mcqCount} câu). Đề thiếu ${shortage} câu; cần bổ sung ngân hàng tài liệu.`;
         }
       }
 
@@ -788,14 +808,15 @@
       try {
         if (typeof AppState !== 'undefined') AppState.recentDocQuestionIds = recentDocIds;
         if (typeof localStorage !== 'undefined') {
-          const arr = Array.from(recentDocIds).slice(-100);
+          const arr = Array.from(recentDocIds).slice(-50000);
           localStorage.setItem('khiemedu_recent_doc_question_ids', JSON.stringify(arr));
         }
       } catch (e) {}
 
       // BƯỚC 2: BỔ SUNG CÂU TÍNH TOÁN SINH TỰ ĐỘNG BẰNG ANTI-DUPLICATE GUARD
-      const remainingMcqNeeded = mcqCount - selectedMcq.length;
+      const remainingMcqNeeded = sourceMode === 'document' ? 0 : mcqCount - selectedMcq.length;
       for (let i = 0; i < remainingMcqNeeded; i++) {
+        if (!mcqTemplates.length) { warningMsg = 'Chưa đủ câu đúng môn và mức độ đã chọn; không lấy câu nhóm khác để bù.'; break; }
         let chosenQ = null;
         let attempts = 0;
         const maxAttempts = 40;
@@ -805,7 +826,8 @@
           if (!mcqDeck.length) refillMcqDeck();
           const templateIdx = mcqDeck.pop();
           const candidate = mcqTemplates[templateIdx](selectedMcq.length + 1);
-          const signature = candidate.question.trim().replace(/\s+/g, ' ');
+          if (!matches(candidate)) continue;
+          const signature = khtnQuestionSignature(candidate.question);
 
           if (!seenSignatures.has(signature)) {
             seenSignatures.add(signature);
@@ -816,18 +838,8 @@
 
         // Fallback tạo biến thể nếu trùng lặp
         if (!chosenQ) {
-          if (!mcqDeck.length) refillMcqDeck();
-          const base = mcqTemplates[mcqDeck.pop() || 0](selectedMcq.length + 1);
-          let uniqSuffix = 1;
-          let candidateQ = base.question;
-          let sig = candidateQ.trim().replace(/\s+/g, ' ');
-          while (seenSignatures.has(sig)) {
-            uniqSuffix++;
-            candidateQ = `${base.question.replace(/\s*\(Biến thể\s+\d+\)/, '')} (Biến thể ${uniqSuffix})`;
-            sig = candidateQ.trim().replace(/\s+/g, ' ');
-          }
-          seenSignatures.add(sig);
-          chosenQ = { ...base, question: candidateQ };
+          warningMsg = 'Không đủ câu hỏi độc nhất; đã dừng bổ sung để tránh trùng lặp.';
+          break;
         }
 
         selectedMcq.push(chosenQ);
@@ -841,13 +853,17 @@
       if (typeof DocumentQuestionBank !== 'undefined' && sourceMode !== 'synthetic') {
         const queryFilter = { subject: 'khtn', type: 'essay' };
         if (gStr !== 'all') queryFilter.grade = gStr;
-        if (topic !== 'all') queryFilter.topic = topic;
+        if (scopedTopic !== 'all') queryFilter.topic = scopedTopic;
 
-        const docEssays = DocumentQuestionBank.getQuestions(queryFilter);
+        const docEssays = DocumentQuestionBank.getQuestions(queryFilter).filter(matches);
         const shuffledEssays = shuffleArray(docEssays);
         const takeEssay = Math.min(totalEssaysRequested, shuffledEssays.length);
         for (let i = 0; i < takeEssay; i++) {
-          selectedEssay.push(shuffledEssays[i]);
+          const q = shuffledEssays[i];
+          const sig = khtnQuestionSignature(q.question);
+          if (seenSignatures.has(sig)) continue;
+          seenSignatures.add(sig);
+          selectedEssay.push(q);
         }
       }
 
@@ -862,19 +878,35 @@
         }
       };
 
-      const remainingEssayNeeded = totalEssaysRequested - selectedEssay.length;
+      const remainingEssayNeeded = sourceMode === 'document' ? 0 : totalEssaysRequested - selectedEssay.length;
       for (let i = 0; i < remainingEssayNeeded; i++) {
-        if (!essayDeck.length) refillEssayDeck();
-        const tIdx = essayDeck.pop();
-        const candidate = essayTemplates[tIdx](selectedEssay.length + 1);
+        let candidate = null;
+        for (let attempt = 0; attempt < 100 && essayTemplates.length; attempt++) {
+          if (!essayDeck.length) refillEssayDeck();
+          const q = essayTemplates[essayDeck.pop()](selectedEssay.length + 1);
+          if (!matches(q)) continue;
+          const sig = khtnQuestionSignature(q.question);
+          if (seenSignatures.has(sig)) continue;
+          seenSignatures.add(sig);
+          candidate = q;
+          break;
+        }
+        if (!candidate) {
+          warningMsg = 'Không đủ câu tự luận độc nhất; đã dừng bổ sung để tránh trùng lặp.';
+          break;
+        }
         selectedEssay.push(candidate);
+      }
+
+      if (selectedMcq.length < mcqCount || selectedEssay.length < Object.values(essayMatrix).reduce((sum, n) => sum + n, 0)) {
+        warningMsg = [warningMsg, 'Số câu thực tế ít hơn yêu cầu do ngân hàng chưa đủ câu độc nhất.'].filter(Boolean).join(' ');
       }
 
       // Tính điểm số
       const totalEssays = selectedEssay.length;
-      const essayTotalScore = totalEssays > 0 ? 3.0 : 0;
+      const essayTotalScore = totalEssays > 0 ? (selectedMcq.length ? 3.0 : 10.0) : 0;
       const mcqTotalScore = 10.0 - essayTotalScore;
-      const mcqScore = mcqCount ? Math.round((mcqTotalScore / mcqCount) * 100) / 100 : 0;
+      const mcqScore = selectedMcq.length ? Math.round((mcqTotalScore / selectedMcq.length) * 100) / 100 : 0;
       const essayScore = totalEssays ? Math.round((essayTotalScore / totalEssays) * 100) / 100 : 0;
 
       const topicDisplayMap = {
@@ -933,12 +965,19 @@
       const gradeLabel = gStr === 'all' ? 'Tổng Hợp (6-9)' : `Lớp ${gStr}`;
       const termLabel = termLabels[term] || 'Chuẩn Ma Trận';
       const topicLabel = topicDisplayMap[topic] || 'Tổng Hợp';
-      const examTitle = title || `Đề Kiểm Tra ${termLabel} — Môn KHTN ${gradeLabel} [${topicLabel}]`;
+      const disciplineLabel = { vat_ly: 'Vật lý', hoa_hoc: 'Hóa học', sinh_hoc: 'Sinh học', all: 'KHTN tổng hợp' }[discipline];
+      const difficultyLabel = difficultyMode === 'advanced' ? 'Nâng cao' : difficultyMode === 'basic' ? 'Cơ bản' : '';
+      const examTitle = (title || `Đề Kiểm Tra ${termLabel} — ${disciplineLabel} ${gradeLabel} [${topicLabel}]`) + (difficultyLabel ? ` — ${difficultyLabel}` : '');
+
+      khtnAssignScores(answerKeys);
 
       const examHtml = this.renderExamToHtml(examTitle, answerKeys, timeLimit, termLabel);
 
       return {
         title: examTitle,
+        difficultyMode,
+        specializedSourceOnly: difficultyMode === 'advanced',
+        discipline,
         term,
         timeLimit,
         totalQuestions: answerKeys.length,
@@ -1064,7 +1103,7 @@
     /**
      * Xuất HTML standalone in đề thi (Tích hợp KaTeX + mhchem)
      */
-    renderExamToHtml(title, keys, timeLimit, termLabel = '') {
+    renderExamToHtml(title, keys, timeLimit, termLabel = '', includeAnswers = false) {
       const mcqItems = keys.filter(k => k.type === 'mcq');
       const essayItems = keys.filter(k => k.type === 'essay');
 
@@ -1216,6 +1255,7 @@
     `).join('')}
   ` : ''}
 
+${includeAnswers ? `
   <div class="page-break"></div>
   <div class="section-title" style="margin-top: 2.5rem;">BẢNG ĐÁP ÁN & HƯỚNG DẪN CHẤM THI</div>
   <table class="answer-key-table">
@@ -1242,6 +1282,7 @@
       `).join('')}
     </tbody>
   </table>
+  ` : ''}
 
   <script>
     document.addEventListener("DOMContentLoaded", function() {

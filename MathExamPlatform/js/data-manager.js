@@ -32,10 +32,11 @@ class QuestionDataManager {
   }
 
   addQuestion(questionData) {
-    const newId = `Q_${Date.now().toString().slice(-6)}`;
+    this._idSequence = (this._idSequence || 0) + 1;
+    const newId = `Q_${Date.now()}_${this._idSequence}`;
     const newQuestion = {
-      id: newId,
-      ...questionData
+      ...questionData,
+      id: newId
     };
     this.questions.unshift(newQuestion);
     saveLocalQuestionBank(this.questions);
@@ -83,8 +84,9 @@ class QuestionDataManager {
           return parseFloat(parts[0]) / parseFloat(parts[1]);
         }
       }
-      const num = parseFloat(val);
-      return isNaN(num) ? null : num;
+      if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(val)) return null;
+      const num = Number(val);
+      return Number.isFinite(num) ? num : null;
     };
 
     const studentNum = parseNumeric(studentClean);

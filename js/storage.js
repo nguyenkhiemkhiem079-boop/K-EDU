@@ -100,6 +100,13 @@ const StorageEngine = {
   },
 
   async savePdfBlob(quizId, base64OrBlob) {
+    if (typeof base64OrBlob === 'string' && base64OrBlob.startsWith('blob:')) {
+      try {
+        const response = await fetch(base64OrBlob);
+        if (!response.ok) return false;
+        base64OrBlob = await response.blob();
+      } catch (error) { return false; }
+    }
     if (!this.db) await this.initIndexedDB();
     if (this.db) {
       return new Promise((resolve) => {
@@ -264,42 +271,40 @@ const StorageEngine = {
   },
 
   async saveQuiz(quiz) {
+    const previousQuiz = await this.get('quiz:' + quiz.id);
     const quizToSave = { ...quiz };
     quizToSave.updatedAt = new Date().toISOString();
-
-    // Remove from deleted tombstone so it immediately shows up
-    const deletedIds = this.getDeletedQuizIds();
-    if (deletedIds.has(quiz.id)) {
-      deletedIds.delete(quiz.id);
-      localStorage.setItem(STORAGE_PREFIX + 'deleted_quizzes', JSON.stringify(Array.from(deletedIds)));
-    }
 
     // Preserve examHtml for auto-generated or HTML exams
     if (!quizToSave.examHtml && quizToSave.pdfDataUrl && typeof quizToSave.pdfDataUrl === 'string' && quizToSave.pdfDataUrl.startsWith('data:text/html')) {
       try {
-        const parts = quizToSave.pdfDataUrl.split(',');
+        const separator = quizToSave.pdfDataUrl.indexOf(',');
+      const parts = [quizToSave.pdfDataUrl.slice(0, separator), quizToSave.pdfDataUrl.slice(separator + 1)];
         if (parts.length > 1) {
-          quizToSave.examHtml = decodeURIComponent(parts[1]);
+          quizToSave.examHtml = parts[0].includes(';base64') ? new TextDecoder().decode(Uint8Array.from(atob(parts[1]), c => c.charCodeAt(0))) : decodeURIComponent(parts[1]);
         }
       } catch (e) {}
     }
 
     // 1. Save to LocalStorage IMMEDIATELY (guaranteed 0ms local persistence, UI updates instantly)
     const localCacheQuiz = { ...quizToSave };
-    if (localCacheQuiz.pdfDataUrl && (localCacheQuiz.pdfDataUrl.startsWith('data:') || localCacheQuiz.pdfDataUrl.startsWith('blob:'))) {
+    if (typeof localCacheQuiz.pdfDataUrl === 'string' && (localCacheQuiz.pdfDataUrl.startsWith('data:') || localCacheQuiz.pdfDataUrl.startsWith('blob:'))) {
       if (typeof localCacheQuiz.pdfDataUrl === 'string' && localCacheQuiz.pdfDataUrl.length > 300000) {
         delete localCacheQuiz.pdfDataUrl;
       }
     }
-    await this.set('quiz:' + quiz.id, localCacheQuiz);
+    if (localCacheQuiz.pdfDataUrl instanceof Blob || (typeof localCacheQuiz.pdfDataUrl === 'string' && localCacheQuiz.pdfDataUrl.startsWith('blob:'))) delete localCacheQuiz.pdfDataUrl;
+    const localSaved = await this.set('quiz:' + quiz.id, localCacheQuiz);
     if (this.channel) {
       this.channel.postMessage({ type: 'quizzes_updated', quizId: quiz.id });
     }
 
     // 2. Save PDF / HTML to IndexedDB safely in background
-    if (quizToSave.pdfDataUrl && (quizToSave.pdfDataUrl.startsWith('data:') || quizToSave.pdfDataUrl.startsWith('blob:') || quizToSave.pdfDataUrl instanceof Blob)) {
+    const hasAttachment = quizToSave.pdfDataUrl && ((typeof quizToSave.pdfDataUrl === 'string' && (quizToSave.pdfDataUrl.startsWith('data:') || quizToSave.pdfDataUrl.startsWith('blob:'))) || quizToSave.pdfDataUrl instanceof Blob);
+    let attachmentSaved = false;
+    if (hasAttachment) {
       try {
-        await this.savePdfBlob(quiz.id, quizToSave.pdfDataUrl);
+        attachmentSaved = await this.savePdfBlob(quiz.id, quizToSave.pdfDataUrl);
       } catch (e) {
         console.warn('savePdfBlob non-fatal error:', e);
       }
@@ -320,10 +325,20 @@ const StorageEngine = {
       }
     }
 
+    const localComplete = !!(localSaved && (!hasAttachment || attachmentSaved || localCacheQuiz.examHtml || (typeof localCacheQuiz.pdfDataUrl === 'string' && localCacheQuiz.pdfDataUrl.startsWith('data:'))));
+    const success = localComplete || !!(cloudResult && cloudResult.success);
+    if (success) {
+      const deletedIds = this.getDeletedQuizIds();
+      if (deletedIds.delete(quiz.id)) await this.set('deleted_quizzes', Array.from(deletedIds));
+    } else if (localSaved) {
+      if (previousQuiz) await this.set('quiz:' + quiz.id, previousQuiz);
+      else await this.remove('quiz:' + quiz.id);
+    }
     return {
-      success: true,
+      success,
+      localSaved: localComplete,
       cloudSaved: !!(cloudResult && cloudResult.success),
-      error: cloudResult && cloudResult.error ? cloudResult.error : null
+      error: !localComplete && !(cloudResult && cloudResult.success) ? 'Không lưu được đề hoặc file đính kèm. Hãy kiểm tra dung lượng lưu trữ và kết nối.' : (cloudResult && cloudResult.error ? cloudResult.error : null)
     };
   },
 
@@ -463,31 +478,41 @@ const StorageEngine = {
     if (this._lastSubmitRecord &&
         this._lastSubmitRecord.quizId === result.quizId &&
         this._lastSubmitRecord.name === result.name &&
+        this._lastSubmitRecord.className === result.className &&
+        this._lastSubmitRecord.studentUid === result.studentUid &&
         (now - this._lastSubmitRecord.time < 5000)) {
       console.warn('[StorageEngine] Blocked rapid duplicate submission for:', result.name, result.quizId);
       return this._lastSubmitRecord.resultKey;
     }
 
-    const resultKey = `result:${result.quizId}:${result.className}_${result.name}_${now}`;
+    const resultKey = `result:${result.quizId}:${result.studentUid || result.className + '_' + result.name}_${now}`;
     result.id = resultKey;
-    this._lastSubmitRecord = { quizId: result.quizId, name: result.name, time: now, resultKey };
-
+    const localSaved = await this.set(resultKey, result);
+    let cloudSaved = false;
     if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
-      await window.FirebaseEngine.saveResult(result);
+      try {
+        const response = await window.FirebaseEngine.saveResult(result);
+        cloudSaved = typeof response === 'string' ? !!response : !!(response && response.success);
+      } catch (error) { console.warn('Cloud result save failed:', error); }
     }
-    await this.set(resultKey, result);
-    await this.set(`submitted:${result.quizId}:${result.className}_${result.name}`, '1');
+    if (!localSaved && !cloudSaved) throw new Error('Không lưu được kết quả. Bài làm vẫn được giữ để thử nộp lại.');
+    this._lastSubmitRecord = { quizId: result.quizId, name: result.name, className: result.className, studentUid: result.studentUid, time: now, resultKey };
+    await this.set(`submitted:${result.quizId}:${result.studentUid || result.className + '_' + result.name}`, '1');
     return resultKey;
   },
 
-  async hasSubmitted(quizId, className, name) {
-    const sub = await this.get(`submitted:${quizId}:${className}_${name}`);
-    return !!sub;
+  async hasSubmitted(quizId, className, name, studentUid = null) {
+    const sub = await this.get(`submitted:${quizId}:${studentUid || className + '_' + name}`);
+    if (sub) return true;
+    const results = await this.getResultsByQuiz(quizId);
+    return results.some(r => studentUid ? r.studentUid === studentUid : (r.className || '').trim().toLowerCase() === (className || '').trim().toLowerCase() && (r.name || '').trim().toLowerCase() === (name || '').trim().toLowerCase());
   },
 
   async deleteResult(resultId, quizId = null, className = null, name = null) {
     // 1. Remove from LocalStorage
     const cleanKey = resultId.replace(STORAGE_PREFIX, '');
+    const originalResult = await this.get(cleanKey) || await this.get(resultId);
+    if (originalResult?.studentUid) await this.remove(`submitted:${originalResult.quizId}:${originalResult.studentUid}`);
     await this.remove(cleanKey);
     await this.remove(resultId);
 
@@ -746,62 +771,33 @@ const StorageEngine = {
     }
   },
 
-  async getResultsByQuiz(quizId) {
-    const deletedRes = this.getDeletedResultIds();
-
+  async _readMergedResults(prefix, loadCloud) {
+    const deleted = this.getDeletedResultIds();
+    const results = new Map();
+    for (const key of await this.list(prefix)) {
+      const result = await this.get(key);
+      if (result && !deleted.has(key) && !deleted.has(result.id)) results.set(result.id || key, { ...result, key });
+    }
     if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
-      const cloudResults = await window.FirebaseEngine.getResultsByQuiz(quizId);
-      if (cloudResults && cloudResults.length > 0) {
-        const validCloud = [];
-        for (const r of cloudResults) {
-          if (deletedRes.has(r.id) || deletedRes.has(r.key)) continue;
-          await this.set(r.id || `result:${r.quizId}:${r.className}_${r.name}_${Date.now()}`, r);
-          validCloud.push(r);
+      try {
+        for (const result of await loadCloud() || []) {
+          if (!result || deleted.has(result.id) || deleted.has(result.key)) continue;
+          const key = result.id || result.key || `result:${result.quizId}:${result.className}_${result.name}_${new Date(result.submittedAt || 0).getTime()}`;
+          if (deleted.has(key)) continue;
+          results.set(key, { ...result, key });
+          await this.set(key, result);
         }
-        return validCloud;
-      }
+      } catch (error) { console.warn('Cloud results unavailable; using local results:', error); }
     }
+    return Array.from(results.values());
+  },
 
-    const keys = await this.list(`result:${quizId}:`);
-    const results = [];
-    for (const key of keys) {
-      if (deletedRes.has(key)) continue;
-      const r = await this.get(key);
-      if (r && !deletedRes.has(r.id)) {
-        r.key = key;
-        results.push(r);
-      }
-    }
-    return results;
+  async getResultsByQuiz(quizId) {
+    return this._readMergedResults(`result:${quizId}:`, () => window.FirebaseEngine.getResultsByQuiz(quizId));
   },
 
   async getAllResults() {
-    const deletedRes = this.getDeletedResultIds();
-
-    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
-      const cloudResults = await window.FirebaseEngine.getAllResults();
-      if (cloudResults && cloudResults.length > 0) {
-        const validCloud = [];
-        for (const r of cloudResults) {
-          if (deletedRes.has(r.id) || deletedRes.has(r.key)) continue;
-          await this.set(r.id || `result:${r.quizId}:${r.className}_${r.name}_${Date.now()}`, r);
-          validCloud.push(r);
-        }
-        return validCloud;
-      }
-    }
-
-    const keys = await this.list('result:');
-    const results = [];
-    for (const key of keys) {
-      if (deletedRes.has(key)) continue;
-      const r = await this.get(key);
-      if (r && !deletedRes.has(r.id)) {
-        r.key = key;
-        results.push(r);
-      }
-    }
-    return results;
+    return this._readMergedResults('result:', () => window.FirebaseEngine.getAllResults());
   },
 
   seedStudentRosterIfEmpty(force = false) {
@@ -1085,13 +1081,14 @@ const StorageEngine = {
       for (const key of quizKeys) {
         const q = await this.get(key);
         if (q) {
-          if (!q.pdfDataUrl || !q.pdfDataUrl.startsWith('http')) {
+          if (typeof q.pdfDataUrl !== 'string' || !q.pdfDataUrl.startsWith('http')) {
             const blob = await this.getPdfBlob(q.id);
             if (blob) {
               q.pdfDataUrl = blob;
             }
           }
-          await window.FirebaseEngine.saveQuiz(q);
+          const saved = await window.FirebaseEngine.saveQuiz(q);
+          if (!saved || !saved.success) throw new Error(saved?.error || 'Không đồng bộ được đề ' + q.id);
         }
       }
       
@@ -1106,7 +1103,7 @@ const StorageEngine = {
       for (const key of resultKeys) {
         const r = await this.get(key);
         if (r) {
-          await window.FirebaseEngine.saveResult(r);
+          if (!await window.FirebaseEngine.saveResult(r)) throw new Error('Không đồng bộ được kết quả ' + (r.id || key));
         }
       }
 

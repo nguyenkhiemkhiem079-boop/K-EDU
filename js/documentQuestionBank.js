@@ -35007,6 +35007,43 @@ const DocumentQuestionBank = {
     return this.query({ grade, topic, level, type, limit, subject });
   },
 
+  signature(text) { return String(text || '').normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s*\(Biến thể\s+\d+\)\s*$/iu, '').trim().replace(/\s+/g, ' '); },
+
+  registerQuestions(questions) {
+    const ids = new Set(this.questions.map(q => q.id));
+    const seen = new Set(this.questions.map(q => this.signature(q.question)));
+    for (const q of questions) {
+      const signature = this.signature(q.question);
+      if (!signature || ids.has(q.id) || seen.has(signature)) continue;
+      this.questions.push({ subject: 'toan', passage: null, ...q });
+      ids.add(q.id);
+      seen.add(signature);
+    }
+  },
+
+  async ensureGradeLoaded(grade) {
+    const requested = String(grade).toUpperCase();
+    if (requested === 'ALL') return Promise.all(['6', '7', '8', '9', '10', '11', '12'].map(g => this.ensureGradeLoaded(g)));
+    const key = requested === 'TS10' ? '9' : requested === 'THPT' ? '12' : requested;
+    if (!/^(6|7|8|9|10|11|12|DGNL)$/.test(key)) throw new Error('Unsupported grade: ' + key);
+    if (typeof document === 'undefined') return;
+    if (!this._gradeLoads) this._gradeLoads = new Map();
+    if (this._gradeLoads.has(key)) return this._gradeLoads.get(key);
+    const promise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = `js/question-bank/toan-${key}.js?v=5.0`;
+      script.onload = resolve;
+      script.onerror = () => {
+        this._gradeLoads.delete(key);
+        script.remove();
+        reject(new Error('Không tải được ngân hàng câu hỏi lớp ' + key));
+      };
+      document.head.appendChild(script);
+    });
+    this._gradeLoads.set(key, promise);
+    return promise;
+  },
+
   query(filters = {}) {
     const { grade, topic, level, type, limit, subject = 'toan' } = filters;
     let list = [...this.questions];
@@ -35046,6 +35083,14 @@ const DocumentQuestionBank = {
       list = list.filter(q => q.type === type);
     }
 
+    const seen = new Set();
+    list = list.filter(q => {
+      const key = this.signature(q.question);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
     // Xáo trộn ngẫu nhiên để không bị trùng lặp thứ tự
     for (let i = list.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -35074,6 +35119,10 @@ const DocumentQuestionBank = {
    * Thống kê số lượng câu hỏi theo từng tài liệu & khối lớp
    */
   getStats(subject) {
+    if (typeof window !== 'undefined' && window.QuestionBankStats) {
+      const snapshot = window.QuestionBankStats[subject || 'all'];
+      if (snapshot) return JSON.parse(JSON.stringify(snapshot));
+    }
     let list = this.questions;
     if (subject && subject !== 'all') {
       list = list.filter(q => (q.subject || 'toan') === subject);
@@ -35083,6 +35132,7 @@ const DocumentQuestionBank = {
       byGrade: {},
       byTopic: {},
       bySubject: {},
+      byDisciplineDifficulty: {},
       sourcesCount: this.getSources(subject).length
     };
     this.questions.forEach(q => {
@@ -35090,6 +35140,13 @@ const DocumentQuestionBank = {
       stats.bySubject[s] = (stats.bySubject[s] || 0) + 1;
     });
     list.forEach(q => {
+      const discipline = q.subject === 'khtn' ? q.topic : (String(q.grade) === 'DGNL' ? 'dgnl' : 'toan');
+      const level = String(q.level || '').toUpperCase();
+      const mode = ['NB', 'TH'].includes(level) ? 'basic' : ['VD', 'VDC'].includes(level) ? 'advanced' : 'unclassified';
+      const counts = stats.byDisciplineDifficulty[discipline] ||= { basic: 0, advanced: 0, specializedVdc: 0, unclassified: 0 };
+      counts[mode]++;
+      const policy = typeof SpecializedBankPolicy !== 'undefined' ? SpecializedBankPolicy : (typeof require === 'function' ? require('./specializedBankPolicy') : null);
+      if (policy?.isApproved(q)) counts.specializedVdc++;
       stats.byGrade[q.grade] = (stats.byGrade[q.grade] || 0) + 1;
       stats.byTopic[q.topic] = (stats.byTopic[q.topic] || 0) + 1;
     });
@@ -35109,4 +35166,10 @@ if (typeof DocumentQuestionBank !== 'undefined' && Array.isArray(DocumentQuestio
     if (!q.subject) q.subject = 'toan';
     if (q.passage === undefined) q.passage = null;
   });
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  for (const grade of ["6", "7", "8", "9", "10", "11", "12", "DGNL"]) {
+    DocumentQuestionBank.registerQuestions(require("./question-bank/toan-" + grade + ".js"));
+  }
 }

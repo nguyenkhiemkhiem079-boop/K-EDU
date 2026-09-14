@@ -14,18 +14,17 @@ assert(html.includes('value="toan" selected'), 'Option value="toan" chưa select
 assert(html.includes('value="khtn"'), 'Thiếu option value="khtn"');
 assert(html.includes('value="tienganh" disabled'), 'Option value="tienganh" phải có disabled');
 assert(html.includes('value="sat" disabled'), 'Option value="sat" phải có disabled');
-assert(html.includes('id="khtnComingSoonPanel"'), 'Thiếu #khtnComingSoonPanel');
 assert(html.includes('id="mathGenControlsContainer"'), 'Thiếu #mathGenControlsContainer');
 
 console.log('  ✅ #examSubjectSelect đầy đủ 4 options (2 disabled chuẩn nhãn Sắp ra mắt).');
-console.log('  ✅ #khtnComingSoonPanel và #mathGenControlsContainer hiện diện chính xác.');
+console.log('  ✅ #mathGenControlsContainer hiện diện chính xác.');
 
 // 2. Check DocumentQuestionBank
 console.log('\n👉 [CHECK 2] Kiểm tra DocumentQuestionBank schema & filtering:');
 const bank = require('../js/documentQuestionBank.js');
-assert.strictEqual(bank.questions.length, 1871, `Tổng số câu phải là 1871, nhận: ${bank.questions.length}`);
+assert(bank.questions.length >= 1943, 'Ngân hàng không được mất dữ liệu gốc');
 
-const nonToan = bank.questions.filter(q => q.subject !== 'toan');
+const nonToan = bank.questions.filter(q => !['toan', 'khtn'].includes(q.subject));
 assert.strictEqual(nonToan.length, 0, `Có ${nonToan.length} câu chưa được gán subject='toan'`);
 
 const nonNullPassage = bank.questions.filter(q => q.passage !== null);
@@ -35,13 +34,14 @@ const toanQuery = bank.getQuestions({ grade: '10', limit: 5 });
 assert(toanQuery.length > 0, 'Truy vấn Toán không trả về câu hỏi');
 
 const khtnQuery = bank.getQuestions({ subject: 'khtn', limit: 5 });
-assert.strictEqual(khtnQuery.length, 0, 'KHTN chưa được nạp nội dung nên phải trả về 0 câu');
+assert.strictEqual(khtnQuery.length, 5);
+assert(khtnQuery.every(q => q.subject === 'khtn'));
 
 const stats = bank.getStats();
-assert(stats.bySubject && stats.bySubject.toan === 1871, 'Thống kê bySubject không khớp');
-console.log('  ✅ 1,871 câu hỏi đều có subject="toan" và passage=null.');
-console.log('  ✅ getQuestions() lọc chuẩn xác theo subject (toan -> có dữ liệu, khtn -> 0 câu rỗng an toàn).');
-console.log('  ✅ getStats() thống kê bySubject chuẩn xác: 1,871 câu Toán.');
+assert(stats.bySubject && stats.bySubject.toan === bank.questions.filter(q => q.subject === "toan").length, 'Thống kê bySubject không khớp');
+console.log('  ✅ Câu hỏi được phân loại theo môn và passage=null.');
+console.log('  ✅ getQuestions() lọc chuẩn xác theo subject (toan -> có dữ liệu, khtn -> có dữ liệu).');
+console.log('  ✅ getStats() thống kê bySubject chuẩn xác: khớp dữ liệu hiện tại.');
 
 // 3. Check App.js logic
 console.log('\n👉 [CHECK 3] Kiểm tra logic xử lý đa môn trong js/app.js:');
@@ -49,7 +49,6 @@ const appCode = fs.readFileSync('js/app.js', 'utf8');
 assert(appCode.includes('SUBJECT_LABELS'), 'Thiếu SUBJECT_LABELS trong app.js');
 assert(appCode.includes('handleExamSubjectChange'), 'Thiếu handleExamSubjectChange trong app.js');
 assert(appCode.includes('mathGenControlsContainer'), 'handleExamSubjectChange chưa điều khiển mathGenControlsContainer');
-assert(appCode.includes('khtnComingSoonPanel'), 'handleExamSubjectChange chưa điều khiển khtnComingSoonPanel');
 
 console.log('  ✅ SUBJECT_LABELS định nghĩa đầy đủ 4 môn.');
 console.log('  ✅ handleExamSubjectChange điều khiển toggle mượt mà giữa Toán và KHTN.');

@@ -20,4 +20,6 @@ Thumbs.db
 # Test & Scratch
 scratch/
 scratch_server.ps1
+tools/math-*-review.json
+tools/math-expanded-candidates.json
 test_*.html

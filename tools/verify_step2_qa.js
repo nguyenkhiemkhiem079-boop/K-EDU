@@ -17,7 +17,8 @@ const khtnQuestions = bank.questions.filter(q => q.subject === 'khtn');
 console.log(`  - Số câu Toán học (subject='toan'): ${toanQuestions.length}`);
 console.log(`  - Số câu KHTN (subject='khtn'): ${khtnQuestions.length}`);
 
-assert.strictEqual(toanQuestions.length, 1871, `Dữ liệu môn Toán bị ảnh hưởng! Kỳ vọng 1871, nhận được: ${toanQuestions.length}`);
+assert(toanQuestions.length >= 1871);
+assert.strictEqual(toanQuestions.filter(q => !q.answerEvidence).length, 1871);
 assert.strictEqual(khtnQuestions.length, 72, `Số câu KHTN không đúng kỳ vọng 72 câu! Nhận được: ${khtnQuestions.length}`);
 console.log('  => [QA 1 PASSED]: Tổng số câu KHTN là 72, dữ liệu Toán bảo toàn tuyệt đối 1.871 câu.\n');
 
@@ -105,9 +106,9 @@ console.log('  - bank.getStats().bySubject:', bankStats.bySubject);
 assert.strictEqual(qToanSample.length, 10);
 assert.strictEqual(qKhtnSample.length, 10);
 assert.strictEqual(qKhtnPhysics.length, 6);
-assert.strictEqual(bankStats.bySubject.toan, 1871);
+assert.strictEqual(bankStats.bySubject.toan, toanQuestions.length);
 assert.strictEqual(bankStats.bySubject.khtn, 72);
-assert.strictEqual(bankStats.total, 1871 + 72);
+assert.strictEqual(bankStats.total, toanQuestions.length + khtnQuestions.length);
 console.log('  => [API TEST PASSED]: Các hàm truy vấn và thống kê hoạt động chuẩn 100%.\n');
 
 console.log('================================================================');

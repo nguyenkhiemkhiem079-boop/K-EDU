@@ -550,11 +550,11 @@ const WeeklyHonorEngine = {
     const studentSubmissions = {};
 
     sortedResults.forEach(res => {
-      if (!res || !res.name) return;
+      if (!res || !res.name || res.gradingStatus === 'pending' || res.isDocumentOnly) return;
       if (targetClass !== 'all' && res.className !== targetClass) return;
       if (weekRange && !this.isInWeek(res.submittedAt, weekRange)) return;
 
-      const key = res.name.trim().toLowerCase();
+      const key = JSON.stringify([(res.className || '').trim().toLowerCase(), res.name.trim().toLowerCase()]);
       if (!studentSubmissions[key]) {
         studentSubmissions[key] = {
           name: res.name.trim(),
@@ -872,7 +872,7 @@ const WeeklyHonorEngine = {
 /* ================= 🎮 CORE GAMIFICATION ENGINE ================= */
 const GamificationEngine = {
   getUserProfile() {
-    const raw = localStorage.getItem('khiemedu_profile');
+    const raw = localStorage.getItem('khiemedu_profile' + (window.StudentAccounts?.uid ? '_' + window.StudentAccounts.uid : ''));
     if (!raw) {
       const initial = {
         name: 'Nguyễn Văn An',
@@ -895,6 +895,11 @@ const GamificationEngine = {
         equippedTitle: '',
         penalties: []
       };
+      if (window.StudentAccounts?.uid) {
+        Object.assign(initial, { name: window.StudentAccounts.profile?.name || '', className: window.StudentAccounts.profile?.className || '',
+          xp: 0, streak: 0, perfectStreak: 0, examsCount: 0, perfectCount: 0, totalCorrectAnswers: 0,
+          unlockedBadges: [], unlockedFrames: ['frame-target'] });
+      }
       this.saveUserProfile(initial);
       return initial;
     }
@@ -917,7 +922,7 @@ const GamificationEngine = {
   },
 
   saveUserProfile(profile) {
-    localStorage.setItem('khiemedu_profile', JSON.stringify(profile));
+    localStorage.setItem('khiemedu_profile' + (window.StudentAccounts?.uid ? '_' + window.StudentAccounts.uid : ''), JSON.stringify(profile));
   },
 
   resetUserProfile(cleanStats = true) {
@@ -976,6 +981,9 @@ const GamificationEngine = {
 
   awardExamRewards(result, allQuizzesForClass = []) {
     const profile = this.getUserProfile();
+    if (result.gradingStatus === 'pending' || result.isDocumentOnly) {
+      return { xpGained: 0, streak: profile.streak || 0, bonusBreakdown: [], newBadges: [], newFrames: [] };
+    }
 
     // Kiểm tra thẻ nhân đôi XP (2x XP Booster) còn hiệu lực
     const hasActive2x = profile.boosters && profile.boosters.xp2xUntil && profile.boosters.xp2xUntil > Date.now();

@@ -1,0 +1,47 @@
+{
+  "extracted": 75984,
+  "candidates": 13121,
+  "newUniqueCandidates": 7551,
+  "byGrade": {
+    "7": {
+      "extracted": 4427,
+      "eligible": 0,
+      "pending": 4427
+    },
+    "8": {
+      "extracted": 4356,
+      "eligible": 0,
+      "pending": 4356
+    },
+    "9": {
+      "extracted": 904,
+      "eligible": 0,
+      "pending": 904
+    },
+    "10": {
+      "extracted": 16130,
+      "eligible": 4838,
+      "pending": 11292
+    },
+    "11": {
+      "extracted": 5663,
+      "eligible": 159,
+      "pending": 5504
+    },
+    "12": {
+      "extracted": 44504,
+      "eligible": 8124,
+      "pending": 36380
+    }
+  },
+  "missingPdfGrades": [
+    "6"
+  ],
+  "initialMathTotal": 1871,
+  "finalMathTotal": 13962,
+  "addedUnique": 12091,
+  "audit": {
+    "duplicateQuestions": 0,
+    "invalidStructure": 0
+  }
+}

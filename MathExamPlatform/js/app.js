@@ -431,11 +431,13 @@ function handleGenerateExam(e) {
     numEssay
   });
 
+  if (currentGeneratedExam.warning) showToast(currentGeneratedExam.warning, 'warning');
+
   // Tự động gán nhãn câu tự luận theo thứ tự (ví dụ: Câu 13, Câu 14...)
   currentGeneratedExam.questions.forEach((q, idx) => {
     if (q.questionType === 'essay' || q.type === 'essay') {
       const essayIndex = idx - currentGeneratedExam.numChoice + 1;
-      q.questionLabel = `Câu ${numChoice + essayIndex}`;
+      q.questionLabel = `Câu ${currentGeneratedExam.numChoice + essayIndex}`;
     }
   });
 

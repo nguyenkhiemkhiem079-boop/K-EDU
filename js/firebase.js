@@ -122,7 +122,8 @@ const FirebaseEngine = {
     if (typeof data !== 'string') return null;
 
     if (data.startsWith('data:')) {
-      const parts = data.split(',');
+      const separator = data.indexOf(',');
+      const parts = [data.slice(0, separator), data.slice(separator + 1)];
       const mimeMatch = parts[0].match(/:(.*?);/);
       const mime = mimeMatch ? mimeMatch[1] : defaultType;
       const isBase64 = parts[0].includes(';base64');
@@ -141,7 +142,7 @@ const FirebaseEngine = {
           return null;
         }
       } else {
-        const text = decodeURIComponent(parts[1]);
+        const text = parts[0].includes(';base64') ? new TextDecoder().decode(Uint8Array.from(atob(parts[1]), c => c.charCodeAt(0))) : decodeURIComponent(parts[1]);
         return new Blob([text], { type: mime });
       }
     }
@@ -185,9 +186,9 @@ const FirebaseEngine = {
       console.error('Firestore connection test error:', err);
       const msg = err.message || '';
       if (err.code === 'not-found' || msg.includes('does not exist') || msg.includes('404')) {
-        firestoreMsg = 'Cơ sở dữ liệu Firestore (default) chưa được tạo trên Firebase Console. Vui lòng vào Firebase Console -> Build -> Firestore Database -> Bấm "Create database" (chọn chế độ Test mode).';
+        firestoreMsg = 'Cơ sở dữ liệu Firestore (default) chưa được tạo. Vào Firebase Console -> Build -> Firestore Database -> Create database và cấu hình Security Rules theo tài khoản, vai trò được phép truy cập.';
       } else if (err.code === 'permission-denied') {
-        firestoreMsg = 'Quyền truy cập Firestore bị chặn (Permission Denied). Vui lòng cập nhật Rules sang Test Mode: allow read, write: if true;';
+        firestoreMsg = 'Quyền truy cập Firestore bị chặn (Permission Denied). Kiểm tra tài khoản Firebase Authentication và Security Rules cho đúng vai trò, bộ sưu tập và thao tác cần dùng.';
       } else {
         firestoreMsg = `Lỗi Firestore (${err.code || 'unknown'}): ${msg}`;
       }
@@ -207,9 +208,9 @@ const FirebaseEngine = {
       console.error('Storage connection test error:', err);
       const msg = err.message || '';
       if (err.code === 'storage/bucket-not-found' || msg.includes('404') || msg.includes('does not exist')) {
-        storageMsg = 'Storage bucket chưa được khởi tạo trên Firebase Console. Vui lòng vào Firebase Console -> Build -> Storage -> Bấm "Get started" (chọn chế độ Test mode).';
+        storageMsg = 'Storage bucket chưa được khởi tạo. Vào Firebase Console -> Build -> Storage -> Get started và cấu hình Security Rules theo tài khoản, vai trò và đường dẫn tệp.';
       } else if (err.code === 'storage/unauthorized') {
-        storageMsg = 'Quyền truy cập Cloud Storage bị chặn. Vui lòng cập nhật Rules sang Test Mode: allow read, write: if true;';
+        storageMsg = 'Quyền truy cập Cloud Storage bị chặn. Kiểm tra tài khoản Firebase Authentication và Security Rules cho đường dẫn tệp, vai trò và thao tác cần dùng.';
       } else {
         storageMsg = `Lỗi Storage (${err.code || 'unknown'}): ${msg}`;
       }
@@ -243,7 +244,12 @@ const FirebaseEngine = {
       const mimeType = isHtml ? 'text/html' : 'application/pdf';
       const ext = isHtml ? '.html' : '.pdf';
 
-      const blob = this._dataToBlob(base64OrDataUrl, mimeType);
+      let blob;
+      if (typeof base64OrDataUrl === 'string' && base64OrDataUrl.startsWith('blob:')) {
+        const response = await fetch(base64OrDataUrl);
+        if (!response.ok) throw new Error('Không đọc được file đính kèm.');
+        blob = await response.blob();
+      } else blob = this._dataToBlob(base64OrDataUrl, mimeType);
       if (!blob) {
         console.warn('Could not convert PDF/file data to Blob');
         return null;
@@ -289,7 +295,8 @@ const FirebaseEngine = {
       // Extract examHtml if available in pdfDataUrl
       if (!quizToSave.examHtml && quizToSave.pdfDataUrl && typeof quizToSave.pdfDataUrl === 'string' && quizToSave.pdfDataUrl.startsWith('data:text/html')) {
         try {
-          const parts = quizToSave.pdfDataUrl.split(',');
+          const separator = quizToSave.pdfDataUrl.indexOf(',');
+      const parts = [quizToSave.pdfDataUrl.slice(0, separator), quizToSave.pdfDataUrl.slice(separator + 1)];
           if (parts.length > 1) {
             quizToSave.examHtml = decodeURIComponent(parts[1]);
           }
@@ -299,7 +306,7 @@ const FirebaseEngine = {
       }
 
       // If quiz contains raw base64 or data URL, upload to Firebase Storage if available
-      if (quizToSave.pdfDataUrl && (quizToSave.pdfDataUrl.startsWith('data:') || quizToSave.pdfDataUrl.startsWith('blob:') || quizToSave.pdfDataUrl instanceof Blob)) {
+      if (quizToSave.pdfDataUrl && ((typeof quizToSave.pdfDataUrl === 'string' && (quizToSave.pdfDataUrl.startsWith('data:') || quizToSave.pdfDataUrl.startsWith('blob:'))) || quizToSave.pdfDataUrl instanceof Blob)) {
         if (this.storage) {
           try {
             downloadUrl = await this.uploadPdf(quiz.id, quizToSave.pdfDataUrl, quizToSave.pdfFileName);
@@ -316,8 +323,11 @@ const FirebaseEngine = {
         // Only strip pdfDataUrl if it's a huge binary file (> 500KB) to prevent exceeding Firestore's 1MB doc limit.
         // For auto-generated math exams (~15KB HTML), KEEP it directly in Firestore so student devices can render it instantly!
         if (!downloadUrl && typeof quizToSave.pdfDataUrl === 'string' && quizToSave.pdfDataUrl.length > 500000) {
-          delete quizToSave.pdfDataUrl;
+          throw new Error('Không tải được file lên Cloud Storage; đề chỉ được lưu ở máy nếu có bản local.');
         }
+        if (!downloadUrl && quizToSave.pdfDataUrl instanceof Blob) throw new Error('Không tải được file Blob lên Cloud Storage.');
+        if (!downloadUrl && typeof quizToSave.pdfDataUrl === 'string' && quizToSave.pdfDataUrl.startsWith('blob:')) throw new Error('Không lưu được địa chỉ file tạm lên Cloud.');
+        if (downloadUrl && quizToSave.examHtml?.length > 500000) delete quizToSave.examHtml;
       }
 
       const setPromise = this.db.collection('quizzes').doc(quiz.id).set(quizToSave);

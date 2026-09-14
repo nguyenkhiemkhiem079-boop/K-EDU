@@ -3,6 +3,7 @@
  * Activated ONLY when URL parameter ?qa= is present.
  */
 document.addEventListener('DOMContentLoaded', async () => {
+  if (!['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname)) return;
   const params = new URLSearchParams(window.location.search);
   const qa = params.get('qa');
   if (!qa) return;
@@ -25,6 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!existing && typeof MathEngine !== 'undefined') {
     const demo = MathEngine.generateExam({
       grade: '10',
+      sourceMode: 'synthetic',
       term: 'GK1',
       topic: 'Hình học',
       mcqCount: 5,

@@ -25,9 +25,7 @@ class ExamBuilder {
     
     // Lọc theo khối lớp (Nếu grade là 'all' thì lấy cả khối, còn không thì lấy đúng lớp hoặc lớp lân cận nếu thiếu)
     let candidatePool = allQuestions.filter(q => grade === 'all' || q.grade == grade);
-    if (candidatePool.length < (numChoice + numEssay)) {
-      candidatePool = allQuestions; // Dự phòng lấy từ toàn kho nếu lớp đó chưa đủ câu
-    }
+
 
     const choicePool = candidatePool.filter(q => q.type === 'choice' || !q.type);
     const essayPool = candidatePool.filter(q => q.type === 'essay' || q.type === 'fill');
@@ -35,11 +33,23 @@ class ExamBuilder {
     // Thuật toán chọn câu hỏi theo tỉ lệ mức độ nhận thức
     const selectedQuestions = [];
 
+    const seen = new Set();
+    const signature = q => String(q.content || '').normalize('NFC').trim().replace(/\s+/g, ' ');
     const selectFromPool = (pool, count) => {
-      if (pool.length <= count) return [...pool];
-      // Xáo trộn ngẫu nhiên
-      const shuffled = [...pool].sort(() => 0.5 - Math.random());
-      return shuffled.slice(0, count);
+      const shuffled = [...pool];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      const selected = [];
+      for (const q of shuffled) {
+        if (selected.length >= count) break;
+        const key = signature(q);
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        selected.push(q);
+      }
+      return selected;
     };
 
     // Chọn trắc nghiệm
@@ -60,7 +70,16 @@ class ExamBuilder {
     if (selectedEssay.length < numEssay) {
       const needed = numEssay - selectedEssay.length;
       for (let i = 0; i < needed; i++) {
-        const variant = this.dataManager.generateRandomizedVariant();
+        let variant = null;
+        for (let attempt = 0; attempt < 50; attempt++) {
+          const candidate = this.dataManager.generateRandomizedVariant();
+          const key = signature(candidate);
+          if (!key || seen.has(key)) continue;
+          seen.add(key);
+          variant = candidate;
+          break;
+        }
+        if (!variant) break;
         selectedEssay.push({
           id: `ESSAY_GEN_${Date.now()}_${i}`,
           grade: grade === 'all' ? 8 : grade,
@@ -93,6 +112,7 @@ class ExamBuilder {
       totalQuestions: selectedQuestions.length,
       numChoice: selectedChoice.length,
       numEssay: selectedEssay.length,
+      warning: selectedChoice.length < numChoice || selectedEssay.length < numEssay ? 'Không đủ câu độc nhất cho khối đã chọn; đề sử dụng số câu thực tế.' : null,
       createdAt: new Date().toISOString(),
       questions: selectedQuestions
     };

@@ -15,13 +15,14 @@ const StudentAnalytics = {
       let needsUpdate = false;
       const quiz = await window.StorageEngine.getQuiz(result.quizId);
       
-      if (!quiz || !quiz.keys) {
+      const quizKeys = quiz && (quiz.answerKeys || quiz.keys);
+      if (!Array.isArray(quizKeys)) {
         missingQuizCount++;
         continue; // Không thể backfill nếu không còn quiz.keys
       }
       
       const keyMap = {};
-      quiz.keys.forEach(k => {
+      quizKeys.forEach(k => {
         keyMap[k.num] = k.topic || k.category || '';
       });
 
@@ -65,11 +66,12 @@ const StudentAnalytics = {
     );
 
     // Sắp xếp các bài theo thời gian nộp
-    studentResults.sort((a, b) => new Date(a.time || a.createdAt || 0) - new Date(b.time || b.createdAt || 0));
+    studentResults.sort((a, b) => new Date(a.submittedAt || a.time || a.createdAt || 0) - new Date(b.submittedAt || b.time || b.createdAt || 0));
 
     const stats = {};
 
     for (const result of studentResults) {
+      if (result.gradingStatus === 'pending' || result.isDocumentOnly) continue;
       const reviewList = result.review || result.reviewData || [];
       const topicAttempt = {}; // Gom nhóm trong 1 bài thi
       
@@ -217,6 +219,7 @@ const StudentAnalytics = {
     const stats = {};
 
     for (const result of classResults) {
+      if (result.gradingStatus === 'pending' || result.isDocumentOnly) continue;
       const reviewList = result.review || result.reviewData || [];
       for (const item of reviewList) {
         const subject = item.subject || 'Chưa rõ';
