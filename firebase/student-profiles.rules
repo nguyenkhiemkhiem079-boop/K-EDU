@@ -6,14 +6,26 @@ service cloud.firestore {
     match /students/{uid} {
       allow read: if request.auth != null && (request.auth.uid == uid || request.auth.token.teacher == true);
       allow create: if request.auth != null && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['uid', 'email', 'username', 'name', 'className', 'role', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['uid', 'email', 'username', 'name', 'className', 'role', 'createdAt', 'updatedAt'])
         && request.resource.data.username is string && request.resource.data.username.size() >= 3 && request.resource.data.username.size() <= 40
         && request.resource.data.uid == uid && request.resource.data.email == request.auth.token.email
         && request.resource.data.role == 'student'
         && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 100
         && request.resource.data.className is string && request.resource.data.className.size() > 0 && request.resource.data.className.size() <= 40
         && request.resource.data.createdAt is string;
-      allow update, delete: if request.auth != null && request.auth.token.teacher == true;
+      allow update: if request.auth != null
+        && ((request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['uid', 'email', 'username', 'name', 'className', 'role', 'createdAt', 'updatedAt'])
+          && request.resource.data.uid == uid
+          && request.resource.data.email == resource.data.email
+          && request.resource.data.username == resource.data.username
+          && request.resource.data.role == 'student'
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 100
+          && request.resource.data.className is string && request.resource.data.className.size() > 0 && request.resource.data.className.size() <= 40
+          && request.resource.data.updatedAt is string)
+        || request.auth.token.teacher == true);
+      allow delete: if request.auth != null && request.auth.token.teacher == true;
     }
   }
 }
