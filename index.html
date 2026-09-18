@@ -14,7 +14,7 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
   
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="css/style.css?v=6.0">
+  <link rel="stylesheet" href="css/style.css?v=6.1">
   
   <!-- KaTeX Math Formula Rendering -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
@@ -293,12 +293,12 @@ GIANG, 8"></textarea>
                 <div class="form-group hidden" id="studentAccountConfirmGroup"><label for="studentAccountConfirm">Nhập lại mật khẩu</label><input id="studentAccountConfirm" type="password" autocomplete="new-password"></div>
               </div>
               <div class="form-row hidden" id="studentAccountProfileFields">
-                <div class="form-group"><label for="studentAccountName">Họ và tên</label><input id="studentAccountName" maxlength="100" autocomplete="name"></div>
-                <div class="form-group"><label for="studentAccountClass">Lớp học</label><input id="studentAccountClass" maxlength="40" placeholder="Ví dụ: 10A1"></div>
+                <div class="form-group"><label for="studentAccountName">Họ và tên</label><input id="studentAccountName" type="text" maxlength="100" autocomplete="name" placeholder="Ví dụ: Nguyễn Văn An"></div>
+                <div class="form-group"><label for="studentAccountClass">Lớp học</label><input id="studentAccountClass" type="text" maxlength="40" placeholder="Ví dụ: 10A1"></div>
               </div>
               <div class="account-mode-buttons">
                 <button type="submit" class="btn btn-primary" id="studentAccountLoginButton" data-account-action>Đăng nhập</button>
-                <button type="button" class="btn btn-primary hidden" id="studentAccountRegisterButton" data-account-action onclick="StudentAccounts.register()">Tạo tài khoản</button>
+                <button type="submit" class="btn btn-primary hidden" id="studentAccountRegisterButton" data-account-action>Tạo tài khoản</button>
                 <button type="button" class="btn btn-primary hidden" id="studentCompleteProfileButton" data-account-action onclick="StudentAccounts.completeProfile()">Hoàn thiện hồ sơ</button>
               </div>
             </form>
@@ -1957,7 +1957,7 @@ GIANG, 8"></textarea>
   <script src="js/question-bank/stats.js?v=5.2"></script>
   <script src="js/mathGenerator.js?v=5.2"></script>
   <script src="js/khtnGenerator.js?v=5.2"></script>
-  <script src="js/studentAccounts.js?v=6.2"></script>
+  <script src="js/studentAccounts.js?v=6.3"></script>
   <script src="js/teacherWorkspace.js?v=6.0"></script>
   <!-- V-ACT Core Architecture & Engines -->
   <script src="js/vact/taxonomy.js"></script>
