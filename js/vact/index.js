@@ -6,30 +6,40 @@
   if (typeof module !== 'undefined' && module.exports) {
     const taxonomy = require('./taxonomy');
     const signature = require('./quality/signature');
-    const schema = require('./schema');
     const validator = require('./quality/validator');
+    const deduplicator = require('./quality/deduplicator');
+    const schema = require('./schema');
     const profiles = require('./profiles');
     const adapter = require('./bank/adapter');
     const internalBank = require('./bank/internalBank');
-    module.exports = factory(taxonomy, signature, schema, validator, profiles, adapter, internalBank);
+    const coverage = require('./bank/coverage');
+    module.exports = factory(taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, coverage);
   } else {
     root.KEDUVACT = root.KEDUVACT || {};
     // When loaded via script tags, individual modules attach to root.KEDUVACT
   }
-})(typeof window !== 'undefined' ? window : globalThis, function (taxonomy, signature, schema, validator, profiles, adapter, internalBank) {
+})(typeof window !== 'undefined' ? window : globalThis, function (taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, coverage) {
   'use strict';
 
   return Object.freeze({
     ...taxonomy,
     ...signature,
-    ...schema,
     ...validator,
+    ...deduplicator,
+    ...schema,
     ...profiles,
     ...adapter,
     ...internalBank,
+    ...coverage,
+    quality: Object.freeze({
+      ...signature,
+      ...validator,
+      ...deduplicator
+    }),
     bank: Object.freeze({
       ...adapter,
-      ...internalBank
+      ...internalBank,
+      ...coverage
     })
   });
 });
