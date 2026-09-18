@@ -13,12 +13,13 @@
     const adapter = require('./bank/adapter');
     const internalBank = require('./bank/internalBank');
     const coverage = require('./bank/coverage');
-    module.exports = factory(taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, coverage);
+    const sectionTestGenerator = require('./generator/sectionTestGenerator');
+    module.exports = factory(taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, coverage, sectionTestGenerator);
   } else {
     root.KEDUVACT = root.KEDUVACT || {};
     // When loaded via script tags, individual modules attach to root.KEDUVACT
   }
-})(typeof window !== 'undefined' ? window : globalThis, function (taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, coverage) {
+})(typeof window !== 'undefined' ? window : globalThis, function (taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, coverage, sectionTestGenerator) {
   'use strict';
 
   return Object.freeze({
@@ -31,6 +32,7 @@
     ...adapter,
     ...internalBank,
     ...coverage,
+    ...sectionTestGenerator,
     quality: Object.freeze({
       ...signature,
       ...validator,
@@ -40,6 +42,9 @@
       ...adapter,
       ...internalBank,
       ...coverage
+    }),
+    generator: Object.freeze({
+      ...sectionTestGenerator
     })
   });
 });
