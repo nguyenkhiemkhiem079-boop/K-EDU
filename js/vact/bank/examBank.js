@@ -307,10 +307,54 @@
     }
 
     /**
+     * Loads source-backed exams from data/vact/exams.json (Node environment) or provided array.
+     * @param {Array<object>} [customExams]
+     * @returns {Array<object>}
+     */
+    loadSourceBackedExams(customExams = null) {
+      let examsList = customExams;
+      if (!Array.isArray(examsList) && typeof require === 'function') {
+        try {
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const examsPath = path.resolve(__dirname, '../../../data/vact/exams.json');
+          if (fs.existsSync(examsPath)) {
+            examsList = JSON.parse(fs.readFileSync(examsPath, 'utf8'));
+          }
+        } catch (_) {}
+      }
+
+      if (Array.isArray(examsList)) {
+        for (const ex of examsList) {
+          const examRecord = {
+            id: ex.id,
+            sourceId: ex.sourceId,
+            filename: ex.filename,
+            year: ex.year || 2025,
+            structureVersion: ex.structureVersion || 'unknown',
+            questionIds: ex.questionIds || [],
+            expectedQuestionCount: ex.expectedQuestionCount || 120,
+            extractedQuestionCount: ex.extractedQuestionCount || (ex.questionIds ? ex.questionIds.length : 0),
+            productionQuestionCount: ex.productionQuestionCount || (ex.questionIds ? ex.questionIds.length : 0),
+            complete: Boolean(ex.complete),
+            sourceBacked: true,
+            isCanonical: true,
+            status: ex.complete ? EXAM_STATUS.COMPLETE : EXAM_STATUS.INCOMPLETE
+          };
+          this._exams.set(ex.id, examRecord);
+        }
+      }
+      return Array.from(this._exams.values()).map(e => JSON.parse(JSON.stringify(e)));
+    }
+
+    /**
      * Returns all registered exams.
      * @returns {Array<object>}
      */
     getAllExams() {
+      if (this._exams.size === 0) {
+        this.loadSourceBackedExams();
+      }
       return Array.from(this._exams.values()).map(e => JSON.parse(JSON.stringify(e)));
     }
 

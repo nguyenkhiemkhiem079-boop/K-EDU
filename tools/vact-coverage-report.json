@@ -1,62 +1,65 @@
 {
-  "generatedAt": "2026-09-18T04:10:13.217Z",
+  "generatedAt": "2026-09-18T08:05:14.996Z",
   "bankSummary": {
-    "totalRaw": 14034,
-    "totalMapped": 13596,
-    "totalUniqueUsable": 13590,
-    "duplicatesCount": 6,
-    "duplicateGroupsCount": 6,
-    "invalidCount": 53,
-    "unsupportedCount": 385,
+    "totalRaw": 1758,
+    "totalMapped": 1758,
+    "totalUniqueUsable": 1758,
+    "duplicatesCount": 0,
+    "duplicateGroupsCount": 0,
+    "invalidCount": 0,
+    "unsupportedCount": 0,
     "sections": {
       "vietnamese": {
-        "total": 7,
-        "difficulty": {
-          "easy": 0,
-          "medium": 7,
-          "hard": 0,
-          "unclassified": 0
-        }
-      },
-      "english": {
-        "total": 0,
+        "total": 415,
         "difficulty": {
           "easy": 0,
           "medium": 0,
           "hard": 0,
-          "unclassified": 0
+          "unclassified": 415
+        }
+      },
+      "english": {
+        "total": 421,
+        "difficulty": {
+          "easy": 0,
+          "medium": 0,
+          "hard": 0,
+          "unclassified": 421
         }
       },
       "math": {
-        "total": 13114,
+        "total": 427,
         "difficulty": {
-          "easy": 3,
-          "medium": 13111,
+          "easy": 0,
+          "medium": 0,
           "hard": 0,
-          "unclassified": 0
+          "unclassified": 427
         }
       },
       "logic_data": {
-        "total": 401,
+        "total": 209,
         "difficulty": {
           "easy": 0,
-          "medium": 400,
-          "hard": 1,
-          "unclassified": 0
+          "medium": 0,
+          "hard": 0,
+          "unclassified": 209
         }
       },
       "scientific_reasoning": {
-        "total": 68,
+        "total": 286,
         "difficulty": {
-          "easy": 20,
-          "medium": 48,
+          "easy": 0,
+          "medium": 0,
           "hard": 0,
-          "unclassified": 0
+          "unclassified": 286
         },
         "skills": {
-          "physics": 20,
-          "chemistry": 24,
-          "biology": 24,
+          "physics": 0,
+          "chemistry": 0,
+          "biology": 0,
+          "history": 0,
+          "geography": 0,
+          "economics_law": 0,
           "technology": 0,
           "economics": 0,
           "society": 0,
@@ -65,200 +68,105 @@
       }
     },
     "qualityStatus": {
-      "usable": 13590,
-      "invalid": 53,
-      "duplicate": 6,
-      "unsupported": 385,
-      "unverifiedSource": 13590,
-      "unverifiedAnswer": 13590
+      "usable": 1758,
+      "invalid": 0,
+      "duplicate": 0,
+      "unsupported": 0,
+      "unverifiedSource": 0,
+      "unverifiedAnswer": 0
     },
-    "duplicateGroups": [
-      {
-        "signature": "cho hàm số y = (m + 2)x + √2 − m. có bao nhiêu giá trị nguyên của m để hàm số đồ...",
-        "canonicalId": "legacy:TOAN10_TUYEN_TAP_CAU_HO_735",
-        "duplicateIds": [
-          "legacy:TOAN10_TUYEN_TAP_CAU_HO_851"
-        ],
-        "count": 2
-      },
-      {
-        "signature": "tìm m để parabol (p ): y = x2 − 2(m + 1)x + m2 − 3 cắt trục hoành tại 2 điểm phâ...",
-        "canonicalId": "legacy:TOAN10_TUYEN_TAP_CAU_HO_840",
-        "duplicateIds": [
-          "legacy:TOAN10_TUYEN_TAP_CAU_HO_4261"
-        ],
-        "count": 2
-      },
-      {
-        "signature": "một người gửi vào ngân hàng 50 triệu đồng thời hạn 15 tháng, lãi suất 0, 6% thán...",
-        "canonicalId": "legacy:TOAN12_TUYEN_TAP_CAU_HO_1847",
-        "duplicateIds": [
-          "legacy:TOAN12_TUYEN_TAP_CAU_HO_2445"
-        ],
-        "count": 2
-      },
-      {
-        "signature": "một ô tô bắt đầu chuyển động nhanh dần đều với vận tốc v1(t) = 2t (m/s). đi được...",
-        "canonicalId": "legacy:TOAN12_TUYEN_TAP_CAU_HO_3483",
-        "duplicateIds": [
-          "legacy:TOAN12_TUYEN_TAP_CAU_HO_3625"
-        ],
-        "count": 2
-      },
-      {
-        "signature": "trong không gian với hệ tọa độ oxyz, cho các điểm a(2; 0; 0), b(0; 3; 0), c(0; 0...",
-        "canonicalId": "legacy:TOAN12_TUYEN_TAP_CAU_HO_6712",
-        "duplicateIds": [
-          "legacy:TOAN12_TUYEN_TAP_CAU_HO_6713"
-        ],
-        "count": 2
-      },
-      {
-        "signature": "trong không gian oxyz, đường thẳng d: x − 1 2 = y − 2 −1 = z − 3 2 đi qua điểm n...",
-        "canonicalId": "legacy:TOAN12_TUYEN_TAP_CAU_HO_6864",
-        "duplicateIds": [
-          "legacy:TOAN12_TUYEN_TAP_CAU_HO_6949"
-        ],
-        "count": 2
-      }
-    ]
+    "duplicateGroups": []
   },
   "mini100Readiness": {
     "profileId": "vact_mini_100",
     "profileName": "Mini V-ACT 100 Luyện Tập",
-    "ready": false,
+    "ready": true,
     "totalRequired": 100,
-    "totalAvailable": 57,
-    "totalMissing": 43,
+    "totalAvailable": 100,
+    "totalMissing": 0,
     "sections": {
       "vietnamese": {
         "required": 25,
-        "available": 7,
-        "missing": 18,
-        "ready": false,
-        "reason": "POOL_SHORTAGE"
+        "available": 415,
+        "missing": 0,
+        "ready": true,
+        "reason": null
       },
       "english": {
         "required": 25,
-        "available": 0,
-        "missing": 25,
-        "ready": false,
-        "reason": "POOL_SHORTAGE"
+        "available": 421,
+        "missing": 0,
+        "ready": true,
+        "reason": null
       },
       "math": {
         "required": 25,
-        "available": 13114,
+        "available": 427,
         "missing": 0,
         "ready": true,
         "reason": null
       },
       "logic_data": {
         "required": 10,
-        "available": 401,
+        "available": 209,
         "missing": 0,
         "ready": true,
         "reason": null
       },
       "scientific_reasoning": {
         "required": 15,
-        "available": 68,
+        "available": 286,
         "missing": 0,
         "ready": true,
         "reason": null
       }
     },
-    "shortages": [
-      {
-        "scope": "section",
-        "section": "vietnamese",
-        "skill": null,
-        "difficulty": null,
-        "requested": 25,
-        "available": 7,
-        "missing": 18,
-        "fulfilled": false,
-        "reason": "POOL_SHORTAGE"
-      },
-      {
-        "scope": "section",
-        "section": "english",
-        "skill": null,
-        "difficulty": null,
-        "requested": 25,
-        "available": 0,
-        "missing": 25,
-        "fulfilled": false,
-        "reason": "POOL_SHORTAGE"
-      }
-    ]
+    "shortages": []
   },
   "fullReadiness": {
     "profileId": "vact_full",
     "profileName": "V-ACT ĐHQG-HCM Chính Thức",
-    "ready": false,
+    "ready": true,
     "totalRequired": 120,
-    "totalAvailable": 67,
-    "totalMissing": 53,
+    "totalAvailable": 120,
+    "totalMissing": 0,
     "sections": {
       "vietnamese": {
         "required": 30,
-        "available": 7,
-        "missing": 23,
-        "ready": false,
-        "reason": "POOL_SHORTAGE"
+        "available": 415,
+        "missing": 0,
+        "ready": true,
+        "reason": null
       },
       "english": {
         "required": 30,
-        "available": 0,
-        "missing": 30,
-        "ready": false,
-        "reason": "POOL_SHORTAGE"
+        "available": 421,
+        "missing": 0,
+        "ready": true,
+        "reason": null
       },
       "math": {
         "required": 30,
-        "available": 13114,
+        "available": 427,
         "missing": 0,
         "ready": true,
         "reason": null
       },
       "logic_data": {
         "required": 12,
-        "available": 401,
+        "available": 209,
         "missing": 0,
         "ready": true,
         "reason": null
       },
       "scientific_reasoning": {
         "required": 18,
-        "available": 68,
+        "available": 286,
         "missing": 0,
         "ready": true,
         "reason": null
       }
     },
-    "shortages": [
-      {
-        "scope": "section",
-        "section": "vietnamese",
-        "skill": null,
-        "difficulty": null,
-        "requested": 30,
-        "available": 7,
-        "missing": 23,
-        "fulfilled": false,
-        "reason": "POOL_SHORTAGE"
-      },
-      {
-        "scope": "section",
-        "section": "english",
-        "skill": null,
-        "difficulty": null,
-        "requested": 30,
-        "available": 0,
-        "missing": 30,
-        "fulfilled": false,
-        "reason": "POOL_SHORTAGE"
-      }
-    ]
+    "shortages": []
   }
 }
