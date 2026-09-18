@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-09-18T04:19:39.665Z",
+  "timestamp": "2026-09-18T09:39:20.138Z",
   "summary": {
-    "totalRaw": 14034,
-    "totalMapped": 13596,
-    "totalUniqueUsable": 13590,
-    "duplicatesRemoved": 6,
+    "totalRaw": 1758,
+    "totalMapped": 1758,
+    "totalUniqueUsable": 1758,
+    "duplicatesRemoved": 0,
     "probableDuplicates": 0,
     "reviewRequiredPairs": 0
   },
@@ -30,33 +30,33 @@
     },
     "sections": {
       "vietnamese": {
-        "available": 7,
+        "available": 415,
         "target": 600,
-        "deficit": 593
+        "deficit": 185
       },
       "english": {
-        "available": 0,
+        "available": 421,
         "target": 600,
-        "deficit": 600
+        "deficit": 179
       },
       "math": {
-        "available": 13114,
+        "available": 427,
         "target": 600,
-        "deficit": 0
+        "deficit": 173
       },
       "logic_data": {
-        "available": 401,
+        "available": 209,
         "target": 240,
-        "deficit": 0
+        "deficit": 31
       },
       "scientific_reasoning": {
-        "available": 68,
+        "available": 286,
         "target": 360,
-        "deficit": 292,
+        "deficit": 74,
         "skills": {
-          "physics": 20,
-          "chemistry": 24,
-          "biology": 24,
+          "physics": 0,
+          "chemistry": 0,
+          "biology": 0,
           "history": 0,
           "geography": 0,
           "economics_law": 0,
@@ -69,17 +69,17 @@
     }
   },
   "duplicates": {
-    "totalDuplicatesRemoved": 6,
-    "duplicateGroupsCount": 6,
+    "totalDuplicatesRemoved": 0,
+    "duplicateGroupsCount": 0,
     "probableDuplicatesCount": 0,
     "reviewRequiredCount": 0,
     "sampleNearDuplicates": []
   },
   "examDuplicates": {
-    "totalRegisteredExams": 0,
-    "canonicalExams": 0,
-    "completeCanonicalExams": 0,
-    "incompleteExams": 0,
+    "totalRegisteredExams": 42,
+    "canonicalExams": 42,
+    "completeCanonicalExams": 14,
+    "incompleteExams": 28,
     "mirrorsDetected": 0,
     "mirrors": []
   },
@@ -108,25 +108,56 @@
   },
   "gaps": [
     {
-      "section": "english",
-      "target": 600,
-      "available": 0,
-      "missing": 600,
-      "deficitPct": 100
-    },
-    {
       "section": "vietnamese",
       "target": 600,
-      "available": 7,
-      "missing": 593,
-      "deficitPct": 98.8
+      "available": 415,
+      "missing": 185,
+      "deficitPct": 30.8
+    },
+    {
+      "section": "english",
+      "target": 600,
+      "available": 421,
+      "missing": 179,
+      "deficitPct": 29.8
+    },
+    {
+      "section": "math",
+      "target": 600,
+      "available": 427,
+      "missing": 173,
+      "deficitPct": 28.8
     },
     {
       "section": "scientific_reasoning",
       "target": 360,
-      "available": 68,
-      "missing": 292,
-      "deficitPct": 81.1
+      "available": 286,
+      "missing": 74,
+      "deficitPct": 20.6
+    },
+    {
+      "section": "scientific_reasoning",
+      "skill": "physics",
+      "target": 40,
+      "available": 0,
+      "missing": 40,
+      "deficitPct": 100
+    },
+    {
+      "section": "scientific_reasoning",
+      "skill": "chemistry",
+      "target": 40,
+      "available": 0,
+      "missing": 40,
+      "deficitPct": 100
+    },
+    {
+      "section": "scientific_reasoning",
+      "skill": "biology",
+      "target": 40,
+      "available": 0,
+      "missing": 40,
+      "deficitPct": 100
     },
     {
       "section": "scientific_reasoning",
@@ -177,102 +208,25 @@
       "deficitPct": 100
     },
     {
-      "section": "scientific_reasoning",
-      "skill": "physics",
-      "target": 40,
-      "available": 20,
-      "missing": 20,
-      "deficitPct": 50
-    },
-    {
-      "section": "scientific_reasoning",
-      "skill": "chemistry",
-      "target": 40,
-      "available": 24,
-      "missing": 16,
-      "deficitPct": 40
-    },
-    {
-      "section": "scientific_reasoning",
-      "skill": "biology",
-      "target": 40,
-      "available": 24,
-      "missing": 16,
-      "deficitPct": 40
-    },
-    {
-      "section": "math",
-      "target": 600,
-      "available": 13114,
-      "missing": 0,
-      "deficitPct": 0
-    },
-    {
       "section": "logic_data",
       "target": 240,
-      "available": 401,
-      "missing": 0,
-      "deficitPct": 0
+      "available": 209,
+      "missing": 31,
+      "deficitPct": 12.9
     }
   ],
   "readiness": {
     "full120": {
-      "ready": false,
+      "ready": true,
       "totalRequired": 120,
-      "totalMissing": 53,
-      "shortages": [
-        {
-          "scope": "section",
-          "section": "vietnamese",
-          "skill": null,
-          "difficulty": null,
-          "requested": 30,
-          "available": 7,
-          "missing": 23,
-          "fulfilled": false,
-          "reason": "POOL_SHORTAGE"
-        },
-        {
-          "scope": "section",
-          "section": "english",
-          "skill": null,
-          "difficulty": null,
-          "requested": 30,
-          "available": 0,
-          "missing": 30,
-          "fulfilled": false,
-          "reason": "POOL_SHORTAGE"
-        }
-      ]
+      "totalMissing": 0,
+      "shortages": []
     },
     "mini100": {
-      "ready": false,
+      "ready": true,
       "totalRequired": 100,
-      "totalMissing": 43,
-      "shortages": [
-        {
-          "scope": "section",
-          "section": "vietnamese",
-          "skill": null,
-          "difficulty": null,
-          "requested": 25,
-          "available": 7,
-          "missing": 18,
-          "fulfilled": false,
-          "reason": "POOL_SHORTAGE"
-        },
-        {
-          "scope": "section",
-          "section": "english",
-          "skill": null,
-          "difficulty": null,
-          "requested": 25,
-          "available": 0,
-          "missing": 25,
-          "fulfilled": false,
-          "reason": "POOL_SHORTAGE"
-        }
-      ]
+      "totalMissing": 0,
+      "shortages": []
     }
   }
 }
