@@ -1,7 +1,8 @@
 /**
  * K-EDU V-ACT Core Architecture - Deduplication Engine
  * Groups questions by normalized signature, selects canonical records deterministically,
- * and tracks diagnostic duplicate group provenance.
+ * preserves alternate source provenance, and computes near-duplicate diagnostics
+ * without silently merging uncertain pairs.
  */
 (function (root, factory) {
   if (typeof module !== 'undefined' && module.exports) {
@@ -19,13 +20,27 @@
   'use strict';
 
   const computeVACTQuestionSignature = signatureModule?.computeVACTQuestionSignature;
+  const computeQuestionSimilarity = signatureModule?.computeQuestionSimilarity;
+  const classifyDuplicateStatus = signatureModule?.classifyDuplicateStatus;
+  const DUPLICATE_STATUS = signatureModule?.DUPLICATE_STATUS || {
+    EXACT_DUPLICATE: 'EXACT_DUPLICATE',
+    PROBABLE_DUPLICATE: 'PROBABLE_DUPLICATE',
+    REVIEW_REQUIRED: 'REVIEW_REQUIRED',
+    UNIQUE: 'UNIQUE'
+  };
+  const NEAR_DUPLICATE_THRESHOLDS = signatureModule?.NEAR_DUPLICATE_THRESHOLDS || {
+    EXACT: 1.0,
+    PROBABLE: 0.85,
+    REVIEW_REQUIRED: 0.70
+  };
+
   const validateVACTQuestion = validatorModule?.validateVACTQuestion || (() => ({ valid: true, errors: [] }));
 
   /**
    * Computes a deterministic quality score for a question candidate to select
    * the best canonical record among duplicate variants.
    *
-   * Scoring hierarchy (Phase 3 spec):
+   * Scoring hierarchy (Spec 11):
    * 1. Valid question: +10,000 pts
    * 2. Verified answer (quality.answerVerified): +2,000 pts
    * 3. Reviewed content (quality.reviewed): +1,000 pts
@@ -35,6 +50,7 @@
    *    - source.page present: +50 pts
    *    - source.title present: +25 pts
    * 6. Richer explanation: length of explanation (up to +100 pts)
+   * 7. Stable fallback: alphabetical ID comparison (in selectCanonicalQuestion)
    *
    * @param {object} q
    * @returns {number}
@@ -72,7 +88,7 @@
   /**
    * Selects the single best canonical question from an array of duplicate candidates.
    * Deterministic: Uses quality scoring with alphabetical ID fallback.
-   * Does NOT mutate candidates.
+   * Preserves alternate source references on the returned canonical object.
    *
    * @param {Array<object>} candidates
    * @returns {object|null}
@@ -102,30 +118,119 @@
       }
     }
 
-    return best;
+    // Preserve alternate source references without modifying original objects directly
+    const canonical = { ...best };
+    canonical.alternateSources = Array.isArray(best.alternateSources)
+      ? [...best.alternateSources]
+      : [];
+
+    for (let i = 0; i < candidates.length; i++) {
+      const c = candidates[i];
+      if (c && c.id !== best.id) {
+        const ref = {
+          sourceId: c.sourceId || c.source?.sourceId || 'unknown',
+          originalId: c.originalId || c.id,
+          examSetId: c.examSetId || c.source?.examSetId || null,
+          originalQuestionNumber: c.originalQuestionNumber || c.source?.originalQuestionNumber || null,
+          provider: c.source?.provider || null
+        };
+        const alreadyHas = canonical.alternateSources.some(
+          a => a.sourceId === ref.sourceId && a.originalId === ref.originalId
+        );
+        if (!alreadyHas) {
+          canonical.alternateSources.push(ref);
+        }
+      }
+    }
+
+    return canonical;
   }
 
   /**
-   * Deduplicates an array of questions based on question text + options signature.
-   * Returns unique canonical questions along with diagnostic duplicate groups.
+   * Identifies near-duplicate pairs across a list of questions using Level-2 similarity.
+   * Only pairs with similarity >= REVIEW_REQUIRED (< 1.0) are returned as near-duplicates.
+   *
+   * @param {Array<object>} questions
+   * @param {object} [options]
+   * @param {number} [options.maxComparisons=10000]
+   * @returns {Array<object>}
+   */
+  function detectNearDuplicates(questions, options = {}) {
+    if (!Array.isArray(questions) || questions.length < 2 || !computeQuestionSimilarity) {
+      return [];
+    }
+
+    const maxComparisons = options.maxComparisons || 20000;
+    const nearDups = [];
+    let comparisons = 0;
+
+    for (let i = 0; i < questions.length; i++) {
+      for (let j = i + 1; j < questions.length; j++) {
+        comparisons++;
+        if (comparisons > maxComparisons) break;
+
+        const q1 = questions[i];
+        const q2 = questions[j];
+        if (!q1 || !q2) continue;
+
+        // Same section check for efficiency
+        if (q1.section && q2.section && q1.section !== q2.section) continue;
+
+        const sim = computeQuestionSimilarity(q1, q2);
+        const status = classifyDuplicateStatus ? classifyDuplicateStatus(sim) : (
+          sim >= NEAR_DUPLICATE_THRESHOLDS.EXACT ? DUPLICATE_STATUS.EXACT_DUPLICATE :
+          sim >= NEAR_DUPLICATE_THRESHOLDS.PROBABLE ? DUPLICATE_STATUS.PROBABLE_DUPLICATE :
+          sim >= NEAR_DUPLICATE_THRESHOLDS.REVIEW_REQUIRED ? DUPLICATE_STATUS.REVIEW_REQUIRED :
+          DUPLICATE_STATUS.UNIQUE
+        );
+
+        if (status === DUPLICATE_STATUS.PROBABLE_DUPLICATE || status === DUPLICATE_STATUS.REVIEW_REQUIRED) {
+          nearDups.push({
+            q1Id: q1.id,
+            q2Id: q2.id,
+            similarity: Math.round(sim * 1000) / 1000,
+            status,
+            q1Preview: (q1.question || '').slice(0, 80),
+            q2Preview: (q2.question || '').slice(0, 80)
+          });
+        }
+      }
+      if (comparisons > maxComparisons) break;
+    }
+
+    return nearDups;
+  }
+
+  /**
+   * Deduplicates an array of questions based on question text + options signature (Level 1).
+   * Returns unique canonical questions along with diagnostic duplicate groups and
+   * optional Level-2 near-duplicate diagnostics.
    *
    * @param {Array<object>} questions Array of questions
+   * @param {object} [options]
+   * @param {boolean} [options.detectNearDuplicates=false]
    * @returns {{
    *   uniqueQuestions: Array<object>,
    *   duplicateGroups: Array<object>,
+   *   nearDuplicates: Array<object>,
    *   totalInput: number,
    *   totalUnique: number,
-   *   totalDuplicatesRemoved: number
+   *   totalDuplicatesRemoved: number,
+   *   probableDuplicatesCount: number,
+   *   reviewRequiredCount: number
    * }}
    */
-  function deduplicateVACTQuestions(questions) {
+  function deduplicateVACTQuestions(questions, options = {}) {
     if (!Array.isArray(questions)) {
       return {
         uniqueQuestions: [],
         duplicateGroups: [],
+        nearDuplicates: [],
         totalInput: 0,
         totalUnique: 0,
-        totalDuplicatesRemoved: 0
+        totalDuplicatesRemoved: 0,
+        probableDuplicatesCount: 0,
+        reviewRequiredCount: 0
       };
     }
 
@@ -135,7 +240,7 @@
       const q = questions[i];
       if (!q || typeof q !== 'object') continue;
 
-      const sig = computeVACTQuestionSignature(q);
+      const sig = computeVACTQuestionSignature ? computeVACTQuestionSignature(q) : (q.signature || q.id);
       if (!groupsBySig.has(sig)) {
         groupsBySig.set(sig, []);
       }
@@ -170,18 +275,32 @@
       }
     });
 
+    let nearDuplicates = [];
+    if (options.detectNearDuplicates && uniqueQuestions.length > 1) {
+      nearDuplicates = detectNearDuplicates(uniqueQuestions, options);
+    }
+
+    const probableCount = nearDuplicates.filter(d => d.status === DUPLICATE_STATUS.PROBABLE_DUPLICATE).length;
+    const reviewCount = nearDuplicates.filter(d => d.status === DUPLICATE_STATUS.REVIEW_REQUIRED).length;
+
     return {
       uniqueQuestions,
       duplicateGroups,
+      nearDuplicates,
       totalInput: questions.length,
       totalUnique: uniqueQuestions.length,
-      totalDuplicatesRemoved: duplicatesRemoved
+      totalDuplicatesRemoved: duplicatesRemoved,
+      probableDuplicatesCount: probableCount,
+      reviewRequiredCount: reviewCount
     };
   }
 
   return {
     scoreQuestionQuality,
     selectCanonicalQuestion,
-    deduplicateVACTQuestions
+    detectNearDuplicates,
+    deduplicateVACTQuestions,
+    DUPLICATE_STATUS,
+    NEAR_DUPLICATE_THRESHOLDS
   };
 });

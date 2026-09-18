@@ -209,10 +209,29 @@
       ? String(raw.explanation).trim()
       : (raw.solution !== undefined && raw.solution !== null ? String(raw.solution).trim() : '');
 
+    // Stimulus / Passage
+    const stimulus = raw.stimulus !== undefined && raw.stimulus !== null
+      ? String(raw.stimulus).trim()
+      : (raw.passage !== undefined && raw.passage !== null ? String(raw.passage).trim() : '');
+
     // Source object (preserve original provenance without inventing verification)
     const rawSource = raw.source || {};
     const originalId = raw.originalId || rawSource.originalId || null;
+    const examSetId = raw.examSetId || rawSource.examSetId || null;
+    const originalQuestionNumber = typeof raw.originalQuestionNumber === 'number'
+      ? raw.originalQuestionNumber
+      : (typeof rawSource.originalQuestionNumber === 'number' ? rawSource.originalQuestionNumber : null);
+
+    const sourceId = raw.sourceId || rawSource.sourceId || rawSource.id || (rawSource.provider ? String(rawSource.provider).toLowerCase().replace(/[^a-z0-9_]/g, '_') : 'internal');
+    const structureVersion = raw.structureVersion || rawSource.structureVersion || (
+      (raw.year && raw.year < 2025) || (rawSource.year && rawSource.year < 2025) ? 'legacy_pre_2025' : '2025+'
+    );
+
     const source = {
+      sourceId,
+      examSetId,
+      originalQuestionNumber,
+      structureVersion,
       provider: rawSource.provider || 'internal',
       type: rawSource.type || (raw.synthetic ? 'synthetic' : 'curated'),
       title: rawSource.title || raw.sourceTitle || null,
@@ -235,9 +254,16 @@
       reviewed: Boolean(rawQuality.reviewed || rawCuration.status === 'approved' || rawCuration.status === 'verified')
     };
 
+    // Alternate sources when deduplicated
+    const alternateSources = Array.isArray(raw.alternateSources) ? raw.alternateSources.map(s => ({ ...s })) : [];
+
     return {
       id,
       originalId,
+      sourceId,
+      examSetId,
+      originalQuestionNumber,
+      structureVersion,
       section,
       skill,
       subSkill,
@@ -245,12 +271,14 @@
       difficultyScore,
       questionType,
       stimulusId,
+      stimulus,
       question: questionText,
       options,
       correctAnswer,
       explanation,
       source,
-      quality
+      quality,
+      alternateSources
     };
   }
 

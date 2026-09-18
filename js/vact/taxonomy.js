@@ -98,10 +98,13 @@
       'physics',
       'chemistry',
       'biology',
+      'history',
+      'geography',
+      'economics_law',
       'technology',
-      'economics',
       'society',
-      'interdisciplinary'
+      'interdisciplinary',
+      'economics' // alias/backward-compatibility
     ])
   });
 

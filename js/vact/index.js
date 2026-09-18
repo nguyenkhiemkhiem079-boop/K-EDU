@@ -12,6 +12,7 @@
     const profiles = require('./profiles');
     const adapter = require('./bank/adapter');
     const internalBank = require('./bank/internalBank');
+    const examBank = require('./bank/examBank');
     const coverage = require('./bank/coverage');
     const sectionTestGenerator = require('./generator/sectionTestGenerator');
     const examGenerator = require('./generator/examGenerator');
@@ -20,13 +21,14 @@
     const internalSource = require('./sources/internalSource');
     const remoteJsonSource = require('./sources/remoteJsonSource');
     const sourceManager = require('./sources/sourceManager');
+    const sourceRegistry = require('./sources/sourceRegistry');
     const adaptivePractice = require('./adaptive/weaknessGenerator');
-    module.exports = factory(taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, coverage, sectionTestGenerator, examGenerator, performanceAnalytics, sourceConfig, internalSource, remoteJsonSource, sourceManager, adaptivePractice);
+    module.exports = factory(taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, examBank, coverage, sectionTestGenerator, examGenerator, performanceAnalytics, sourceConfig, internalSource, remoteJsonSource, sourceManager, sourceRegistry, adaptivePractice);
   } else {
     root.KEDUVACT = root.KEDUVACT || {};
     // When loaded via script tags, individual modules attach to root.KEDUVACT
   }
-})(typeof window !== 'undefined' ? window : globalThis, function (taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, coverage, sectionTestGenerator, examGenerator, performanceAnalytics, sourceConfig, internalSource, remoteJsonSource, sourceManager, adaptivePractice) {
+})(typeof window !== 'undefined' ? window : globalThis, function (taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, examBank, coverage, sectionTestGenerator, examGenerator, performanceAnalytics, sourceConfig, internalSource, remoteJsonSource, sourceManager, sourceRegistry, adaptivePractice) {
   'use strict';
 
   return Object.freeze({
@@ -38,7 +40,9 @@
     ...profiles,
     ...adapter,
     ...internalBank,
+    ...examBank,
     ...coverage,
+    ...(coverage.VACTCoverage || {}),
     ...sectionTestGenerator,
     ...examGenerator,
     performanceAnalytics,
@@ -54,13 +58,27 @@
       sourceManager: sourceManager.sourceManager,
       VACTSourceManager: sourceManager.VACTSourceManager,
       VACTInternalSource: internalSource.VACTInternalSource,
-      VACTRemoteJsonSource: remoteJsonSource.VACTRemoteJsonSource
+      VACTRemoteJsonSource: remoteJsonSource.VACTRemoteJsonSource,
+      registry: sourceRegistry.sourceRegistry,
+      sourceRegistry: sourceRegistry.sourceRegistry,
+      VACTSourceRegistry: sourceRegistry.VACTSourceRegistry,
+      SOURCE_TYPES: sourceRegistry.SOURCE_TYPES,
+      RIGHTS_STATUS: sourceRegistry.RIGHTS_STATUS,
+      INGESTABLE_RIGHTS: sourceRegistry.INGESTABLE_RIGHTS
     }),
     sourceManager: sourceManager.sourceManager,
     VACTSourceManager: sourceManager.VACTSourceManager,
     VACTRemoteJsonSource: remoteJsonSource.VACTRemoteJsonSource,
     VACTInternalSource: internalSource.VACTInternalSource,
     VACTSourceConfig: sourceConfig,
+    sourceRegistry: sourceRegistry.sourceRegistry,
+    VACTSourceRegistry: sourceRegistry.VACTSourceRegistry,
+    SOURCE_TYPES: sourceRegistry.SOURCE_TYPES,
+    RIGHTS_STATUS: sourceRegistry.RIGHTS_STATUS,
+    INGESTABLE_RIGHTS: sourceRegistry.INGESTABLE_RIGHTS,
+    VACTQuestionBank: internalBank.VACTInternalBank,
+    VACTExamBank: examBank.VACTExamBank,
+    examBank: examBank.examBank,
     adaptive: Object.freeze({
       ...adaptivePractice
     }),
@@ -74,7 +92,12 @@
     bank: Object.freeze({
       ...adapter,
       ...internalBank,
-      ...coverage
+      ...examBank,
+      ...coverage,
+      questionBank: internalBank.VACTInternalBank,
+      VACTQuestionBank: internalBank.VACTInternalBank,
+      examBank: examBank.examBank,
+      VACTExamBank: examBank.VACTExamBank
     }),
     generator: Object.freeze({
       ...sectionTestGenerator,

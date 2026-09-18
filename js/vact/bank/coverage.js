@@ -35,6 +35,27 @@
   const VACTInternalBank = bankModule?.VACTInternalBank;
   const deduplicateVACTQuestions = deduplicatorModule?.deduplicateVACTQuestions;
 
+  const VACT_BANK_TARGETS = Object.freeze({
+    [VACT_SECTIONS.VIETNAMESE]: 600,
+    [VACT_SECTIONS.ENGLISH]: 600,
+    [VACT_SECTIONS.MATH]: 600,
+    [VACT_SECTIONS.LOGIC_DATA]: 240,
+    [VACT_SECTIONS.SCIENTIFIC_REASONING]: 360,
+    TOTAL: 2400
+  });
+
+  const VACT_SCIENTIFIC_TARGETS = Object.freeze({
+    physics: 40,
+    chemistry: 40,
+    biology: 40,
+    history: 40,
+    geography: 40,
+    economics_law: 40,
+    technology: 40,
+    society: 40,
+    interdisciplinary: 40
+  });
+
   let _cachedSummary = null;
   let _cachedUniqueQuestions = null;
 
@@ -118,6 +139,9 @@
           physics: 0,
           chemistry: 0,
           biology: 0,
+          history: 0,
+          geography: 0,
+          economics_law: 0,
           technology: 0,
           economics: 0,
           society: 0,
@@ -380,17 +404,163 @@
     };
   }
 
+  /**
+   * Generates a deep multi-tier breakdown of the active bank:
+   * section -> skill -> subSkill -> difficulty.
+   *
+   * @param {object} [options={}]
+   * @returns {object}
+   */
+  function getDeepCoverage(options = {}) {
+    const list = getUniqueUsableQuestions();
+    const deep = {};
+
+    for (let i = 0; i < list.length; i++) {
+      const q = list[i];
+      const sec = q.section || 'unclassified';
+      const sk = q.skill || 'unclassified';
+      const sub = q.subSkill || 'general';
+      const diff = q.difficulty || 'unclassified';
+
+      if (!deep[sec]) deep[sec] = {};
+      if (!deep[sec][sk]) deep[sec][sk] = {};
+      if (!deep[sec][sk][sub]) {
+        deep[sec][sk][sub] = { easy: 0, medium: 0, hard: 0, unclassified: 0, total: 0 };
+      }
+
+      if (deep[sec][sk][sub][diff] !== undefined) {
+        deep[sec][sk][sub][diff]++;
+      } else {
+        deep[sec][sk][sub].unclassified++;
+      }
+      deep[sec][sk][sub].total++;
+    }
+
+    return deep;
+  }
+
+  /**
+   * Computes bank coverage gaps against standard bank-health targets (2,400 total).
+   * Identifies section deficits and scientific skill deficits.
+   *
+   * @param {object} [options={}]
+   * @param {object} [options.bankTargets]
+   * @param {object} [options.scientificTargets]
+   * @returns {Array<{ section: string, skill?: string, target: number, available: number, missing: number, deficitPct: number }>}
+   */
+  function getGaps(options = {}) {
+    const summary = getSummary(options);
+    const bankTargets = options.bankTargets || VACT_BANK_TARGETS;
+    const sciTargets = options.scientificTargets || VACT_SCIENTIFIC_TARGETS;
+
+    const gaps = [];
+
+    // 1. Section-level gaps
+    for (const [sec, target] of Object.entries(bankTargets)) {
+      if (sec === 'TOTAL') continue;
+      const available = summary.sections[sec] ? summary.sections[sec].total : 0;
+      const missing = Math.max(0, target - available);
+      const deficitPct = target > 0 ? Math.round((missing / target) * 1000) / 10 : 0;
+      gaps.push({
+        section: sec,
+        target,
+        available,
+        missing,
+        deficitPct
+      });
+    }
+
+    // 2. Scientific skill-level gaps
+    const sciSkills = summary.sections[VACT_SECTIONS.SCIENTIFIC_REASONING]?.skills || {};
+    for (const [skill, target] of Object.entries(sciTargets)) {
+      const available = sciSkills[skill] || 0;
+      const missing = Math.max(0, target - available);
+      const deficitPct = target > 0 ? Math.round((missing / target) * 1000) / 10 : 0;
+      gaps.push({
+        section: VACT_SECTIONS.SCIENTIFIC_REASONING,
+        skill,
+        target,
+        available,
+        missing,
+        deficitPct
+      });
+    }
+
+    // Sort descending by missing count
+    gaps.sort((a, b) => b.missing - a.missing);
+
+    return gaps;
+  }
+
+  /**
+   * Prioritizes question sources or sections based on active bank deficits.
+   * Deprioritizes surplus sections (e.g. Math when target is exceeded)
+   * and highlights sections/skills with the highest deficit.
+   *
+   * @param {Array<object>} [candidateSources=null]
+   * @param {object} [options={}]
+   * @returns {object|Array<object>}
+   */
+  function getImportPriorities(candidateSources = null, options = {}) {
+    const gaps = getGaps(options);
+    const sectionGaps = gaps.filter(g => !g.skill);
+    const skillGaps = gaps.filter(g => g.skill);
+
+    if (Array.isArray(candidateSources) && candidateSources.length > 0) {
+      return candidateSources.map(src => {
+        let score = 0;
+        const reasons = [];
+
+        const targetSections = Array.isArray(src.targetSections) ? src.targetSections : (
+          src.section ? [src.section] : Object.values(VACT_SECTIONS)
+        );
+
+        for (const sec of targetSections) {
+          const secGap = sectionGaps.find(g => g.section === sec);
+          if (secGap && secGap.missing > 0) {
+            score += Math.min(secGap.missing, 100) * (secGap.deficitPct / 100);
+            reasons.push(`${sec}: missing ${secGap.missing} (${secGap.deficitPct}%)`);
+          } else {
+            reasons.push(`${sec}: surplus / target met`);
+          }
+        }
+
+        return {
+          sourceId: src.sourceId || src.id,
+          provider: src.provider || 'unknown',
+          sourceType: src.sourceType || 'unknown',
+          priorityScore: Math.round(score * 10) / 10,
+          recommendation: score > 50 ? 'HIGH_PRIORITY' : (score > 10 ? 'MEDIUM_PRIORITY' : 'DEPRIORITIZED'),
+          reasons
+        };
+      }).sort((a, b) => b.priorityScore - a.priorityScore);
+    }
+
+    return {
+      topSectionDeficits: sectionGaps.filter(g => g.missing > 0),
+      topSkillDeficits: skillGaps.filter(g => g.missing > 0),
+      deprioritizedSections: sectionGaps.filter(g => g.missing === 0).map(g => g.section)
+    };
+  }
+
   const VACTCoverage = {
+    VACT_BANK_TARGETS,
+    VACT_SCIENTIFIC_TARGETS,
     clearCoverageCache,
     getUniqueUsableQuestions,
     getSummary,
     getCapacity,
     checkShortage,
     getProfileReadiness,
-    getCombinedCoverage
+    getCombinedCoverage,
+    getDeepCoverage,
+    getGaps,
+    getImportPriorities
   };
 
   return {
+    VACT_BANK_TARGETS,
+    VACT_SCIENTIFIC_TARGETS,
     VACTCoverage
   };
 });

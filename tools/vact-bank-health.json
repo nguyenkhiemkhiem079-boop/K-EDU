@@ -1,0 +1,278 @@
+{
+  "timestamp": "2026-09-18T04:19:39.665Z",
+  "summary": {
+    "totalRaw": 14034,
+    "totalMapped": 13596,
+    "totalUniqueUsable": 13590,
+    "duplicatesRemoved": 6,
+    "probableDuplicates": 0,
+    "reviewRequiredPairs": 0
+  },
+  "coverage": {
+    "targets": {
+      "vietnamese": 600,
+      "english": 600,
+      "math": 600,
+      "logic_data": 240,
+      "scientific_reasoning": 360,
+      "TOTAL": 2400
+    },
+    "scientificTargets": {
+      "physics": 40,
+      "chemistry": 40,
+      "biology": 40,
+      "history": 40,
+      "geography": 40,
+      "economics_law": 40,
+      "technology": 40,
+      "society": 40,
+      "interdisciplinary": 40
+    },
+    "sections": {
+      "vietnamese": {
+        "available": 7,
+        "target": 600,
+        "deficit": 593
+      },
+      "english": {
+        "available": 0,
+        "target": 600,
+        "deficit": 600
+      },
+      "math": {
+        "available": 13114,
+        "target": 600,
+        "deficit": 0
+      },
+      "logic_data": {
+        "available": 401,
+        "target": 240,
+        "deficit": 0
+      },
+      "scientific_reasoning": {
+        "available": 68,
+        "target": 360,
+        "deficit": 292,
+        "skills": {
+          "physics": 20,
+          "chemistry": 24,
+          "biology": 24,
+          "history": 0,
+          "geography": 0,
+          "economics_law": 0,
+          "technology": 0,
+          "economics": 0,
+          "society": 0,
+          "interdisciplinary": 0
+        }
+      }
+    }
+  },
+  "duplicates": {
+    "totalDuplicatesRemoved": 6,
+    "duplicateGroupsCount": 6,
+    "probableDuplicatesCount": 0,
+    "reviewRequiredCount": 0,
+    "sampleNearDuplicates": []
+  },
+  "examDuplicates": {
+    "totalRegisteredExams": 0,
+    "canonicalExams": 0,
+    "completeCanonicalExams": 0,
+    "incompleteExams": 0,
+    "mirrorsDetected": 0,
+    "mirrors": []
+  },
+  "sourceCoverage": {
+    "allSourcesCount": 3,
+    "ingestableSources": [
+      {
+        "sourceId": "internal_kedu_legacy",
+        "provider": "K-EDU Curated Bank",
+        "rights": "owned"
+      },
+      {
+        "sourceId": "vact_official_sample_2025",
+        "provider": "VNU-HCM",
+        "rights": "approved"
+      }
+    ],
+    "pendingReviewSources": [
+      {
+        "sourceId": "commercial_ref_mock_2025",
+        "provider": "Third-party Publisher",
+        "rights": "review_required"
+      }
+    ],
+    "blockedSources": []
+  },
+  "gaps": [
+    {
+      "section": "english",
+      "target": 600,
+      "available": 0,
+      "missing": 600,
+      "deficitPct": 100
+    },
+    {
+      "section": "vietnamese",
+      "target": 600,
+      "available": 7,
+      "missing": 593,
+      "deficitPct": 98.8
+    },
+    {
+      "section": "scientific_reasoning",
+      "target": 360,
+      "available": 68,
+      "missing": 292,
+      "deficitPct": 81.1
+    },
+    {
+      "section": "scientific_reasoning",
+      "skill": "history",
+      "target": 40,
+      "available": 0,
+      "missing": 40,
+      "deficitPct": 100
+    },
+    {
+      "section": "scientific_reasoning",
+      "skill": "geography",
+      "target": 40,
+      "available": 0,
+      "missing": 40,
+      "deficitPct": 100
+    },
+    {
+      "section": "scientific_reasoning",
+      "skill": "economics_law",
+      "target": 40,
+      "available": 0,
+      "missing": 40,
+      "deficitPct": 100
+    },
+    {
+      "section": "scientific_reasoning",
+      "skill": "technology",
+      "target": 40,
+      "available": 0,
+      "missing": 40,
+      "deficitPct": 100
+    },
+    {
+      "section": "scientific_reasoning",
+      "skill": "society",
+      "target": 40,
+      "available": 0,
+      "missing": 40,
+      "deficitPct": 100
+    },
+    {
+      "section": "scientific_reasoning",
+      "skill": "interdisciplinary",
+      "target": 40,
+      "available": 0,
+      "missing": 40,
+      "deficitPct": 100
+    },
+    {
+      "section": "scientific_reasoning",
+      "skill": "physics",
+      "target": 40,
+      "available": 20,
+      "missing": 20,
+      "deficitPct": 50
+    },
+    {
+      "section": "scientific_reasoning",
+      "skill": "chemistry",
+      "target": 40,
+      "available": 24,
+      "missing": 16,
+      "deficitPct": 40
+    },
+    {
+      "section": "scientific_reasoning",
+      "skill": "biology",
+      "target": 40,
+      "available": 24,
+      "missing": 16,
+      "deficitPct": 40
+    },
+    {
+      "section": "math",
+      "target": 600,
+      "available": 13114,
+      "missing": 0,
+      "deficitPct": 0
+    },
+    {
+      "section": "logic_data",
+      "target": 240,
+      "available": 401,
+      "missing": 0,
+      "deficitPct": 0
+    }
+  ],
+  "readiness": {
+    "full120": {
+      "ready": false,
+      "totalRequired": 120,
+      "totalMissing": 53,
+      "shortages": [
+        {
+          "scope": "section",
+          "section": "vietnamese",
+          "skill": null,
+          "difficulty": null,
+          "requested": 30,
+          "available": 7,
+          "missing": 23,
+          "fulfilled": false,
+          "reason": "POOL_SHORTAGE"
+        },
+        {
+          "scope": "section",
+          "section": "english",
+          "skill": null,
+          "difficulty": null,
+          "requested": 30,
+          "available": 0,
+          "missing": 30,
+          "fulfilled": false,
+          "reason": "POOL_SHORTAGE"
+        }
+      ]
+    },
+    "mini100": {
+      "ready": false,
+      "totalRequired": 100,
+      "totalMissing": 43,
+      "shortages": [
+        {
+          "scope": "section",
+          "section": "vietnamese",
+          "skill": null,
+          "difficulty": null,
+          "requested": 25,
+          "available": 7,
+          "missing": 18,
+          "fulfilled": false,
+          "reason": "POOL_SHORTAGE"
+        },
+        {
+          "scope": "section",
+          "section": "english",
+          "skill": null,
+          "difficulty": null,
+          "requested": 25,
+          "available": 0,
+          "missing": 25,
+          "fulfilled": false,
+          "reason": "POOL_SHORTAGE"
+        }
+      ]
+    }
+  }
+}
