@@ -1,0 +1,134 @@
+{
+  "provider": "K-EDU Authorized Partner Feed",
+  "title": "V-ACT Physics & Science Supplementary Bank 2026",
+  "year": 2026,
+  "url": "https://api.k-edu.vn/feeds/vact-science-2026.json",
+  "questions": [
+    {
+      "id": "remote_phy_001",
+      "section": "scientific_reasoning",
+      "skill": "physics",
+      "difficulty": "medium",
+      "question": "Một con lắc lò xo dao động điều hòa với chu kỳ T = 0,5 s. Tần số dao động của con lắc là:",
+      "options": [
+        "A. 1 Hz",
+        "B. 2 Hz",
+        "C. 0,5 Hz",
+        "D. 4 Hz"
+      ],
+      "correctAnswer": "B",
+      "explanation": "f = 1 / T = 1 / 0,5 = 2 Hz.",
+      "source": {
+        "provider": "V-ACT Practice Consortium",
+        "title": "Đề thi thử ĐHQG-HCM 2026",
+        "year": 2026,
+        "page": 12,
+        "originalId": "phy_feed_101"
+      }
+    },
+    {
+      "id": "remote_phy_002",
+      "section": "scientific_reasoning",
+      "skill": "physics",
+      "difficulty": "hard",
+      "question": "Trong thí nghiệm Y-âng về giao thoa ánh sáng, khoảng vân đo được là 0,8 mm. Khoảng cách giữa 5 vân sáng liên tiếp là:",
+      "options": [
+        "A. 3,2 mm",
+        "B. 4,0 mm",
+        "C. 2,4 mm",
+        "D. 4,8 mm"
+      ],
+      "correctAnswer": "A",
+      "explanation": "Khoảng cách giữa 5 vân sáng liên tiếp là 4i = 4 * 0,8 = 3,2 mm.",
+      "source": {
+        "provider": "V-ACT Practice Consortium",
+        "title": "Đề thi thử ĐHQG-HCM 2026",
+        "year": 2026,
+        "page": 13,
+        "originalId": "phy_feed_102"
+      }
+    },
+    {
+      "id": "remote_chem_001",
+      "section": "scientific_reasoning",
+      "skill": "chemistry",
+      "difficulty": "easy",
+      "question": "Kim loại nào sau đây có tính dẫn điện tốt nhất ở điều kiện thường?",
+      "options": [
+        "A. Nhôm (Al)",
+        "B. Đồng (Cu)",
+        "C. Bạc (Ag)",
+        "D. Sắt (Fe)"
+      ],
+      "correctAnswer": "C",
+      "explanation": "Thứ tự dẫn điện giảm dần: Ag > Cu > Au > Al > Fe.",
+      "source": {
+        "provider": "V-ACT Chemistry Dept",
+        "title": "Chuyên đề Hóa học V-ACT",
+        "year": 2026,
+        "page": 5
+      }
+    },
+    {
+      "id": "remote_bio_001",
+      "section": "scientific_reasoning",
+      "skill": "biology",
+      "difficulty": "medium",
+      "question": "Trong tế bào nhân thực, quá trình dịch mã diễn ra ở vị trí nào?",
+      "options": [
+        "A. Nhân tế bào",
+        "B. Tế bào chất",
+        "C. Màng sinh chất",
+        "D. Không bào"
+      ],
+      "correctAnswer": "B",
+      "explanation": "Dịch mã diễn ra tại ribosome trong tế bào chất.",
+      "source": {
+        "provider": "V-ACT Biology Dept",
+        "title": "Tài liệu Sinh học 12 V-ACT",
+        "year": 2026,
+        "page": 22
+      }
+    },
+    {
+      "id": "remote_math_001",
+      "section": "math",
+      "skill": "probability_statistics",
+      "difficulty": "medium",
+      "question": "Gieo một con súc sắc cân đối và đồng chất 2 lần. Xác suất để tổng số chấm xuất hiện bằng 7 là:",
+      "options": [
+        "A. 1/6",
+        "B. 1/12",
+        "C. 5/36",
+        "D. 7/36"
+      ],
+      "correctAnswer": "A",
+      "explanation": "Có 6 cặp có tổng bằng 7: (1,6),(2,5),(3,4),(4,3),(5,2),(6,1). P = 6/36 = 1/6.",
+      "source": {
+        "provider": "V-ACT Math Dept",
+        "title": "Toán học nâng cao V-ACT",
+        "year": 2026
+      }
+    },
+    {
+      "id": "remote_eng_001",
+      "section": "english",
+      "skill": "vocabulary",
+      "difficulty": "medium",
+      "question": "Choose the word that is CLOSEST in meaning to the underlined word: The government has implemented a **comprehensive** plan to combat climate change.",
+      "options": [
+        "A. incomplete",
+        "B. thorough",
+        "C. simple",
+        "D. temporary"
+      ],
+      "correctAnswer": "B",
+      "explanation": "Comprehensive means complete and including everything that is necessary (thorough).",
+      "source": {
+        "provider": "V-ACT English League",
+        "title": "English V-ACT Master 2026",
+        "year": 2026
+      }
+    }
+  ]
+}

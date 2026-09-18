@@ -1,0 +1,56 @@
+{
+  "provider": "Malformed External Source",
+  "title": "Corrupt Feed QA Test",
+  "year": 2026,
+  "url": "https://api.k-edu.vn/feeds/corrupt-feed.json",
+  "questions": [
+    {
+      "id": "bad_q_001",
+      "section": "scientific_reasoning",
+      "question": "",
+      "options": ["A. 1", "B. 2"],
+      "correctAnswer": "A"
+    },
+    {
+      "id": "bad_q_002",
+      "section": "invalid_nonexistent_section",
+      "question": "Câu hỏi với phân môn không tồn tại?",
+      "options": ["A. 1", "B. 2", "C. 3", "D. 4"],
+      "correctAnswer": "A"
+    },
+    {
+      "id": "bad_q_003",
+      "section": "math",
+      "question": "Câu hỏi không có đáp án đúng?",
+      "options": ["A. 1", "B. 2"],
+      "correctAnswer": "Z"
+    },
+    {
+      "id": "bad_q_004",
+      "section": "math",
+      "question": "Câu hỏi chỉ có 1 lựa chọn?",
+      "options": ["A. Duy nhất"],
+      "correctAnswer": "A"
+    },
+    {
+      "id": "valid_survivor_001",
+      "section": "math",
+      "skill": "algebra",
+      "difficulty": "easy",
+      "question": "Nghiệm của phương trình 2x - 6 = 0 là:",
+      "options": [
+        "A. x = 2",
+        "B. x = 3",
+        "C. x = -3",
+        "D. x = 6"
+      ],
+      "correctAnswer": "B",
+      "explanation": "2x = 6 <=> x = 3.",
+      "source": {
+        "provider": "Resilient Test",
+        "title": "Survivor Item",
+        "year": 2026
+      }
+    }
+  ]
+}

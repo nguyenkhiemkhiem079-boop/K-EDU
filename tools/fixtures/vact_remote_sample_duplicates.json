@@ -1,0 +1,75 @@
+{
+  "provider": "V-ACT Cross-Source Duplicate Test Feed",
+  "title": "Deduplication Validation Feed",
+  "year": 2026,
+  "url": "https://api.k-edu.vn/feeds/dedup-test.json",
+  "questions": [
+    {
+      "id": "remote_dup_internal_phy_01",
+      "section": "scientific_reasoning",
+      "skill": "physics",
+      "difficulty": "easy",
+      "question": "Đơn vị đo độ dài hợp pháp trong hệ thống đo lường chính thức của nước ta là:",
+      "options": [
+        "A. Mét (m)",
+        "B. Kilômét (km)",
+        "C. Centimét (cm)",
+        "D. Milimét (mm)"
+      ],
+      "correctAnswer": "A",
+      "explanation": "Đơn vị cơ bản đo chiều dài trong hệ SI là mét (m).",
+      "source": {
+        "provider": "Verified V-ACT Consortium",
+        "title": "Tuyển tập Vật Lý Chuẩn 2026",
+        "year": 2026,
+        "page": 1
+      },
+      "quality": {
+        "sourceVerified": true,
+        "answerVerified": true,
+        "reviewed": true
+      }
+    },
+    {
+      "id": "remote_dup_valid_sample_01",
+      "section": "scientific_reasoning",
+      "skill": "physics",
+      "difficulty": "medium",
+      "question": "Một con lắc lò xo dao động điều hòa với chu kỳ T = 0,5 s. Tần số dao động của con lắc là:",
+      "options": [
+        "A. 1 Hz",
+        "B. 2 Hz",
+        "C. 0,5 Hz",
+        "D. 4 Hz"
+      ],
+      "correctAnswer": "B",
+      "explanation": "f = 1 / T = 1 / 0,5 = 2 Hz.",
+      "source": {
+        "provider": "Secondary Duplicate Mirror",
+        "title": "Đề thi thử Mirror",
+        "year": 2026
+      }
+    },
+    {
+      "id": "remote_phy_distinct_099",
+      "section": "scientific_reasoning",
+      "skill": "physics",
+      "difficulty": "medium",
+      "question": "Vận tốc truyền sóng điện từ trong chân không có giá trị xấp xỉ bằng:",
+      "options": [
+        "A. 3.10^8 m/s",
+        "B. 3.10^6 m/s",
+        "C. 330 m/s",
+        "D. 1,5.10^8 m/s"
+      ],
+      "correctAnswer": "A",
+      "explanation": "Tốc độ ánh sáng trong chân không c ≈ 3.10^8 m/s.",
+      "source": {
+        "provider": "Verified V-ACT Consortium",
+        "title": "Tuyển tập Sóng Điện Từ",
+        "year": 2026,
+        "page": 45
+      }
+    }
+  ]
+}

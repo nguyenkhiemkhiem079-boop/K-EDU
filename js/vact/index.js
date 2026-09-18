@@ -16,12 +16,16 @@
     const sectionTestGenerator = require('./generator/sectionTestGenerator');
     const examGenerator = require('./generator/examGenerator');
     const performanceAnalytics = require('./analytics/performance');
-    module.exports = factory(taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, coverage, sectionTestGenerator, examGenerator, performanceAnalytics);
+    const sourceConfig = require('./sources/config');
+    const internalSource = require('./sources/internalSource');
+    const remoteJsonSource = require('./sources/remoteJsonSource');
+    const sourceManager = require('./sources/sourceManager');
+    module.exports = factory(taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, coverage, sectionTestGenerator, examGenerator, performanceAnalytics, sourceConfig, internalSource, remoteJsonSource, sourceManager);
   } else {
     root.KEDUVACT = root.KEDUVACT || {};
     // When loaded via script tags, individual modules attach to root.KEDUVACT
   }
-})(typeof window !== 'undefined' ? window : globalThis, function (taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, coverage, sectionTestGenerator, examGenerator, performanceAnalytics) {
+})(typeof window !== 'undefined' ? window : globalThis, function (taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, coverage, sectionTestGenerator, examGenerator, performanceAnalytics, sourceConfig, internalSource, remoteJsonSource, sourceManager) {
   'use strict';
 
   return Object.freeze({
@@ -40,6 +44,22 @@
     analytics: Object.freeze({
       performance: performanceAnalytics
     }),
+    sources: Object.freeze({
+      config: sourceConfig,
+      sourceConfig,
+      VACTSourceConfig: sourceConfig,
+      internal: internalSource,
+      remote: remoteJsonSource,
+      sourceManager: sourceManager.sourceManager,
+      VACTSourceManager: sourceManager.VACTSourceManager,
+      VACTInternalSource: internalSource.VACTInternalSource,
+      VACTRemoteJsonSource: remoteJsonSource.VACTRemoteJsonSource
+    }),
+    sourceManager: sourceManager.sourceManager,
+    VACTSourceManager: sourceManager.VACTSourceManager,
+    VACTRemoteJsonSource: remoteJsonSource.VACTRemoteJsonSource,
+    VACTInternalSource: internalSource.VACTInternalSource,
+    VACTSourceConfig: sourceConfig,
     quality: Object.freeze({
       ...signature,
       ...validator,

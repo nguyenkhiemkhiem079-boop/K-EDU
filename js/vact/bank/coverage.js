@@ -340,13 +340,54 @@
     };
   }
 
+  /**
+   * Computes multi-tier coverage matrix across Internal and Remote sources.
+   * Reports Internal, Remote, and Combined unique question counts per section and skill.
+   *
+   * @param {object} [options={}]
+   * @returns {Promise<object>}
+   */
+  async function getCombinedCoverage(options = {}) {
+    let sm = null;
+    if (typeof require === 'function') {
+      try {
+        const sourcesMod = require('../sources/sourceManager');
+        sm = sourcesMod?.sourceManager;
+      } catch (_) {}
+    }
+    if (!sm && typeof window !== 'undefined' && window.KEDUVACT?.sourceManager) {
+      sm = window.KEDUVACT.sourceManager;
+    }
+    if (!sm && typeof globalThis !== 'undefined' && globalThis.KEDUVACT?.sourceManager) {
+      sm = globalThis.KEDUVACT.sourceManager;
+    }
+
+    if (sm && typeof sm.getCombinedCoverage === 'function') {
+      return await sm.getCombinedCoverage(options);
+    }
+
+    // Fallback if source manager is not yet initialized
+    const internalSummary = getSummary(options);
+    return {
+      summary: {
+        internalTotal: internalSummary.totalUniqueUsable,
+        remoteTotal: 0,
+        combinedRawTotal: internalSummary.totalUniqueUsable,
+        combinedUniqueTotal: internalSummary.totalUniqueUsable,
+        crossSourceDuplicatesRemoved: 0
+      },
+      sections: internalSummary.sections
+    };
+  }
+
   const VACTCoverage = {
     clearCoverageCache,
     getUniqueUsableQuestions,
     getSummary,
     getCapacity,
     checkShortage,
-    getProfileReadiness
+    getProfileReadiness,
+    getCombinedCoverage
   };
 
   return {
