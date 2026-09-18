@@ -211,6 +211,7 @@
 
     // Source object (preserve original provenance without inventing verification)
     const rawSource = raw.source || {};
+    const originalId = raw.originalId || rawSource.originalId || null;
     const source = {
       provider: rawSource.provider || 'internal',
       type: rawSource.type || (raw.synthetic ? 'synthetic' : 'curated'),
@@ -218,7 +219,11 @@
       year: rawSource.year || raw.sourceYear || null,
       url: rawSource.url || raw.sourceUrl || null,
       file: rawSource.file || raw.sourceFile || null,
-      page: rawSource.page !== undefined ? raw.sourcePage : (raw.sourcePage !== undefined ? raw.sourcePage : null)
+      page: rawSource.page !== undefined ? rawSource.page : (raw.sourcePage !== undefined ? raw.sourcePage : null),
+      originalId: originalId,
+      originalGrade: rawSource.originalGrade || raw.originalGrade || null,
+      originalTopic: rawSource.originalTopic || raw.originalTopic || null,
+      originalSubject: rawSource.originalSubject || raw.originalSubject || null
     };
 
     // Quality object (strict: do NOT invent review status)
@@ -232,6 +237,7 @@
 
     return {
       id,
+      originalId,
       section,
       skill,
       subSkill,

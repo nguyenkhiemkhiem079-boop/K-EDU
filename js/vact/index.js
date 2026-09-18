@@ -9,12 +9,14 @@
     const schema = require('./schema');
     const validator = require('./quality/validator');
     const profiles = require('./profiles');
-    module.exports = factory(taxonomy, signature, schema, validator, profiles);
+    const adapter = require('./bank/adapter');
+    const internalBank = require('./bank/internalBank');
+    module.exports = factory(taxonomy, signature, schema, validator, profiles, adapter, internalBank);
   } else {
     root.KEDUVACT = root.KEDUVACT || {};
     // When loaded via script tags, individual modules attach to root.KEDUVACT
   }
-})(typeof window !== 'undefined' ? window : globalThis, function (taxonomy, signature, schema, validator, profiles) {
+})(typeof window !== 'undefined' ? window : globalThis, function (taxonomy, signature, schema, validator, profiles, adapter, internalBank) {
   'use strict';
 
   return Object.freeze({
@@ -22,6 +24,12 @@
     ...signature,
     ...schema,
     ...validator,
-    ...profiles
+    ...profiles,
+    ...adapter,
+    ...internalBank,
+    bank: Object.freeze({
+      ...adapter,
+      ...internalBank
+    })
   });
 });
