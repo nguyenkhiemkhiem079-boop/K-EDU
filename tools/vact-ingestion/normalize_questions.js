@@ -69,7 +69,13 @@ function normalizeQuestion(matchedQ, sourceRecord) {
       sourcePage: matchedQ.sourcePage || null,
       questionNumber: matchedQ.questionNumber || null,
       examSetId,
-      extractedFromSource: true
+      extractedFromSource: true,
+      questionSourceId: sourceRecord.sourceId,
+      questionSourceFile: sourceRecord.path || sourceRecord.filename,
+      questionSourcePage: matchedQ.sourcePage || null,
+      solutionSourceId: matchedQ.solutionSourceId || (sourceRecord.documentRole === 'combined' ? sourceRecord.sourceId : null),
+      solutionSourceFile: matchedQ.solutionSourceFile || (sourceRecord.documentRole === 'combined' ? (sourceRecord.path || sourceRecord.filename) : null),
+      solutionSourcePage: matchedQ.solutionSourcePage !== undefined ? matchedQ.solutionSourcePage : (sourceRecord.documentRole === 'combined' ? (matchedQ.sourcePage || null) : null)
     },
     quality: {
       sourceVerified: true,

@@ -40,7 +40,8 @@ async function matchSolutions(parsedQuestions, sourceRecord) {
           answer: ans || null,
           explanation: expl || null,
           solutionSourceId: pairedSource.sourceId,
-          solutionFile: pairedSource.filename
+          solutionFile: pairedSource.filename,
+          solutionPage: sq.sourcePage || null
         });
       }
     } catch (err) {
@@ -53,6 +54,9 @@ async function matchSolutions(parsedQuestions, sourceRecord) {
     let correctAnswer = null;
     let explanation = null;
     let answerVerified = false;
+    let solutionSourceId = null;
+    let solutionSourceFile = null;
+    let solutionSourcePage = null;
 
     // First check paired solution
     const paired = solutionMap.get(q.questionNumber);
@@ -60,11 +64,17 @@ async function matchSolutions(parsedQuestions, sourceRecord) {
       correctAnswer = paired.answer;
       explanation = paired.explanation;
       answerVerified = true;
+      solutionSourceId = paired.solutionSourceId;
+      solutionSourceFile = paired.solutionFile;
+      solutionSourcePage = paired.solutionPage || null;
     } else if (q.explicitAnswer) {
       // Combined document had explicit answer
       correctAnswer = q.explicitAnswer;
       explanation = q.solutionText ? q.solutionText : null;
       answerVerified = true;
+      solutionSourceId = sourceRecord.sourceId;
+      solutionSourceFile = sourceRecord.filename;
+      solutionSourcePage = q.sourcePage || null;
     } else {
       // Check if rawChunk has answer
       const rawAnsM = q.rawChunk.match(/(?:Đáp\s*án(?:\s+đúng\s+là|\s*:|\s+là)?|Chọn)\s*([A-D])\b/i);
@@ -72,6 +82,9 @@ async function matchSolutions(parsedQuestions, sourceRecord) {
         correctAnswer = rawAnsM[1].toUpperCase();
         explanation = q.solutionText ? q.solutionText : null;
         answerVerified = true;
+        solutionSourceId = sourceRecord.sourceId;
+        solutionSourceFile = sourceRecord.filename;
+        solutionSourcePage = q.sourcePage || null;
       }
     }
 
@@ -79,7 +92,10 @@ async function matchSolutions(parsedQuestions, sourceRecord) {
       ...q,
       correctAnswer,
       explanation: explanation || null,
-      answerVerified
+      answerVerified,
+      solutionSourceId,
+      solutionSourceFile,
+      solutionSourcePage
     };
   });
 
