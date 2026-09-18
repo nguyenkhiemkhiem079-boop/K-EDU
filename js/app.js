@@ -262,6 +262,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initFirebaseRealtimeSync();
   initVactMini100UI();
   initVactFull120UI();
+  updateVactStudentDashboard();
 });
 
 /* ================= AVATAR PICKER ENGINE ================= */
@@ -4791,6 +4792,7 @@ async function renderSampleQuizzes(filterName = '', filterClass = '') {
 `;
   initVactMini100UI();
   initVactFull120UI();
+  updateVactStudentDashboard();
 }
 
 function loadAndJoinQuizDirectly(quizId) {
@@ -5675,6 +5677,41 @@ async function submitStudentExam(isAuto = false) {
     const savedKey = await StorageEngine.saveResult(resultRecord);
     resultRecord.key = savedKey;
     clearPausedExamSession(AppState.studentName, AppState.currentQuizId);
+
+    // Ghi nhận bản ghi phân tích năng lực V-ACT nếu bài thi thuộc hệ thống V-ACT
+    const isVact = quiz.subject === 'vact' || quiz.vactMeta || (reviewData && reviewData.some(r => r.section));
+    if (isVact && window.KEDUVACT?.performanceAnalytics?.recordAttempt) {
+      try {
+        const vMeta = quiz.vactMeta || {};
+        window.KEDUVACT.performanceAnalytics.recordAttempt({
+          testId: AppState.currentQuizId,
+          mode: vMeta.profileId ? (vMeta.profileId === 'vact_full' ? 'full_120' : 'mini_100') : 'section_mini',
+          profile: vMeta.profileId || null,
+          section: vMeta.section || (vMeta.profileId ? 'composite' : (reviewData[0]?.section || 'composite')),
+          skill: vMeta.skill || null,
+          requestedCount: vMeta.requestedTotal || total,
+          generatedCount: total,
+          questionIds: reviewData.map(r => r.id || `q_${r.num}`),
+          questionSignatures: reviewData.map(r => r.signature || `${r.num}`),
+          answers: { ...AppState.studentAnswers },
+          correct: correctCount,
+          incorrect: Math.max(0, total - correctCount - (reviewData.filter(r => !r.given || r.given === '(chưa điền)').length)),
+          unanswered: reviewData.filter(r => !r.given || r.given === '(chưa điền)').length,
+          scoreRaw: correctCount,
+          accuracy: scorePct,
+          duration: timeTakenSeconds,
+          startedAt: new Date(Date.now() - (timeTakenSeconds * 1000)).toISOString(),
+          submittedAt: new Date().toISOString(),
+          studentName: AppState.studentName,
+          studentClass: AppState.studentClass,
+          studentUid: AppState.studentUid || null,
+          review: reviewData
+        });
+        updateVactStudentDashboard();
+      } catch (analyticsErr) {
+        console.warn('V-ACT attempt record warning:', analyticsErr);
+      }
+    }
 
     const rewards = GamificationEngine.awardExamRewards(resultRecord);
     updateGamifyBar();
@@ -8474,5 +8511,128 @@ window.initVactMini100UI = initVactMini100UI;
 window.handleStartMini100Click = handleStartMini100Click;
 window.initVactFull120UI = initVactFull120UI;
 window.handleStartFull120Click = handleStartFull120Click;
+
+/* ================= V-ACT STUDENT DASHBOARD & WRONG QUESTION REVIEW ================= */
+function updateVactStudentDashboard() {
+  const container = document.getElementById('vactStudentAnalyticsSection');
+  if (!container) return;
+
+  const analytics = window.KEDUVACT?.performanceAnalytics;
+  if (!analytics || typeof analytics.renderDashboardHtml !== 'function') {
+    container.innerHTML = '';
+    return;
+  }
+
+  const name = (document.getElementById('studentJoinName')?.value || AppState.studentName || '').trim();
+  const className = (document.getElementById('studentJoinClass')?.value || AppState.studentClass || '').trim();
+  const studentUid = window.StudentAccounts?.uid || AppState.studentUid || null;
+
+  const html = analytics.renderDashboardHtml({ studentName: name, studentClass: className, studentUid });
+  container.innerHTML = html;
+}
+
+function handleOpenWrongQuestionsModal(attemptId = null) {
+  const modal = document.getElementById('vactWrongQuestionsModal');
+  const body = document.getElementById('vactWrongQuestionsModalBody');
+  const title = document.getElementById('vactWrongQuestionsModalTitle');
+  if (!modal || !body) return;
+
+  const analytics = window.KEDUVACT?.performanceAnalytics;
+  if (!analytics) return;
+
+  const name = (document.getElementById('studentJoinName')?.value || AppState.studentName || '').trim();
+  const className = (document.getElementById('studentJoinClass')?.value || AppState.studentClass || '').trim();
+  const studentUid = window.StudentAccounts?.uid || AppState.studentUid || null;
+
+  const wrongQuestions = analytics.getWrongQuestions({ studentName: name, studentClass: className, studentUid }, { attemptId });
+
+  if (title) {
+    title.innerHTML = `<span>🔍</span> <span>Ôn Lại Câu Hỏi Chưa Đạt (${wrongQuestions.length} câu)</span>`;
+  }
+
+  if (!wrongQuestions.length) {
+    body.innerHTML = `
+      <div style="padding:2.5rem 1.5rem;text-align:center;background:var(--bg-card);border:2px dashed var(--emerald);border-radius:var(--radius-lg);">
+        <div style="font-size:3.5rem;margin-bottom:0.75rem;">🎉</div>
+        <div style="font-size:1.25rem;font-weight:800;color:var(--text-primary);margin-bottom:0.5rem;">
+          Không có câu hỏi nào bị làm sai hoặc chưa điền!
+        </div>
+        <p style="font-size:0.92rem;color:var(--text-secondary);margin:0;">
+          Bạn đã hoàn thành chính xác tất cả các câu hỏi được kiểm tra trong bài thi này.
+        </p>
+      </div>
+    `;
+  } else {
+    body.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:1rem;">
+        ${wrongQuestions.map((q, idx) => `
+          <div class="card" style="padding:1rem 1.25rem;background:var(--bg-tertiary);border-left:4px solid ${q.isUnanswered ? 'var(--amber)' : 'var(--rose)'};border-radius:var(--radius-md);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.45rem;flex-wrap:wrap;gap:0.4rem;">
+              <span style="font-weight:900;font-size:0.92rem;color:var(--text-primary);">
+                Câu ${q.num || idx + 1}: <span style="color:${q.isUnanswered ? 'var(--amber-shadow)' : 'var(--rose)'};">${q.isUnanswered ? 'Chưa trả lời' : 'Làm sai'}</span>
+              </span>
+              <div style="display:flex;gap:0.35rem;font-size:0.75rem;font-weight:800;">
+                ${q.section ? `<span style="background:rgba(99,102,241,0.15);color:var(--indigo);padding:2px 8px;border-radius:999px;">${q.section}</span>` : ''}
+                ${q.skillName ? `<span style="background:rgba(16,185,129,0.15);color:var(--emerald);padding:2px 8px;border-radius:999px;">${q.skillName}</span>` : ''}
+              </div>
+            </div>
+            <div style="font-size:0.92rem;font-weight:600;color:var(--text-primary);margin-bottom:0.6rem;line-height:1.5;">
+              ${escapeHtml(q.question)}
+            </div>
+            ${Array.isArray(q.options) && q.options.length ? `
+              <div style="display:flex;flex-direction:column;gap:0.35rem;margin-bottom:0.6rem;">
+                ${q.options.map((opt, oIdx) => {
+                  const optLetter = String.fromCharCode(65 + oIdx);
+                  const isGiven = q.given === optLetter || q.given === opt;
+                  const isCorrect = q.correctAnswer === optLetter || q.correctAnswer === opt;
+                  let bg = 'var(--bg-card)';
+                  let border = '1px solid var(--border-color)';
+                  let color = 'var(--text-primary)';
+                  if (isCorrect) {
+                    bg = 'rgba(16,185,129,0.12)';
+                    border = '1.5px solid var(--emerald)';
+                    color = 'var(--emerald)';
+                  } else if (isGiven) {
+                    bg = 'rgba(244,63,94,0.12)';
+                    border = '1.5px solid var(--rose)';
+                    color = 'var(--rose)';
+                  }
+                  return `
+                    <div style="padding:0.4rem 0.75rem;background:${bg};border:${border};border-radius:var(--radius-sm);font-size:0.85rem;color:${color};font-weight:700;">
+                      <strong>${optLetter}.</strong> ${escapeHtml(opt)}
+                      ${isCorrect ? ' <span style="color:var(--emerald);font-weight:900;">✓ (Đáp án đúng)</span>' : ''}
+                      ${isGiven && !isCorrect ? ' <span style="color:var(--rose);font-weight:900;">✗ (Em đã chọn)</span>' : ''}
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            ` : ''}
+            <div style="display:flex;gap:1rem;flex-wrap:wrap;font-size:0.82rem;font-weight:800;margin-top:0.4rem;">
+              <div>Em chọn: <span style="color:var(--rose);">${escapeHtml(q.given || '(chưa điền)')}</span></div>
+              <div>Đáp án đúng: <span style="color:var(--emerald);">${escapeHtml(q.correctAnswer)}</span></div>
+            </div>
+            ${q.explanation ? `
+              <div style="margin-top:0.6rem;padding:0.5rem 0.75rem;background:rgba(99,102,241,0.08);border-radius:var(--radius-sm);font-size:0.82rem;color:var(--text-secondary);line-height:1.5;">
+                💡 <strong>Lời giải:</strong> ${escapeHtml(q.explanation)}
+              </div>
+            ` : ''}
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  modal.classList.remove('hidden');
+}
+
+function closeVactWrongQuestionsModal() {
+  const modal = document.getElementById('vactWrongQuestionsModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+window.updateVactStudentDashboard = updateVactStudentDashboard;
+window.handleOpenWrongQuestionsModal = handleOpenWrongQuestionsModal;
+window.closeVactWrongQuestionsModal = closeVactWrongQuestionsModal;
+
 
 

@@ -451,6 +451,9 @@ GIANG, 8"></textarea>
           </div>
         </div>
 
+        <!-- V-ACT Student Performance Analytics Dashboard Section -->
+        <div id="vactStudentAnalyticsSection" style="margin-bottom:1.5rem;"></div>
+
         <!-- Direct Exam Feed List -->
         <div class="card duo-feed-card">
           <div class="card-header">
@@ -1968,6 +1971,7 @@ GIANG, 8"></textarea>
   <script src="js/vact/bank/coverage.js"></script>
   <script src="js/vact/generator/sectionTestGenerator.js"></script>
   <script src="js/vact/generator/examGenerator.js"></script>
+  <script src="js/vact/analytics/performance.js"></script>
   <script src="js/app.js?v=6.1"></script>
   <script src="js/studentAnalytics.js?v=5.0"></script>
   <!-- BATCH EXAM RESULTS MODAL -->
@@ -2246,6 +2250,19 @@ GIANG, 8"></textarea>
         <button type="button" class="btn btn-secondary btn-sm" onclick="closeTeacherSubmissionReviewModal()">✕ Đóng</button>
       </div>
       <div id="teacherSubmissionReviewModalBody" style="padding:1.25rem;overflow-y:auto;flex:1;"></div>
+    </div>
+  </div>
+
+  <!-- ================= V-ACT WRONG QUESTIONS REVIEW MODAL ================= -->
+  <div id="vactWrongQuestionsModal" class="roster-modal-backdrop hidden" style="z-index:9999;">
+    <div class="card" style="max-width:850px;width:95%;max-height:90vh;display:flex;flex-direction:column;border-radius:var(--radius-xl);overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,0.3);margin:auto;background:var(--bg-card);">
+      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding:1rem 1.25rem;">
+        <h2 style="margin:0;font-size:1.2rem;color:var(--indigo);display:flex;align-items:center;gap:0.4rem;" id="vactWrongQuestionsModalTitle">
+          <span>🔍</span> <span>Ôn Lại Câu Hỏi Chưa Đạt — V-ACT</span>
+        </h2>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeVactWrongQuestionsModal()">✕ Đóng</button>
+      </div>
+      <div id="vactWrongQuestionsModalBody" style="padding:1.25rem;overflow-y:auto;flex:1;"></div>
     </div>
   </div>
 

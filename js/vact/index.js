@@ -15,12 +15,13 @@
     const coverage = require('./bank/coverage');
     const sectionTestGenerator = require('./generator/sectionTestGenerator');
     const examGenerator = require('./generator/examGenerator');
-    module.exports = factory(taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, coverage, sectionTestGenerator, examGenerator);
+    const performanceAnalytics = require('./analytics/performance');
+    module.exports = factory(taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, coverage, sectionTestGenerator, examGenerator, performanceAnalytics);
   } else {
     root.KEDUVACT = root.KEDUVACT || {};
     // When loaded via script tags, individual modules attach to root.KEDUVACT
   }
-})(typeof window !== 'undefined' ? window : globalThis, function (taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, coverage, sectionTestGenerator, examGenerator) {
+})(typeof window !== 'undefined' ? window : globalThis, function (taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, coverage, sectionTestGenerator, examGenerator, performanceAnalytics) {
   'use strict';
 
   return Object.freeze({
@@ -35,6 +36,10 @@
     ...coverage,
     ...sectionTestGenerator,
     ...examGenerator,
+    performanceAnalytics,
+    analytics: Object.freeze({
+      performance: performanceAnalytics
+    }),
     quality: Object.freeze({
       ...signature,
       ...validator,
@@ -51,3 +56,4 @@
     })
   });
 });
+
