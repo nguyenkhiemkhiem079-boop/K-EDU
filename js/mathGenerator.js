@@ -1600,15 +1600,7 @@ const MathEngine = {
     const difficultyMode = config.difficultyMode || 'mixed';
     if (!['basic', 'advanced', 'mixed'].includes(difficultyMode)) throw new Error('Chế độ độ khó không hợp lệ.');
     const specializedPolicy = typeof SpecializedBankPolicy !== 'undefined' ? SpecializedBankPolicy : (typeof require === 'function' ? require('./specializedBankPolicy') : null);
-    const allowedLevel = q => difficultyMode === 'advanced' ? !!specializedPolicy?.isApproved(q)
-      : difficultyMode === 'mixed' || ['NB', 'TH'].includes(String(q.level || '').toUpperCase());
-    if (difficultyMode === 'advanced') config = { ...config, sourceMode: 'document' };
-    if (difficultyMode !== 'mixed') {
-      const matrix = config.essayMatrix || { TH: 1, VD: 1, VDC: 1 };
-      config = { ...config, essayMatrix: difficultyMode === 'basic'
-        ? { TH: (matrix.TH || 0) + (matrix.VD || 0) + (matrix.VDC || 0), VD: 0, VDC: 0 }
-        : { TH: 0, VD: 0, VDC: (matrix.TH || 0) + (matrix.VD || 0) + (matrix.VDC || 0) } };
-    }
+
     const {
       track = 'toan',
       grade = '10',
@@ -1621,6 +1613,11 @@ const MathEngine = {
       title = '',
       batchSeenSignatures = null
     } = config;
+
+    // Giữ nguyên giá trị Ma trận Tự luận do người dùng cấu hình
+    const reqTH = Math.max(0, parseInt(essayMatrix?.TH ?? 0, 10) || 0);
+    const reqVD = Math.max(0, parseInt(essayMatrix?.VD ?? 0, 10) || 0);
+    const reqVDC = Math.max(0, parseInt(essayMatrix?.VDC ?? 0, 10) || 0);
 
     const gStr = (track && track.startsWith('dgnl')) ? 'DGNL' : grade.toString();
     if (gStr === 'DGNL' && sourceMode === 'synthetic' && difficultyMode === 'mixed') {
@@ -1635,21 +1632,20 @@ const MathEngine = {
     }
 
     let warningMsg = null;
+    let topicWarning = null;
 
     let mcqTemplates = GradeEngines.getTemplates(gStr, 'mcq', 'TH', topic);
     const allMcqTemplates = GradeEngines.getTemplates(gStr, 'mcq', 'TH', 'all');
 
     if (topic !== 'all') {
       if (mcqTemplates.warning) {
-        warningMsg = mcqTemplates.warning;
+        topicWarning = mcqTemplates.warning;
       } else if (mcqCount > mcqTemplates.length) {
-        warningMsg = `Chủ đề "${topic}" chỉ có ${mcqTemplates.length} câu hỏi mẫu, không đủ so với yêu cầu ${mcqCount} câu. Đã bổ sung thêm từ các chủ đề khác.`;
+        topicWarning = `Chủ đề "${topic}" chỉ có ${mcqTemplates.length} câu hỏi mẫu, không đủ so với yêu cầu ${mcqCount} câu. Đã bổ sung thêm từ các chủ đề khác.`;
         const extra = allMcqTemplates.filter(t => !mcqTemplates.includes(t));
         mcqTemplates = [...mcqTemplates, ...extra];
       }
     }
-
-    mcqTemplates = mcqTemplates.filter(allowedLevel);
 
     // ================= ANTI-DUPLICATE GUARD CHO TRẮC NGHIỆM =================
     const selectedMcq = [];
@@ -1668,9 +1664,12 @@ const MathEngine = {
       }
     } catch (e) {}
 
+    let mcqDuplicateExhausted = false;
+
     // BƯỚC 1: LẤY CÂU HỎI TRỰC TIẾP TỪ KHO TÀI LIỆU (NẾU sourceMode LÀ 'document' HOẶC 'hybrid')
+    // Loại bỏ bộ lọc toàn cục VDC/NB-TH: Các câu trắc nghiệm phổ thông trong ngân hàng được tuyển chọn bình thường
     if (typeof DocumentQuestionBank !== 'undefined' && sourceMode !== 'synthetic') {
-      let docQuestions = DocumentQuestionBank.query({ subject: 'toan', grade: gStr, topic: topic, type: 'mcq' }).filter(allowedLevel);
+      let docQuestions = DocumentQuestionBank.query({ subject: 'toan', grade: gStr, topic: topic, type: 'mcq' });
 
       // Lọc bỏ các câu đã xuất hiện trong batch và câu vừa dùng gần đây
       let availableDocQuestions = docQuestions.filter(q => 
@@ -1692,8 +1691,8 @@ const MathEngine = {
       const takenFromDoc = availableDocQuestions.slice(0, targetDocCount);
 
       takenFromDoc.forEach(q => {
-        if (seenSignatures.has(mathQuestionSignature(q.question))) return;
         const sig = mathQuestionSignature(q.question);
+        if (seenSignatures.has(sig)) return;
         seenSignatures.add(sig);
         recentDocIds.add(q.id);
         selectedMcq.push({
@@ -1712,7 +1711,7 @@ const MathEngine = {
         });
       });
 
-      // Lưu lại recentDocIds (giữ tối đa 300 ID gần nhất)
+      // Lưu lại recentDocIds (giữ tối đa 50000 ID gần nhất)
       try {
         if (typeof localStorage !== 'undefined') {
           const arr = Array.from(recentDocIds).slice(-50000);
@@ -1720,16 +1719,9 @@ const MathEngine = {
         }
       } catch (e) {}
 
-      // Xử lý cảnh báo số lượng câu hỏi theo yêu cầu Part B.2
-      if (sourceMode === 'document') {
-        if (takenFromDoc.length < mcqCount) {
-          warningMsg = `Ngân hàng tài liệu chỉ có ${takenFromDoc.length}/${mcqCount} câu phù hợp (đề thi được tạo với ${takenFromDoc.length} câu).`;
-        }
-      } else if (sourceMode === 'hybrid') {
-        if (takenFromDoc.length < mcqCount) {
-          const missing = mcqCount - takenFromDoc.length;
-          warningMsg = `Ngân hàng tài liệu chỉ có ${takenFromDoc.length}/${mcqCount} câu phù hợp — đã tự động bổ sung ${missing} câu sinh tự động.`;
-        }
+      if (sourceMode === 'hybrid' && takenFromDoc.length < mcqCount) {
+        const missing = mcqCount - takenFromDoc.length;
+        topicWarning = `Ngân hàng tài liệu chỉ có ${takenFromDoc.length}/${mcqCount} câu phù hợp — đã tự động bổ sung ${missing} câu sinh tự động.`;
       }
     }
 
@@ -1746,7 +1738,7 @@ const MathEngine = {
 
     const remainingMcqNeeded = (sourceMode === 'document') ? 0 : (mcqCount - selectedMcq.length);
     for (let i = 0; i < remainingMcqNeeded; i++) {
-      if (!mcqTemplates.length) { warningMsg = 'Chưa đủ câu đúng mức độ đã chọn; không lấy câu ở mức độ khác để bù.'; break; }
+      if (!mcqTemplates.length) { break; }
       let chosenQ = null;
       let attempts = 0;
       const maxAttempts = 35;
@@ -1783,7 +1775,7 @@ const MathEngine = {
       }
 
       if (!chosenQ) {
-        warningMsg = 'Không đủ câu hỏi độc nhất; đã dừng bổ sung để tránh trùng lặp.';
+        mcqDuplicateExhausted = true;
         break;
       }
       selectedMcq.push(chosenQ);
@@ -1794,117 +1786,184 @@ const MathEngine = {
     const seenEssaySignatures = seenSignatures;
 
     const targetLevels = [
-      { level: 'TH', count: essayMatrix.TH || 0 },
-      { level: 'VD', count: essayMatrix.VD || 0 },
-      { level: 'VDC', count: essayMatrix.VDC || 0 }
+      { level: 'TH', count: reqTH },
+      { level: 'VD', count: reqVD },
+      { level: 'VDC', count: reqVDC }
     ];
 
+    let essayDuplicateExhausted = { TH: false, VD: false };
+
     // LẤY CÂU HỎI TỰ LUẬN TỪ TÀI LIỆU KHỚP VỚI CÁC CẤP ĐỘ YÊU CẦU
+    // VDC BẮT BUỘC: SpecializedBankPolicy.isApproved(q) === true CHỈ áp dụng cho câu VDC được yêu cầu
     if (typeof DocumentQuestionBank !== 'undefined' && sourceMode !== 'synthetic') {
       const docEssays = DocumentQuestionBank.query({
         grade: gStr,
         topic: topic === 'all' ? undefined : topic,
         type: 'essay'
-      });
-      const availableDocEssays = docEssays.filter(eq => (eq.subject || 'toan') === 'toan' && allowedLevel(eq) && !seenEssaySignatures.has(mathQuestionSignature(eq.question)));
-      availableDocEssays.forEach(eq => {
-        const eqLevel = (eq.level || 'VD').toUpperCase();
-        const levelConfig = targetLevels.find(t => t.level === eqLevel);
-        if (levelConfig && levelConfig.count > 0 && !seenEssaySignatures.has(mathQuestionSignature(eq.question))) {
-          const currentLevelCount = selectedEssay.filter(e => (e.level || '').toUpperCase() === eqLevel).length;
-          if (currentLevelCount < levelConfig.count) {
-            const sig = mathQuestionSignature(eq.question);
-            seenEssaySignatures.add(sig);
-            selectedEssay.push({
-              id: eq.id,
-              sourceFile: eq.sourceFile,
-              curation: eq.curation,
-              grade: eq.grade,
-              level: eq.level || 'VD',
-              type: 'essay',
-              topic: eq.topic,
-              source: eq.source || 'Kho tài liệu ôn thi K-EDU',
-              question: eq.question,
-              correctAnswer: eq.correctAnswer,
-              explanation: eq.explanation || ''
-            });
+      }).filter(eq => (eq.subject || 'toan') === 'toan');
+
+      targetLevels.forEach(({ level, count }) => {
+        if (count <= 0) return;
+
+        const candidates = docEssays.filter(eq => {
+          const eqLevel = (eq.level || '').toUpperCase();
+          if (level === 'VDC') {
+            return eqLevel === 'VDC' && (specializedPolicy ? specializedPolicy.isApproved(eq) === true : false);
+          } else if (level === 'VD') {
+            return eqLevel === 'VD';
+          } else if (level === 'TH') {
+            return eqLevel === 'TH' || eqLevel === 'NB';
           }
+          return false;
+        });
+
+        for (const eq of candidates) {
+          const currentLevelCount = selectedEssay.filter(e => {
+            const eLevel = (e.level || '').toUpperCase();
+            return level === 'TH' ? (eLevel === 'TH' || eLevel === 'NB') : eLevel === level;
+          }).length;
+          if (currentLevelCount >= count) break;
+
+          const sig = mathQuestionSignature(eq.question);
+          if (seenEssaySignatures.has(sig)) continue;
+          seenEssaySignatures.add(sig);
+
+          selectedEssay.push({
+            id: eq.id,
+            sourceFile: eq.sourceFile,
+            curation: eq.curation,
+            grade: eq.grade,
+            level: eq.level || level,
+            type: 'essay',
+            topic: eq.topic,
+            source: eq.source || 'Kho tài liệu ôn thi K-EDU',
+            question: eq.question,
+            correctAnswer: eq.correctAnswer,
+            explanation: eq.explanation || ''
+          });
         }
       });
     }
 
-    let essayIndex = selectedEssay.length + 1;
-    targetLevels.forEach(({ level, count }) => {
-      // Số lượng câu tự luận cần bổ sung thêm cho cấp độ này
-      const currentLevelCount = selectedEssay.filter(e => (e.level || '').toUpperCase() === level.toUpperCase()).length;
-      const needed = Math.max(0, count - currentLevelCount);
-      if (needed <= 0 || sourceMode === 'document') return;
+    // Bổ sung tự luận bằng templates nếu sourceMode !== 'document' (bổ sung cho các mức độ còn thiếu)
+    if (sourceMode !== 'document') {
+      let essayIndex = selectedEssay.length + 1;
+      targetLevels.forEach(({ level, count }) => {
+        const currentLevelCount = selectedEssay.filter(e => {
+          const eLevel = (e.level || '').toUpperCase();
+          return level === 'TH' ? (eLevel === 'TH' || eLevel === 'NB') : eLevel === level;
+        }).length;
+        const needed = Math.max(0, count - currentLevelCount);
+        if (needed <= 0) return;
 
-      let essayTemplates = GradeEngines.getTemplates(gStr, 'essay', level, topic);
-      if (!essayTemplates || !essayTemplates.length) {
-        essayTemplates = GradeEngines.getTemplates(gStr, 'essay', level, 'all');
-      }
-      essayTemplates = (essayTemplates || []).filter(allowedLevel);
-      if (!essayTemplates || !essayTemplates.length) return;
-
-      const essayDeck = [];
-      const refillEssayDeck = () => {
-        const arr = Array.from({ length: essayTemplates.length }, (_, k) => k);
-        for (let j = arr.length - 1; j > 0; j--) {
-          const r = Math.floor(Math.random() * (j + 1));
-          [arr[j], arr[r]] = [arr[r], arr[j]];
+        let essayTemplates = GradeEngines.getTemplates(gStr, 'essay', level, topic);
+        if (!essayTemplates || !essayTemplates.length) {
+          essayTemplates = GradeEngines.getTemplates(gStr, 'essay', level, 'all');
         }
-        essayDeck.push(...arr);
-      };
+        if (!essayTemplates || !essayTemplates.length) return;
 
-      for (let i = 0; i < needed; i++) {
-        let chosenEq = null;
-        let attempts = 0;
-        const maxAttempts = 25;
+        const essayDeck = [];
+        const refillEssayDeck = () => {
+          const arr = Array.from({ length: essayTemplates.length }, (_, k) => k);
+          for (let j = arr.length - 1; j > 0; j--) {
+            const r = Math.floor(Math.random() * (j + 1));
+            [arr[j], arr[r]] = [arr[r], arr[j]];
+          }
+          essayDeck.push(...arr);
+        };
 
-        while (attempts < maxAttempts) {
-          attempts++;
-          if (!essayDeck.length) refillEssayDeck();
-          const idx = essayDeck.pop();
-          const candidate = essayTemplates[idx](essayIndex);
-          const sig = mathQuestionSignature(candidate.question);
-          if (!seenEssaySignatures.has(sig)) {
-            seenEssaySignatures.add(sig);
-            candidate.source = candidate.source || `Chuyên đề tự luận Toán — Khối ${gStr}`;
-            chosenEq = candidate;
+        for (let i = 0; i < needed; i++) {
+          let chosenEq = null;
+          let attempts = 0;
+          const maxAttempts = 25;
+
+          while (attempts < maxAttempts) {
+            attempts++;
+            if (!essayDeck.length) refillEssayDeck();
+            const idx = essayDeck.pop();
+            const candidate = essayTemplates[idx](essayIndex);
+            const sig = mathQuestionSignature(candidate.question);
+            if (!seenEssaySignatures.has(sig)) {
+              seenEssaySignatures.add(sig);
+              candidate.source = candidate.source || `Chuyên đề tự luận Toán — Khối ${gStr}`;
+              chosenEq = candidate;
+              break;
+            }
+          }
+
+          if (!chosenEq) {
+            for (let tIdx = 0; tIdx < essayTemplates.length; tIdx++) {
+              for (let retry = 0; retry < 5; retry++) {
+                const candidate = essayTemplates[tIdx](essayIndex);
+                const sig = mathQuestionSignature(candidate.question);
+                if (!seenEssaySignatures.has(sig)) {
+                  seenEssaySignatures.add(sig);
+                  candidate.source = candidate.source || `Chuyên đề tự luận Toán — Khối ${gStr}`;
+                  chosenEq = candidate;
+                  break;
+                }
+              }
+              if (chosenEq) break;
+            }
+          }
+
+          if (!chosenEq) {
+            essayDuplicateExhausted[level] = true;
             break;
           }
+
+          essayIndex++;
+          selectedEssay.push(chosenEq);
         }
-
-        if (!chosenEq) {
-          for (let tIdx = 0; tIdx < essayTemplates.length; tIdx++) {
-            for (let retry = 0; retry < 5; retry++) {
-              const candidate = essayTemplates[tIdx](essayIndex);
-              const sig = mathQuestionSignature(candidate.question);
-              if (!seenEssaySignatures.has(sig)) {
-                seenEssaySignatures.add(sig);
-                candidate.source = candidate.source || `Chuyên đề tự luận Toán — Khối ${gStr}`;
-                chosenEq = candidate;
-                break;
-              }
-            }
-            if (chosenEq) break;
-          }
-        }
-
-        if (!chosenEq) {
-          warningMsg = 'Không đủ câu tự luận độc nhất; đã dừng bổ sung để tránh trùng lặp.';
-          break;
-        }
-
-        essayIndex++;
-        selectedEssay.push(chosenEq);
-      }
-    });
-
-    if (selectedMcq.length < mcqCount || selectedEssay.length < Object.values(essayMatrix).reduce((sum, n) => sum + n, 0)) {
-      warningMsg = [warningMsg, 'Số câu thực tế ít hơn yêu cầu do ngân hàng chưa đủ câu độc nhất.'].filter(Boolean).join(' ');
+      });
     }
+
+    // ================= PHÂN BIỆT RÕ RÀNG TỪNG LOẠI THIẾU HỤT CÂU HỎI (REQUIREMENT 10) =================
+    const shortageWarnings = [];
+
+    // 1. Thiếu câu trắc nghiệm (MCQ)
+    if (selectedMcq.length < mcqCount) {
+      if (mcqDuplicateExhausted) {
+        shortageWarnings.push('Trắc nghiệm: Không đủ câu hỏi độc nhất do trùng lặp chữ ký; đã dừng bổ sung để tránh lặp câu.');
+      } else {
+        shortageWarnings.push(`Ngân hàng tài liệu chỉ có ${selectedMcq.length}/${mcqCount} câu phù hợp (đề thi được tạo với ${selectedMcq.length} câu).`);
+      }
+    }
+
+    // Đếm số lượng thực tế từng mức độ tự luận
+    const actualTH = selectedEssay.filter(e => ['TH', 'NB'].includes((e.level || '').toUpperCase())).length;
+    const actualVD = selectedEssay.filter(e => (e.level || '').toUpperCase() === 'VD').length;
+    const actualVDC = selectedEssay.filter(e => (e.level || '').toUpperCase() === 'VDC').length;
+
+    // 2. Thiếu tự luận Thông hiểu (TH) - normal pool shortage / duplicate
+    if (actualTH < reqTH) {
+      if (essayDuplicateExhausted.TH) {
+        shortageWarnings.push('Tự luận TH: Trùng lặp chữ ký nội dung câu hỏi; đã dừng bổ sung.');
+      } else {
+        shortageWarnings.push(`Tự luận TH: Ngân hàng chỉ có ${actualTH}/${reqTH} câu Thông hiểu phù hợp.`);
+      }
+    }
+
+    // 3. Thiếu tự luận Vận dụng (VD) - VD shortage / duplicate
+    if (actualVD < reqVD) {
+      if (essayDuplicateExhausted.VD) {
+        shortageWarnings.push('Tự luận VD: Trùng lặp chữ ký nội dung câu hỏi; đã dừng bổ sung.');
+      } else {
+        shortageWarnings.push(`Tự luận VD: Ngân hàng chỉ có ${actualVD}/${reqVD} câu Vận dụng (VD) phù hợp.`);
+      }
+    }
+
+    // 4. Thiếu tự luận Vận dụng cao (VDC) - approved VDC shortage
+    if (actualVDC < reqVDC) {
+      if (sourceMode === 'synthetic') {
+        shortageWarnings.push(`Tự luận VDC: Chỉ sinh được ${actualVDC}/${reqVDC} câu Vận dụng cao.`);
+      } else {
+        shortageWarnings.push(`Tự luận VDC: Ngân hàng chỉ có ${actualVDC}/${reqVDC} câu VDC trường chuyên đã duyệt đạt chuẩn (SpecializedBankPolicy).`);
+      }
+    }
+
+    const allShortageMessages = [topicWarning, ...shortageWarnings].filter(Boolean);
+    warningMsg = allShortageMessages.length ? allShortageMessages.join(' ') : null;
 
     const totalEssays = selectedEssay.length;
     const essayTotalScore = totalEssays > 0 ? (selectedMcq.length ? 3.0 : 10.0) : 0;

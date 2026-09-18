@@ -972,17 +972,7 @@ GIANG, 8"></textarea>
             <span class="badge-status" style="background:#ede9fe;color:#6d28d9;font-weight:800;">LaTeX & KaTeX Chuẩn</span>
           </div>
           <!-- MODE SWITCHER: TOÁN PHỔ THÔNG vs ĐÁNH GIÁ NĂNG LỰC -->
-          <div class="form-row" style="margin-bottom:1rem;">
-            <div class="form-group">
-              <label>Chọn khu vực luyện đề</label>
-              <input type="hidden" id="mathGenDifficultyMode" value="basic">
-              <div style="display:flex;gap:1rem;flex-wrap:wrap;">
-                <button type="button" id="mathGenBasicButton" class="btn btn-primary" aria-pressed="true" onclick="setExamDifficultyMode('basic')">📘 Đề cơ bản — Nhận biết &amp; Thông hiểu</button>
-                <button type="button" id="mathGenAdvancedButton" class="btn btn-secondary" aria-pressed="false" onclick="setExamDifficultyMode('advanced')">🔥 Vận dụng cao — Tài liệu trường chuyên đã duyệt</button>
-              </div>
-              <p id="mathGenDifficultyNotice">Cơ bản: chỉ lấy câu Nhận biết và Thông hiểu. Không trộn câu nâng cao.</p>
-            </div>
-          </div>
+          <input type="hidden" id="mathGenDifficultyMode" value="mixed">
           <div style="display:flex;gap:0.75rem;margin-bottom:1.25rem;border-bottom:2px solid var(--border-color);padding-bottom:1rem;flex-wrap:wrap;align-items:center;">
             <span style="font-weight:900;color:var(--text-secondary);font-size:0.88rem;text-transform:uppercase;letter-spacing:0.5px;">Chọn Hệ Thống Sinh Đề:</span>
             <button type="button" id="tabMathModeStandard" class="btn btn-primary" onclick="switchMathGenMode('standard')" style="border-radius:var(--radius-full);font-weight:800;padding:0.6rem 1.35rem;box-shadow:0 3px 10px rgba(99,102,241,0.25);">
@@ -1115,15 +1105,6 @@ GIANG, 8"></textarea>
           </div>
 
           <!-- DETAILED ESSAY MATRIX SPECIFICATION WIDGET -->
-          <div class="card" style="border:2px solid var(--primary);padding:1rem;margin-bottom:1rem;">
-            <h3 style="margin:0 0 .75rem;">Chọn khu vực đề: Cơ bản hoặc VDC trường chuyên</h3>
-            <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
-              <button type="button" id="mathGenBasicQuickButton" class="btn btn-primary" aria-pressed="true" onclick="setExamDifficultyMode('basic')">📘 Chỉ đề cơ bản</button>
-              <button type="button" id="mathGenAdvancedQuickButton" class="btn btn-secondary" aria-pressed="false" onclick="setExamDifficultyMode('advanced')">🔥 VDC — Chỉ tài liệu trường chuyên</button>
-            </div>
-            <p id="mathGenQuickModeStatus" role="status">Đang chọn: Cơ bản (NB + TH).</p>
-            <p style="margin-bottom:0;">VDC chỉ dùng câu đã duyệt nguồn trường chuyên, độ khó và đáp án. Nếu chưa đủ câu đạt điều kiện, hệ thống sẽ báo thiếu.</p>
-          </div>
           <div class="card" style="background:#ffffff;border:2px solid #8b5cf6;padding:1.1rem 1.25rem;margin-bottom:1.25rem;border-radius:var(--radius-lg);">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem;">
               <h4 style="margin:0;font-size:1.05rem;color:#6d28d9;display:flex;align-items:center;gap:0.4rem;">
@@ -1139,12 +1120,7 @@ GIANG, 8"></textarea>
               <div style="background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:8px;padding:0.75rem 0.85rem;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;">
                   <span style="font-weight:800;color:#0369a1;font-size:0.88rem;">💡 Thông Hiểu (TH)</span>
-                  <select id="mathGenCountTHSelect" onchange="updateMathGenEssaySummary()" style="width:70px;padding:2px 6px;font-weight:800;border:1.5px solid #0284c7;border-radius:6px;">
-                    <option value="0">0 câu</option>
-                    <option value="1" selected>1 câu</option>
-                    <option value="2">2 câu</option>
-                    <option value="3">3 câu</option>
-                  </select>
+                  <input type="number" id="mathGenCountTHSelect" min="0" step="1" value="1" oninput="updateMathGenEssaySummary()" onchange="updateMathGenEssaySummary()" style="width:70px;padding:2px 6px;font-weight:800;border:1.5px solid #0284c7;border-radius:6px;">
                 </div>
                 <div style="font-size:0.75rem;color:#0284c7;line-height:1.35;">
                   Rút gọn biểu thức, tính giá trị phân số, giải PT cơ bản.
@@ -1155,13 +1131,7 @@ GIANG, 8"></textarea>
               <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:8px;padding:0.75rem 0.85rem;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;">
                   <span style="font-weight:800;color:#b45309;font-size:0.88rem;">🧠 Vận Dụng (VD)</span>
-                  <select id="mathGenCountVDSelect" onchange="updateMathGenEssaySummary()" style="width:70px;padding:2px 6px;font-weight:800;border:1.5px solid #d97706;border-radius:6px;">
-                    <option value="0">0 câu</option>
-                    <option value="1" selected>1 câu</option>
-                    <option value="2">2 câu</option>
-                    <option value="3">3 câu</option>
-                    <option value="4">4 câu</option>
-                  </select>
+                  <input type="number" id="mathGenCountVDSelect" min="0" step="1" value="1" oninput="updateMathGenEssaySummary()" onchange="updateMathGenEssaySummary()" style="width:70px;padding:2px 6px;font-weight:800;border:1.5px solid #d97706;border-radius:6px;">
                 </div>
                 <div style="font-size:0.75rem;color:#b45309;line-height:1.35;">
                   Hệ thức Vi-ét, toán thực tế lập PT, hình học phẳng & không gian.
@@ -1172,15 +1142,10 @@ GIANG, 8"></textarea>
               <div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:8px;padding:0.75rem 0.85rem;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;">
                   <span style="font-weight:800;color:#b91c1c;font-size:0.88rem;">🔥 Vận Dụng Cao (VDC)</span>
-                  <select id="mathGenCountVDCSelect" onchange="updateMathGenEssaySummary()" style="width:70px;padding:2px 6px;font-weight:800;border:1.5px solid #dc2626;border-radius:6px;">
-                    <option value="0">0 câu</option>
-                    <option value="1" selected>1 câu</option>
-                    <option value="2">2 câu</option>
-                    <option value="3">3 câu</option>
-                  </select>
+                  <input type="number" id="mathGenCountVDCSelect" min="0" step="1" value="1" oninput="updateMathGenEssaySummary()" onchange="updateMathGenEssaySummary()" style="width:70px;padding:2px 6px;font-weight:800;border:1.5px solid #dc2626;border-radius:6px;">
                 </div>
                 <div style="font-size:0.75rem;color:#b91c1c;line-height:1.35;">
-                  Bất đẳng thức Cauchy, cực trị hình học, tham số m (Câu điểm 10).
+                  Bất đẳng thức Cauchy, cực trị hình học, tham số m (Chỉ dùng câu trường chuyên đã duyệt).
                 </div>
               </div>
             </div>

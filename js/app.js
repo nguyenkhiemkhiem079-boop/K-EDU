@@ -2645,9 +2645,9 @@ if (typeof window !== 'undefined') {
 }
 
 function updateMathGenEssaySummary() {
-  const cTH = parseInt(document.getElementById('mathGenCountTHSelect')?.value || '1', 10);
-  const cVD = parseInt(document.getElementById('mathGenCountVDSelect')?.value || '1', 10);
-  const cVDC = parseInt(document.getElementById('mathGenCountVDCSelect')?.value || '1', 10);
+  const cTH = Math.max(0, parseInt(document.getElementById('mathGenCountTHSelect')?.value || '0', 10) || 0);
+  const cVD = Math.max(0, parseInt(document.getElementById('mathGenCountVDSelect')?.value || '0', 10) || 0);
+  const cVDC = Math.max(0, parseInt(document.getElementById('mathGenCountVDCSelect')?.value || '0', 10) || 0);
   const total = cTH + cVD + cVDC;
 
   const badge = document.getElementById('mathGenTotalEssaySummaryBadge');
@@ -2710,39 +2710,17 @@ function renderDocumentBankStats() {
 window.renderDocumentBankStats = renderDocumentBankStats;
 
 function setExamDifficultyMode(mode) {
-  if (!['basic', 'advanced'].includes(mode)) return;
+  if (!['basic', 'advanced', 'mixed'].includes(mode)) return;
   const input = document.getElementById('mathGenDifficultyMode');
   if (input) input.value = mode;
-  for (const [value, id] of [['basic', 'mathGenBasicButton'], ['advanced', 'mathGenAdvancedButton'], ['basic', 'mathGenBasicQuickButton'], ['advanced', 'mathGenAdvancedQuickButton']]) {
-    const button = document.getElementById(id);
-    if (button) { button.className = `btn btn-${mode === value ? 'primary' : 'secondary'}`; button.setAttribute('aria-pressed', String(mode === value)); }
-  }
-  const quickStatus = document.getElementById('mathGenQuickModeStatus');
-  if (quickStatus) quickStatus.textContent = mode === 'advanced' ? 'Đang chọn: VDC — chỉ tài liệu trường chuyên đã duyệt.' : 'Đang chọn: Cơ bản (NB + TH).';
-  const notice = document.getElementById('mathGenDifficultyNotice');
-  if (notice) notice.textContent = mode === 'basic'
-    ? 'Cơ bản: chỉ lấy câu Nhận biết và Thông hiểu. Không trộn câu nâng cao.'
-    : 'Vận dụng cao: chỉ dùng câu VDC đã duyệt từ tài liệu trường chuyên, có tên trường và trang PDF đối chiếu. Không dùng câu sinh tự động.';
-  const source = document.getElementById('mathGenSourceSelect');
-  if (source) { source.disabled = mode === 'advanced'; if (mode === 'advanced') source.value = 'document'; }
-  const th = document.getElementById('mathGenCountTHSelect');
-  const vd = document.getElementById('mathGenCountVDSelect');
-  const vdc = document.getElementById('mathGenCountVDCSelect');
-  if (th && vd && vdc) {
-    const total = Number(th.value) + Number(vd.value) + Number(vdc.value);
-    th.disabled = mode === 'advanced'; vd.disabled = vdc.disabled = mode === 'basic';
-    if (mode === 'advanced') vd.disabled = true;
-    const values = mode === 'basic' ? [total, 0, 0] : [0, 0, total];
-    for (const [index, element] of [th, vd, vdc].entries()) {
-      const value = String(values[index]);
-      if (![...element.options].some(option => option.value === value)) element.add(new Option(value, value));
-      element.value = value;
-    }
-    updateMathGenEssaySummary();
-  }
+  // Người dùng tự cấu hình Ma trận Tự luận (TH / VD / VDC).
+  // Tuyệt đối không tự ý ghi đè hoặc vô hiệu hóa các ô nhập.
+  updateMathGenEssaySummary();
 }
 window.setExamDifficultyMode = setExamDifficultyMode;
-document.addEventListener('DOMContentLoaded', () => setExamDifficultyMode(document.getElementById('mathGenDifficultyMode')?.value || 'basic'));
+document.addEventListener('DOMContentLoaded', () => {
+  updateMathGenEssaySummary();
+});
 
 function updateMathGenBatchButtonText() {
   const count = parseInt(document.getElementById('mathGenBatchCountSelect')?.value || '1', 10);
@@ -2805,7 +2783,7 @@ async function triggerAutoGenerateMathExam() {
     const term = document.getElementById('mathGenTermSelect')?.value || 'GK1';
     let topic = document.getElementById('mathGenTopicSelect')?.value || 'all';
     const sourceMode = document.getElementById('mathGenSourceSelect')?.value || 'document';
-    const difficultyMode = document.getElementById('mathGenDifficultyMode')?.value || 'basic';
+    const difficultyMode = document.getElementById('mathGenDifficultyMode')?.value || 'mixed';
     const discipline = isKhtn ? (document.getElementById('mathGenDisciplineSelect')?.value || 'all') : 'all';
     if (isKhtn && discipline !== 'all') topic = discipline;
     if (!isKhtn && sourceMode !== 'synthetic' && typeof DocumentQuestionBank !== 'undefined') {
@@ -2813,9 +2791,9 @@ async function triggerAutoGenerateMathExam() {
     }
     const mcqCount = parseInt(document.getElementById('mathGenMcqCountSelect')?.value || '12', 10);
 
-    const countTH = parseInt(document.getElementById('mathGenCountTHSelect')?.value || '1', 10);
-    const countVD = parseInt(document.getElementById('mathGenCountVDSelect')?.value || '1', 10);
-    const countVDC = parseInt(document.getElementById('mathGenCountVDCSelect')?.value || '1', 10);
+    const countTH = Math.max(0, parseInt(document.getElementById('mathGenCountTHSelect')?.value || '0', 10) || 0);
+    const countVD = Math.max(0, parseInt(document.getElementById('mathGenCountVDSelect')?.value || '0', 10) || 0);
+    const countVDC = Math.max(0, parseInt(document.getElementById('mathGenCountVDCSelect')?.value || '0', 10) || 0);
 
     const batchCount = parseInt(document.getElementById('mathGenBatchCountSelect')?.value || '1', 10);
     const deduplicatePolicy = document.getElementById('mathGenDeduplicatePolicySelect')?.value || 'disjoint';
@@ -2856,12 +2834,13 @@ async function triggerAutoGenerateMathExam() {
       const firstGen = generatedList[0];
       const incomplete = generatedList.find(gen => !gen.totalQuestions || gen.mcqCount < mcqCount || gen.essayCount < countTH + countVD + countVDC);
       if (incomplete) {
-        showToast('Ngân hàng chưa đủ câu độc nhất cho cả bộ đề. Hãy giảm số đề/số câu hoặc bổ sung ngân hàng; bộ đề chưa được lưu.', 'warn');
+        const warning = incomplete.warning || 'Ngân hàng chưa đủ câu độc nhất cho cả bộ đề.';
+        showToast(warning, 'warn');
         const shortageAlert = document.getElementById('mathGenSourceAlert');
         if (shortageAlert) {
           shortageAlert.classList.remove('hidden');
           shortageAlert.style.display = 'block';
-          shortageAlert.textContent = incomplete.warning || 'Ngân hàng chưa đủ câu độc nhất cho cả bộ đề.';
+          shortageAlert.textContent = warning;
         }
         return;
       }
