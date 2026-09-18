@@ -381,6 +381,38 @@ GIANG, 8"></textarea>
         <!-- Student Topic Feedback (Nhận Xét Của Em) In Lobby -->
         <div id="studentLobbyTopicFeedbackWrap" style="margin-bottom:1.5rem;"></div>
 
+        <!-- V-ACT Mini 100 Practice Card -->
+        <div class="card vact-mini-card" id="vactMini100Card" style="background:linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);color:#ffffff;border:2px solid #6366f1;border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:1.5rem;box-shadow:0 12px 32px rgba(79,70,229,0.25);">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
+            <div>
+              <div style="display:inline-flex;align-items:center;gap:0.4rem;background:rgba(255,255,255,0.15);padding:3px 10px;border-radius:999px;font-size:0.78rem;font-weight:800;letter-spacing:0.5px;margin-bottom:0.6rem;">
+                <span>⚡</span> <span>BÀI LUYỆN TỔNG HỢP K-EDU</span>
+              </div>
+              <h2 style="margin:0 0 0.4rem;font-size:1.45rem;color:#ffffff;display:flex;align-items:center;gap:0.5rem;">
+                <span>⚡</span> <span>MINI V-ACT 100</span>
+              </h2>
+              <div style="font-size:0.92rem;color:#c7d2fe;font-weight:600;display:flex;gap:1.2rem;flex-wrap:wrap;">
+                <span>📝 <strong>100 câu</strong></span>
+                <span>📚 <strong>Nhiều phần</strong> (Toán, Ngôn ngữ, Logic, Khoa học)</span>
+                <span>⏱️ <strong>90 phút</strong> (Luyện tập K-EDU)</span>
+              </div>
+            </div>
+            <div>
+              <button type="button" class="btn btn-primary btn-lg" id="btnStartMini100" onclick="handleStartMini100Click()" style="background:linear-gradient(135deg, #4f46e5, #7c3aed);border:none;font-weight:900;padding:0.85rem 1.6rem;font-size:1rem;box-shadow:0 6px 20px rgba(99,102,241,0.4);border-radius:var(--radius-md);cursor:pointer;">
+                BẮT ĐẦU MINI 100 🚀
+              </button>
+            </div>
+          </div>
+          <div id="vactMini100WarningBox" style="margin-top:1rem;padding:0.75rem 1rem;background:rgba(245,158,11,0.15);border:1px solid #f59e0b;border-radius:var(--radius-md);color:#fde68a;font-size:0.85rem;font-weight:600;display:none;">
+            <div style="font-weight:800;color:#fbbf24;display:flex;align-items:center;gap:0.4rem;margin-bottom:0.2rem;">
+              <span>⚠️</span> <span>CẢNH BÁO ĐỘ SẴN SÀNG CỦA NGÂN HÀNG:</span>
+            </div>
+            <div id="vactMini100WarningText">
+              Ngân hàng hiện tại chỉ có 57/100 câu (Thiếu: 18 câu Tiếng Việt, 25 câu Tiếng Anh). Đề sẽ được tạo với các phần có sẵn.
+            </div>
+          </div>
+        </div>
+
         <!-- Direct Exam Feed List -->
         <div class="card duo-feed-card">
           <div class="card-header">
@@ -594,6 +626,7 @@ GIANG, 8"></textarea>
           </div>
 
           <div id="resultBonusBreakdown" class="hidden"></div>
+          <div id="vactSectionScoreBreakdown" class="hidden"></div>
 
           <div style="display:flex;justify-content:center;gap:1rem;margin-top:1.5rem;flex-wrap:wrap;">
             <button type="button" class="btn btn-primary" onclick="restartStudentJoin()">🔄 Làm Đề Khác</button>
@@ -1883,6 +1916,18 @@ GIANG, 8"></textarea>
   <script src="js/khtnGenerator.js?v=5.2"></script>
   <script src="js/studentAccounts.js?v=6.2"></script>
   <script src="js/teacherWorkspace.js?v=6.0"></script>
+  <!-- V-ACT Core Architecture & Engines -->
+  <script src="js/vact/taxonomy.js"></script>
+  <script src="js/vact/profiles.js"></script>
+  <script src="js/vact/schema.js"></script>
+  <script src="js/vact/quality/signature.js"></script>
+  <script src="js/vact/quality/validator.js"></script>
+  <script src="js/vact/quality/deduplicator.js"></script>
+  <script src="js/vact/bank/adapter.js"></script>
+  <script src="js/vact/bank/internalBank.js"></script>
+  <script src="js/vact/bank/coverage.js"></script>
+  <script src="js/vact/generator/sectionTestGenerator.js"></script>
+  <script src="js/vact/generator/examGenerator.js"></script>
   <script src="js/app.js?v=6.1"></script>
   <script src="js/studentAnalytics.js?v=5.0"></script>
   <!-- BATCH EXAM RESULTS MODAL -->

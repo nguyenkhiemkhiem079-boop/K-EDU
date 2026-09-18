@@ -27,6 +27,8 @@
     SCIENTIFIC_REASONING: 'scientific_reasoning'
   };
 
+  const isValidSection = taxonomyModule?.isValidSection || (sec => Object.values(VACT_SECTIONS).includes(sec));
+  const isValidSectionSkill = taxonomyModule?.isValidSectionSkill || (() => true);
   const mapLegacyDifficulty = schemaModule?.mapLegacyDifficulty || (lvl => 'medium');
   const normalizeVACTQuestion = schemaModule?.normalizeVACTQuestion;
   const validateVACTQuestion = validatorModule?.validateVACTQuestion || (() => ({ valid: true, errors: [] }));
@@ -41,6 +43,15 @@
   function mapLegacySectionAndSkill(raw) {
     if (!raw || typeof raw !== 'object') {
       return { section: null, skill: null, status: 'invalid_record' };
+    }
+
+    // 0. If record already has a canonical V-ACT section
+    if (raw.section && isValidSection(raw.section)) {
+      let skill = raw.skill || null;
+      if (skill && !isValidSectionSkill(raw.section, skill)) {
+        skill = null;
+      }
+      return { section: raw.section, skill, status: 'mapped' };
     }
 
     const topic = String(raw.topic || '').trim().toLowerCase();

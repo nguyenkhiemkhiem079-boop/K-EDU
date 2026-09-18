@@ -60,6 +60,8 @@ const ExamVault = (function () {
         category: k.topic || k.category || '',
         source: k.source || '',
         subject: k.subject || fallbackSubjectLabel,
+        section: k.section || null,
+        skill: k.skill || null,
         passage: k.passage !== undefined ? k.passage : null,
         content: k.content || '',
         options: k.options || [],
@@ -258,6 +260,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   checkUrlQuizParam();
   checkAndRenderPausedExamBanner();
   initFirebaseRealtimeSync();
+  initVactMini100UI();
 });
 
 /* ================= AVATAR PICKER ENGINE ================= */
@@ -4785,6 +4788,7 @@ async function renderSampleQuizzes(filterName = '', filterClass = '') {
     }).join('')}
   </div>
 `;
+  initVactMini100UI();
 }
 
 function loadAndJoinQuizDirectly(quizId) {
@@ -4974,6 +4978,33 @@ async function startExamWithQuizId(quizId) {
 function renderStudentAnswerSheet(keys) {
   const container = document.getElementById('studentAnswerSheetBody');
   if (!container) return;
+
+  const isVact = AppState.currentQuiz && (AppState.currentQuiz.subject === 'vact' || AppState.currentQuiz.vactMeta);
+  if (isVact) {
+    let vactHtml = '';
+    let lastSection = null;
+    const sectionNames = {
+      vietnamese: 'PHẦN 1 — TIẾNG VIỆT',
+      english: 'PHẦN 2 — TIẾNG ANH',
+      math: 'PHẦN 3 — TOÁN HỌC',
+      logic_data: 'PHẦN 4 — TƯ DUY LOGIC & PHÂN TÍCH SỐ LIỆU',
+      scientific_reasoning: 'PHẦN 5 — SUY LUẬN KHOA HỌC'
+    };
+
+    keys.forEach(k => {
+      const sec = k.section || 'math';
+      if (sec !== lastSection) {
+        lastSection = sec;
+        const bannerTitle = sectionNames[sec] || `PHẦN — ${sec.toUpperCase()}`;
+        vactHtml += `<div class="vact-sheet-section-banner" style="padding:0.45rem 0.75rem;background:linear-gradient(90deg, #312e81, #4338ca);color:#fff;border-radius:var(--radius-sm);font-weight:900;font-size:0.82rem;margin:0.85rem 0 0.45rem;letter-spacing:0.5px;">${bannerTitle}</div>`;
+      }
+      vactHtml += renderSingleSheetRow(k);
+    });
+
+    container.innerHTML = vactHtml;
+    updateSheetProgress();
+    return;
+  }
 
   const mcqList = keys.filter(k => k.type === 'mcq' || k.type === 'truefalse');
   const essayList = keys.filter(k => k.type === 'essay');
@@ -5711,6 +5742,54 @@ function renderExamResultHero(result, rewards) {
       </div>
     `;
     breakdownBox.classList.remove('hidden');
+  }
+
+  // Hiển thị bảng phân tích điểm theo từng phần V-ACT
+  const vactBreakdownBox = document.getElementById('vactSectionScoreBreakdown');
+  if (vactBreakdownBox) {
+    const isVact = result.subjectLabel === 'Mini V-ACT 100' || result.subjectLabel === 'vact' || (AppState.currentQuiz && (AppState.currentQuiz.subject === 'vact' || AppState.currentQuiz.vactMeta)) || (result.review && result.review.some(r => r.section));
+    const computeFn = window.KEDUVACT?.computeSectionBreakdown || window.KEDUVACT?.VACTExamGenerator?.computeSectionBreakdown || window.VACTExamGenerator?.computeSectionBreakdown;
+    if (isVact && computeFn) {
+      const breakdown = computeFn(result.review || []);
+      const unanswered = (result.review || []).filter(r => !r.given || r.given === '(chưa điền)').length;
+      const wrong = Math.max(0, result.total - result.correct - unanswered);
+
+      let bHtml = `
+        <div class="card" style="background:var(--bg-tertiary);border:2px solid var(--indigo);border-radius:var(--radius-lg);padding:1rem 1.25rem;margin:1.25rem 0;text-align:left;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem;">
+            <h3 style="margin:0;font-size:1.1rem;color:var(--indigo);display:flex;align-items:center;gap:0.4rem;">
+              <span>⚡</span> <span>KẾT QUẢ TỪNG PHẦN MINI V-ACT:</span>
+            </h3>
+            <div style="font-size:0.85rem;font-weight:800;color:var(--text-secondary);">
+              Đúng: <strong style="color:var(--emerald);">${result.correct}</strong> | Sai: <strong style="color:var(--rose);">${wrong}</strong> | Chưa điền: <strong style="color:var(--amber-shadow);">${unanswered}</strong>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:0.6rem;">
+      `;
+
+      for (const s of Object.values(breakdown)) {
+        if (s.total === 0) continue;
+        const color = s.pct >= 75 ? 'var(--emerald)' : (s.pct >= 50 ? 'var(--indigo)' : 'var(--rose)');
+        bHtml += `
+          <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:0.6rem 0.85rem;">
+            <div style="font-size:0.78rem;font-weight:800;color:var(--text-secondary);margin-bottom:0.2rem;">${escapeHtml(s.name)}</div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;">
+              <span style="font-size:1.15rem;font-weight:900;color:var(--text-primary);">${s.correct}/${s.total}</span>
+              <span style="font-size:0.82rem;font-weight:800;color:${color};">${s.pct}%</span>
+            </div>
+          </div>
+        `;
+      }
+
+      bHtml += `
+          </div>
+        </div>
+      `;
+      vactBreakdownBox.innerHTML = bHtml;
+      vactBreakdownBox.classList.remove('hidden');
+    } else {
+      vactBreakdownBox.classList.add('hidden');
+    }
   }
 
   const badgeBox = document.getElementById('resultNewlyUnlockedBadges');
@@ -8132,3 +8211,113 @@ function closeTeacherSubmissionReviewModal() {
   const modal = document.getElementById('teacherSubmissionReviewModal');
   if (modal) modal.classList.add('hidden');
 }
+
+/* ================= V-ACT MINI 100 PRACTICE ENGINE & UI ================= */
+function initVactMini100UI() {
+  const card = document.getElementById('vactMini100Card');
+  if (!card) return;
+
+  const vactCoverage = window.KEDUVACT?.VACTCoverage || window.VACTCoverage;
+  if (!vactCoverage || typeof vactCoverage.getProfileReadiness !== 'function') return;
+
+  try {
+    const readiness = vactCoverage.getProfileReadiness('vact_mini_100');
+    const warningBox = document.getElementById('vactMini100WarningBox');
+    const warningText = document.getElementById('vactMini100WarningText');
+
+    if (warningBox && warningText) {
+      if (!readiness.ready) {
+        warningBox.style.display = 'block';
+        const missingDetails = [];
+        const secLabels = {
+          vietnamese: 'Tiếng Việt',
+          english: 'Tiếng Anh',
+          math: 'Toán học',
+          logic_data: 'Logic & Phân tích số liệu',
+          scientific_reasoning: 'Suy luận khoa học'
+        };
+
+        for (const [secKey, sec] of Object.entries(readiness.sections)) {
+          if (sec.missing > 0) {
+            const label = secLabels[secKey] || secKey;
+            missingDetails.push(`thiếu ${sec.missing} câu ${label} (hiện có ${sec.available}/${sec.required})`);
+          }
+        }
+
+        warningText.innerHTML = `
+          <div>Ngân hàng hiện có <strong>${readiness.totalAvailable}/${readiness.totalRequired}</strong> câu khả dụng (${missingDetails.join('; ')}).</div>
+          <div style="margin-top:0.35rem;font-size:0.8rem;color:#fef08a;">
+            ℹ️ Đề thi vẫn sẽ được tạo đầy đủ từ các phần sẵn có theo nguyên tắc độc lập tuyệt đối (không tự ý bù chéo câu giữa các phần).
+          </div>
+        `;
+      } else {
+        warningBox.style.display = 'none';
+      }
+    }
+  } catch (e) {
+    console.warn('initVactMini100UI warning:', e);
+  }
+}
+
+async function handleStartMini100Click() {
+  const nameEl = document.getElementById('studentJoinName');
+  const classEl = document.getElementById('studentJoinClass');
+
+  if (window.StudentAccounts) {
+    if (!window.StudentAccounts.ready) {
+      showToast('Vui lòng đăng nhập và hoàn thiện hồ sơ học sinh trước khi làm bài.', 'warn');
+      document.getElementById('studentAccountCard')?.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+    if (nameEl) nameEl.value = window.StudentAccounts.profile.name;
+    if (classEl) classEl.value = window.StudentAccounts.profile.className;
+  }
+
+  const name = nameEl?.value?.trim();
+  const className = classEl?.value?.trim();
+
+  if (!name || !className) {
+    showToast('⚠️ Vui lòng nhập Họ Tên và Lớp học của bạn trước khi bắt đầu!', 'warn');
+    nameEl?.focus();
+    nameEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  const examGen = window.KEDUVACT?.VACTExamGenerator || window.VACTExamGenerator;
+  if (!examGen) {
+    showToast('Hệ thống tạo đề V-ACT chưa sẵn sàng.', 'error');
+    return;
+  }
+
+  try {
+    showToast('⚡ Đang tổng hợp bài luyện Mini V-ACT 100...', 'info');
+    const examResult = examGen.generateMini100();
+
+    if (!examResult || !examResult.questions || examResult.questions.length === 0) {
+      showToast('Không có câu hỏi khả dụng trong ngân hàng để tạo đề.', 'error');
+      return;
+    }
+
+    const quizRecord = examGen.formatExamAsQuiz(examResult, {
+      title: 'Đề Luyện Tập Tổng Hợp — Mini V-ACT 100',
+      timeLimitMinutes: 90
+    });
+
+    await StorageEngine.saveQuiz(quizRecord);
+
+    if (!examResult.isComplete) {
+      showToast(`Đã tạo ${examResult.totalGenerated}/${examResult.totalRequested} câu (ngân hàng chưa đủ 100 câu). Đang vào bài thi...`, 'warn');
+    } else {
+      showToast(`Đã tạo thành công bài thi Mini V-ACT 100 (${examResult.totalGenerated} câu)!`, 'success');
+    }
+
+    await startExamWithQuizId(quizRecord.id);
+  } catch (err) {
+    console.error('Failed to start Mini V-ACT 100:', err);
+    showToast('Lỗi khi tạo đề Mini V-ACT 100: ' + err.message, 'error');
+  }
+}
+
+window.initVactMini100UI = initVactMini100UI;
+window.handleStartMini100Click = handleStartMini100Click;
+
