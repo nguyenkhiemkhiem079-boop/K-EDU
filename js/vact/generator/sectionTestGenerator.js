@@ -318,12 +318,100 @@
     };
   }
 
+  const SECTION_LABELS_VI = Object.freeze({
+    vietnamese: 'Tiếng Việt',
+    english: 'Tiếng Anh',
+    math: 'Toán học',
+    logic_data: 'Tư duy logic & Phân tích số liệu',
+    scientific_reasoning: 'Suy luận khoa học'
+  });
+
+  /**
+   * Converts a generated V-ACT section mini test into a K-EDU Quiz object.
+   * Preserves full source provenance, quality metadata, and verified answer keys.
+   *
+   * @param {object} sectionTest Generated section test object
+   * @returns {object} K-EDU Quiz format
+   */
+  function formatSectionTestAsQuiz(sectionTest) {
+    if (!sectionTest || !Array.isArray(sectionTest.questions)) {
+      throw new TypeError('formatSectionTestAsQuiz expects a valid section test object');
+    }
+
+    const secLabel = SECTION_LABELS_VI[sectionTest.section] || sectionTest.section;
+    const title = `V-ACT ${secLabel} Mini ${sectionTest.generatedCount}`;
+
+    const answerKeys = [];
+    const questionsList = [];
+
+    for (let i = 0; i < sectionTest.questions.length; i++) {
+      const q = sectionTest.questions[i];
+      const num = i + 1;
+
+      answerKeys.push({
+        num,
+        id: q.id,
+        type: 'mcq',
+        score: 1,
+        correct: q.correctAnswer,
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation || '',
+        section: sectionTest.section,
+        topic: q.skill || sectionTest.section,
+        content: q.question,
+        options: q.options || [],
+        level: q.difficulty || 'medium',
+        source: q.source || null,
+        quality: q.quality || null,
+        stimulus: q.stimulus || null
+      });
+
+      questionsList.push({
+        id: q.id,
+        num,
+        question: q.question,
+        options: q.options || [],
+        section: sectionTest.section,
+        skill: q.skill || null,
+        difficulty: q.difficulty,
+        stimulus: q.stimulus || null,
+        source: q.source || null
+      });
+    }
+
+    return {
+      id: sectionTest.id,
+      title,
+      subject: 'vact',
+      subjectLabel: `V-ACT ${secLabel}`,
+      mode: 'section_mini',
+      timeLimit: Math.round(sectionTest.generatedCount * 1.5),
+      timeLimitMinutes: Math.round(sectionTest.generatedCount * 1.5),
+      answerKeys,
+      questions: questionsList,
+      questionsCount: sectionTest.generatedCount,
+      createdAt: sectionTest.createdAt || new Date().toISOString(),
+      vactMeta: {
+        mode: 'section_mini',
+        section: sectionTest.section,
+        skill: sectionTest.skill,
+        requestedTotal: sectionTest.requestedCount,
+        generatedTotal: sectionTest.generatedCount,
+        missingTotal: sectionTest.missingCount,
+        shortages: sectionTest.shortages
+      }
+    };
+  }
+
   const VACTSectionTestGenerator = {
     DEFAULT_BALANCED_WEIGHTS,
-    generate
+    generate,
+    formatSectionTestAsQuiz
   };
 
   return {
-    VACTSectionTestGenerator
+    VACTSectionTestGenerator,
+    generate,
+    formatSectionTestAsQuiz
   };
 });

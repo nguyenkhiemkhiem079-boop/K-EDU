@@ -29,8 +29,15 @@ const ExamVault = (function () {
   function getPublicKeys(quizId) {
     const entry = vault.get(quizId);
     const keys = Array.isArray(entry) ? entry : (entry?.keys || []);
-    // Trả về bản sao đã loại bỏ trường `correct` để render an toàn cho học sinh
-    return keys.map(({ correct, correctAnswer, explanation, pitfall, keyFormula, ...rest }) => ({ ...rest }));
+    // Trả về bản sao đã loại bỏ trường `correct`, `explanation` và solution source để render an toàn cho học sinh
+    return keys.map(({ correct, correctAnswer, explanation, pitfall, keyFormula, ...rest }) => {
+      const safe = { ...rest };
+      if (safe.source && typeof safe.source === 'object') {
+        const { solutionSourceId, solutionSourceFile, solutionSourcePage, ...safeSrc } = safe.source;
+        safe.source = safeSrc;
+      }
+      return safe;
+    });
   }
 
   function grade(quizId, studentAnswers) {
@@ -55,10 +62,14 @@ const ExamVault = (function () {
 
       reviewData.push({
         num: k.num,
+        id: k.id || `q_${k.num}`,
+        questionId: k.id || k.questionId || `q_${k.num}`,
         type: k.type,
         level: k.level || 'TH',
         category: k.topic || k.category || '',
-        source: k.source || '',
+        source: k.source || null,
+        quality: k.quality || null,
+        stimulus: k.stimulus !== undefined ? k.stimulus : (k.passage !== undefined ? k.passage : null),
         subject: k.subject || fallbackSubjectLabel,
         section: k.section || null,
         skill: k.skill || null,
@@ -5645,9 +5656,52 @@ async function submitStudentExam(isAuto = false) {
       reviewData = gradeResult.reviewData;
     }
 
+    // Freeze student answers for strict immutability
+    const submittedAnswers = Object.freeze({ ...AppState.studentAnswers });
+
+    // Identify V-ACT exams
+    const isVact = Boolean(
+      quiz.subject === 'vact' ||
+      quiz.vactMeta ||
+      (quiz.answerKeys && quiz.answerKeys.some(r => r.section)) ||
+      (reviewData && reviewData.some(r => r.section))
+    );
+
+    let vactAttempt = null;
+    const timeTakenSeconds = AppState.totalExamSeconds - AppState.secondsLeft;
+
+    if (isVact && window.KEDUVACT?.review?.gradeVactAttempt) {
+      try {
+        const vMeta = quiz.vactMeta || {};
+        const examQuestions = (quiz.questions && quiz.questions.length) ? quiz.questions : (quiz.answerKeys || []);
+        vactAttempt = window.KEDUVACT.review.gradeVactAttempt({
+          id: AppState.currentQuizId,
+          title: quiz.title || 'V-ACT',
+          questions: examQuestions
+        }, submittedAnswers, {
+          studentName: AppState.studentName,
+          className: AppState.studentClass,
+          studentUid: AppState.studentUid || null,
+          duration: timeTakenSeconds,
+          mode: vMeta.mode || (vMeta.profileId ? (vMeta.profileId === 'vact_full' ? 'full_120' : 'mini_100') : 'section_mini'),
+          profileId: vMeta.profileId || null,
+          title: quiz.title || 'V-ACT'
+        });
+
+        totalEarnedScore = vactAttempt.correctCount;
+        correctCount = vactAttempt.correctCount;
+        total = vactAttempt.totalCount;
+        reviewData = vactAttempt.review;
+      } catch (gradeErr) {
+        console.error('V-ACT verified grading error:', gradeErr);
+        if (String(gradeErr.message).includes('ANSWER_METADATA_ERROR')) {
+          showToast('LỖI DỮ LIỆU ĐÁP ÁN: ' + gradeErr.message, 'error');
+        }
+      }
+    }
+
     const finalScore10 = Math.round(totalEarnedScore * 10) / 10;
     const scorePct = total ? Math.round((correctCount / total) * 100) : 0;
-    const timeTakenSeconds = AppState.totalExamSeconds - AppState.secondsLeft;
 
     // Kiểm tra xem bài thi này học sinh đã từng nộp trước đó chưa (Retake)
     const isRetake = await StorageEngine.hasSubmitted(AppState.currentQuizId, AppState.studentClass, AppState.studentName, AppState.studentUid);
@@ -5662,7 +5716,7 @@ async function submitStudentExam(isAuto = false) {
       avatar: AppState.studentAvatar || '🦊',
       correct: correctCount,
       total,
-      totalScore: isDocumentOnly ? null : finalScore10,
+      totalScore: isDocumentOnly ? null : (isVact ? correctCount : finalScore10),
       gradingStatus: isDocumentOnly ? 'pending' : 'graded',
       scorePct,
       timeTakenSeconds,
@@ -5670,6 +5724,9 @@ async function submitStudentExam(isAuto = false) {
       isAuto,
       isDocumentOnly,
       isRetake,
+      isVact,
+      submittedAnswers,
+      vactAttempt,
       submittedAt: new Date().toISOString(),
       review: reviewData
     };
@@ -5679,21 +5736,21 @@ async function submitStudentExam(isAuto = false) {
     clearPausedExamSession(AppState.studentName, AppState.currentQuizId);
 
     // Ghi nhận bản ghi phân tích năng lực V-ACT nếu bài thi thuộc hệ thống V-ACT
-    const isVact = quiz.subject === 'vact' || quiz.vactMeta || (reviewData && reviewData.some(r => r.section));
     if (isVact && window.KEDUVACT?.performanceAnalytics?.recordAttempt) {
       try {
         const vMeta = quiz.vactMeta || {};
         window.KEDUVACT.performanceAnalytics.recordAttempt({
           testId: AppState.currentQuizId,
-          mode: vMeta.profileId ? (vMeta.profileId === 'vact_full' ? 'full_120' : 'mini_100') : 'section_mini',
+          mode: vMeta.profileId ? (vMeta.profileId === 'vact_full' ? 'full_120' : 'mini_100') : (vMeta.mode || 'section_mini'),
           profile: vMeta.profileId || null,
           section: vMeta.section || (vMeta.profileId ? 'composite' : (reviewData[0]?.section || 'composite')),
           skill: vMeta.skill || null,
           requestedCount: vMeta.requestedTotal || total,
           generatedCount: total,
-          questionIds: reviewData.map(r => r.id || `q_${r.num}`),
+          questionIds: reviewData.map(r => r.id || r.questionId || `q_${r.num}`),
           questionSignatures: reviewData.map(r => r.signature || `${r.num}`),
-          answers: { ...AppState.studentAnswers },
+          answers: { ...submittedAnswers },
+          submittedAnswers,
           correct: correctCount,
           incorrect: Math.max(0, total - correctCount - (reviewData.filter(r => !r.given || r.given === '(chưa điền)').length)),
           unanswered: reviewData.filter(r => !r.given || r.given === '(chưa điền)').length,
@@ -5705,7 +5762,8 @@ async function submitStudentExam(isAuto = false) {
           studentName: AppState.studentName,
           studentClass: AppState.studentClass,
           studentUid: AppState.studentUid || null,
-          review: reviewData
+          review: reviewData,
+          sectionResults: vactAttempt?.sectionBreakdown || null
         });
         updateVactStudentDashboard();
       } catch (analyticsErr) {
@@ -5792,9 +5850,23 @@ if (typeof window !== 'undefined') {
 }
 
 function renderExamResultHero(result, rewards) {
+  const isVact = Boolean(
+    result.isVact ||
+    result.vactAttempt ||
+    result.subjectLabel === 'Mini V-ACT 100' ||
+    result.subjectLabel === 'Full V-ACT 120' ||
+    (typeof result.subjectLabel === 'string' && result.subjectLabel.startsWith('V-ACT')) ||
+    result.subject === 'vact' ||
+    (AppState.currentQuiz && (AppState.currentQuiz.subject === 'vact' || AppState.currentQuiz.vactMeta)) ||
+    (result.review && result.review.some(r => r.section))
+  );
+
   if (result.isDocumentOnly) {
     document.getElementById('resultScoreVal').textContent = 'ĐÃ NỘP ✅';
     document.getElementById('resultScorePct').textContent = 'Đã ghi nhận bài nộp thành công cho giáo viên!';
+  } else if (isVact) {
+    document.getElementById('resultScoreVal').textContent = `${result.correct}/${result.total}`;
+    document.getElementById('resultScorePct').textContent = `${result.scorePct}% chính xác (${result.correct} đúng / ${result.total} câu)`;
   } else {
     document.getElementById('resultScoreVal').textContent = `${result.totalScore}/10`;
     document.getElementById('resultScorePct').textContent = `${result.correct}/${result.total} câu đúng (${result.scorePct}%)`;
@@ -5829,7 +5901,6 @@ function renderExamResultHero(result, rewards) {
   // Hiển thị bảng phân tích điểm theo từng phần V-ACT
   const vactBreakdownBox = document.getElementById('vactSectionScoreBreakdown');
   if (vactBreakdownBox) {
-    const isVact = result.subjectLabel === 'Mini V-ACT 100' || result.subjectLabel === 'Full V-ACT 120' || result.subjectLabel === 'vact' || (AppState.currentQuiz && (AppState.currentQuiz.subject === 'vact' || AppState.currentQuiz.vactMeta)) || (result.review && result.review.some(r => r.section));
     const computeFn = window.KEDUVACT?.computeSectionBreakdown || window.KEDUVACT?.VACTExamGenerator?.computeSectionBreakdown || window.VACTExamGenerator?.computeSectionBreakdown;
     if (isVact && computeFn) {
       const breakdown = computeFn(result.review || []);
@@ -5933,6 +6004,61 @@ function renderExamReviewList(reviewData, isDocumentOnly = false, resultRecord =
         </div>
       </div>
     `;
+    return;
+  }
+
+  // DEDICATED V-ACT RESULT & ANSWER REVIEW MODE
+  const isVact = Boolean(
+    resultRecord?.isVact ||
+    resultRecord?.vactAttempt ||
+    (AppState.currentQuiz && (AppState.currentQuiz.subject === 'vact' || AppState.currentQuiz.vactMeta)) ||
+    (reviewData && reviewData.some(r => r.section))
+  );
+
+  if (isVact && window.KEDUVACT?.review?.renderVactReviewHtml) {
+    let attempt = resultRecord?.vactAttempt;
+    if (!attempt) {
+      const correctCount = reviewData.filter(r => r.isCorrect).length;
+      const unansweredCount = reviewData.filter(r => !r.given || r.given === '(chưa điền)').length;
+      const incorrectCount = Math.max(0, reviewData.length - correctCount - unansweredCount);
+      const acc = reviewData.length > 0 ? Math.round((correctCount / reviewData.length) * 100) : 0;
+      const secBreakdown = window.KEDUVACT.computeSectionBreakdown
+        ? window.KEDUVACT.computeSectionBreakdown(reviewData)
+        : (window.KEDUVACT.analytics?.performance?.computeSectionAnalytics ? window.KEDUVACT.analytics.performance.computeSectionAnalytics({ review: reviewData }) : {});
+
+      attempt = {
+        title: resultRecord?.quizTitle || AppState.currentQuiz?.title || 'V-ACT',
+        mode: AppState.currentQuiz?.vactMeta?.mode || AppState.currentQuiz?.mode || 'section_mini',
+        profileId: AppState.currentQuiz?.vactMeta?.profileId || null,
+        duration: resultRecord?.timeTakenSeconds || (AppState.totalExamSeconds - AppState.secondsLeft) || 0,
+        totalCount: reviewData.length,
+        correctCount,
+        incorrectCount,
+        unansweredCount,
+        accuracy: acc,
+        sectionBreakdown: secBreakdown,
+        review: reviewData.map((r, idx) => {
+          if (r.friendlySource && r.status) return r;
+          return window.KEDUVACT.review.buildReviewItem(r, r.given, r.num || (idx + 1));
+        })
+      };
+    }
+
+    window._activeVactReviewAttempt = attempt;
+    const currentFilter = window._activeVactReviewFilter || 'all';
+    container.innerHTML = window.KEDUVACT.review.renderVactReviewHtml(attempt, { filter: currentFilter });
+
+    if (typeof renderMathInElement !== 'undefined') {
+      renderMathInElement(container, {
+        delimiters: [
+          { left: "$$", right: "$$", display: true },
+          { left: "$", right: "$", display: false },
+          { left: "\\(", right: "\\)", display: false },
+          { left: "\\[", right: "\\]", display: true }
+        ],
+        throwOnError: false
+      });
+    }
     return;
   }
 
@@ -8698,4 +8824,150 @@ async function handleStartWeaknessPracticeClick() {
 window.handleStartWeaknessPracticeClick = handleStartWeaknessPracticeClick;
 
 
+/* ================= V-ACT REVIEW SYSTEM EVENT HANDLERS ================= */
 
+function setVactReviewFilter(filter) {
+  window._activeVactReviewFilter = filter;
+  if (window._activeVactReviewAttempt && window.KEDUVACT?.review?.renderVactReviewHtml) {
+    const container = document.getElementById('examReviewContainer');
+    if (container) {
+      container.innerHTML = window.KEDUVACT.review.renderVactReviewHtml(window._activeVactReviewAttempt, { filter });
+      if (typeof renderMathInElement !== 'undefined') {
+        renderMathInElement(container, {
+          delimiters: [
+            { left: "$$", right: "$$", display: true },
+            { left: "$", right: "$", display: false },
+            { left: "\(", right: "\)", display: false },
+            { left: "\[", right: "\]", display: true }
+          ],
+          throwOnError: false
+        });
+      }
+    }
+  }
+}
+
+function scrollToReviewQuestion(num) {
+  const el = document.getElementById('vact-review-q-' + num);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.style.transition = 'box-shadow 0.3s ease, border-color 0.3s ease';
+    el.style.boxShadow = '0 0 0 3px #6366f1';
+    setTimeout(() => {
+      el.style.boxShadow = '';
+    }, 1500);
+  }
+}
+
+async function handleRetakeSimilarVactTest(mode, profileId) {
+  try {
+    showToast('Đang khởi tạo bài thi V-ACT tương tự với các câu hỏi mới...', 'info');
+    if (profileId === 'vact_full' || mode === 'full_120') {
+      if (typeof startFullVact120Exam === 'function') {
+        await startFullVact120Exam();
+        return;
+      }
+    } else if (profileId === 'vact_mini_100' || mode === 'mini_100') {
+      if (typeof startMiniVact100Exam === 'function') {
+        await startMiniVact100Exam();
+        return;
+      }
+    } else if (mode === 'section_mini' || mode === 'weakness_practice') {
+      if (typeof handleStartWeaknessPracticeClick === 'function') {
+        await handleStartWeaknessPracticeClick();
+        return;
+      }
+    }
+    restartStudentJoin();
+  } catch (err) {
+    console.error('Error retaking similar V-ACT test:', err);
+    showToast('Không thể tạo đề mới: ' + err.message, 'error');
+  }
+}
+
+function returnToVactDashboard() {
+  const resSec = document.getElementById('studentResultSection');
+  if (resSec) resSec.classList.add('hidden');
+  const exSec = document.getElementById('studentExamSection');
+  if (exSec) exSec.classList.add('hidden');
+  const joinSec = document.getElementById('studentJoinSection');
+  if (joinSec) joinSec.classList.remove('hidden');
+  updateVactStudentDashboard();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function openVactAttemptReview(attemptId) {
+  const analytics = window.KEDUVACT?.performanceAnalytics;
+  if (!analytics) return;
+  const name = (document.getElementById('studentJoinName')?.value || AppState.studentName || '').trim();
+  const className = (document.getElementById('studentJoinClass')?.value || AppState.studentClass || '').trim();
+  const studentUid = window.StudentAccounts?.uid || AppState.studentUid || null;
+
+  const attempt = analytics.getAttemptById(attemptId, { studentName: name, studentClass: className, studentUid });
+  if (!attempt) {
+    showToast('Không tìm thấy dữ liệu xem lại của bài thi này.', 'warn');
+    return;
+  }
+
+  const reviewItems = (attempt.review || []).map((r, idx) => {
+    if (r.friendlySource && r.status) return r;
+    return window.KEDUVACT.review.buildReviewItem(r, r.given || r.studentAnswer, r.num || (idx + 1));
+  });
+
+  const fullAttempt = {
+    ...attempt,
+    title: attempt.title || (attempt.mode === 'full_120' ? 'Full V-ACT 120' : (attempt.mode === 'mini_100' ? 'Mini V-ACT 100' : 'V-ACT Mini Test')),
+    duration: attempt.duration || 0,
+    totalCount: attempt.generatedCount || reviewItems.length,
+    correctCount: attempt.correct !== undefined ? attempt.correct : reviewItems.filter(r => r.isCorrect).length,
+    incorrectCount: attempt.incorrect !== undefined ? attempt.incorrect : reviewItems.filter(r => r.status === 'incorrect').length,
+    unansweredCount: attempt.unanswered !== undefined ? attempt.unanswered : reviewItems.filter(r => r.status === 'unanswered').length,
+    accuracy: attempt.accuracy || (reviewItems.length ? Math.round((reviewItems.filter(r => r.isCorrect).length / reviewItems.length) * 100) : 0),
+    sectionBreakdown: attempt.sectionResults || analytics.computeSectionAnalytics({ review: reviewItems }),
+    review: reviewItems
+  };
+
+  window._activeVactReviewAttempt = fullAttempt;
+  window._activeVactReviewFilter = 'all';
+
+  document.getElementById('studentJoinSection')?.classList.add('hidden');
+  document.getElementById('studentExamSection')?.classList.add('hidden');
+  document.getElementById('studentResultSection')?.classList.remove('hidden');
+  document.getElementById('studentExamReviewCard')?.classList.remove('hidden');
+
+  renderExamResultHero({
+    totalScore: fullAttempt.correctCount,
+    correct: fullAttempt.correctCount,
+    total: fullAttempt.totalCount,
+    scorePct: fullAttempt.accuracy,
+    timeTakenSeconds: fullAttempt.duration,
+    tabSwitches: 0,
+    subjectLabel: fullAttempt.title,
+    review: fullAttempt.review,
+    isVact: true
+  }, { xpGained: 0, streak: 1, bonusBreakdown: [] });
+
+  const container = document.getElementById('examReviewContainer');
+  if (container) {
+    container.innerHTML = window.KEDUVACT.review.renderVactReviewHtml(fullAttempt, { filter: 'all' });
+    if (typeof renderMathInElement !== 'undefined') {
+      renderMathInElement(container, {
+        delimiters: [
+          { left: "$$", right: "$$", display: true },
+          { left: "$", right: "$", display: false },
+          { left: "\(", right: "\)", display: false },
+          { left: "\[", right: "\]", display: true }
+        ],
+        throwOnError: false
+      });
+    }
+  }
+
+  document.getElementById('studentExamReviewCard')?.scrollIntoView({ behavior: 'smooth' });
+}
+
+window.setVactReviewFilter = setVactReviewFilter;
+window.scrollToReviewQuestion = scrollToReviewQuestion;
+window.handleRetakeSimilarVactTest = handleRetakeSimilarVactTest;
+window.returnToVactDashboard = returnToVactDashboard;
+window.openVactAttemptReview = openVactAttemptReview;

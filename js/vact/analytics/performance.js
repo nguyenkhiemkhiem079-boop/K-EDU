@@ -834,6 +834,7 @@
                   <span style="font-weight:800;color:var(--indigo);">${h.scoreText}</span>
                   <span style="font-size:0.78rem;font-weight:800;background:rgba(99,102,241,0.15);color:var(--indigo);padding:1px 6px;border-radius:4px;">${h.accuracy}%</span>
                   <button type="button" class="btn btn-sm btn-secondary" onclick="handleOpenWrongQuestionsModal('${h.id}')" style="font-size:0.72rem;padding:2px 6px;">Xem lỗi</button>
+                  <button type="button" class="btn btn-sm btn-primary" onclick="openVactAttemptReview('${h.id}')" style="font-size:0.72rem;padding:2px 6px;background:var(--indigo);border-color:var(--indigo);">Xem lại bài</button>
                 </div>
               </div>
             `).join('')}

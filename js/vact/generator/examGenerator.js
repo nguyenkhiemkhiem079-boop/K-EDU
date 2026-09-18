@@ -316,6 +316,7 @@
 
       answerKeys.push({
         num,
+        id: q.id,
         type: 'mcq',
         score: 1, // Normalized per-question score
         correct: q.correctAnswer,
@@ -325,7 +326,10 @@
         topic: q.skill || q.sectionKey,
         content: q.question,
         options: q.options || [],
-        level: q.difficulty || 'medium'
+        level: q.difficulty || 'medium',
+        source: q.source || null,
+        quality: q.quality || null,
+        stimulus: q.stimulus || null
       });
 
       questionsList.push({
@@ -335,7 +339,9 @@
         options: q.options || [],
         section: q.sectionKey,
         skill: q.skill || null,
-        difficulty: q.difficulty
+        difficulty: q.difficulty,
+        stimulus: q.stimulus || null,
+        source: q.source || null
       });
     }
 

@@ -23,12 +23,13 @@
     const sourceManager = require('./sources/sourceManager');
     const sourceRegistry = require('./sources/sourceRegistry');
     const adaptivePractice = require('./adaptive/weaknessGenerator');
-    module.exports = factory(taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, examBank, coverage, sectionTestGenerator, examGenerator, performanceAnalytics, sourceConfig, internalSource, remoteJsonSource, sourceManager, sourceRegistry, adaptivePractice);
+    const reviewManager = require('./review/reviewManager');
+    module.exports = factory(taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, examBank, coverage, sectionTestGenerator, examGenerator, performanceAnalytics, sourceConfig, internalSource, remoteJsonSource, sourceManager, sourceRegistry, adaptivePractice, reviewManager);
   } else {
     root.KEDUVACT = root.KEDUVACT || {};
     // When loaded via script tags, individual modules attach to root.KEDUVACT
   }
-})(typeof window !== 'undefined' ? window : globalThis, function (taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, examBank, coverage, sectionTestGenerator, examGenerator, performanceAnalytics, sourceConfig, internalSource, remoteJsonSource, sourceManager, sourceRegistry, adaptivePractice) {
+})(typeof window !== 'undefined' ? window : globalThis, function (taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, examBank, coverage, sectionTestGenerator, examGenerator, performanceAnalytics, sourceConfig, internalSource, remoteJsonSource, sourceManager, sourceRegistry, adaptivePractice, reviewManager) {
   'use strict';
 
   return Object.freeze({
@@ -102,7 +103,15 @@
     generator: Object.freeze({
       ...sectionTestGenerator,
       ...examGenerator
-    })
+    }),
+    review: Object.freeze({
+      ...reviewManager
+    }),
+    VACTReviewManager: reviewManager,
+    gradeVactAttempt: reviewManager.gradeVactAttempt,
+    renderVactReviewHtml: reviewManager.renderVactReviewHtml,
+    buildReviewItem: reviewManager.buildReviewItem,
+    formatStudentFriendlySource: reviewManager.formatStudentFriendlySource
   });
 });
 
