@@ -12,6 +12,7 @@
     const profiles = require('./profiles');
     const adapter = require('./bank/adapter');
     const internalBank = require('./bank/internalBank');
+    const sourceBankLoader = require('./bank/sourceBankLoader');
     const examBank = require('./bank/examBank');
     const coverage = require('./bank/coverage');
     const sectionTestGenerator = require('./generator/sectionTestGenerator');
@@ -24,12 +25,12 @@
     const sourceRegistry = require('./sources/sourceRegistry');
     const adaptivePractice = require('./adaptive/weaknessGenerator');
     const reviewManager = require('./review/reviewManager');
-    module.exports = factory(taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, examBank, coverage, sectionTestGenerator, examGenerator, performanceAnalytics, sourceConfig, internalSource, remoteJsonSource, sourceManager, sourceRegistry, adaptivePractice, reviewManager);
+    module.exports = factory(taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, sourceBankLoader, examBank, coverage, sectionTestGenerator, examGenerator, performanceAnalytics, sourceConfig, internalSource, remoteJsonSource, sourceManager, sourceRegistry, adaptivePractice, reviewManager);
   } else {
     root.KEDUVACT = root.KEDUVACT || {};
     // When loaded via script tags, individual modules attach to root.KEDUVACT
   }
-})(typeof window !== 'undefined' ? window : globalThis, function (taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, examBank, coverage, sectionTestGenerator, examGenerator, performanceAnalytics, sourceConfig, internalSource, remoteJsonSource, sourceManager, sourceRegistry, adaptivePractice, reviewManager) {
+})(typeof window !== 'undefined' ? window : globalThis, function (taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, sourceBankLoader, examBank, coverage, sectionTestGenerator, examGenerator, performanceAnalytics, sourceConfig, internalSource, remoteJsonSource, sourceManager, sourceRegistry, adaptivePractice, reviewManager) {
   'use strict';
 
   return Object.freeze({
@@ -77,6 +78,7 @@
     SOURCE_TYPES: sourceRegistry.SOURCE_TYPES,
     RIGHTS_STATUS: sourceRegistry.RIGHTS_STATUS,
     INGESTABLE_RIGHTS: sourceRegistry.INGESTABLE_RIGHTS,
+    sourceBankLoader,
     VACTQuestionBank: internalBank.VACTInternalBank,
     VACTExamBank: examBank.VACTExamBank,
     examBank: examBank.examBank,
@@ -93,6 +95,7 @@
     bank: Object.freeze({
       ...adapter,
       ...internalBank,
+      sourceBankLoader,
       ...examBank,
       ...coverage,
       questionBank: internalBank.VACTInternalBank,
