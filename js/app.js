@@ -8634,5 +8634,68 @@ window.updateVactStudentDashboard = updateVactStudentDashboard;
 window.handleOpenWrongQuestionsModal = handleOpenWrongQuestionsModal;
 window.closeVactWrongQuestionsModal = closeVactWrongQuestionsModal;
 
+/* ================= V-ACT ADAPTIVE WEAKNESS PRACTICE ================= */
+async function handleStartWeaknessPracticeClick() {
+  const nameEl = document.getElementById('studentJoinName');
+  const classEl = document.getElementById('studentJoinClass');
+
+  if (window.StudentAccounts) {
+    if (!window.StudentAccounts.ready) {
+      showToast('Vui lòng đăng nhập và hoàn thiện hồ sơ học sinh trước khi luyện tập.', 'warn');
+      document.getElementById('studentAccountCard')?.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+    if (nameEl) nameEl.value = window.StudentAccounts.profile.name;
+    if (classEl) classEl.value = window.StudentAccounts.profile.className;
+  }
+
+  const name = (nameEl?.value || AppState.studentName || '').trim();
+  const className = (classEl?.value || AppState.studentClass || '').trim();
+  const studentUid = window.StudentAccounts?.uid || AppState.studentUid || null;
+
+  if (!name || !className) {
+    showToast('⚠️ Vui lòng nhập Họ Tên và Lớp học của bạn để hệ thống tải dữ liệu điểm yếu!', 'warn');
+    nameEl?.focus();
+    nameEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  const adaptive = window.KEDUVACT?.adaptive || window.KEDUVACT?.adaptivePractice;
+  if (!adaptive || typeof adaptive.generateWeaknessTest !== 'function') {
+    showToast('Hệ thống Luyện Điểm Yếu Thích Ứng chưa sẵn sàng.', 'error');
+    return;
+  }
+
+  try {
+    showToast('🎯 Đang phân tích năng lực và tạo đề luyện điểm yếu...', 'info');
+    const weaknessResult = adaptive.generateWeaknessTest({
+      studentId: { studentName: name, studentClass: className, studentUid },
+      count: 20,
+      minimumQuestions: 5,
+      minimumAttempts: 1,
+      weaknessThreshold: 60,
+      adaptiveDifficulty: true
+    });
+
+    if (!weaknessResult.success) {
+      showToast(weaknessResult.message || 'Chưa đủ dữ liệu nhận diện điểm yếu.', 'info');
+      return;
+    }
+
+    const quizRecord = adaptive.formatWeaknessExamAsQuiz(weaknessResult);
+    await StorageEngine.saveQuiz(quizRecord);
+
+    const weakNames = weaknessResult.targetedWeaknesses.map(w => w.name).join(', ');
+    showToast(`🎯 Đã tạo bài luyện điểm yếu (${weaknessResult.generatedCount} câu): ${weakNames}!`, 'success');
+
+    await startExamWithQuizId(quizRecord.id || quizRecord.examId);
+  } catch (err) {
+    console.warn('handleStartWeaknessPracticeClick error:', err);
+    showToast('Lỗi khi tạo bài luyện điểm yếu: ' + err.message, 'error');
+  }
+}
+
+window.handleStartWeaknessPracticeClick = handleStartWeaknessPracticeClick;
+
 
 

@@ -718,9 +718,14 @@
           <h3 style="margin:0;font-size:1.2rem;color:var(--indigo);display:flex;align-items:center;gap:0.5rem;">
             <span>📊</span> <span>BÁO CÁO NĂNG LỰC & TIẾN ĐỘ V-ACT</span>
           </h3>
-          <span style="font-size:0.8rem;font-weight:700;color:var(--text-secondary);background:var(--bg-tertiary);padding:3px 10px;border-radius:999px;">
-            ${totalAttempts} bài thi đã hoàn thành
-          </span>
+          <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+            <span style="font-size:0.8rem;font-weight:700;color:var(--text-secondary);background:var(--bg-tertiary);padding:3px 10px;border-radius:999px;">
+              ${totalAttempts} bài thi đã hoàn thành
+            </span>
+            <button type="button" class="btn btn-sm btn-primary" onclick="handleStartWeaknessPracticeClick()" style="font-size:0.75rem;padding:3px 10px;font-weight:800;background:var(--rose);border:none;border-radius:999px;box-shadow:0 2px 6px rgba(244,63,94,0.25);cursor:pointer;">
+              🎯 Luyện điểm yếu
+            </button>
+          </div>
         </div>
 
         <!-- 1. TIẾN ĐỘ (Progress Summary) -->
@@ -777,15 +782,20 @@
           </div>
 
           <!-- Weaknesses -->
-          <div style="background:rgba(244,63,94,0.06);border:1.5px solid var(--rose);border-radius:var(--radius-md);padding:0.85rem;">
-            <div style="font-size:0.85rem;font-weight:900;color:var(--rose);margin-bottom:0.45rem;display:flex;align-items:center;gap:0.35rem;">
-              <span>⚠️</span> <span>CẦN CẢI THIỆN (< 60%):</span>
+          <div style="background:rgba(244,63,94,0.06);border:1.5px solid var(--rose);border-radius:var(--radius-md);padding:0.85rem;display:flex;flex-direction:column;justify-content:space-between;">
+            <div>
+              <div style="font-size:0.85rem;font-weight:900;color:var(--rose);margin-bottom:0.45rem;display:flex;align-items:center;gap:0.35rem;">
+                <span>⚠️</span> <span>CẦN CẢI THIỆN (< 60%):</span>
+              </div>
+              ${evaluation.weaknesses.length ? `
+                <ul style="margin:0 0 0.5rem;padding-left:1.2rem;font-size:0.82rem;font-weight:700;color:var(--text-primary);line-height:1.6;">
+                  ${evaluation.weaknesses.map(w => `<li>${w.name}: <strong style="color:var(--rose);">${w.accuracy}%</strong> (${w.correct}/${w.total} câu)</li>`).join('')}
+                </ul>
+              ` : `<div style="font-size:0.8rem;color:var(--text-secondary);font-style:italic;margin-bottom:0.5rem;">Không có điểm yếu rõ rệt hoặc chưa đủ bằng chứng (cần tối thiểu 5 câu để đánh giá).</div>`}
             </div>
-            ${evaluation.weaknesses.length ? `
-              <ul style="margin:0;padding-left:1.2rem;font-size:0.82rem;font-weight:700;color:var(--text-primary);line-height:1.6;">
-                ${evaluation.weaknesses.map(w => `<li>${w.name}: <strong style="color:var(--rose);">${w.accuracy}%</strong> (${w.correct}/${w.total} câu)</li>`).join('')}
-              </ul>
-            ` : `<div style="font-size:0.8rem;color:var(--text-secondary);font-style:italic;">Không có điểm yếu rõ rệt hoặc chưa đủ bằng chứng (cần tối thiểu 5 câu để đánh giá).</div>`}
+            <button type="button" class="btn btn-sm btn-primary" onclick="handleStartWeaknessPracticeClick()" style="margin-top:0.4rem;width:100%;font-weight:900;background:var(--rose);border:none;border-radius:var(--radius-sm);box-shadow:0 3px 8px rgba(244,63,94,0.3);cursor:pointer;padding:6px 10px;display:flex;align-items:center;justify-content:center;gap:0.4rem;">
+              <span>🎯</span> <span>Luyện Điểm Yếu (${evaluation.weaknesses.length ? evaluation.weaknesses.length + ' chủ đề' : 'Thích ứng'})</span>
+            </button>
           </div>
         </div>
 

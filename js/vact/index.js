@@ -20,12 +20,13 @@
     const internalSource = require('./sources/internalSource');
     const remoteJsonSource = require('./sources/remoteJsonSource');
     const sourceManager = require('./sources/sourceManager');
-    module.exports = factory(taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, coverage, sectionTestGenerator, examGenerator, performanceAnalytics, sourceConfig, internalSource, remoteJsonSource, sourceManager);
+    const adaptivePractice = require('./adaptive/weaknessGenerator');
+    module.exports = factory(taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, coverage, sectionTestGenerator, examGenerator, performanceAnalytics, sourceConfig, internalSource, remoteJsonSource, sourceManager, adaptivePractice);
   } else {
     root.KEDUVACT = root.KEDUVACT || {};
     // When loaded via script tags, individual modules attach to root.KEDUVACT
   }
-})(typeof window !== 'undefined' ? window : globalThis, function (taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, coverage, sectionTestGenerator, examGenerator, performanceAnalytics, sourceConfig, internalSource, remoteJsonSource, sourceManager) {
+})(typeof window !== 'undefined' ? window : globalThis, function (taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, coverage, sectionTestGenerator, examGenerator, performanceAnalytics, sourceConfig, internalSource, remoteJsonSource, sourceManager, adaptivePractice) {
   'use strict';
 
   return Object.freeze({
@@ -60,6 +61,11 @@
     VACTRemoteJsonSource: remoteJsonSource.VACTRemoteJsonSource,
     VACTInternalSource: internalSource.VACTInternalSource,
     VACTSourceConfig: sourceConfig,
+    adaptive: Object.freeze({
+      ...adaptivePractice
+    }),
+    generateWeaknessTest: adaptivePractice.generateWeaknessTest,
+    formatWeaknessExamAsQuiz: adaptivePractice.formatWeaknessExamAsQuiz,
     quality: Object.freeze({
       ...signature,
       ...validator,
