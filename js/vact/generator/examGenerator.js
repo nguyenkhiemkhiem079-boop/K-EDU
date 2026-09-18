@@ -210,6 +210,15 @@
   }
 
   /**
+   * Convenience entry point to generate a Full V-ACT 120 simulation exam.
+   * @param {object} [options]
+   * @returns {object}
+   */
+  function generateFull120(options = {}) {
+    return generateFromProfile(VACT_FULL_PROFILE, options);
+  }
+
+  /**
    * Formats a generated V-ACT exam object into HTML for display and printable papers.
    * Clearly renders section boundaries (Phần 1 - Tiếng Việt, Phần 2 - Tiếng Anh, etc.).
    *
@@ -336,7 +345,7 @@
       id: exam.id,
       title: exam.title,
       subject: 'vact',
-      subjectLabel: 'Mini V-ACT 100',
+      subjectLabel: exam.profileId === 'vact_full' ? 'Full V-ACT 120' : (exam.profileId === 'vact_mini_100' ? 'Mini V-ACT 100' : 'V-ACT'),
       timeLimit: exam.timeLimitMinutes,
       examHtml,
       pdfDataUrl: 'data:text/html;charset=utf-8,' + encodeURIComponent(examHtml),
@@ -400,6 +409,7 @@
     ORDERED_SECTION_KEYS,
     generateFromProfile,
     generateMini100,
+    generateFull120,
     renderExamPaperHtml,
     formatExamAsQuiz,
     computeSectionBreakdown
@@ -410,6 +420,7 @@
     ORDERED_SECTION_KEYS,
     generateFromProfile,
     generateMini100,
+    generateFull120,
     renderExamPaperHtml,
     formatExamAsQuiz,
     computeSectionBreakdown

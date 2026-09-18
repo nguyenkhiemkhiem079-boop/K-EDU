@@ -1487,27 +1487,27 @@ const MathEngine = {
   /**
    * Sinh bộ đề thi Đánh Giá Năng Lực (ĐGNL) độc lập:
    * - Mini Test: 100 câu (40 Định lượng, 30 Logic, 30 Số liệu - 90 phút)
-   * - Full Test: 200 câu (80 Định lượng, 60 Logic, 60 Số liệu - 150 phút)
+   * - Full Test: 120 câu chuẩn V-ACT (150 phút)
    * 100% trắc nghiệm chuẩn hóa, không pha trộn Toán phổ thông SGK
    */
   generateDgnlExam(config = {}) {
     const difficultyMode = config.difficultyMode || 'mixed';
     if (!['basic', 'advanced', 'mixed'].includes(difficultyMode)) throw new Error('Chế độ độ khó không hợp lệ.');
-    if (difficultyMode === 'advanced') return this.generateExam({ ...config, track: 'dgnl', grade: 'DGNL', sourceMode: 'document', mcqCount: config.packageType === 'full' ? 200 : 100, essayMatrix: { TH: 0, VD: 0, VDC: 0 } });
+    if (difficultyMode === 'advanced') return this.generateExam({ ...config, track: 'dgnl', grade: 'DGNL', sourceMode: 'document', mcqCount: config.packageType === 'full' ? 120 : 100, essayMatrix: { TH: 0, VD: 0, VDC: 0 } });
     const allowedLevel = q => difficultyMode === 'mixed' || (difficultyMode === 'basic' ? ['NB', 'TH'] : ['VD', 'VDC']).includes(String(q.level || '').toUpperCase());
     const {
-      packageType = 'mini', // 'mini' (100 câu) | 'full' (200 câu)
+      packageType = 'mini', // 'mini' (100 câu) | 'full' (120 câu)
       targetExam = 'HCM',    // 'HCM' | 'HSA' | 'TSA'
       timeLimit = (packageType === 'full' ? 150 : 90),
       title = '',
       batchSeenSignatures = null
     } = config;
 
-    const totalQuestions = packageType === 'full' ? 200 : 100;
+    const totalQuestions = packageType === 'full' ? 120 : 100;
     // Chuẩn ma trận ĐGNL: 40% Định lượng, 30% Logic, 30% Phân tích số liệu
-    const quantCount = Math.round(totalQuestions * 0.4); // 40 hoặc 80
-    const logicCount = Math.round(totalQuestions * 0.3); // 30 hoặc 60
-    const dataCount = totalQuestions - quantCount - logicCount; // 30 hoặc 60
+    const quantCount = Math.round(totalQuestions * 0.4); // 40 hoặc 48
+    const logicCount = Math.round(totalQuestions * 0.3); // 30 hoặc 36
+    const dataCount = totalQuestions - quantCount - logicCount; // 30 hoặc 36
 
     const targetNames = {
       HCM: 'ĐHQG TP.HCM',
@@ -1515,7 +1515,7 @@ const MathEngine = {
       TSA: 'ĐHBK Hà Nội (TSA)'
     };
     const targetLabel = targetNames[targetExam] || 'ĐHQG TP.HCM';
-    const packageLabel = packageType === 'full' ? 'Full Test (200 Câu Toàn Diện)' : 'Mini Test (100 Câu Chuẩn Hóa)';
+    const packageLabel = packageType === 'full' ? 'Full Test (120 Câu Chuẩn V-ACT)' : 'Mini Test (100 Câu Chuẩn Hóa)';
     const difficultyLabel = difficultyMode === 'advanced' ? 'Nâng cao' : difficultyMode === 'basic' ? 'Cơ bản' : '';
     const examTitle = (title || `Đề Thi Thử Đánh Giá Năng Lực ${targetLabel} — ${packageLabel}`) + (difficultyLabel ? ` — ${difficultyLabel}` : '');
 

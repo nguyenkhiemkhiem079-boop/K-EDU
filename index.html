@@ -413,6 +413,44 @@ GIANG, 8"></textarea>
           </div>
         </div>
 
+        <!-- V-ACT Full 120 Simulation Card -->
+        <div class="card vact-full-card" id="vactFull120Card" style="background:linear-gradient(135deg, #1e1b4b 0%, #2e1065 100%);color:#ffffff;border:2px solid #8b5cf6;border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:1.5rem;box-shadow:0 12px 32px rgba(139,92,246,0.25);">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
+            <div style="flex:1;min-width:280px;">
+              <div style="display:inline-flex;align-items:center;gap:0.4rem;background:rgba(255,255,255,0.15);padding:3px 10px;border-radius:999px;font-size:0.78rem;font-weight:800;letter-spacing:0.5px;margin-bottom:0.6rem;">
+                <span>🏆</span> <span>MÔ PHỎNG CẤU TRÚC V-ACT CHÍNH THỨC</span>
+              </div>
+              <h2 style="margin:0 0 0.4rem;font-size:1.45rem;color:#ffffff;display:flex;align-items:center;gap:0.5rem;">
+                <span>🏆</span> <span>FULL V-ACT</span>
+              </h2>
+              <div style="font-size:0.92rem;color:#ddd6fe;font-weight:600;display:flex;gap:1.2rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+                <span>📝 <strong>120 câu</strong></span>
+                <span>⏱️ <strong>150 phút</strong></span>
+                <span>🏛️ <strong>Mô phỏng cấu trúc V-ACT</strong></span>
+              </div>
+              <!-- Section Composition -->
+              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(170px, 1fr));gap:0.45rem;background:rgba(0,0,0,0.2);padding:0.75rem;border-radius:var(--radius-md);font-size:0.82rem;font-weight:700;">
+                <div>🇻🇳 Tiếng Việt: <strong>30 câu</strong></div>
+                <div>🇬🇧 Tiếng Anh: <strong>30 câu</strong></div>
+                <div>📐 Toán học: <strong>30 câu</strong></div>
+                <div>🧩 Logic & Số liệu: <strong>12 câu</strong></div>
+                <div>🔬 Suy luận khoa học: <strong>18 câu</strong></div>
+              </div>
+            </div>
+            <div style="align-self:center;">
+              <button type="button" class="btn btn-primary btn-lg" id="btnStartFull120" onclick="handleStartFull120Click()" style="background:linear-gradient(135deg, #7c3aed, #a855f7);border:none;font-weight:900;padding:0.85rem 1.6rem;font-size:1rem;box-shadow:0 6px 20px rgba(168,85,247,0.4);border-radius:var(--radius-md);cursor:pointer;white-space:nowrap;">
+                BẮT ĐẦU FULL V-ACT 🏆
+              </button>
+            </div>
+          </div>
+          <div id="vactFull120WarningBox" style="margin-top:1rem;padding:0.75rem 1rem;background:rgba(245,158,11,0.15);border:1px solid #f59e0b;border-radius:var(--radius-md);color:#fde68a;font-size:0.85rem;font-weight:600;display:none;">
+            <div style="font-weight:800;color:#fbbf24;display:flex;align-items:center;gap:0.4rem;margin-bottom:0.2rem;">
+              <span>⚠️</span> <span>CẢNH BÁO ĐỘ SẴN SÀNG CỦA NGÂN HÀNG:</span>
+            </div>
+            <div id="vactFull120WarningText"></div>
+          </div>
+        </div>
+
         <!-- Direct Exam Feed List -->
         <div class="card duo-feed-card">
           <div class="card-header">
@@ -1012,7 +1050,7 @@ GIANG, 8"></textarea>
               📐 1. Toán Phổ Thông Chuẩn SGK (Lớp 6 - 12)
             </button>
             <button type="button" id="tabMathModeDgnl" class="btn btn-secondary" onclick="switchMathGenMode('dgnl')" style="border-radius:var(--radius-full);font-weight:800;padding:0.6rem 1.35rem;border:2px solid #8b5cf6;color:#6d28d9;background:var(--bg-card);">
-              🧠 2. Đánh Giá Năng Lực Chuẩn Hóa (Mini 100 / Full 200) ⭐ MỚI
+              🧠 2. Đánh Giá Năng Lực Chuẩn Hóa (Mini 100 / Full 120) ⭐ MỚI
             </button>
           </div>
 
@@ -1043,7 +1081,7 @@ GIANG, 8"></textarea>
                 <label>🎯 Định Hướng Đề Thi</label>
                 <select id="mathGenTrackSelect" onchange="handleTrackChange(this.value)" style="font-weight:700;">
                   <option value="toan" selected>📐 Toán Phổ Thông Chuẩn SGK (Lớp 6 - 12)</option>
-                  <option value="dgnl">🧠 Đánh Giá Năng Lực (Mini 100 / Full 200) ➔ Chuyển Ngay</option>
+                  <option value="dgnl">🧠 Đánh Giá Năng Lực (Mini 100 / Full 120) ➔ Chuyển Ngay</option>
                 </select>
               </div>
             </div>
@@ -1250,7 +1288,7 @@ GIANG, 8"></textarea>
           </div><!-- /mathGenControlsContainer -->
           </div><!-- /mathGenStandardPanel -->
 
-          <!-- PANEL 2: ĐÁNH GIÁ NĂNG LỰC (ĐGNL) ĐỘC LẬP (MINI 100 / FULL 200) -->
+          <!-- PANEL 2: ĐÁNH GIÁ NĂNG LỰC (ĐGNL) ĐỘC LẬP (MINI 100 / FULL 120) -->
           <div id="mathGenDgnlPanel" class="hidden">
             <div style="background:var(--bg-tertiary);border:2px solid var(--indigo);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.25rem;">
               <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;">
@@ -1262,7 +1300,7 @@ GIANG, 8"></textarea>
                 </span>
               </div>
 
-              <!-- 2 LỰA CHỌN GÓI ĐỀ: MINI TEST 100 CÂU & FULL TEST 200 CÂU -->
+              <!-- 2 LỰA CHỌN GÓI ĐỀ: MINI TEST 100 CÂU & FULL TEST 120 CÂU -->
               <label style="font-weight:800;display:block;margin-bottom:0.75rem;color:var(--text-primary);">
                 🎯 Chọn Định Dạng Đề Thi ĐGNL:
               </label>
@@ -1285,19 +1323,21 @@ GIANG, 8"></textarea>
                   </div>
                 </div>
 
-                <!-- FULL TEST 200 CÂU -->
+                <!-- FULL TEST 120 CÂU -->
                 <div class="dgnl-package-card" id="cardDgnlFull" onclick="selectDgnlPackage('full')" style="cursor:pointer;border:2px solid var(--border-color);background:var(--bg-card);border-radius:var(--radius-lg);padding:1.15rem;position:relative;opacity:0.85;transition:all 0.2s ease;">
                   <input type="radio" name="dgnlPackageRadio" id="dgnlPackageFull" value="full" style="position:absolute;top:1rem;right:1rem;width:1.3rem;height:1.3rem;accent-color:var(--indigo);">
                   <div style="font-size:1.2rem;font-weight:800;color:#7c3aed;margin-bottom:0.35rem;display:flex;align-items:center;gap:0.4rem;">
-                    <span>🎯</span> Full Test — 200 Câu
+                    <span>🏆</span> Full Test — 120 Câu (Chuẩn V-ACT)
                   </div>
                   <div style="font-size:0.88rem;color:var(--text-secondary);margin-bottom:0.75rem;line-height:1.4;">
-                    Bộ đề toàn diện mô phỏng chính xác áp lực và cấu trúc kỳ thi thực chiến của các ĐH hàng đầu.
+                    Bộ đề toàn diện mô phỏng chính xác cấu trúc đề thi chính thức ĐHQG-HCM gồm 5 phần độc lập.
                   </div>
                   <div style="display:flex;flex-direction:column;gap:0.35rem;font-size:0.84rem;font-weight:700;color:var(--text-primary);background:var(--bg-tertiary);padding:0.65rem 0.85rem;border-radius:var(--radius-md);">
-                    <div>📊 <strong>80 câu</strong> Tư duy Định lượng (Toán học)</div>
-                    <div>🧩 <strong>60 câu</strong> Tư duy Logic & Suy luận</div>
-                    <div>📈 <strong>60 câu</strong> Phân tích & Xử lý Số liệu</div>
+                    <div>🇻🇳 <strong>30 câu</strong> Sử dụng ngôn ngữ Tiếng Việt</div>
+                    <div>🇬🇧 <strong>30 câu</strong> Sử dụng ngôn ngữ Tiếng Anh</div>
+                    <div>📐 <strong>30 câu</strong> Toán học</div>
+                    <div>🧩 <strong>12 câu</strong> Tư duy Logic & Phân tích số liệu</div>
+                    <div>🔬 <strong>18 câu</strong> Suy luận khoa học</div>
                     <div style="color:#7c3aed;margin-top:2px;">⏱️ Thời gian tiêu chuẩn: <strong>150 phút</strong></div>
                   </div>
                 </div>
