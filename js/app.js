@@ -271,9 +271,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   checkUrlQuizParam();
   checkAndRenderPausedExamBanner();
   initFirebaseRealtimeSync();
-  initVactMini100UI();
-  initVactFull120UI();
-  updateVactStudentDashboard();
+  initializeVactRuntime().catch(err => console.warn('V-ACT runtime init warning:', err));
 });
 
 /* ================= AVATAR PICKER ENGINE ================= */
@@ -8421,10 +8419,129 @@ function closeTeacherSubmissionReviewModal() {
   if (modal) modal.classList.add('hidden');
 }
 
+/* ================= V-ACT RUNTIME INITIALIZATION & STATE MANAGEMENT ================= */
+async function initializeVactRuntime() {
+  const loader = window.KEDUVACT?.sourceBankLoader || window.sourceBankLoader;
+  if (!loader) {
+    console.warn('[VACT] sourceBankLoader chưa sẵn sàng.');
+    return;
+  }
+
+  // Set initial loading UI (buttons disabled, loading text, no 0/100 or 0/120)
+  renderVactCardsLoading();
+
+  try {
+    await loader.ready();
+    if (window.KEDUVACT?.VACTCoverage?.clearCoverageCache) {
+      window.KEDUVACT.VACTCoverage.clearCoverageCache();
+    }
+    initVactMini100UI();
+    initVactFull120UI();
+    updateVactStudentDashboard();
+  } catch (err) {
+    console.error('[VACT] Không thể nạp ngân hàng câu hỏi V-ACT:', err);
+    renderVactCardsError(err);
+  }
+}
+
+async function retryVactRuntimeLoad() {
+  const loader = window.KEDUVACT?.sourceBankLoader || window.sourceBankLoader;
+  if (!loader) return;
+  renderVactCardsLoading();
+  try {
+    await loader.reload();
+    if (window.KEDUVACT?.VACTCoverage?.clearCoverageCache) {
+      window.KEDUVACT.VACTCoverage.clearCoverageCache();
+    }
+    initVactMini100UI();
+    initVactFull120UI();
+    updateVactStudentDashboard();
+  } catch (err) {
+    console.error('[VACT] Tải lại ngân hàng thất bại:', err);
+    renderVactCardsError(err);
+  }
+}
+
+function renderVactCardsLoading() {
+  const btnMini = document.getElementById('btnStartMini100');
+  const btnFull = document.getElementById('btnStartFull120');
+  if (btnMini) {
+    btnMini.disabled = true;
+    btnMini.textContent = 'Đang tải ngân hàng V-ACT...';
+  }
+  if (btnFull) {
+    btnFull.disabled = true;
+    btnFull.textContent = 'Đang tải ngân hàng V-ACT...';
+  }
+
+  const miniBox = document.getElementById('vactMini100WarningBox');
+  const miniText = document.getElementById('vactMini100WarningText');
+  if (miniBox && miniText) {
+    miniBox.style.display = 'block';
+    miniText.innerHTML = '<span style="display:inline-flex;align-items:center;gap:0.4rem;">⏳ Đang tải ngân hàng V-ACT từ nguồn xác thực...</span>';
+  }
+
+  const fullBox = document.getElementById('vactFull120WarningBox');
+  const fullText = document.getElementById('vactFull120WarningText');
+  if (fullBox && fullText) {
+    fullBox.style.display = 'block';
+    fullText.innerHTML = '<span style="display:inline-flex;align-items:center;gap:0.4rem;">⏳ Đang tải ngân hàng V-ACT từ nguồn xác thực...</span>';
+  }
+}
+
+function renderVactCardsError(err) {
+  const btnMini = document.getElementById('btnStartMini100');
+  const btnFull = document.getElementById('btnStartFull120');
+  if (btnMini) {
+    btnMini.disabled = true;
+    btnMini.textContent = 'BẮT ĐẦU MINI 100 🚀';
+  }
+  if (btnFull) {
+    btnFull.disabled = true;
+    btnFull.textContent = 'BẮT ĐẦU FULL V-ACT 🏆';
+  }
+
+  const errorHtml = `
+    <div>Không thể tải ngân hàng V-ACT từ nguồn xác thực. Vui lòng tải lại trang hoặc thử lại.</div>
+    <div style="margin-top:0.45rem;">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="retryVactRuntimeLoad()" style="padding:0.25rem 0.75rem;font-weight:700;border-radius:var(--radius-sm);">
+        🔄 Thử lại
+      </button>
+    </div>
+  `;
+
+  const miniBox = document.getElementById('vactMini100WarningBox');
+  const miniText = document.getElementById('vactMini100WarningText');
+  if (miniBox && miniText) {
+    miniBox.style.display = 'block';
+    miniText.innerHTML = errorHtml;
+  }
+
+  const fullBox = document.getElementById('vactFull120WarningBox');
+  const fullText = document.getElementById('vactFull120WarningText');
+  if (fullBox && fullText) {
+    fullBox.style.display = 'block';
+    fullText.innerHTML = errorHtml;
+  }
+}
+
+window.initializeVactRuntime = initializeVactRuntime;
+window.retryVactRuntimeLoad = retryVactRuntimeLoad;
+
 /* ================= V-ACT MINI 100 PRACTICE ENGINE & UI ================= */
 function initVactMini100UI() {
   const card = document.getElementById('vactMini100Card');
   if (!card) return;
+
+  const loader = window.KEDUVACT?.sourceBankLoader || window.sourceBankLoader;
+  if (loader && loader.getStatus() === 'loading') {
+    renderVactCardsLoading();
+    return;
+  }
+  if (loader && loader.getStatus() === 'error') {
+    renderVactCardsError(loader.getError());
+    return;
+  }
 
   const vactCoverage = window.KEDUVACT?.VACTCoverage || window.VACTCoverage;
   if (!vactCoverage || typeof vactCoverage.getProfileReadiness !== 'function') return;
@@ -8433,6 +8550,12 @@ function initVactMini100UI() {
     const readiness = vactCoverage.getProfileReadiness('vact_mini_100');
     const warningBox = document.getElementById('vactMini100WarningBox');
     const warningText = document.getElementById('vactMini100WarningText');
+    const btnStart = document.getElementById('btnStartMini100');
+
+    if (btnStart) {
+      btnStart.textContent = 'BẮT ĐẦU MINI 100 🚀';
+      btnStart.disabled = (!readiness.ready && readiness.totalAvailable === 0);
+    }
 
     if (warningBox && warningText) {
       if (!readiness.ready) {
@@ -8446,7 +8569,7 @@ function initVactMini100UI() {
           scientific_reasoning: 'Suy luận khoa học'
         };
 
-        for (const [secKey, sec] of Object.entries(readiness.sections)) {
+        for (const [secKey, sec] of Object.entries(readiness.sections || {})) {
           if (sec.missing > 0) {
             const label = secLabels[secKey] || secKey;
             missingDetails.push(`thiếu ${sec.missing} câu ${label} (hiện có ${sec.available}/${sec.required})`);
@@ -8454,9 +8577,9 @@ function initVactMini100UI() {
         }
 
         warningText.innerHTML = `
-          <div>Ngân hàng hiện có <strong>${readiness.totalAvailable}/${readiness.totalRequired}</strong> câu khả dụng (${missingDetails.join('; ')}).</div>
+          <div>Ngân hàng nguồn hiện chưa đủ để tạo Mini V-ACT 100 hoàn chỉnh (khả dụng <strong>${readiness.totalAvailable}/${readiness.totalRequired}</strong> câu: ${missingDetails.join('; ')}).</div>
           <div style="margin-top:0.35rem;font-size:0.8rem;color:#fef08a;">
-            ℹ️ Đề thi vẫn sẽ được tạo đầy đủ từ các phần sẵn có theo nguyên tắc độc lập tuyệt đối (không tự ý bù chéo câu giữa các phần).
+            ⚠️ Tuân thủ nghiêm ngặt nguyên tắc độc lập phần thi (không tự ý bù chéo câu giữa các phần).
           </div>
         `;
       } else {
@@ -8469,6 +8592,16 @@ function initVactMini100UI() {
 }
 
 async function handleStartMini100Click() {
+  const loader = window.KEDUVACT?.sourceBankLoader || window.sourceBankLoader;
+  if (loader && loader.getStatus() !== 'ready') {
+    try {
+      await loader.ready();
+    } catch (err) {
+      showToast('Không thể tải ngân hàng V-ACT từ nguồn xác thực. Vui lòng thử lại.', 'error');
+      return;
+    }
+  }
+
   const nameEl = document.getElementById('studentJoinName');
   const classEl = document.getElementById('studentJoinClass');
 
@@ -8532,6 +8665,16 @@ function initVactFull120UI() {
   const card = document.getElementById('vactFull120Card');
   if (!card) return;
 
+  const loader = window.KEDUVACT?.sourceBankLoader || window.sourceBankLoader;
+  if (loader && loader.getStatus() === 'loading') {
+    renderVactCardsLoading();
+    return;
+  }
+  if (loader && loader.getStatus() === 'error') {
+    renderVactCardsError(loader.getError());
+    return;
+  }
+
   const vactCoverage = window.KEDUVACT?.VACTCoverage || window.VACTCoverage;
   if (!vactCoverage || typeof vactCoverage.getProfileReadiness !== 'function') return;
 
@@ -8539,6 +8682,12 @@ function initVactFull120UI() {
     const readiness = vactCoverage.getProfileReadiness('vact_full');
     const warningBox = document.getElementById('vactFull120WarningBox');
     const warningText = document.getElementById('vactFull120WarningText');
+    const btnStart = document.getElementById('btnStartFull120');
+
+    if (btnStart) {
+      btnStart.textContent = 'BẮT ĐẦU FULL V-ACT 🏆';
+      btnStart.disabled = (!readiness.ready && readiness.totalAvailable === 0);
+    }
 
     if (warningBox && warningText) {
       if (!readiness.ready) {
@@ -8552,7 +8701,7 @@ function initVactFull120UI() {
           scientific_reasoning: 'Suy luận khoa học'
         };
 
-        for (const [secKey, sec] of Object.entries(readiness.sections)) {
+        for (const [secKey, sec] of Object.entries(readiness.sections || {})) {
           if (sec.missing > 0) {
             const label = secLabels[secKey] || secKey;
             missingDetails.push(`thiếu ${sec.missing} câu ${label} (hiện có ${sec.available}/${sec.required})`);
@@ -8560,9 +8709,9 @@ function initVactFull120UI() {
         }
 
         warningText.innerHTML = `
-          <div>Ngân hàng hiện có <strong>${readiness.totalAvailable}/${readiness.totalRequired}</strong> câu khả dụng (${missingDetails.join('; ')}).</div>
+          <div>Ngân hàng nguồn hiện chưa đủ để tạo Full V-ACT 120 hoàn chỉnh (khả dụng <strong>${readiness.totalAvailable}/${readiness.totalRequired}</strong> câu: ${missingDetails.join('; ')}).</div>
           <div style="margin-top:0.35rem;font-size:0.8rem;color:#fef08a;">
-            ⚠️ <em>Lưu ý:</em> Bài thi mô phỏng sẽ tạo với các phần có sẵn (bản rút gọn ${readiness.totalAvailable}/120 câu, chưa phải đề Full 120 hoàn chỉnh). Hệ thống tuân thủ nghiêm ngặt nguyên tắc cách ly phần thi (không bù câu môn này sang môn khác).
+            ⚠️ Tuân thủ nghiêm ngặt nguyên tắc cách ly phần thi (không bù câu môn này sang môn khác).
           </div>
         `;
       } else {
@@ -8575,6 +8724,16 @@ function initVactFull120UI() {
 }
 
 async function handleStartFull120Click() {
+  const loader = window.KEDUVACT?.sourceBankLoader || window.sourceBankLoader;
+  if (loader && loader.getStatus() !== 'ready') {
+    try {
+      await loader.ready();
+    } catch (err) {
+      showToast('Không thể tải ngân hàng V-ACT từ nguồn xác thực. Vui lòng thử lại.', 'error');
+      return;
+    }
+  }
+
   const nameEl = document.getElementById('studentJoinName');
   const classEl = document.getElementById('studentJoinClass');
 
@@ -8784,6 +8943,16 @@ async function handleStartWeaknessPracticeClick() {
     nameEl?.focus();
     nameEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
+  }
+
+  const loader = window.KEDUVACT?.sourceBankLoader || window.sourceBankLoader;
+  if (loader && loader.getStatus() !== 'ready') {
+    try {
+      await loader.ready();
+    } catch (err) {
+      showToast('Không thể tải ngân hàng V-ACT từ nguồn xác thực. Vui lòng thử lại.', 'error');
+      return;
+    }
   }
 
   const adaptive = window.KEDUVACT?.adaptive || window.KEDUVACT?.adaptivePractice;
