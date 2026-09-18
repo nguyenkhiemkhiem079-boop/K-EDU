@@ -8421,6 +8421,30 @@ function closeTeacherSubmissionReviewModal() {
   if (modal) modal.classList.add('hidden');
 }
 
+/* ================= V-ACT SOURCE-BACKED RUNTIME GATE ================= */
+async function ensureVactSourceBankReady() {
+  const loader = window.KEDUVACT?.sourceBankLoader;
+  if (!loader || typeof loader.ready !== 'function') {
+    showToast('Không thể tải ngân hàng V-ACT từ nguồn xác thực. Vui lòng thử lại.', 'error');
+    return false;
+  }
+
+  try {
+    await loader.ready();
+    const bank = window.KEDUVACT?.VACTInternalBank;
+    if (bank?.setMode) bank.setMode('source_backed');
+    const coverage = bank?.getCoverage ? bank.getCoverage() : null;
+    if (!coverage || !Number.isFinite(Number(coverage.total)) || Number(coverage.total) <= 0) {
+      throw new Error('SOURCE_BANK_EMPTY');
+    }
+    return true;
+  } catch (err) {
+    console.error('V-ACT source-backed bank unavailable:', err);
+    showToast('Không thể tải ngân hàng V-ACT từ nguồn xác thực. Vui lòng thử lại.', 'error');
+    return false;
+  }
+}
+
 /* ================= V-ACT MINI 100 PRACTICE ENGINE & UI ================= */
 function initVactMini100UI() {
   const card = document.getElementById('vactMini100Card');
@@ -8499,6 +8523,7 @@ async function handleStartMini100Click() {
   }
 
   try {
+    if (!(await ensureVactSourceBankReady())) return;
     showToast('⚡ Đang tổng hợp bài luyện Mini V-ACT 100...', 'info');
     const examResult = examGen.generateMini100();
 
@@ -8605,6 +8630,7 @@ async function handleStartFull120Click() {
   }
 
   try {
+    if (!(await ensureVactSourceBankReady())) return;
     showToast('🏆 Đang mô phỏng kỳ thi Full V-ACT 120 (150 phút)...', 'info');
     const examResult = examGen.generateFull120();
 
@@ -8793,6 +8819,7 @@ async function handleStartWeaknessPracticeClick() {
   }
 
   try {
+    if (!(await ensureVactSourceBankReady())) return;
     showToast('🎯 Đang phân tích năng lực và tạo đề luyện điểm yếu...', 'info');
     const weaknessResult = adaptive.generateWeaknessTest({
       studentId: { studentName: name, studentClass: className, studentUid },
