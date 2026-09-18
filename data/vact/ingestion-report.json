@@ -1,0 +1,31 @@
+{
+  "totalSources": 106,
+  "ingestableSources": 87,
+  "sourcesByCategory": {
+    "OFFICIAL": 6,
+    "FULL_TEST": 50,
+    "SUBJECT_BANK": 31,
+    "PENDING": 6,
+    "DUPLICATE": 13
+  },
+  "docsProcessed": 69,
+  "docsFailed": 0,
+  "totalRaw": 6703,
+  "uniqueCount": 6695,
+  "duplicateCount": 8,
+  "productionCount": 1758,
+  "reviewRequiredCount": 3226,
+  "invalidCount": 1711,
+  "bySection": {
+    "vietnamese": 415,
+    "english": 421,
+    "math": 427,
+    "logic_data": 209,
+    "scientific_reasoning": 286
+  },
+  "mini100Ready": true,
+  "full120Ready": true,
+  "totalExams": 42,
+  "completeExams": 14,
+  "incompleteExams": 28
+}
