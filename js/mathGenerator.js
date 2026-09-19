@@ -28,6 +28,13 @@ if (typeof window !== 'undefined' && typeof window.escapeHtml === 'undefined') {
   window.escapeHtml = escapeMathHtml;
 }
 
+function resolveDocBank() {
+  if (typeof DocumentQuestionBank !== 'undefined') return DocumentQuestionBank;
+  if (typeof global !== 'undefined' && global.DocumentQuestionBank) return global.DocumentQuestionBank;
+  if (typeof window !== 'undefined' && window.DocumentQuestionBank) return window.DocumentQuestionBank;
+  try { return require('./documentQuestionBank'); } catch (_) { return null; }
+}
+
 /**
  * Hàm tính ước chung lớn nhất (ƯCLN) theo giải thuật Euclid
  */
@@ -1614,7 +1621,7 @@ const MathEngine = {
       grade = '10',
       term = 'GK1',
       topic = 'all',
-      sourceMode = 'document', // 'document' (Ưu tiên kho tài liệu) | 'hybrid' | 'synthetic'
+      sourceMode = 'hybrid', // 'hybrid' (Mặc định: Ưu tiên kho tài liệu, tự động bổ sung nếu thiếu) | 'document' | 'synthetic'
       mcqCount = 12,
       essayMatrix = { TH: 1, VD: 1, VDC: 1 },
       timeLimit = 45,
@@ -1648,10 +1655,9 @@ const MathEngine = {
     if (topic !== 'all') {
       if (mcqTemplates.warning) {
         topicWarning = mcqTemplates.warning;
-      } else if (mcqCount > mcqTemplates.length) {
-        topicWarning = `Chủ đề "${topic}" chỉ có ${mcqTemplates.length} câu hỏi mẫu, không đủ so với yêu cầu ${mcqCount} câu. Đã bổ sung thêm từ các chủ đề khác.`;
-        const extra = allMcqTemplates.filter(t => !mcqTemplates.includes(t));
-        mcqTemplates = [...mcqTemplates, ...extra];
+      } else if (!mcqTemplates.length) {
+        topicWarning = `Chủ đề "${topic}" không có câu hỏi mẫu, đã bổ sung thêm từ các chủ đề khác.`;
+        mcqTemplates = [...allMcqTemplates];
       }
     }
 
@@ -1660,7 +1666,7 @@ const MathEngine = {
     const seenSignatures = batchSeenSignatures || new Set();
     const mcqDeck = [];
 
-    // Tải danh sách câu hỏi tài liệu đã dùng gần đây (Anti-Duplicate Guard)
+    // Tải danh sách câu hỏi tài liệu đã dùng gần đây (Anti-Duplicate Guard - Preference only)
     let recentDocIds = new Set();
     try {
       if (typeof AppState !== 'undefined' && AppState.recentDocQuestionIds) {
@@ -1673,29 +1679,27 @@ const MathEngine = {
     } catch (e) {}
 
     let mcqDuplicateExhausted = false;
+    let takenFromDocCount = 0;
 
     // BƯỚC 1: LẤY CÂU HỎI TRỰC TIẾP TỪ KHO TÀI LIỆU (NẾU sourceMode LÀ 'document' HOẶC 'hybrid')
-    // Loại bỏ bộ lọc toàn cục VDC/NB-TH: Các câu trắc nghiệm phổ thông trong ngân hàng được tuyển chọn bình thường
-    if (typeof DocumentQuestionBank !== 'undefined' && sourceMode !== 'synthetic') {
-      let docQuestions = DocumentQuestionBank.query({ subject: 'toan', grade: gStr, topic: topic, type: 'mcq' });
+    const docBank = resolveDocBank();
+    if (docBank && sourceMode !== 'synthetic') {
+      let docQuestions = docBank.query({ subject: 'toan', grade: gStr, topic: topic, type: 'mcq' });
 
-      // Lọc bỏ các câu đã xuất hiện trong batch và câu vừa dùng gần đây
-      let availableDocQuestions = docQuestions.filter(q => 
+      // Thứ tự ưu tiên tuyển chọn câu hỏi tài liệu:
+      // 1. Câu hỏi tài liệu chưa dùng gần đây (unseen)
+      // 2. Câu hỏi tài liệu đã dùng trong các đề cũ (seen) - cho phép tái sử dụng giữa các đề, miễn là không trùng trong cùng 1 đề
+      const unseenDoc = docQuestions.filter(q => 
         !seenSignatures.has(mathQuestionSignature(q.question)) &&
         !recentDocIds.has(q.id)
       );
+      const seenDoc = docQuestions.filter(q => 
+        !seenSignatures.has(mathQuestionSignature(q.question)) &&
+        recentDocIds.has(q.id)
+      );
 
-      // Nếu sau khi lọc recentDocIds mà không đủ câu, tái sử dụng các câu cũ để tránh thiếu hụt
-      if (availableDocQuestions.length < mcqCount) {
-        const fallbackCandidates = docQuestions.filter(q => 
-          !seenSignatures.has(mathQuestionSignature(q.question)) &&
-          !availableDocQuestions.some(aq => aq.id === q.id)
-        );
-        availableDocQuestions = [...availableDocQuestions, ...fallbackCandidates];
-      }
-
-      const totalDocAvailable = availableDocQuestions.length;
-      const targetDocCount = Math.min(mcqCount, totalDocAvailable);
+      const availableDocQuestions = [...unseenDoc, ...seenDoc];
+      const targetDocCount = Math.min(mcqCount, availableDocQuestions.length);
       const takenFromDoc = availableDocQuestions.slice(0, targetDocCount);
 
       takenFromDoc.forEach(q => {
@@ -1719,6 +1723,8 @@ const MathEngine = {
         });
       });
 
+      takenFromDocCount = selectedMcq.length;
+
       // Lưu lại recentDocIds (giữ tối đa 50000 ID gần nhất)
       try {
         if (typeof localStorage !== 'undefined') {
@@ -1727,9 +1733,9 @@ const MathEngine = {
         }
       } catch (e) {}
 
-      if (sourceMode === 'hybrid' && takenFromDoc.length < mcqCount) {
-        const missing = mcqCount - takenFromDoc.length;
-        topicWarning = `Ngân hàng tài liệu chỉ có ${takenFromDoc.length}/${mcqCount} câu phù hợp — đã tự động bổ sung ${missing} câu sinh tự động.`;
+      if (sourceMode === 'hybrid' && takenFromDocCount < mcqCount) {
+        const missing = mcqCount - takenFromDocCount;
+        topicWarning = `Ngân hàng tài liệu có ${takenFromDocCount}/${mcqCount} câu phù hợp — đã tự động bổ sung ${missing} câu sinh tự động.`;
       }
     }
 
@@ -1744,7 +1750,7 @@ const MathEngine = {
       mcqDeck.push(...arr);
     };
 
-    const remainingMcqNeeded = (sourceMode === 'document') ? 0 : (mcqCount - selectedMcq.length);
+    const remainingMcqNeeded = (sourceMode === 'document') ? 0 : Math.max(0, mcqCount - selectedMcq.length);
     for (let i = 0; i < remainingMcqNeeded; i++) {
       if (!mcqTemplates.length) { break; }
       let chosenQ = null;
@@ -1803,8 +1809,8 @@ const MathEngine = {
 
     // LẤY CÂU HỎI TỰ LUẬN TỪ TÀI LIỆU KHỚP VỚI CÁC CẤP ĐỘ YÊU CẦU
     // VDC BẮT BUỘC: SpecializedBankPolicy.isApproved(q) === true CHỈ áp dụng cho câu VDC được yêu cầu
-    if (typeof DocumentQuestionBank !== 'undefined' && sourceMode !== 'synthetic') {
-      const docEssays = DocumentQuestionBank.query({
+    if (docBank && sourceMode !== 'synthetic') {
+      const docEssays = docBank.query({
         grade: gStr,
         topic: topic === 'all' ? undefined : topic,
         type: 'essay'
@@ -1853,10 +1859,15 @@ const MathEngine = {
       });
     }
 
-    // Bổ sung tự luận bằng templates nếu sourceMode !== 'document' (bổ sung cho các mức độ còn thiếu)
+    // Bổ sung tự luận bằng templates nếu sourceMode !== 'document' (bổ sung cho các mức độ TH và VD)
+    // Chú ý: Trong chế độ hybrid, VDC tuyệt đối không bổ sung bằng templates thường (Section 7 & 8)
+    let generatedTH = 0;
+    let generatedVD = 0;
     if (sourceMode !== 'document') {
       let essayIndex = selectedEssay.length + 1;
       targetLevels.forEach(({ level, count }) => {
+        if (sourceMode === 'hybrid' && level === 'VDC') return; // Không bổ sung VDC bằng template trong chế độ hybrid
+
         const currentLevelCount = selectedEssay.filter(e => {
           const eLevel = (e.level || '').toUpperCase();
           return level === 'TH' ? (eLevel === 'TH' || eLevel === 'NB') : eLevel === level;
@@ -1922,15 +1933,30 @@ const MathEngine = {
 
           essayIndex++;
           selectedEssay.push(chosenEq);
+          if (level === 'TH') generatedTH++;
+          if (level === 'VD') generatedVD++;
         }
       });
     }
 
-    // ================= PHÂN BIỆT RÕ RÀNG TỪNG LOẠI THIẾU HỤT CÂU HỎI (REQUIREMENT 10) =================
+    // ================= PHÂN BIỆT RÕ RÀNG TỪNG LOẠI THIẾU HỤT CÂU HỎI & DIAGNOSTICS =================
     const shortageWarnings = [];
+    const shortageDetails = [];
 
     // 1. Thiếu câu trắc nghiệm (MCQ)
     if (selectedMcq.length < mcqCount) {
+      const code = mcqDuplicateExhausted
+        ? 'DUPLICATE_EXHAUSTION'
+        : (sourceMode === 'document' ? 'DOCUMENT_POOL_SHORTAGE' : 'TEMPLATE_GENERATION_SHORTAGE');
+      const missing = mcqCount - selectedMcq.length;
+      shortageDetails.push({
+        type: 'mcq',
+        code,
+        requested: mcqCount,
+        generated: selectedMcq.length,
+        missing,
+        reason: code
+      });
       if (mcqDuplicateExhausted) {
         shortageWarnings.push('Trắc nghiệm: Không đủ câu hỏi độc nhất do trùng lặp chữ ký; đã dừng bổ sung để tránh lặp câu.');
       } else {
@@ -1943,8 +1969,17 @@ const MathEngine = {
     const actualVD = selectedEssay.filter(e => (e.level || '').toUpperCase() === 'VD').length;
     const actualVDC = selectedEssay.filter(e => (e.level || '').toUpperCase() === 'VDC').length;
 
-    // 2. Thiếu tự luận Thông hiểu (TH) - normal pool shortage / duplicate
+    // 2. Thiếu tự luận Thông hiểu (TH)
     if (actualTH < reqTH) {
+      const code = essayDuplicateExhausted.TH ? 'DUPLICATE_EXHAUSTION' : (sourceMode === 'document' ? 'DOCUMENT_POOL_SHORTAGE' : 'TEMPLATE_GENERATION_SHORTAGE');
+      shortageDetails.push({
+        type: 'essay_TH',
+        code,
+        requested: reqTH,
+        generated: actualTH,
+        missing: reqTH - actualTH,
+        reason: code
+      });
       if (essayDuplicateExhausted.TH) {
         shortageWarnings.push('Tự luận TH: Trùng lặp chữ ký nội dung câu hỏi; đã dừng bổ sung.');
       } else {
@@ -1952,8 +1987,17 @@ const MathEngine = {
       }
     }
 
-    // 3. Thiếu tự luận Vận dụng (VD) - VD shortage / duplicate
+    // 3. Thiếu tự luận Vận dụng (VD)
     if (actualVD < reqVD) {
+      const code = essayDuplicateExhausted.VD ? 'DUPLICATE_EXHAUSTION' : (sourceMode === 'document' ? 'DOCUMENT_POOL_SHORTAGE' : 'TEMPLATE_GENERATION_SHORTAGE');
+      shortageDetails.push({
+        type: 'essay_VD',
+        code,
+        requested: reqVD,
+        generated: actualVD,
+        missing: reqVD - actualVD,
+        reason: code
+      });
       if (essayDuplicateExhausted.VD) {
         shortageWarnings.push('Tự luận VD: Trùng lặp chữ ký nội dung câu hỏi; đã dừng bổ sung.');
       } else {
@@ -1963,11 +2007,15 @@ const MathEngine = {
 
     // 4. Thiếu tự luận Vận dụng cao (VDC) - approved VDC shortage
     if (actualVDC < reqVDC) {
-      if (sourceMode === 'synthetic') {
-        shortageWarnings.push(`Tự luận VDC: Chỉ sinh được ${actualVDC}/${reqVDC} câu Vận dụng cao.`);
-      } else {
-        shortageWarnings.push(`Tự luận VDC: Ngân hàng chỉ có ${actualVDC}/${reqVDC} câu VDC trường chuyên đã duyệt đạt chuẩn (SpecializedBankPolicy).`);
-      }
+      shortageDetails.push({
+        type: 'essay_VDC',
+        code: 'VDC_APPROVED_SOURCE_SHORTAGE',
+        requested: reqVDC,
+        generated: actualVDC,
+        missing: reqVDC - actualVDC,
+        reason: 'Ngân hàng hiện chưa có đủ câu VDC trường chuyên đã duyệt.'
+      });
+      shortageWarnings.push(`Tự luận VDC: Ngân hàng chỉ có ${actualVDC}/${reqVDC} câu VDC trường chuyên đã duyệt đạt chuẩn (SpecializedBankPolicy).`);
     }
 
     const allShortageMessages = [topicWarning, ...shortageWarnings].filter(Boolean);
@@ -2056,6 +2104,33 @@ const MathEngine = {
 
     const examHtml = this.renderExamToHtml(examTitle, answerKeys, timeLimit, termLabel);
 
+    const isComplete = shortageDetails.length === 0;
+
+    const generationDiagnostics = {
+      requested: {
+        mcq: mcqCount,
+        TH: reqTH,
+        VD: reqVD,
+        VDC: reqVDC
+      },
+      generated: {
+        mcq: selectedMcq.length,
+        TH: actualTH,
+        VD: actualVD,
+        VDC: actualVDC
+      },
+      sourceMode,
+      fallback: {
+        documentMcq: takenFromDocCount,
+        generatedMcq: Math.max(0, selectedMcq.length - takenFromDocCount),
+        documentEssayTH: Math.max(0, actualTH - generatedTH),
+        generatedEssayTH: generatedTH,
+        documentEssayVD: Math.max(0, actualVD - generatedVD),
+        generatedEssayVD: generatedVD
+      },
+      shortages: shortageDetails
+    };
+
     return {
       title: examTitle,
       difficultyMode,
@@ -2067,7 +2142,9 @@ const MathEngine = {
       essayCount: selectedEssay.length,
       answerKeys,
       examHtml,
-      warning: warningMsg
+      warning: warningMsg,
+      generationDiagnostics,
+      isComplete
     };
   },
 
@@ -2075,18 +2152,39 @@ const MathEngine = {
    * Sinh hàng loạt N đề thi (5, 10, 20 đề...) với cơ chế chống trùng lặp chéo
    * @param {Object} config
    *   - batchCount: số lượng đề thi cần sinh (mặc định: 5)
-   *   - deduplicatePolicy: 'disjoint' (100% độc lập không trùng câu hỏi) | 'variant_shuffle' (đảo mã đề 101, 102...)
+   *   - deduplicatePolicy: 'variant_shuffle' (mặc định: đảo mã đề 101, 102...) | 'disjoint' (100% độc lập)
    *   - titlePrefix: tiền tố tiêu đề đề thi
    */
   generateBatchExams(config = {}) {
     const {
       batchCount = 5,
-      deduplicatePolicy = 'disjoint',
+      deduplicatePolicy = 'variant_shuffle',
       titlePrefix = '',
       ...examConfig
     } = config;
 
     const count = Math.max(1, parseInt(batchCount, 10) || 5);
+    const reqMcq = Math.max(0, parseInt(examConfig.mcqCount ?? 12, 10) || 0);
+    const totalRequiredMcq = count * reqMcq;
+
+    // Disjoint Batch Preflight
+    if (deduplicatePolicy === 'disjoint') {
+      const gStr = (examConfig.track && examConfig.track.startsWith('dgnl')) ? 'DGNL' : (examConfig.grade || '10').toString();
+      const topic = examConfig.topic || 'all';
+      let docCount = 0;
+      const docBank = resolveDocBank();
+      if (docBank) {
+        docCount = docBank.query({ subject: 'toan', grade: gStr, topic, type: 'mcq' }).length;
+      }
+      const templates = GradeEngines.getTemplates(gStr, 'mcq', 'TH', topic);
+      const templateCount = Array.isArray(templates) ? templates.length : 0;
+      const availableUnique = examConfig.sourceMode === 'document' ? docCount : (docCount + templateCount * 12);
+
+      if (totalRequiredMcq > availableUnique) {
+        throw new Error(`Chế độ 100% độc lập cần ${totalRequiredMcq} câu độc nhất, nhưng bộ lọc hiện chỉ có ${availableUnique} câu khả dụng.`);
+      }
+    }
+
     const exams = [];
 
     if (deduplicatePolicy === 'variant_shuffle') {
