@@ -239,4 +239,24 @@ const examTopic = MathEngine.generateExam({
 assert.strictEqual(examTopic.answerKeys.filter(k => k.type === 'mcq').length, Math.min(5, docSoHoc.length));
 console.log('  => [TEST 16 PASSED]\n');
 
-console.log('🎉 ALL 16 MATH GENERATION CAPACITY TESTS PASSED SUCCESSFULLY!');
+// 17. default normal UI-compatible config
+console.log('👉 [TEST 17] Default normal UI-compatible config generates complete exam');
+const defaultUIExam = MathEngine.generateExam({
+  grade: '10',
+  sourceMode: 'hybrid',
+  mcqCount: 12,
+  essayMatrix: {
+    TH: 1,
+    VD: 1,
+    VDC: 0
+  }
+});
+assert.strictEqual(defaultUIExam.mcqCount, 12, 'Must generate 12 MCQ');
+const diag17 = defaultUIExam.generationDiagnostics.generated;
+assert.strictEqual(Number(diag17.TH ?? 0), 1, 'TH must be 1');
+assert.strictEqual(Number(diag17.VD ?? 0), 1, 'VD must be 1');
+assert.strictEqual(Number(diag17.VDC ?? 0), 0, 'VDC must be 0');
+assert.strictEqual(defaultUIExam.isComplete, true, 'isComplete must be true');
+console.log('  => [TEST 17 PASSED]\n');
+
+console.log('🎉 ALL 17 MATH GENERATION CAPACITY TESTS PASSED SUCCESSFULLY!');
