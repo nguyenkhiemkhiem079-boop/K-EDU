@@ -1,57 +1,57 @@
 {
-  "generatedAt": "2026-09-19T15:05:22.984Z",
+  "generatedAt": "2026-09-19T15:30:20.990Z",
   "bankSummary": {
-    "totalRaw": 1229,
-    "totalMapped": 1229,
-    "totalUniqueUsable": 1229,
+    "totalRaw": 854,
+    "totalMapped": 854,
+    "totalUniqueUsable": 854,
     "duplicatesCount": 0,
     "duplicateGroupsCount": 0,
     "invalidCount": 0,
     "unsupportedCount": 0,
     "sections": {
       "vietnamese": {
-        "total": 247,
+        "total": 230,
         "difficulty": {
           "easy": 0,
           "medium": 0,
           "hard": 0,
-          "unclassified": 247
+          "unclassified": 230
         }
       },
       "english": {
-        "total": 374,
+        "total": 373,
         "difficulty": {
           "easy": 0,
           "medium": 0,
           "hard": 0,
-          "unclassified": 374
+          "unclassified": 373
         }
       },
       "math": {
-        "total": 283,
+        "total": 176,
         "difficulty": {
           "easy": 0,
           "medium": 0,
           "hard": 0,
-          "unclassified": 283
+          "unclassified": 176
         }
       },
       "logic_data": {
-        "total": 135,
+        "total": 28,
         "difficulty": {
           "easy": 0,
           "medium": 0,
           "hard": 0,
-          "unclassified": 135
+          "unclassified": 28
         }
       },
       "scientific_reasoning": {
-        "total": 190,
+        "total": 47,
         "difficulty": {
           "easy": 0,
           "medium": 0,
           "hard": 0,
-          "unclassified": 190
+          "unclassified": 47
         },
         "skills": {
           "physics": 0,
@@ -68,7 +68,7 @@
       }
     },
     "qualityStatus": {
-      "usable": 1229,
+      "usable": 854,
       "invalid": 0,
       "duplicate": 0,
       "unsupported": 0,
@@ -87,35 +87,35 @@
     "sections": {
       "vietnamese": {
         "required": 25,
-        "available": 247,
+        "available": 230,
         "missing": 0,
         "ready": true,
         "reason": null
       },
       "english": {
         "required": 25,
-        "available": 374,
+        "available": 373,
         "missing": 0,
         "ready": true,
         "reason": null
       },
       "math": {
         "required": 25,
-        "available": 283,
+        "available": 176,
         "missing": 0,
         "ready": true,
         "reason": null
       },
       "logic_data": {
         "required": 10,
-        "available": 135,
+        "available": 28,
         "missing": 0,
         "ready": true,
         "reason": null
       },
       "scientific_reasoning": {
         "required": 15,
-        "available": 190,
+        "available": 47,
         "missing": 0,
         "ready": true,
         "reason": null
@@ -123,11 +123,11 @@
     },
     "shortages": [],
     "debugReport": {
-      "vietnamese": "247/25",
-      "english": "374/25",
-      "math": "283/25",
-      "logic_data": "135/10",
-      "scientific_reasoning": "190/15"
+      "vietnamese": "230/25",
+      "english": "373/25",
+      "math": "176/25",
+      "logic_data": "28/10",
+      "scientific_reasoning": "47/15"
     }
   },
   "fullReadiness": {
@@ -140,35 +140,35 @@
     "sections": {
       "vietnamese": {
         "required": 30,
-        "available": 247,
+        "available": 230,
         "missing": 0,
         "ready": true,
         "reason": null
       },
       "english": {
         "required": 30,
-        "available": 374,
+        "available": 373,
         "missing": 0,
         "ready": true,
         "reason": null
       },
       "math": {
         "required": 30,
-        "available": 283,
+        "available": 176,
         "missing": 0,
         "ready": true,
         "reason": null
       },
       "logic_data": {
         "required": 12,
-        "available": 135,
+        "available": 28,
         "missing": 0,
         "ready": true,
         "reason": null
       },
       "scientific_reasoning": {
         "required": 18,
-        "available": 190,
+        "available": 47,
         "missing": 0,
         "ready": true,
         "reason": null
@@ -176,11 +176,11 @@
     },
     "shortages": [],
     "debugReport": {
-      "vietnamese": "247/30",
-      "english": "374/30",
-      "math": "283/30",
-      "logic_data": "135/12",
-      "scientific_reasoning": "190/18"
+      "vietnamese": "230/30",
+      "english": "373/30",
+      "math": "176/30",
+      "logic_data": "28/12",
+      "scientific_reasoning": "47/18"
     }
   }
 }

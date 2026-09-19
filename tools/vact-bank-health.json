@@ -1,14 +1,14 @@
 {
-  "timestamp": "2026-09-19T15:05:22.460Z",
+  "timestamp": "2026-09-19T15:30:20.797Z",
   "summary": {
-    "totalRaw": 1229,
-    "totalMapped": 1229,
-    "totalUniqueUsable": 1229,
+    "totalRaw": 854,
+    "totalMapped": 854,
+    "totalUniqueUsable": 854,
     "duplicatesRemoved": 0,
-    "probableDuplicates": 24,
-    "reviewRequiredPairs": 156,
-    "questionsScanned": 1229,
-    "candidateComparisons": 754606
+    "probableDuplicates": 17,
+    "reviewRequiredPairs": 30,
+    "questionsScanned": 854,
+    "candidateComparisons": 364231
   },
   "coverage": {
     "targets": {
@@ -32,29 +32,29 @@
     },
     "sections": {
       "vietnamese": {
-        "available": 247,
+        "available": 230,
         "target": 600,
-        "deficit": 353
+        "deficit": 370
       },
       "english": {
-        "available": 374,
+        "available": 373,
         "target": 600,
-        "deficit": 226
+        "deficit": 227
       },
       "math": {
-        "available": 283,
+        "available": 176,
         "target": 600,
-        "deficit": 317
+        "deficit": 424
       },
       "logic_data": {
-        "available": 135,
+        "available": 28,
         "target": 240,
-        "deficit": 105
+        "deficit": 212
       },
       "scientific_reasoning": {
-        "available": 190,
+        "available": 47,
         "target": 360,
-        "deficit": 170,
+        "deficit": 313,
         "skills": {
           "physics": 0,
           "chemistry": 0,
@@ -73,8 +73,8 @@
   "duplicates": {
     "totalDuplicatesRemoved": 0,
     "duplicateGroupsCount": 0,
-    "probableDuplicatesCount": 24,
-    "reviewRequiredCount": 156,
+    "probableDuplicatesCount": 17,
+    "reviewRequiredCount": 30,
     "sampleNearDuplicates": [
       {
         "q1Id": "vact_q_1c3e50a762b7",
@@ -141,28 +141,28 @@
         "q2Preview": "In America, a worker can take a _______ leave to take care of his or her baby"
       },
       {
-        "q1Id": "vact_q_5214cd60d2f2",
-        "q2Id": "vact_q_d9ec3342249e",
-        "similarity": 0.706,
+        "q1Id": "vact_q_d9ec3342249e",
+        "q2Id": "vact_q_63904a34f1a8",
+        "similarity": 0.712,
         "status": "REVIEW_REQUIRED",
-        "q1Preview": "Go away! I want to be __________ alone",
-        "q2Preview": "________ she studies, the better results she gets"
+        "q1Preview": "________ she studies, the better results she gets",
+        "q2Preview": "Due to the heavy rain, there were ______ cars on the road this morning"
       },
       {
-        "q1Id": "vact_q_14b7bd7ba9be",
-        "q2Id": "vact_q_d9ec3342249e",
-        "similarity": 0.704,
+        "q1Id": "vact_q_6578340c3cb1",
+        "q2Id": "vact_q_6b69ffb77e2f",
+        "similarity": 0.769,
         "status": "REVIEW_REQUIRED",
-        "q1Preview": "In challenging times, everyone needs ___ courage to keep moving forward",
-        "q2Preview": "________ she studies, the better results she gets"
+        "q1Preview": "Câu nào dưới đây không thể đúng?",
+        "q2Preview": "Nếu D sống ở tầng 4 thì câu nào dưới đây không thể đúng?"
       }
     ]
   },
   "examDuplicates": {
-    "totalRegisteredExams": 42,
-    "canonicalExams": 42,
-    "completeCanonicalExams": 14,
-    "incompleteExams": 28,
+    "totalRegisteredExams": 56,
+    "canonicalExams": 56,
+    "completeCanonicalExams": 0,
+    "incompleteExams": 56,
     "mirrorsDetected": 0,
     "mirrors": []
   },
@@ -191,39 +191,39 @@
   },
   "gaps": [
     {
-      "section": "vietnamese",
-      "target": 600,
-      "available": 247,
-      "missing": 353,
-      "deficitPct": 58.8
-    },
-    {
       "section": "math",
       "target": 600,
-      "available": 283,
-      "missing": 317,
-      "deficitPct": 52.8
+      "available": 176,
+      "missing": 424,
+      "deficitPct": 70.7
     },
     {
-      "section": "english",
+      "section": "vietnamese",
       "target": 600,
-      "available": 374,
-      "missing": 226,
-      "deficitPct": 37.7
+      "available": 230,
+      "missing": 370,
+      "deficitPct": 61.7
     },
     {
       "section": "scientific_reasoning",
       "target": 360,
-      "available": 190,
-      "missing": 170,
-      "deficitPct": 47.2
+      "available": 47,
+      "missing": 313,
+      "deficitPct": 86.9
+    },
+    {
+      "section": "english",
+      "target": 600,
+      "available": 373,
+      "missing": 227,
+      "deficitPct": 37.8
     },
     {
       "section": "logic_data",
       "target": 240,
-      "available": 135,
-      "missing": 105,
-      "deficitPct": 43.8
+      "available": 28,
+      "missing": 212,
+      "deficitPct": 88.3
     },
     {
       "section": "scientific_reasoning",
