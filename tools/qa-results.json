@@ -100,6 +100,11 @@
     "error": null
   },
   {
+    "test": "verify_ui_contract.js",
+    "passed": true,
+    "error": null
+  },
+  {
     "test": "verify_vact_adaptive_production.js",
     "passed": true,
     "error": null
