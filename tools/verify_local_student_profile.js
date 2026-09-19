@@ -1,0 +1,32 @@
+const assert = require('node:assert');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const root = path.resolve(__dirname, '..');
+const read = file => fs.readFileSync(path.join(root, file), 'utf8');
+
+assert.ok(fs.existsSync(path.join(root, 'js/localStudentProfile.js')));
+const html = read('index.html');
+const app = read('js/app.js');
+assert.ok(html.includes('js/localStudentProfile.js?v=1.0'));
+assert.ok(!html.includes('student' + 'Accounts.js'));
+assert.ok(!html.includes('firebase-' + 'auth-compat.js'));
+assert.ok(!new RegExp('studentAccount(?:User' + 'name|Pass' + 'word)').test(html));
+assert.ok(!new RegExp('Student' + 'Accounts').test(app));
+
+const store = new Map();
+const crypto = { randomUUID: () => 'stable-test-id' };
+const context = { window: {}, localStorage: { getItem: k => store.get(k) || null, setItem: (k, v) => store.set(k, v), removeItem: k => store.delete(k) }, crypto, globalThis: { crypto } };
+context.window = context;
+vm.createContext(context);
+vm.runInContext(read('js/localStudentProfile.js'), context);
+const profile = context.LocalStudentProfile;
+profile.init();
+const id = profile.getStudentId();
+profile.updateProfile({ name: 'Nguyễn Văn An', className: '10A1' });
+assert.equal(profile.getStudentId(), id);
+profile.init();
+assert.equal(profile.getStudentId(), id);
+profile.updateProfile({ name: 'Trần An', className: '11A1' });
+assert.equal(profile.getStudentId(), id);
+console.log('Local student profile, stable identity, and login-free runtime checks passed.');
