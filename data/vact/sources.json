@@ -13,7 +13,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "1f8441bfd594d1eb98cbeb7f8a73ce4761699ae60a22eb7e992d15242b12013d",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_1f71c451be9cacfd",
@@ -29,7 +30,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "1f71c451be9cacfd1d10b03da8159948c9f343f17ef72d807384c8e79caddeaf",
-    "notes": "Đề tái hiện phần Toán & Xử lý số liệu Đợt 1 2025"
+    "notes": "Đề tái hiện phần Toán & Xử lý số liệu Đợt 1 2025",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_4cf37b4c5ce74ee2",
@@ -39,13 +41,14 @@
     "year": 2025,
     "sectionHint": null,
     "documentRole": "question",
-    "pairedSourceId": "vact_source_000004",
+    "pairedSourceId": "vact_src_e847c66fe1b6aafe",
     "structureVersion": "2025+",
     "official": true,
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "4cf37b4c5ce74ee23d56c41f82c2db1b7aba46cb128ca855ceac542e97a7e1a6",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_e847c66fe1b6aafe",
@@ -61,7 +64,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "e847c66fe1b6aafe3d25896a175be54da9c8d58922d2f16b30448baf0462bc55",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_83656d2067cf1582",
@@ -71,13 +75,14 @@
     "year": 2025,
     "sectionHint": null,
     "documentRole": "question",
-    "pairedSourceId": "vact_source_000006",
+    "pairedSourceId": "vact_src_3f561154b90327d3",
     "structureVersion": "2025+",
     "official": true,
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "83656d2067cf1582a15be61743317dcf096d2db2d820b904ccc5a16b0f23b092",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_3f561154b90327d3",
@@ -93,7 +98,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "3f561154b90327d30cbe22c7fe152425e3282f11be346592fa75a5c58865037c",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_cb87500c8a108a00",
@@ -109,7 +115,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "cb87500c8a108a002debdd14b736163f58e6a1326d39daa1328026c5a6f9d9ca",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_f2d05f4120afe4e2",
@@ -125,7 +132,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "f2d05f4120afe4e2c0400de0d63d95fac8db7100546f0a51e454c54a46446afa",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_17d8fed8a404efa0",
@@ -135,13 +143,14 @@
     "year": 2025,
     "sectionHint": null,
     "documentRole": "question",
-    "pairedSourceId": "vact_source_000010",
+    "pairedSourceId": "vact_src_706665013bf726c5",
     "structureVersion": "2025+",
     "official": false,
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "17d8fed8a404efa0d7bcf32610daa37c03d1abe4b64336e59989e78d2a81f8ef",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_706665013bf726c5",
@@ -157,7 +166,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "706665013bf726c51b7b0fa87baa58a1e04ad16ca54dcacf8b1231196408ff54",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_b88f3abd1a3e719a",
@@ -167,13 +177,14 @@
     "year": 2025,
     "sectionHint": null,
     "documentRole": "question",
-    "pairedSourceId": "vact_source_000012",
+    "pairedSourceId": "vact_src_3e4e33cbeccb1eec",
     "structureVersion": "2025+",
     "official": false,
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "b88f3abd1a3e719acaba807bb990571f5fdddf7b001f9af56f5332c70e4f5a37",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_3e4e33cbeccb1eec",
@@ -189,7 +200,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "3e4e33cbeccb1eeccc28f4f1974ef47071c113993ae9cc29688fd6f99835df88",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_90b53bf1a16cac6d",
@@ -199,13 +211,14 @@
     "year": 2025,
     "sectionHint": null,
     "documentRole": "question",
-    "pairedSourceId": "vact_source_000014",
+    "pairedSourceId": "vact_src_7c2fc7e7c2eaba0e",
     "structureVersion": "2025+",
     "official": false,
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "90b53bf1a16cac6df07c6bd707ee2140721ebe1a5e4fcfa8cc8e7913e1b49f01",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_7c2fc7e7c2eaba0e",
@@ -221,7 +234,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "7c2fc7e7c2eaba0e459295d7b136e0f2120d45bd16ab68d32002e8b74afe0a76",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_8ef539cd1de92b2b",
@@ -231,13 +245,14 @@
     "year": 2025,
     "sectionHint": null,
     "documentRole": "question",
-    "pairedSourceId": "vact_source_000016",
+    "pairedSourceId": "vact_src_46ce83f0ab5d39db",
     "structureVersion": "2025+",
     "official": false,
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "8ef539cd1de92b2b5afe1ef186a4bf8a8a15107c95811cfbc8940d9411a76b9a",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_46ce83f0ab5d39db",
@@ -253,7 +268,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "46ce83f0ab5d39dbe426c329b6c54b61d73fa95c011d2be7710e67a9f840f25b",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_341d38395120469d",
@@ -263,13 +279,14 @@
     "year": 2025,
     "sectionHint": null,
     "documentRole": "question",
-    "pairedSourceId": "vact_source_000018",
+    "pairedSourceId": "vact_src_43a2ca1b3363aeab",
     "structureVersion": "2025+",
     "official": false,
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "341d38395120469d6962f74503dc988d438a1472c4e35c72343d937b05c508f1",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_43a2ca1b3363aeab",
@@ -285,7 +302,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "43a2ca1b3363aeabaddfe151f00ce1d10966b4a672d6631d906b67a67c14ea3d",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_8e5266e0f8990361",
@@ -295,13 +313,14 @@
     "year": 2025,
     "sectionHint": null,
     "documentRole": "question",
-    "pairedSourceId": "vact_source_000020",
+    "pairedSourceId": "vact_src_c7fd7235c94b8606",
     "structureVersion": "2025+",
     "official": false,
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "8e5266e0f89903614c83098b98aec9d74918dae784e5695cdac8fd550de14dcf",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_c7fd7235c94b8606",
@@ -317,7 +336,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "c7fd7235c94b86066ff4a1cfaf3d6e1124ca6d72ff635eef81b65f9d1a94dec5",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_f836cc483b23fbd7",
@@ -327,13 +347,14 @@
     "year": 2025,
     "sectionHint": null,
     "documentRole": "question",
-    "pairedSourceId": "vact_source_000022",
+    "pairedSourceId": "vact_src_054a7d198df993a9",
     "structureVersion": "2025+",
     "official": false,
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "f836cc483b23fbd7eab6474ce5ad06753305cef02b56641cd855fd706ffc2562",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_054a7d198df993a9",
@@ -349,7 +370,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "054a7d198df993a9b30368ffad28da77daada0e97ef23cd4ce4e3dd4ccc9a3f4",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_218313a1de131946",
@@ -359,13 +381,14 @@
     "year": 2025,
     "sectionHint": null,
     "documentRole": "question",
-    "pairedSourceId": "vact_source_000024",
+    "pairedSourceId": "vact_src_e251b05bf1006de9",
     "structureVersion": "2025+",
     "official": false,
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "218313a1de131946e9ee15bf06234229566fcfc632d440ddc9290499793056a3",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_e251b05bf1006de9",
@@ -381,7 +404,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "e251b05bf1006de9cbc23ef5e057549c9442fee71d0e89fc4d85c2a4941fe1ac",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_241bd882cb7bae91",
@@ -391,13 +415,14 @@
     "year": 2025,
     "sectionHint": null,
     "documentRole": "question",
-    "pairedSourceId": "vact_source_000026",
+    "pairedSourceId": "vact_src_a1f72a785fdde2bc",
     "structureVersion": "2025+",
     "official": false,
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "241bd882cb7bae913c3b57fc7706d447ee412c084abddb4efbf8413a3c0faa54",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_a1f72a785fdde2bc",
@@ -413,7 +438,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "a1f72a785fdde2bc9a4acebe9aa40b11866a9b41b2be91b1e1d33cafcf876ce8",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_35d1a945e609ac65",
@@ -423,13 +449,14 @@
     "year": 2025,
     "sectionHint": null,
     "documentRole": "question",
-    "pairedSourceId": "vact_source_000028",
+    "pairedSourceId": "vact_src_b6696870cd3a01d1",
     "structureVersion": "2025+",
     "official": false,
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "35d1a945e609ac655bcad9355e4d5311710878b7ce0c33d915f61e8e102742ef",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_b6696870cd3a01d1",
@@ -445,7 +472,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "b6696870cd3a01d1e5e9dd0ed0a990c7d450ba696901a63c30ae7f4cda401b37",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_020b18fa88013249",
@@ -455,13 +483,14 @@
     "year": 2025,
     "sectionHint": null,
     "documentRole": "question",
-    "pairedSourceId": "vact_source_000030",
+    "pairedSourceId": "vact_src_7dc183ac3529f835",
     "structureVersion": "2025+",
     "official": false,
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "020b18fa88013249c17a5606941b3510d4dec34b439f6725fd294e07657719af",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_7dc183ac3529f835",
@@ -477,7 +506,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "7dc183ac3529f835dac263ede227b661914721efa6a0fb77bcb80b1ac718abc0",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_93a66dacbca49e5d",
@@ -487,13 +517,14 @@
     "year": 2025,
     "sectionHint": null,
     "documentRole": "question",
-    "pairedSourceId": "vact_source_000032",
+    "pairedSourceId": "vact_src_baf8f109ffbaa351",
     "structureVersion": "2025+",
     "official": false,
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "93a66dacbca49e5d097cc0532c7c4d2ec760e7b6861b7ab82b32f78cc3a1914d",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_baf8f109ffbaa351",
@@ -509,7 +540,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "baf8f109ffbaa351588a3778da32eb95cc3918afd2624ccdbebfa06cc4ff8581",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_6fef8098bb8a463c",
@@ -525,7 +557,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "6fef8098bb8a463cdb6e64701ceb5b13ada061821c1bb4daf997b6b197af007d",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_6de8d706c24ffa20",
@@ -541,7 +574,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "6de8d706c24ffa2037297ea3a98c7b3f7f4f9a683b005b14cfd0e96df4324fdd",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_fc006c57482064b2",
@@ -557,7 +591,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "fc006c57482064b2c028fdeac01c2eb54ed0c6524ecfb3da11bd0bdf5a71b8c8",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_3e4c690ef6e0ee48",
@@ -573,7 +608,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "3e4c690ef6e0ee4851c9005ff20d68f497dad60aa51e51350bc7a4ca4c4d2049",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_0c999e90d9d79807",
@@ -589,7 +625,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "0c999e90d9d79807c25562c2cd506500c332c209e05a7ef310d4c09a9f36b742",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_d9dce4c4e03e2df9",
@@ -605,7 +642,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "d9dce4c4e03e2df9fcb39fabf0c1daa2b885fcd9cc44ac594289399635531a04",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_000d4c80fea134dc",
@@ -621,7 +659,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "000d4c80fea134dc4b5180f2de1768f9ca5f30c9bcdb4054b67a72a2fe0a7d22",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_ec54445e941fc843",
@@ -637,7 +676,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "ec54445e941fc8438feab44f6b04ac3e28f296a86530c1a13bc1150c94b12243",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_c105817e37ef953a",
@@ -653,7 +693,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "c105817e37ef953a10a9c12e3c951b45ba1a5194a36493710fb6ff8d8fd5ce58",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_d89b8ac2cfc86fc2",
@@ -669,7 +710,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "d89b8ac2cfc86fc2042ee1d2db86e51dfd2680db2519030d5011e4e5f9fb01d0",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_df48585807e5bde0",
@@ -685,7 +727,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "df48585807e5bde0b2a7d59b23242d64dbbaa76aa4ee31aea6e45ba8d86e0261",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_92937831424effbe",
@@ -701,7 +744,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "92937831424effbeee9ae74f8352ea160ec6e2f506edb919f88920f9d8e16898",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_7946cdb9c8e87a94",
@@ -717,7 +761,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "7946cdb9c8e87a94496785c28a1e43e25352ebf4808c7abed69cec112da70e74",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_af1c9338e011ee9b",
@@ -733,7 +778,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "af1c9338e011ee9b351d1c5897777b5f668d63a5c84e638dee5ee6cc4548f952",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_78ab6774bb239ef7",
@@ -749,7 +795,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "78ab6774bb239ef7cdd32c382bc058e7b718c93f9e70645b8fc00c8d8bb0a309",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_505b1d6fd2521bc0",
@@ -765,7 +812,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "505b1d6fd2521bc0d0b81e7434486de3779010f52ec91cec3f16e741b3757095",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_0723d515ec884921",
@@ -781,7 +829,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "0723d515ec88492119c1e449212b8adbcf9550e46e484f08cca10a5c8d0e2c8f",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_026387aaffec0260",
@@ -797,7 +846,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "026387aaffec02609e4ad9fe068541eef9e5b26e7897c6a9726d6f2348aa0d24",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_32e87cd40f43c3e0",
@@ -813,7 +863,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "32e87cd40f43c3e06028aba778c97660ab3ce7f8a78dde830ae698fbefe8b223",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_5a40e2a399b2d569",
@@ -829,7 +880,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "5a40e2a399b2d56981f028b4ffd9bf1ea70351fdbf19c85ee0f831a92ba8c23e",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_3d1a84b772996372",
@@ -845,7 +897,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "3d1a84b7729963720839538ab6c8d3de4df20265a71e8e0e344498f51a473724",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_ec51453b715a5f19",
@@ -861,7 +914,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "ec51453b715a5f19d2a83331cc2450e3bf9c971f204983414eb2b0296070f87a",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_04a098e599e08ea0",
@@ -877,7 +931,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "04a098e599e08ea0a3cf9fcfca558cee974c5e81fe169cd88b888a9045f077b0",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_6b5f3097526000f5",
@@ -893,7 +948,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "6b5f3097526000f5cbadc3c5330be5114b179193a9c639c600b70d23d9ef7ebc",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_7c6a5229f97d703e",
@@ -909,7 +965,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "7c6a5229f97d703ebd1e47b0f8503290baaf8e2f673d0f3f32648a6a1fecd39a",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_338bc7f9098e1e6e",
@@ -925,7 +982,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "338bc7f9098e1e6e0c38dd41f1f63efd614d6a8596e9ff0b547d56999a499cfb",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_1576e2ece9bd9d51",
@@ -941,7 +999,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "1576e2ece9bd9d51c3c343f74ee5308e16381f794259dd6e3532915a838a9b3e",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_df3cce3e170cae11",
@@ -957,7 +1016,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "df3cce3e170cae1193a692db6072dd01769d34932cd1f7f177db998f92d1af6c",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_aedec9f6e7670b56",
@@ -973,7 +1033,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "aedec9f6e7670b56bbc6e84a1b7c959035f3ff4044a819178722f4a0945793c3",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_406fa8501b62efdf",
@@ -989,7 +1050,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "406fa8501b62efdf365637d30338b61a9a41d6fa78fe69e2a83093bfa070e730",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_14d11dd5c0381ca1",
@@ -1005,7 +1067,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "14d11dd5c0381ca1ad70e47d32428fadc42e5ca324102fd9171c3a98d3dc4ad7",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_f1fd0de33a629c20",
@@ -1021,7 +1084,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "f1fd0de33a629c2069031d8b743d114a03df0d2d8d4ef406dc210422714a70d0",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_b09ffea5991342c4",
@@ -1037,7 +1101,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "b09ffea5991342c45a9140d4ec10b33b15ce5c23b604980a8e077e57f204be77",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_d5abbb11f1d36f7b",
@@ -1053,7 +1118,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "d5abbb11f1d36f7b37174370e3024aaf049033f51f547006890b422fefc19f33",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_84624b4aab5ae2f2",
@@ -1069,7 +1135,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "84624b4aab5ae2f24a5057d1faf5fb0627d907e853a8b5baba26216a0b8ff713",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_d99617b8c9728f01",
@@ -1085,7 +1152,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "d99617b8c9728f010983991aff178a1f8789b630a047831e33109631344f6d17",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_92789d7531f26dde",
@@ -1101,7 +1169,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "92789d7531f26ddeeb5e72485b17ddbd18c67389d28280d14db4101272c3f79d",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_0caf006d1ad8bc00",
@@ -1111,13 +1180,14 @@
     "year": 2025,
     "sectionHint": "scientific_reasoning",
     "documentRole": "question",
-    "pairedSourceId": "vact_source_000071",
+    "pairedSourceId": "vact_src_71222cc0b77bdaa7",
     "structureVersion": "2025+",
     "official": false,
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "0caf006d1ad8bc00f184cf751d5f9597036c234f9e1040b461ee7060f457fd99",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_71222cc0b77bdaa7",
@@ -1133,7 +1203,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "71222cc0b77bdaa747c2eec730a58cdeee23c367673808d232128e77c333c6ad",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_3a92ee301c073442",
@@ -1143,13 +1214,14 @@
     "year": 2025,
     "sectionHint": "scientific_reasoning",
     "documentRole": "question",
-    "pairedSourceId": "vact_source_000073",
+    "pairedSourceId": "vact_src_6db7d82006c5dca2",
     "structureVersion": "2025+",
     "official": false,
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "3a92ee301c073442e0a5e826972a90438baa111237574c81b9a5f9be8381492f",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_6db7d82006c5dca2",
@@ -1165,7 +1237,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "6db7d82006c5dca2f63612d25d4de3448aa8ef3829253e232f33603ac7e7fd42",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_588e22c2713b3037",
@@ -1181,7 +1254,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "588e22c2713b30371b352af0c22394a00cc59567491ed1f3b482cbffe09377c1",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_87264bfd57d96caa",
@@ -1197,7 +1271,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "87264bfd57d96caa56149cd808c484d7228e6babdf72dd339cb3b75ab397fa33",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_606e08174207248b",
@@ -1213,7 +1288,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "606e08174207248b19a6f18b250103f7c0498dee537e8a50c60077d99aa34aa6",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_e137bb4fe613f032",
@@ -1229,7 +1305,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "e137bb4fe613f032717c7e66c24b7c28610448e432cb03905cc6a374023c9b17",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_e49447bcff9e890a",
@@ -1245,7 +1322,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "e49447bcff9e890a275ad55559f07ffdd96697a35d410a60b4aeb9b91b66ccb8",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_15f03104c8525bf8",
@@ -1261,7 +1339,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "15f03104c8525bf8be071813c7dfb40ef74a79219c51e57d9b4ed9f3e9b2e6ea",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_d3079e48cebf7b01",
@@ -1277,7 +1356,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "d3079e48cebf7b012714a0ed6bd4892a22e0abe8ae50cb9a0053cdbd11afc714",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_199a1da55a8a1756",
@@ -1293,7 +1373,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "199a1da55a8a1756cfe81180cecd64cb0a64145f2e7f4a1330518e5d09708de0",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_8cea12ae9f4702dd",
@@ -1309,7 +1390,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "8cea12ae9f4702dd442afe342b87f2434c37a16139d0acc5ac169a9ef73e1e80",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_4e6ee50906fcde3a",
@@ -1325,7 +1407,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "4e6ee50906fcde3abad1e0c92478cb67c7dd990ae2975147ed0b533918d3c515",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_83a2a6fe5b7ff71b",
@@ -1341,7 +1424,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "83a2a6fe5b7ff71b0cb431769142109a1eb2c052d1344538f326c3ab7e6193bb",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_ba3a251c55ab00cb",
@@ -1357,7 +1441,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "ba3a251c55ab00cb8774c4595e4ae32c641e32c9e513a6fac391df323f2232c2",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_c90ec9774a31cd2b",
@@ -1373,7 +1458,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "c90ec9774a31cd2b481c09098ed58287bef0da8641ecfae2d4cb5aa25cde851e",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_3abb7b603faff2d2",
@@ -1389,7 +1475,8 @@
     "usableForQuestionExtraction": true,
     "rightsStatus": "review_required",
     "fileHash": "3abb7b603faff2d2abb997576ae92ccc48b47f612540b49b10176d313d3370e3",
-    "notes": ""
+    "notes": "",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_1898b15a60aabf7b",
@@ -1405,7 +1492,8 @@
     "usableForQuestionExtraction": false,
     "rightsStatus": "review_required",
     "fileHash": "1898b15a60aabf7b894027c03f3214b7aef65c15f4230ee913f186bde3e28383",
-    "notes": "Tài liệu đang chờ phân loại / ngoài phạm vi V-ACT chuẩn"
+    "notes": "Tài liệu đang chờ phân loại / ngoài phạm vi V-ACT chuẩn",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_e0f2ce0fc0670d68",
@@ -1421,7 +1509,8 @@
     "usableForQuestionExtraction": false,
     "rightsStatus": "review_required",
     "fileHash": "e0f2ce0fc0670d68411d99885c611a33cee836677fa05947eb0df7e8de0250eb",
-    "notes": "Tài liệu đang chờ phân loại / ngoài phạm vi V-ACT chuẩn"
+    "notes": "Tài liệu đang chờ phân loại / ngoài phạm vi V-ACT chuẩn",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_ed292af33f50d2e7",
@@ -1437,7 +1526,8 @@
     "usableForQuestionExtraction": false,
     "rightsStatus": "review_required",
     "fileHash": "ed292af33f50d2e7c1912b2a96ee3a035b302d0d2e5c9dccdb4d050c0e903807",
-    "notes": "Tài liệu đang chờ phân loại / ngoài phạm vi V-ACT chuẩn"
+    "notes": "Tài liệu đang chờ phân loại / ngoài phạm vi V-ACT chuẩn",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_cb628ca341d690d5",
@@ -1453,7 +1543,8 @@
     "usableForQuestionExtraction": false,
     "rightsStatus": "review_required",
     "fileHash": "cb628ca341d690d5f21b551dd6da13bc607a070c816633986abcb43f2205a1d0",
-    "notes": "Tài liệu đang chờ phân loại / ngoài phạm vi V-ACT chuẩn"
+    "notes": "Tài liệu đang chờ phân loại / ngoài phạm vi V-ACT chuẩn",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_f3127713608ffca8",
@@ -1469,7 +1560,8 @@
     "usableForQuestionExtraction": false,
     "rightsStatus": "review_required",
     "fileHash": "f3127713608ffca8ff49b3465712c2f47a791428f1fb86deba26e030e6164f07",
-    "notes": "Tài liệu đang chờ phân loại / ngoài phạm vi V-ACT chuẩn"
+    "notes": "Tài liệu đang chờ phân loại / ngoài phạm vi V-ACT chuẩn",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_e65a518f02c63639",
@@ -1485,7 +1577,8 @@
     "usableForQuestionExtraction": false,
     "rightsStatus": "review_required",
     "fileHash": "e65a518f02c636396a9fdc3e8c66b549798036da8e01e9f7ff3fc2e8daa0dd94",
-    "notes": "Tài liệu đang chờ phân loại / ngoài phạm vi V-ACT chuẩn"
+    "notes": "Tài liệu đang chờ phân loại / ngoài phạm vi V-ACT chuẩn",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_e847c66fe1b6aafe",
@@ -1501,7 +1594,8 @@
     "usableForQuestionExtraction": false,
     "rightsStatus": "review_required",
     "fileHash": "e847c66fe1b6aafe3d25896a175be54da9c8d58922d2f16b30448baf0462bc55",
-    "notes": "Tài liệu trùng lặp (SHA-256 byte identical)"
+    "notes": "Tài liệu trùng lặp (SHA-256 byte identical)",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_3f561154b90327d3",
@@ -1517,7 +1611,8 @@
     "usableForQuestionExtraction": false,
     "rightsStatus": "review_required",
     "fileHash": "3f561154b90327d30cbe22c7fe152425e3282f11be346592fa75a5c58865037c",
-    "notes": "Tài liệu trùng lặp (SHA-256 byte identical)"
+    "notes": "Tài liệu trùng lặp (SHA-256 byte identical)",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_4cf37b4c5ce74ee2",
@@ -1533,7 +1628,8 @@
     "usableForQuestionExtraction": false,
     "rightsStatus": "review_required",
     "fileHash": "4cf37b4c5ce74ee23d56c41f82c2db1b7aba46cb128ca855ceac542e97a7e1a6",
-    "notes": "Tài liệu trùng lặp (SHA-256 byte identical)"
+    "notes": "Tài liệu trùng lặp (SHA-256 byte identical)",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_83656d2067cf1582",
@@ -1549,7 +1645,8 @@
     "usableForQuestionExtraction": false,
     "rightsStatus": "review_required",
     "fileHash": "83656d2067cf1582a15be61743317dcf096d2db2d820b904ccc5a16b0f23b092",
-    "notes": "Tài liệu trùng lặp (SHA-256 byte identical)"
+    "notes": "Tài liệu trùng lặp (SHA-256 byte identical)",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_706665013bf726c5",
@@ -1565,7 +1662,8 @@
     "usableForQuestionExtraction": false,
     "rightsStatus": "review_required",
     "fileHash": "706665013bf726c51b7b0fa87baa58a1e04ad16ca54dcacf8b1231196408ff54",
-    "notes": "Tài liệu trùng lặp (SHA-256 byte identical)"
+    "notes": "Tài liệu trùng lặp (SHA-256 byte identical)",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_17d8fed8a404efa0",
@@ -1581,7 +1679,8 @@
     "usableForQuestionExtraction": false,
     "rightsStatus": "review_required",
     "fileHash": "17d8fed8a404efa0d7bcf32610daa37c03d1abe4b64336e59989e78d2a81f8ef",
-    "notes": "Tài liệu trùng lặp (SHA-256 byte identical)"
+    "notes": "Tài liệu trùng lặp (SHA-256 byte identical)",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_3e4e33cbeccb1eec",
@@ -1597,7 +1696,8 @@
     "usableForQuestionExtraction": false,
     "rightsStatus": "review_required",
     "fileHash": "3e4e33cbeccb1eeccc28f4f1974ef47071c113993ae9cc29688fd6f99835df88",
-    "notes": "Tài liệu trùng lặp (SHA-256 byte identical)"
+    "notes": "Tài liệu trùng lặp (SHA-256 byte identical)",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_b88f3abd1a3e719a",
@@ -1613,7 +1713,8 @@
     "usableForQuestionExtraction": false,
     "rightsStatus": "review_required",
     "fileHash": "b88f3abd1a3e719acaba807bb990571f5fdddf7b001f9af56f5332c70e4f5a37",
-    "notes": "Tài liệu trùng lặp (SHA-256 byte identical)"
+    "notes": "Tài liệu trùng lặp (SHA-256 byte identical)",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_7c2fc7e7c2eaba0e",
@@ -1629,7 +1730,8 @@
     "usableForQuestionExtraction": false,
     "rightsStatus": "review_required",
     "fileHash": "7c2fc7e7c2eaba0e459295d7b136e0f2120d45bd16ab68d32002e8b74afe0a76",
-    "notes": "Tài liệu trùng lặp (SHA-256 byte identical)"
+    "notes": "Tài liệu trùng lặp (SHA-256 byte identical)",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_90b53bf1a16cac6d",
@@ -1645,7 +1747,8 @@
     "usableForQuestionExtraction": false,
     "rightsStatus": "review_required",
     "fileHash": "90b53bf1a16cac6df07c6bd707ee2140721ebe1a5e4fcfa8cc8e7913e1b49f01",
-    "notes": "Tài liệu trùng lặp (SHA-256 byte identical)"
+    "notes": "Tài liệu trùng lặp (SHA-256 byte identical)",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_46ce83f0ab5d39db",
@@ -1661,7 +1764,8 @@
     "usableForQuestionExtraction": false,
     "rightsStatus": "review_required",
     "fileHash": "46ce83f0ab5d39dbe426c329b6c54b61d73fa95c011d2be7710e67a9f840f25b",
-    "notes": "Tài liệu trùng lặp (SHA-256 byte identical)"
+    "notes": "Tài liệu trùng lặp (SHA-256 byte identical)",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_8ef539cd1de92b2b",
@@ -1677,7 +1781,8 @@
     "usableForQuestionExtraction": false,
     "rightsStatus": "review_required",
     "fileHash": "8ef539cd1de92b2b5afe1ef186a4bf8a8a15107c95811cfbc8940d9411a76b9a",
-    "notes": "Tài liệu trùng lặp (SHA-256 byte identical)"
+    "notes": "Tài liệu trùng lặp (SHA-256 byte identical)",
+    "originalSourceId": null
   },
   {
     "sourceId": "vact_src_1898b15a60aabf7b",
@@ -1693,6 +1798,7 @@
     "usableForQuestionExtraction": false,
     "rightsStatus": "review_required",
     "fileHash": "1898b15a60aabf7b894027c03f3214b7aef65c15f4230ee913f186bde3e28383",
-    "notes": "Tài liệu trùng lặp (SHA-256 byte identical)"
+    "notes": "Tài liệu trùng lặp (SHA-256 byte identical)",
+    "originalSourceId": null
   }
 ]

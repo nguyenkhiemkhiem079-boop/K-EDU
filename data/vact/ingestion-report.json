@@ -1,31 +1,22 @@
 {
   "totalSources": 106,
   "ingestableSources": 87,
-  "sourcesByCategory": {
-    "OFFICIAL": 6,
-    "FULL_TEST": 50,
-    "SUBJECT_BANK": 31,
-    "PENDING": 6,
-    "DUPLICATE": 13
-  },
-  "docsProcessed": 69,
-  "docsFailed": 0,
-  "totalRaw": 6703,
-  "uniqueCount": 6695,
-  "duplicateCount": 8,
-  "productionCount": 1758,
-  "reviewRequiredCount": 3226,
-  "invalidCount": 1711,
+  "rawParsedCount": 1258,
+  "normalizedUniqueCount": 1258,
+  "productionCount": 854,
+  "reviewRequiredCount": 404,
+  "invalidCount": 0,
+  "duplicatesRemoved": 8,
   "bySection": {
-    "vietnamese": 415,
-    "english": 421,
-    "math": 427,
-    "logic_data": 209,
-    "scientific_reasoning": 286
+    "english": 373,
+    "logic_data": 28,
+    "math": 176,
+    "scientific_reasoning": 47,
+    "vietnamese": 230
   },
-  "mini100Ready": true,
-  "full120Ready": true,
-  "totalExams": 42,
-  "completeExams": 14,
-  "incompleteExams": 28
+  "totalExams": 56,
+  "sourceCompleteExams": 0,
+  "answerCompleteExams": 0,
+  "productionCompleteExams": 0,
+  "generatedAt": "2026-09-19T15:30:58.256Z"
 }
