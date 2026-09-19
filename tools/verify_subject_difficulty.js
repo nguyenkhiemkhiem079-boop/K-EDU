@@ -121,7 +121,7 @@ try {
   assert.ok(examMcqShortage.warning.includes('Ngân hàng tài liệu chỉ có 5/20 câu phù hợp'));
 
   // Sinh đề hàng loạt toán độc lập không trùng câu
-  const mathBatch = math.generateBatchExams({ grade: '8', sourceMode: 'document', mcqCount: 2, essayMatrix: { TH: 0, VD: 0, VDC: 0 }, batchCount: 2 });
+  const mathBatch = math.generateBatchExams({ grade: '8', sourceMode: 'document', mcqCount: 2, essayMatrix: { TH: 0, VD: 0, VDC: 0 }, batchCount: 2, deduplicatePolicy: 'disjoint' });
   assert.equal(mathBatch.length, 2);
   assert.equal(new Set(mathBatch.flatMap(b => b.answerKeys.map(k => k.content))).size, 4);
 

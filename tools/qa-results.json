@@ -20,6 +20,11 @@
     "error": null
   },
   {
+    "test": "verify_math_generation_capacity.js",
+    "passed": true,
+    "error": null
+  },
+  {
     "test": "verify_project_integrity.js",
     "passed": true,
     "error": null
@@ -130,7 +135,17 @@
     "error": null
   },
   {
+    "test": "verify_vact_source_loader_hardened.js",
+    "passed": true,
+    "error": null
+  },
+  {
     "test": "verify_vact_source_provenance.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_vact_student_guard.js",
     "passed": true,
     "error": null
   },

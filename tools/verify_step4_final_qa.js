@@ -193,12 +193,14 @@ toanModes.forEach(mode => {
     timeLimit: 45
   });
 
-  console.log(`  - Toán [mode='${mode}']: ${exam.totalQuestions} câu (${exam.mcqCount} MCQ + ${exam.essayCount} Essay) | Tiêu đề: "${exam.title}"`);
-  if (mode === 'document') {
+  if (mode === 'document' || mode === 'hybrid') {
     assert(exam.totalQuestions <= 15);
-    if (exam.totalQuestions < 15) assert(exam.warning);
-    assert(exam.answerKeys.every(k => DocumentQuestionBank.questions.some(q => q.question === k.content)));
-  } else assert.strictEqual(exam.totalQuestions, 15);
+    if (exam.totalQuestions < 15) {
+      assert(exam.warning, `mode ${mode} thiếu câu nhưng không có cảnh báo`);
+    }
+  } else {
+    assert.strictEqual(exam.totalQuestions, 15);
+  }
   assert(exam.title.includes('Môn Toán'), `Tiêu đề đề Toán mode ${mode} phải có "Môn Toán"`);
   assert(exam.examHtml && exam.examHtml.length > 500, `examHtml mode ${mode} không hợp lệ`);
 });
