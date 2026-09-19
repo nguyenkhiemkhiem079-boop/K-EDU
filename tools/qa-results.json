@@ -40,6 +40,11 @@
     "error": null
   },
   {
+    "test": "verify_quiz_storage_persistence.js",
+    "passed": true,
+    "error": null
+  },
+  {
     "test": "verify_retention_qa.js",
     "passed": true,
     "error": null

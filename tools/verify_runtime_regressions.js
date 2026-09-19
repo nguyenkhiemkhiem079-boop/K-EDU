@@ -34,9 +34,9 @@ function memory() {
   vm.runInContext(read('js/storage.js'), ctx);
   const storage = ctx.window.StorageEngine;
   const html = 'data:text/html;charset=utf-8,<p>a,b,c</p>';
-  assert.equal((await storage.saveQuiz({ id: 'html', pdfDataUrl: html })).success, true);
+  assert.equal((await storage.saveQuiz({ id: 'html', title: 'HTML fixture', pdfDataUrl: html })).success, true);
   assert.equal((await storage.getQuiz('html')).examHtml, '<p>a,b,c</p>');
-  assert.equal((await storage.saveQuiz({ id: 'blob', pdfDataUrl: new Blob(['PDF']) })).success, false);
+  assert.equal((await storage.saveQuiz({ id: 'blob', title: 'Blob fixture', pdfDataUrl: new Blob(['PDF']) })).success, false);
   assert.equal(await storage.getQuiz('blob'), null);
   const first = await storage.saveResult({ quizId: 'q', name: 'An', className: '8A' });
   assert.equal(await storage.saveResult({ quizId: 'q', name: 'An', className: '8A' }), first);
