@@ -1,0 +1,2 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');const app=fs.readFileSync(path.resolve(__dirname,'..','js/app.js'),'utf8');
+assert.ok(app.includes("q.sourceType === 'vact_mini_100' || q.sourceType === 'vact_full_120'"));assert.ok(app.includes("q.assignment?.type || q.assignType"));assert.ok(app.includes('studentId'));assert.ok(app.includes('getPausedExamSession'));console.log('V-ACT visibility, canonical assignment, student identity, and pause/resume paths are present.');
