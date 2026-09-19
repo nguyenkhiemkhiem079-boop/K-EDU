@@ -13,7 +13,12 @@
 
 const fs = require('fs');
 const path = require('path');
-const { PDFParse } = require('pdf-parse');
+let PDFParse = null;
+function getPdfParser() {
+  if (PDFParse) return PDFParse;
+  try { ({ PDFParse } = require('pdf-parse')); return PDFParse; }
+  catch (error) { throw new Error('PDF_PARSER_UNAVAILABLE: cài dependency pdf-parse trước khi trích xuất PDF.'); }
+}
 
 // ================= CẤU HÌNH & THAM SỐ =================
 const args = process.argv.slice(2);
@@ -464,7 +469,7 @@ async function runPipeline() {
 
     try {
       const buffer = fs.readFileSync(filePath);
-      const parser = new PDFParse({ data: buffer });
+      const parser = new (getPdfParser())({ data: buffer });
       await parser.load();
       const info = await parser.getInfo();
       const text = (await parser.getText()).text || '';
