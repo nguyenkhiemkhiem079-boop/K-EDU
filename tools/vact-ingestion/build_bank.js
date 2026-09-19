@@ -160,6 +160,8 @@ async function buildBank(options = {}) {
   fs.writeFileSync(path.join(dataDir, 'sources.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf8');
   fs.writeFileSync(path.join(dataDir, 'exams.json'), JSON.stringify(examRecords, null, 2) + '\n', 'utf8');
   fs.writeFileSync(path.join(dataDir, 'questions.json'), JSON.stringify(production, null, 2) + '\n', 'utf8');
+  fs.writeFileSync(path.join(dataDir, 'review-required.json'), JSON.stringify(reviewRequired, null, 2) + '\n', 'utf8');
+  fs.writeFileSync(path.join(dataDir, 'invalid.json'), JSON.stringify(invalid, null, 2) + '\n', 'utf8');
   fs.writeFileSync(path.join(dataDir, 'ingestion-report.json'), JSON.stringify(stats, null, 2) + '\n', 'utf8');
 
   // Shards

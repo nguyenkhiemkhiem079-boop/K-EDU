@@ -9,7 +9,8 @@ function normalizeForSignature(str) {
     .replace(/<[^>]+>/g, '') // strip HTML
     .replace(/\\[,;!]/g, '') // strip LaTeX spacing
     .replace(/\\quad|\\qquad/g, '')
-    .replace(/[.,:;?!'"“”‘’`\-_=+\/\\()[\]{}*^~#]/g, ' ') // punctuation
+    // Preserve mathematical operators and grouping; only remove prose punctuation.
+    .replace(/[.,:;?!'"“”‘’`~#]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }

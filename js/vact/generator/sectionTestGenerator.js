@@ -401,7 +401,7 @@
         topic: q.skill || sectionTest.section,
         content: q.question,
         options: q.options || [],
-        level: q.difficulty || 'medium',
+        level: q.difficulty || null,
         source: q.source || null,
         quality: q.quality || null,
         stimulus: q.stimulus || null

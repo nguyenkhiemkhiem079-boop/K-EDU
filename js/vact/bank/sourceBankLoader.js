@@ -70,6 +70,12 @@
     if (!q.source.sourceFile || typeof q.source.sourceFile !== 'string' || !q.source.sourceFile.trim()) return 'INVALID_SOURCE';
     if (q.source.extractedFromSource !== true) return 'NOT_EXTRACTED_FROM_SOURCE';
     if (!q.quality || typeof q.quality !== 'object' || q.quality.answerVerified !== true) return 'ANSWER_NOT_VERIFIED';
+    if (q.quality.contentComplete !== true) return 'CONTENT_INCOMPLETE';
+    if (q.quality.requiresStimulus && q.quality.stimulusPreserved !== true) return 'MISSING_REQUIRED_CONTENT';
+    if (q.quality.requiresVisual && q.quality.visualPreserved !== true) return 'VISUAL_MISSING';
+    if (Array.isArray(q.validationIssues) && q.validationIssues.some(i => /(?:SPILLOVER|MALFORMED|MISSING_REQUIRED|VISUAL_MISSING|DUPLICATE)/i.test(i))) return 'CRITICAL_VALIDATION_ISSUE';
+    if (q.status === 'duplicate' || q.canonicalQuestionId) return 'DUPLICATE_RECORD';
+    if (q.options.some(opt => /^\s*[A-D][.:)]\s*/i.test(opt))) return 'OPTION_PREFIX_CONTAMINATION';
     return null;
   }
 

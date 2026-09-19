@@ -154,7 +154,9 @@
     const tier3RecentlySeen = [];
 
     for (const q of pool) {
-      const sig = computeVACTQuestionSignature(q);
+      // Attempt history stores the ingestion signature; use it only for recency
+      // bookkeeping. Fuzzy duplicate comparison always derives content directly.
+      const sig = q.signature || computeVACTQuestionSignature(q);
       if (!allSeenSignatures.has(sig)) {
         tier1Unseen.push(q);
       } else if (seenLongAgoSignatures.has(sig) && !recentSignatures.has(sig)) {

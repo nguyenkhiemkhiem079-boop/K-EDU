@@ -65,10 +65,6 @@
    * @returns {string}
    */
   function computeVACTQuestionSignature(questionOrObj, optionsList) {
-    if (questionOrObj && typeof questionOrObj === 'object' && typeof questionOrObj.signature === 'string' && questionOrObj.signature && !optionsList) {
-      return questionOrObj.signature;
-    }
-
     let stimulusText = '';
     let questionText = '';
     let options = [];

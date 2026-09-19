@@ -23,10 +23,9 @@ function generateBankHealthReport() {
   const miniReadiness = vact.getProfileReadiness('vact_mini_100');
 
   // Near duplicate diagnostics on sample
-  const sampleForNearDup = summary.totalUniqueUsable > 500
-    ? vact.getUniqueUsableQuestions().slice(0, 500)
-    : vact.getUniqueUsableQuestions();
-  const nearDups = vact.detectNearDuplicates(sampleForNearDup, { maxComparisons: 5000 });
+  const sampleForNearDup = vact.getUniqueUsableQuestions();
+  const candidateComparisons = Math.floor(sampleForNearDup.length * (sampleForNearDup.length - 1) / 2);
+  const nearDups = vact.detectNearDuplicates(sampleForNearDup, { maxComparisons: candidateComparisons });
   const probableCount = nearDups.filter(d => d.status === vact.DUPLICATE_STATUS.PROBABLE_DUPLICATE).length;
   const reviewRequiredCount = nearDups.filter(d => d.status === vact.DUPLICATE_STATUS.REVIEW_REQUIRED).length;
 
@@ -100,6 +99,8 @@ function generateBankHealthReport() {
       duplicatesRemoved: summary.duplicatesCount,
       probableDuplicates: probableCount,
       reviewRequiredPairs: reviewRequiredCount
+      , questionsScanned: sampleForNearDup.length
+      , candidateComparisons
     },
     coverage: {
       targets: vact.VACT_BANK_TARGETS,

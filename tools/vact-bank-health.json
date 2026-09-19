@@ -1,12 +1,14 @@
 {
-  "timestamp": "2026-09-18T09:39:20.138Z",
+  "timestamp": "2026-09-19T15:05:22.460Z",
   "summary": {
-    "totalRaw": 1758,
-    "totalMapped": 1758,
-    "totalUniqueUsable": 1758,
+    "totalRaw": 1229,
+    "totalMapped": 1229,
+    "totalUniqueUsable": 1229,
     "duplicatesRemoved": 0,
-    "probableDuplicates": 0,
-    "reviewRequiredPairs": 0
+    "probableDuplicates": 24,
+    "reviewRequiredPairs": 156,
+    "questionsScanned": 1229,
+    "candidateComparisons": 754606
   },
   "coverage": {
     "targets": {
@@ -30,29 +32,29 @@
     },
     "sections": {
       "vietnamese": {
-        "available": 415,
+        "available": 247,
         "target": 600,
-        "deficit": 185
+        "deficit": 353
       },
       "english": {
-        "available": 421,
+        "available": 374,
         "target": 600,
-        "deficit": 179
+        "deficit": 226
       },
       "math": {
-        "available": 427,
+        "available": 283,
         "target": 600,
-        "deficit": 173
+        "deficit": 317
       },
       "logic_data": {
-        "available": 209,
+        "available": 135,
         "target": 240,
-        "deficit": 31
+        "deficit": 105
       },
       "scientific_reasoning": {
-        "available": 286,
+        "available": 190,
         "target": 360,
-        "deficit": 74,
+        "deficit": 170,
         "skills": {
           "physics": 0,
           "chemistry": 0,
@@ -71,9 +73,90 @@
   "duplicates": {
     "totalDuplicatesRemoved": 0,
     "duplicateGroupsCount": 0,
-    "probableDuplicatesCount": 0,
-    "reviewRequiredCount": 0,
-    "sampleNearDuplicates": []
+    "probableDuplicatesCount": 24,
+    "reviewRequiredCount": 156,
+    "sampleNearDuplicates": [
+      {
+        "q1Id": "vact_q_1c3e50a762b7",
+        "q2Id": "vact_q_388e99e57f2a",
+        "similarity": 0.708,
+        "status": "REVIEW_REQUIRED",
+        "q1Preview": "Each of the following sentences has one error (A, B, C, or D). Find it and black",
+        "q2Preview": "Each of the following sentences has one error (A, B, C or D). Find it and blacke"
+      },
+      {
+        "q1Id": "vact_q_1c3e50a762b7",
+        "q2Id": "vact_q_b3fb85226a8e",
+        "similarity": 0.73,
+        "status": "REVIEW_REQUIRED",
+        "q1Preview": "Each of the following sentences has one error (A, B, C, or D). Find it and black",
+        "q2Preview": "Each of the following sentences has one error (A, B, C, or D). Find it and black"
+      },
+      {
+        "q1Id": "vact_q_48f9e1662c1d",
+        "q2Id": "vact_q_cba43182fb9e",
+        "similarity": 0.746,
+        "status": "REVIEW_REQUIRED",
+        "q1Preview": "Mark the letter A, B, C, or D on your answer sheet to indicate the underlined pa",
+        "q2Preview": "Mark the letter A, B, C, or D on your answer sheet to indicate the underlined pa"
+      },
+      {
+        "q1Id": "vact_q_48f9e1662c1d",
+        "q2Id": "vact_q_7f0ed8bdbdb5",
+        "similarity": 0.781,
+        "status": "REVIEW_REQUIRED",
+        "q1Preview": "Mark the letter A, B, C, or D on your answer sheet to indicate the underlined pa",
+        "q2Preview": "Mark the letter A, B, C, or D on your answer sheet to indicate the underlined pa"
+      },
+      {
+        "q1Id": "vact_q_cba43182fb9e",
+        "q2Id": "vact_q_7f0ed8bdbdb5",
+        "similarity": 0.762,
+        "status": "REVIEW_REQUIRED",
+        "q1Preview": "Mark the letter A, B, C, or D on your answer sheet to indicate the underlined pa",
+        "q2Preview": "Mark the letter A, B, C, or D on your answer sheet to indicate the underlined pa"
+      },
+      {
+        "q1Id": "vact_q_3adc17dfae0b",
+        "q2Id": "vact_q_649c1dde1479",
+        "similarity": 0.703,
+        "status": "REVIEW_REQUIRED",
+        "q1Preview": "Each of the following sentences has one error (A, B, C or D). Find it and blacke",
+        "q2Preview": "The students are excited about _______ a camping trip next weekend"
+      },
+      {
+        "q1Id": "vact_q_5214cd60d2f2",
+        "q2Id": "vact_q_649c1dde1479",
+        "similarity": 0.74,
+        "status": "REVIEW_REQUIRED",
+        "q1Preview": "Go away! I want to be __________ alone",
+        "q2Preview": "The students are excited about _______ a camping trip next weekend"
+      },
+      {
+        "q1Id": "vact_q_5214cd60d2f2",
+        "q2Id": "vact_q_f46cd6d510d5",
+        "similarity": 0.711,
+        "status": "REVIEW_REQUIRED",
+        "q1Preview": "Go away! I want to be __________ alone",
+        "q2Preview": "In America, a worker can take a _______ leave to take care of his or her baby"
+      },
+      {
+        "q1Id": "vact_q_5214cd60d2f2",
+        "q2Id": "vact_q_d9ec3342249e",
+        "similarity": 0.706,
+        "status": "REVIEW_REQUIRED",
+        "q1Preview": "Go away! I want to be __________ alone",
+        "q2Preview": "________ she studies, the better results she gets"
+      },
+      {
+        "q1Id": "vact_q_14b7bd7ba9be",
+        "q2Id": "vact_q_d9ec3342249e",
+        "similarity": 0.704,
+        "status": "REVIEW_REQUIRED",
+        "q1Preview": "In challenging times, everyone needs ___ courage to keep moving forward",
+        "q2Preview": "________ she studies, the better results she gets"
+      }
+    ]
   },
   "examDuplicates": {
     "totalRegisteredExams": 42,
@@ -110,30 +193,37 @@
     {
       "section": "vietnamese",
       "target": 600,
-      "available": 415,
-      "missing": 185,
-      "deficitPct": 30.8
-    },
-    {
-      "section": "english",
-      "target": 600,
-      "available": 421,
-      "missing": 179,
-      "deficitPct": 29.8
+      "available": 247,
+      "missing": 353,
+      "deficitPct": 58.8
     },
     {
       "section": "math",
       "target": 600,
-      "available": 427,
-      "missing": 173,
-      "deficitPct": 28.8
+      "available": 283,
+      "missing": 317,
+      "deficitPct": 52.8
+    },
+    {
+      "section": "english",
+      "target": 600,
+      "available": 374,
+      "missing": 226,
+      "deficitPct": 37.7
     },
     {
       "section": "scientific_reasoning",
       "target": 360,
-      "available": 286,
-      "missing": 74,
-      "deficitPct": 20.6
+      "available": 190,
+      "missing": 170,
+      "deficitPct": 47.2
+    },
+    {
+      "section": "logic_data",
+      "target": 240,
+      "available": 135,
+      "missing": 105,
+      "deficitPct": 43.8
     },
     {
       "section": "scientific_reasoning",
@@ -206,13 +296,6 @@
       "available": 0,
       "missing": 40,
       "deficitPct": 100
-    },
-    {
-      "section": "logic_data",
-      "target": 240,
-      "available": 209,
-      "missing": 31,
-      "deficitPct": 12.9
     }
   ],
   "readiness": {

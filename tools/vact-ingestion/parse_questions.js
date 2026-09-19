@@ -147,11 +147,12 @@ function parseQuestionChunk(chunk, qNum) {
 
     const solMarkerMatch = afterD.match(/(?:^|\n)\s*(?:Đáp án(?:\s+đúng\s+là|\s*:|\s+là)|Hướng dẫn giải|Phương pháp giải|Lời giải)[\s\S]*/i);
     let textD = '';
+    const boundary = findTrailingContentBoundary(afterD);
     if (solMarkerMatch) {
-      textD = afterD.slice(0, solMarkerMatch.index).trim();
+      textD = afterD.slice(0, Math.min(solMarkerMatch.index, boundary)).trim();
       solutionText = solMarkerMatch[0].trim();
     } else {
-      textD = afterD.trim();
+      textD = afterD.slice(0, boundary).trim();
     }
 
     options = [cleanOption(textA), cleanOption(textB), cleanOption(textC), cleanOption(textD)];
@@ -173,6 +174,22 @@ function parseQuestionChunk(chunk, qNum) {
     solutionText: cleanText(solutionText),
     explicitAnswer
   };
+}
+
+// A question chunk may contain the next reading passage when PDFs omit a page break.
+// Keep the passage in the following question's lead text instead of corrupting option D.
+function findTrailingContentBoundary(text) {
+  const boundaryPatterns = [
+    /(?:^|\n)\s*(?:Dựa vào thông tin dưới đây|Dựa vào đoạn[^\n]*|Đọc đoạn[^\n]*|Sử dụng (?:thông tin|dữ liệu)[^\n]*|Trả lời (?:các )?câu hỏi? từ[^\n]*)/iu,
+    /(?:^|\n)\s*(?:Câu|Question|Bài)\s+\d+\s*[:.]/iu,
+    /(?:^|\n)\s*(?:PHẦN|TIẾNG VIỆT|TIẾNG ANH|TOÁN HỌC|TƯ DUY LOGIC|SUY LUẬN KHOA HỌC)\b/iu
+  ];
+  let boundary = text.length;
+  for (const re of boundaryPatterns) {
+    const m = re.exec(text);
+    if (m && m.index < boundary) boundary = m.index + (m[0].startsWith('\n') ? 1 : 0);
+  }
+  return boundary;
 }
 
 function cleanOption(str) {
@@ -200,5 +217,6 @@ module.exports = {
   parseQuestions,
   cleanText,
   cleanOption,
-  parseQuestionChunk
+  parseQuestionChunk,
+  findTrailingContentBoundary
 };

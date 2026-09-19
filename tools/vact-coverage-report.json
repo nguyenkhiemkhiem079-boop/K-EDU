@@ -1,57 +1,57 @@
 {
-  "generatedAt": "2026-09-18T08:05:14.996Z",
+  "generatedAt": "2026-09-19T15:05:22.984Z",
   "bankSummary": {
-    "totalRaw": 1758,
-    "totalMapped": 1758,
-    "totalUniqueUsable": 1758,
+    "totalRaw": 1229,
+    "totalMapped": 1229,
+    "totalUniqueUsable": 1229,
     "duplicatesCount": 0,
     "duplicateGroupsCount": 0,
     "invalidCount": 0,
     "unsupportedCount": 0,
     "sections": {
       "vietnamese": {
-        "total": 415,
+        "total": 247,
         "difficulty": {
           "easy": 0,
           "medium": 0,
           "hard": 0,
-          "unclassified": 415
+          "unclassified": 247
         }
       },
       "english": {
-        "total": 421,
+        "total": 374,
         "difficulty": {
           "easy": 0,
           "medium": 0,
           "hard": 0,
-          "unclassified": 421
+          "unclassified": 374
         }
       },
       "math": {
-        "total": 427,
+        "total": 283,
         "difficulty": {
           "easy": 0,
           "medium": 0,
           "hard": 0,
-          "unclassified": 427
+          "unclassified": 283
         }
       },
       "logic_data": {
-        "total": 209,
+        "total": 135,
         "difficulty": {
           "easy": 0,
           "medium": 0,
           "hard": 0,
-          "unclassified": 209
+          "unclassified": 135
         }
       },
       "scientific_reasoning": {
-        "total": 286,
+        "total": 190,
         "difficulty": {
           "easy": 0,
           "medium": 0,
           "hard": 0,
-          "unclassified": 286
+          "unclassified": 190
         },
         "skills": {
           "physics": 0,
@@ -68,7 +68,7 @@
       }
     },
     "qualityStatus": {
-      "usable": 1758,
+      "usable": 1229,
       "invalid": 0,
       "duplicate": 0,
       "unsupported": 0,
@@ -87,41 +87,48 @@
     "sections": {
       "vietnamese": {
         "required": 25,
-        "available": 415,
+        "available": 247,
         "missing": 0,
         "ready": true,
         "reason": null
       },
       "english": {
         "required": 25,
-        "available": 421,
+        "available": 374,
         "missing": 0,
         "ready": true,
         "reason": null
       },
       "math": {
         "required": 25,
-        "available": 427,
+        "available": 283,
         "missing": 0,
         "ready": true,
         "reason": null
       },
       "logic_data": {
         "required": 10,
-        "available": 209,
+        "available": 135,
         "missing": 0,
         "ready": true,
         "reason": null
       },
       "scientific_reasoning": {
         "required": 15,
-        "available": 286,
+        "available": 190,
         "missing": 0,
         "ready": true,
         "reason": null
       }
     },
-    "shortages": []
+    "shortages": [],
+    "debugReport": {
+      "vietnamese": "247/25",
+      "english": "374/25",
+      "math": "283/25",
+      "logic_data": "135/10",
+      "scientific_reasoning": "190/15"
+    }
   },
   "fullReadiness": {
     "profileId": "vact_full",
@@ -133,40 +140,47 @@
     "sections": {
       "vietnamese": {
         "required": 30,
-        "available": 415,
+        "available": 247,
         "missing": 0,
         "ready": true,
         "reason": null
       },
       "english": {
         "required": 30,
-        "available": 421,
+        "available": 374,
         "missing": 0,
         "ready": true,
         "reason": null
       },
       "math": {
         "required": 30,
-        "available": 427,
+        "available": 283,
         "missing": 0,
         "ready": true,
         "reason": null
       },
       "logic_data": {
         "required": 12,
-        "available": 209,
+        "available": 135,
         "missing": 0,
         "ready": true,
         "reason": null
       },
       "scientific_reasoning": {
         "required": 18,
-        "available": 286,
+        "available": 190,
         "missing": 0,
         "ready": true,
         "reason": null
       }
     },
-    "shortages": []
+    "shortages": [],
+    "debugReport": {
+      "vietnamese": "247/30",
+      "english": "374/30",
+      "math": "283/30",
+      "logic_data": "135/12",
+      "scientific_reasoning": "190/18"
+    }
   }
 }

@@ -36,7 +36,7 @@ async function matchSolutions(parsedQuestions, sourceRecord) {
           if (expM) expl = cleanText(expM[0]);
         }
 
-        solutionMap.set(sq.questionNumber, {
+        solutionMap.set(`${deriveExamKey(pairedSource)}:${sq.questionNumber}`, {
           answer: ans || null,
           explanation: expl || null,
           solutionSourceId: pairedSource.sourceId,
@@ -59,7 +59,7 @@ async function matchSolutions(parsedQuestions, sourceRecord) {
     let solutionSourcePage = null;
 
     // First check paired solution
-    const paired = solutionMap.get(q.questionNumber);
+    const paired = solutionMap.get(`${deriveExamKey(sourceRecord)}:${q.questionNumber}`);
     if (paired && paired.answer) {
       correctAnswer = paired.answer;
       explanation = paired.explanation;
@@ -100,6 +100,10 @@ async function matchSolutions(parsedQuestions, sourceRecord) {
   });
 
   return matched;
+}
+
+function deriveExamKey(source) {
+  return source?.pairedSourceId || source?.sourceId || source?.filename || 'unknown';
 }
 
 module.exports = {

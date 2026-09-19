@@ -30,13 +30,7 @@ function deriveExamSetId(sourceRecord) {
   if (sourceRecord.category !== 'FULL_TEST' && sourceRecord.category !== 'OFFICIAL') {
     return null;
   }
-  const base = sourceRecord.filename
-    .replace(/\.pdf$/i, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/_+/g, '_')
-    .replace(/^_|_$/g, '');
-  return `vact_exam_${base}`;
+  return `vact_exam_${sourceRecord.sourceId}`;
 }
 
 function computeQuestionId(sourceId, qNum, questionText) {
@@ -54,10 +48,10 @@ function normalizeQuestion(matchedQ, sourceRecord) {
 
   const stimulus = matchedQ.stimulus || null;
   const questionText = matchedQ.questionText.trim();
-  const requiresStimulus = /(?:dựa vào|đọc|cho thông tin|bảng số liệu|biểu đồ|hình dưới đây|ngữ liệu)/i.test(questionText);
+  const requiresStimulus = /(?:dựa vào|đọc|cho thông tin|bảng số liệu|biểu đồ|hình dưới đây|ngữ liệu|đoạn văn trên|đoạn trích trên|văn bản trên|thông tin trên|bảng trên|hình trên|biểu đồ trên|theo đoạn văn|theo đoạn trích|dựa vào nội dung|according to the passage|according to the text|according to the chart|according to the table|figure above|table above)/i.test(questionText);
   const requiresVisual = /(?:hình|biểu đồ|đồ thị|sơ đồ|bảng số liệu|hình vẽ)/i.test(questionText + ' ' + (stimulus || ''));
-  const stimulusPreserved = !!(stimulus && stimulus.trim().length > 40);
-  const visualPreserved = !requiresVisual || /(?:hình|biểu đồ|đồ thị|sơ đồ|bảng)/i.test(stimulus || '');
+  const stimulusPreserved = !isPlaceholderStimulus(stimulus);
+  const visualPreserved = !requiresVisual || (Array.isArray(matchedQ.assets) && matchedQ.assets.length > 0);
   const malformed = /(?:\(TAQ Education\)|Đáp án\s+[A-D]\b|Lời giải|Hướng dẫn giải)/i.test(questionText);
   return {
     id: qId,
@@ -102,5 +96,12 @@ function normalizeQuestion(matchedQ, sourceRecord) {
 
 module.exports = {
   normalizeQuestion,
-  inferSection
+  inferSection,
+  isPlaceholderStimulus
 };
+
+function isPlaceholderStimulus(text) {
+  if (!text || typeof text !== 'string') return true;
+  const clean = text.replace(/\s+/g, ' ').trim();
+  return clean.length < 40 || /^(?:dựa vào|đọc|sử dụng|cho)\s+(?:thông tin|đoạn|dữ liệu|bảng|biểu đồ)[^.!?]{0,80}(?:dưới đây|trên)?\s*$/iu.test(clean);
+}

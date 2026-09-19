@@ -131,8 +131,8 @@
   },
   {
     "test": "verify_vact_adaptive_production.js",
-    "passed": true,
-    "error": null
+    "passed": false,
+    "error": "node:internal/assert/utils:77\r\n    throw err;\r\n    ^\r\n\r\nAssertionError [ERR_ASSERTION]: Should select unseen p4\r\n    at Object.<anonymous> (C:\\Users\\HT LAB\\OneDrive\\Documents\\Custom Office Templates\\K-EDU\\tools\\verify_vact_adaptive_production.js:171:8)\r\n    at Module._compile (node:internal/modules/cjs/loader:1872:14)\r\n    at Object..js (node:internal/modules/cjs/loader:2003:10)\r\n    at Module.load (node:internal/modules/cjs/loader:1594:32)\r\n    at Module._load (node:internal/modules/cjs/loader:1396:12)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  generatedMessage: false,\r\n  code: 'ERR_ASSERTION',\r\n  actual: false,\r\n  expected: true,\r\n  operator: '==',\r\n  diff: 'simple'\r\n}\r\n\r\nNode.js v24.19.0\r\n"
   },
   {
     "test": "verify_vact_analytics.js",
@@ -176,8 +176,8 @@
   },
   {
     "test": "verify_vact_phase3_5.js",
-    "passed": true,
-    "error": null
+    "passed": false,
+    "error": "node:assert:152\r\n  throw new AssertionError(obj);\r\n  ^\r\n\r\nAssertionError [ERR_ASSERTION]: 374 == 421\r\n    at Object.<anonymous> (C:\\Users\\HT LAB\\OneDrive\\Documents\\Custom Office Templates\\K-EDU\\tools\\verify_vact_phase3_5.js:325:8)\r\n    at Module._compile (node:internal/modules/cjs/loader:1872:14)\r\n    at Object..js (node:internal/modules/cjs/loader:2003:10)\r\n    at Module.load (node:internal/modules/cjs/loader:1594:32)\r\n    at Module._load (node:internal/modules/cjs/loader:1396:12)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  generatedMessage: true,\r\n  code: 'ERR_ASSERTION',\r\n  actual: 374,\r\n  expected: 421,\r\n  operator: '==',\r\n  diff: 'simple'\r\n}\r\n\r\nNode.js v24.19.0\r\n"
   },
   {
     "test": "verify_vact_production_hardening.js",
@@ -196,8 +196,8 @@
   },
   {
     "test": "verify_vact_source_loader_hardened.js",
-    "passed": true,
-    "error": null
+    "passed": false,
+    "error": "node:assert:152\r\n  throw new AssertionError(obj);\r\n  ^\r\n\r\nAssertionError [ERR_ASSERTION]: 4 options must pass validation\r\n\r\nfalse !== true\r\n\r\n    at Object.<anonymous> (C:\\Users\\HT LAB\\OneDrive\\Documents\\Custom Office Templates\\K-EDU\\tools\\verify_vact_source_loader_hardened.js:45:8)\r\n    at Module._compile (node:internal/modules/cjs/loader:1872:14)\r\n    at Object..js (node:internal/modules/cjs/loader:2003:10)\r\n    at Module.load (node:internal/modules/cjs/loader:1594:32)\r\n    at Module._load (node:internal/modules/cjs/loader:1396:12)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  generatedMessage: false,\r\n  code: 'ERR_ASSERTION',\r\n  actual: false,\r\n  expected: true,\r\n  operator: 'strictEqual',\r\n  diff: 'simple'\r\n}\r\n\r\nNode.js v24.19.0\r\n"
   },
   {
     "test": "verify_vact_source_provenance.js",
@@ -211,7 +211,7 @@
   },
   {
     "test": "verify_vact_teacher_generation.js",
-    "passed": true,
-    "error": null
+    "passed": false,
+    "error": "  FAIL  T02: Source bank has >= 1758 questions -- expected >= 1758, got 1229\n"
   }
 ]

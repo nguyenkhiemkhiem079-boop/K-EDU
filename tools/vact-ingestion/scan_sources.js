@@ -10,7 +10,18 @@ function loadManifest() {
   if (!fs.existsSync(p)) {
     throw new Error(`source-manifest.json not found at ${p}`);
   }
-  return JSON.parse(fs.readFileSync(p, 'utf8'));
+  const manifest = JSON.parse(fs.readFileSync(p, 'utf8'));
+  const migration = {};
+  for (const source of manifest) {
+    if (!source.fileHash) continue;
+    const stable = `vact_src_${String(source.fileHash).replace(/[^a-f0-9]/gi, '').slice(0, 16).toLowerCase()}`;
+    if (source.sourceId && source.sourceId !== stable) migration[source.sourceId] = stable;
+    source.sourceId = stable;
+  }
+  const out = path.resolve('data', 'vact', 'id-migration.json');
+  fs.mkdirSync(path.dirname(out), { recursive: true });
+  fs.writeFileSync(out, JSON.stringify(migration, null, 2) + '\n', 'utf8');
+  return manifest;
 }
 
 function getIngestableSources() {

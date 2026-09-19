@@ -327,7 +327,7 @@
         topic: q.skill || q.sectionKey,
         content: q.question,
         options: q.options || [],
-        level: q.difficulty || 'medium',
+        level: q.difficulty || null,
         source: q.source || null,
         questionSourceId: q.source?.questionSourceId || q.source?.sourceId || null,
         questionSourceFile: q.source?.questionSourceFile || q.source?.sourceFile || null,
@@ -407,8 +407,9 @@
     };
 
     for (const item of reviewData) {
-      const sec = item.section || item.category || 'math';
-      const target = breakdown[sec] || breakdown[VACT_SECTIONS.MATH];
+      const sec = item.section || null;
+      const target = breakdown[sec];
+      if (!target) continue;
 
       target.total++;
       if (item.isCorrect) {
