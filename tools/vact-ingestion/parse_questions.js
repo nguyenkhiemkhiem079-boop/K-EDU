@@ -154,12 +154,7 @@ function parseQuestionChunk(chunk, qNum) {
       textD = afterD.trim();
     }
 
-    options = [
-      `A. ${cleanOption(textA)}`,
-      `B. ${cleanOption(textB)}`,
-      `C. ${cleanOption(textC)}`,
-      `D. ${cleanOption(textD)}`
-    ];
+    options = [cleanOption(textA), cleanOption(textB), cleanOption(textC), cleanOption(textD)];
 
     if (solutionText) {
       const ansMatch = solutionText.match(/Đáp\s*án(?:\s+đúng\s+là|\s*:|\s+là)?\s*([A-D])\b/i) ||
@@ -182,7 +177,7 @@ function parseQuestionChunk(chunk, qNum) {
 
 function cleanOption(str) {
   return str
-    .replace(/^[A-D]\s*[.:)]\s*/i, '')
+    .replace(/^\s*(?:\[[A-D]\]|[A-D])\s*(?:[.:)]|$)\s*/i, '')
     .replace(/--\s*\d+\s+of\s+\d+\s*--/gi, '')
     .replace(/GROUP:\s*GÓC ÔN THI[^\n]*/gi, '')
     .replace(/\s+/g, ' ')
@@ -203,5 +198,7 @@ function cleanText(str) {
 
 module.exports = {
   parseQuestions,
-  cleanText
+  cleanText,
+  cleanOption,
+  parseQuestionChunk
 };

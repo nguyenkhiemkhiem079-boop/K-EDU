@@ -23,7 +23,7 @@ function inferSection(qNum, sourceRecord) {
     }
   }
 
-  return 'math'; // default fallback
+  return null; // unknown is review-required; never silently classify as math
 }
 
 function deriveExamSetId(sourceRecord) {
@@ -52,6 +52,13 @@ function normalizeQuestion(matchedQ, sourceRecord) {
   const examSetId = deriveExamSetId(sourceRecord);
   const qId = computeQuestionId(sourceRecord.sourceId, matchedQ.questionNumber, matchedQ.questionText);
 
+  const stimulus = matchedQ.stimulus || null;
+  const questionText = matchedQ.questionText.trim();
+  const requiresStimulus = /(?:dựa vào|đọc|cho thông tin|bảng số liệu|biểu đồ|hình dưới đây|ngữ liệu)/i.test(questionText);
+  const requiresVisual = /(?:hình|biểu đồ|đồ thị|sơ đồ|bảng số liệu|hình vẽ)/i.test(questionText + ' ' + (stimulus || ''));
+  const stimulusPreserved = !!(stimulus && stimulus.trim().length > 40);
+  const visualPreserved = !requiresVisual || /(?:hình|biểu đồ|đồ thị|sơ đồ|bảng)/i.test(stimulus || '');
+  const malformed = /(?:\(TAQ Education\)|Đáp án\s+[A-D]\b|Lời giải|Hướng dẫn giải)/i.test(questionText);
   return {
     id: qId,
     section,
@@ -59,7 +66,7 @@ function normalizeQuestion(matchedQ, sourceRecord) {
     difficulty: null,
     questionType: 'single_choice',
     stimulus: matchedQ.stimulus || null,
-    question: matchedQ.questionText.trim(),
+    question: questionText,
     options: matchedQ.options || [],
     correctAnswer: matchedQ.correctAnswer || null,
     explanation: matchedQ.explanation || null,
@@ -81,9 +88,15 @@ function normalizeQuestion(matchedQ, sourceRecord) {
       sourceVerified: true,
       answerVerified: !!matchedQ.answerVerified,
       extractionVerified: true,
-      reviewed: false
+      reviewed: false,
+      requiresStimulus,
+      requiresVisual,
+      stimulusPreserved,
+      visualPreserved,
+      contentComplete: !malformed && (!requiresStimulus || stimulusPreserved) && visualPreserved
     },
-    status: 'production' // will be adjusted by validate_questions
+    status: 'production',
+    validationIssues: malformed ? ['MALFORMED_QUESTION_TEXT'] : []
   };
 }
 

@@ -1,6 +1,11 @@
 const fs = require('fs');
 const path = require('path');
-const { PDFParse } = require('pdf-parse');
+let PDFParse;
+function getPdfParse() {
+  if (PDFParse) return PDFParse;
+  try { ({ PDFParse } = require('pdf-parse')); return PDFParse; }
+  catch (_) { throw new Error('PDF_PARSER_UNAVAILABLE: install pdf-parse before rebuilding the V-ACT bank.'); }
+}
 
 const CACHE_DIR = path.resolve('tools', 'vact-ingestion', '.cache');
 
@@ -30,7 +35,7 @@ async function extractDocument(sourceRecord, options = {}) {
   }
 
   const buffer = fs.readFileSync(filePath);
-  const parser = new PDFParse({ data: buffer });
+  const parser = new (getPdfParse())({ data: buffer });
   await parser.load();
   const info = await parser.getInfo();
   const totalPages = info.total || 1;
