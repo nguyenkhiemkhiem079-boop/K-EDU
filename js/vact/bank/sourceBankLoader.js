@@ -44,19 +44,37 @@
     _activeFetch = typeof fn === 'function' ? fn : null;
   }
 
+  const ALLOWED_SECTIONS = new Set([
+    'vietnamese',
+    'english',
+    'math',
+    'logic_data',
+    'scientific_reasoning'
+  ]);
+
+  function getQuestionValidationFailureReason(q, validSourceIds) {
+    if (!q || typeof q !== 'object') return 'INVALID_OBJECT';
+    if (!q.id || typeof q.id !== 'string' || !q.id.trim()) return 'MISSING_ID';
+    if (q.status !== 'production') return 'INVALID_STATUS';
+    if (!q.section || typeof q.section !== 'string' || !ALLOWED_SECTIONS.has(q.section.trim())) return 'INVALID_SECTION';
+    if (!q.question || typeof q.question !== 'string' || !q.question.trim()) return 'EMPTY_QUESTION';
+    if (!Array.isArray(q.options) || q.options.length !== 4) return 'INVALID_OPTION_COUNT';
+    for (let i = 0; i < q.options.length; i++) {
+      const opt = q.options[i];
+      if (typeof opt !== 'string' || !opt.trim()) return 'EMPTY_OPTION';
+    }
+    if (!['A', 'B', 'C', 'D'].includes(q.correctAnswer)) return 'INVALID_ANSWER';
+    if (!q.source || typeof q.source !== 'object') return 'INVALID_SOURCE';
+    if (!q.source.sourceId || typeof q.source.sourceId !== 'string' || !q.source.sourceId.trim()) return 'INVALID_SOURCE';
+    if (validSourceIds && !validSourceIds.has(q.source.sourceId.trim())) return 'SOURCE_NOT_REGISTERED';
+    if (!q.source.sourceFile || typeof q.source.sourceFile !== 'string' || !q.source.sourceFile.trim()) return 'INVALID_SOURCE';
+    if (q.source.extractedFromSource !== true) return 'NOT_EXTRACTED_FROM_SOURCE';
+    if (!q.quality || typeof q.quality !== 'object' || q.quality.answerVerified !== true) return 'ANSWER_NOT_VERIFIED';
+    return null;
+  }
+
   function validateQuestion(q, validSourceIds) {
-    if (!q || typeof q !== 'object') return false;
-    if (!q.id || typeof q.id !== 'string') return false;
-    if (!q.section || typeof q.section !== 'string') return false;
-    if (!q.source || typeof q.source !== 'object') return false;
-    if (!q.source.sourceId || typeof q.source.sourceId !== 'string') return false;
-    if (!q.source.sourceFile || typeof q.source.sourceFile !== 'string') return false;
-    if (q.source.extractedFromSource !== true) return false;
-    if (!q.quality || q.quality.answerVerified !== true) return false;
-    if (!['A', 'B', 'C', 'D'].includes(q.correctAnswer)) return false;
-    if (!Array.isArray(q.options) || q.options.length < 2) return false;
-    if (validSourceIds && !validSourceIds.has(q.source.sourceId)) return false;
-    return true;
+    return getQuestionValidationFailureReason(q, validSourceIds) === null;
   }
 
   async function fetchJson(relativeUrl) {
@@ -127,9 +145,12 @@
       const verifiedQuestions = [];
       for (let i = 0; i < questionsRaw.length; i++) {
         const q = questionsRaw[i];
-        if (validateQuestion(q, validSourceIds)) {
-          verifiedQuestions.push(q);
+        const failReason = getQuestionValidationFailureReason(q, validSourceIds);
+        if (failReason) {
+          const qId = (q && q.id) ? q.id : `index_${i}`;
+          throw new Error(`SOURCE_BANK_INVALID_QUESTION:${qId}:${failReason}`);
         }
+        verifiedQuestions.push(q);
       }
 
       if (verifiedQuestions.length === 0) {
@@ -200,6 +221,7 @@
     getError,
     setFetchFn,
     validateQuestion,
+    getQuestionValidationFailureReason,
     getQuestions: () => [..._loadedQuestions],
     getSources: () => [..._loadedSources]
   };

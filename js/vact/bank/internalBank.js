@@ -175,7 +175,10 @@
     if (!q.source || q.source.extractedFromSource !== true) return false;
     if (!q.source.sourceId || !q.source.sourceFile) return false;
     if (!q.quality || q.quality.answerVerified !== true) return false;
-    if (!Array.isArray(q.options) || q.options.length < 2) return false;
+    if (!Array.isArray(q.options) || q.options.length !== 4) return false;
+    for (let i = 0; i < q.options.length; i++) {
+      if (typeof q.options[i] !== 'string' || !q.options[i].trim()) return false;
+    }
     if (!['A', 'B', 'C', 'D'].includes(q.correctAnswer)) return false;
     return true;
   }

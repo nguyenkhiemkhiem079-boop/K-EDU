@@ -1170,10 +1170,10 @@ GIANG, 8"></textarea>
 
             <div class="form-group">
               <label>📚 Nguồn Câu Hỏi</label>
-              <select id="mathGenSourceSelect" style="font-weight:700;border:1.5px solid var(--primary);background:var(--primary-light);color:var(--primary-shadow);">
+              <select id="mathGenSourceSelect" onchange="updateMathGenCapacityStatus()" style="font-weight:700;border:1.5px solid var(--primary);background:var(--primary-light);color:var(--primary-shadow);">
+                <option value="hybrid" selected>🔀 Trộn cả 2 (khuyên dùng — ưu tiên tài liệu thật, tự động bổ sung nếu thiếu)</option>
+                <option value="document">📚 Từ ngân hàng tài liệu thật (chỉ dùng câu thật)</option>
                 <option value="synthetic">⚙️ Sinh tự động (công thức)</option>
-                <option value="document" selected>📚 Từ ngân hàng tài liệu thật</option>
-                <option value="hybrid">🔀 Trộn cả 2 (ưu tiên tài liệu thật, bổ sung bằng sinh tự động nếu thiếu)</option>
               </select>
             </div>
           </div>
@@ -1258,8 +1258,8 @@ GIANG, 8"></textarea>
                   🛡️ Cơ Chế Xử Lý Trùng Lặp
                 </label>
                 <select id="mathGenDeduplicatePolicySelect" onchange="updateMathGenBatchPolicyNotice()" style="font-weight:800;border:2px solid var(--primary);border-radius:var(--radius-md);padding:0.6rem 0.85rem;background:var(--primary-light);color:var(--primary-shadow);width:100%;">
-                  <option value="disjoint" selected>🛡️ 100% Độc Lập — Không Trùng Câu Hỏi (Disjoint Questions)</option>
-                  <option value="variant_shuffle">🔀 Đảo Mã Đề Chuẩn Bộ GD (Mã 101, 102... Hoán Vị Câu & A-B-C-D)</option>
+                  <option value="variant_shuffle" selected>🔀 Đảo Mã Đề Chuẩn Bộ GD (Mã 101, 102... Hoán Vị Câu & A-B-C-D) (Khuyên dùng)</option>
+                  <option value="disjoint">🛡️ 100% Độc Lập — Không Trùng Câu Hỏi (Disjoint Questions)</option>
                 </select>
               </div>
 
@@ -1273,7 +1273,21 @@ GIANG, 8"></textarea>
             </div>
 
             <div id="mathGenBatchNotice" style="font-size:0.84rem;color:var(--text-secondary);background:var(--bg-tertiary);padding:0.6rem 0.9rem;border-radius:var(--radius-sm);border-left:4px solid var(--indigo);">
-              💡 <strong>Chế độ 100% Độc Lập:</strong> Hệ thống tự động theo dõi và khóa chữ ký câu hỏi trên toàn bộ 5/10 đề. Mỗi câu hỏi trong đề 2, 3, 4, 5... đảm bảo khác biệt hoàn toàn với các đề trước, kết hợp giữa ngân hàng câu hỏi thực tế và bộ sinh tham số ngẫu nhiên.
+              💡 <strong>Chế độ Đảo Mã Đề (Khuyên dùng):</strong> Sinh bộ câu hỏi chuẩn theo ma trận rồi tự động hoán vị thứ tự câu hỏi và phương án A-B-C-D cho từng đề (101, 102, 103...). Giúp tận dụng tối đa ngân hàng câu hỏi chọn lọc và phù hợp thi trắc nghiệm trên lớp.
+            </div>
+          </div>
+
+          <!-- KHẢ DỤNG THEO BỘ LỌC (CAPACITY PREFLIGHT STATUS) -->
+          <div id="mathGenCapacityStatusBar" style="background:var(--bg-tertiary);border:1.5px solid var(--indigo);border-radius:var(--radius-md);padding:0.75rem 1.15rem;margin-bottom:1.15rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
+              <div id="mathGenCapacityDetails" style="font-size:0.9rem;font-weight:700;color:var(--text-primary);">
+                📊 <strong>Khả dụng theo bộ lọc:</strong>
+                <span id="mathGenCapMcq" style="margin-left:0.35rem;">Trắc nghiệm tài liệu: --</span> ·
+                <span id="mathGenCapTH">TH: --</span> ·
+                <span id="mathGenCapVD">VD: --</span> ·
+                <span id="mathGenCapVDC">VDC đã duyệt: --</span>
+              </div>
+              <div id="mathGenCapacityNote" style="font-size:0.86rem;font-weight:800;"></div>
             </div>
           </div>
 
@@ -1351,10 +1365,8 @@ GIANG, 8"></textarea>
               <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:0.85rem;margin-bottom:1.25rem;">
                 <div class="form-group" style="margin-bottom:0;">
                   <label style="font-weight:800;">🏛️ Hệ Thống Kỳ Thi Mục Tiêu</label>
-                  <select id="dgnlTargetExamSelect" style="font-weight:700;border:2px solid var(--indigo);border-radius:var(--radius-md);padding:0.55rem 0.75rem;background:var(--bg-tertiary);width:100%;">
-                    <option value="HCM" selected>🏛️ ĐHQG TP.HCM (Đánh Giá Năng Lực)</option>
-                    <option value="HSA">🏛️ ĐHQG Hà Nội (HSA — Đánh Giá Năng Lực)</option>
-                    <option value="TSA">🏛️ ĐHBK Hà Nội (TSA — Đánh Giá Tư Duy)</option>
+                  <select id="dgnlTargetExamSelect" disabled style="font-weight:700;border:2px solid var(--indigo);border-radius:var(--radius-md);padding:0.55rem 0.75rem;background:var(--bg-tertiary);width:100%;cursor:not-allowed;opacity:0.95;">
+                    <option value="HCM" selected>🏛️ ĐHQG TP.HCM — V-ACT (Chuẩn Hóa 2025)</option>
                   </select>
                 </div>
 
@@ -1366,7 +1378,7 @@ GIANG, 8"></textarea>
 
               <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
                 <button type="button" id="btnGenerateDgnlExam" class="btn btn-primary btn-lg" onclick="triggerAutoGenerateDgnlExam()" style="background:linear-gradient(135deg, #4f46e5, #7c3aed);font-weight:800;">
-                  🚀 TẠO ĐỀ ĐÁNH GIÁ NĂNG LỰC NGAY (100 CÂU — 90 PHÚT)
+                  🚀 TẠO MINI V-ACT 100 — ĐHQG TP.HCM (100 CÂU — 90 PHÚT)
                 </button>
                 <button type="button" class="btn btn-secondary btn-lg" onclick="previewDgnlExamDocument()">
                   👁️ Xem Trước Bản In LaTeX
@@ -1955,7 +1967,7 @@ GIANG, 8"></textarea>
   <script src="js/specializedBankPolicy.js?v=5.2"></script>
   <script src="js/documentQuestionBank.js?v=5.2"></script>
   <script src="js/question-bank/stats.js?v=5.2"></script>
-  <script src="js/mathGenerator.js?v=5.2"></script>
+  <script src="js/mathGenerator.js?v=6.3"></script>
   <script src="js/khtnGenerator.js?v=5.2"></script>
   <script src="js/studentAccounts.js?v=6.3"></script>
   <script src="js/teacherWorkspace.js?v=6.0"></script>
@@ -1968,7 +1980,7 @@ GIANG, 8"></textarea>
   <script src="js/vact/quality/deduplicator.js"></script>
   <script src="js/vact/bank/adapter.js"></script>
   <script src="js/vact/bank/internalBank.js"></script>
-  <script src="js/vact/bank/sourceBankLoader.js?v=6.2"></script>
+  <script src="js/vact/bank/sourceBankLoader.js?v=6.3"></script>
   <script src="js/vact/bank/examBank.js"></script>
   <script src="js/vact/bank/coverage.js"></script>
   <script src="js/vact/generator/sectionTestGenerator.js"></script>
@@ -1981,7 +1993,7 @@ GIANG, 8"></textarea>
   <script src="js/vact/sources/sourceManager.js"></script>
   <script src="js/vact/adaptive/weaknessGenerator.js"></script>
   <script src="js/vact/review/reviewManager.js"></script>
-  <script src="js/app.js?v=6.2"></script>
+  <script src="js/app.js?v=6.3"></script>
   <script src="js/studentAnalytics.js?v=5.0"></script>
   <!-- BATCH EXAM RESULTS MODAL -->
   <div id="batchGenResultsModal" class="hidden" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.7);backdrop-filter:blur(4px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.25rem;">
