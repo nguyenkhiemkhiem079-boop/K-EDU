@@ -4107,7 +4107,10 @@ function cancelTeacherQuizEdit() {
 
 /* ================= QUIZ PUBLISHING & RESULTS ================= */
 async function persistTeacherQuiz(quiz) {
-  const result = await StorageEngine.saveQuiz(quiz);
+  const normalized = window.QuizContract ? window.QuizContract.normalizeQuiz(quiz) : quiz;
+  const validation = window.QuizContract ? window.QuizContract.validateQuiz(normalized) : { valid: true, errors: [] };
+  if (!validation.valid) throw Object.assign(new Error('Dữ liệu đề thi không hợp lệ: ' + validation.errors.join(', ')), { code: 'QUIZ_INVALID', errors: validation.errors });
+  const result = await StorageEngine.saveQuiz(normalized);
   if (!result || !result.success) {
     const message = result?.error || 'Không lưu được đề thi. Vui lòng thử lại.';
     showToast(message, 'error');

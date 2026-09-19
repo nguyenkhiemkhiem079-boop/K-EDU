@@ -372,6 +372,7 @@ const StorageEngine = {
   },
 
   async saveQuiz(quiz) {
+    quiz = window.QuizContract ? window.QuizContract.normalizeQuiz(quiz) : quiz;
     const normalized = normalizeQuizForPersistence(quiz);
     if (!normalized.success) return { success: false, localSaved: false, code: normalized.code, error: 'Đề thi cần có mã và tiêu đề.' };
     const quizToSave = normalized.quiz;
@@ -412,7 +413,7 @@ const StorageEngine = {
 
   async getQuiz(id) {
     const indexed = await this.getQuizRecordFromIndexedDB(id);
-    if (indexed.success && indexed.quiz) return indexed.quiz;
+    if (indexed.success && indexed.quiz) return window.QuizContract ? window.QuizContract.normalizeQuiz(indexed.quiz) : indexed.quiz;
     const localQuiz = await this.get('quiz:' + id);
     if (localQuiz) {
       const migration = await this.saveQuizRecordToIndexedDB(normalizeQuizForPersistence(localQuiz).quiz);
@@ -421,7 +422,7 @@ const StorageEngine = {
         await this.remove('quiz:' + id);
         await this.set('quiz_storage_migration_v3', { completedAt: new Date().toISOString() });
       }
-      return localQuiz;
+      return window.QuizContract ? window.QuizContract.normalizeQuiz(localQuiz) : localQuiz;
     }
 
     if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
@@ -430,7 +431,7 @@ const StorageEngine = {
         if (cloudQuiz) {
           await this.saveQuizRecordToIndexedDB(normalizeQuizForPersistence(cloudQuiz).quiz);
           await this.updateQuizIndex(cloudQuiz);
-          return cloudQuiz;
+          return window.QuizContract ? window.QuizContract.normalizeQuiz(cloudQuiz) : cloudQuiz;
         }
       } catch (err) {
         console.warn('Firebase getQuiz failed, falling back to local:', err);

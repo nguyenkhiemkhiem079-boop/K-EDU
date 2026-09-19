@@ -24,8 +24,10 @@
       '</head><body><div class="kedu-rendered-exam">' + content + '</div></body></html>';
   }
   async function resolveQuizDocument(quiz = {}) {
-    if (typeof quiz.examHtml === 'string' && quiz.examHtml.trim()) return { success: true, kind: 'GENERATED_HTML', source: 'examHtml', html: quiz.examHtml };
-    const value = quiz.pdfDataUrl;
+    const document = quiz.document || {};
+    if (typeof document.examHtml === 'string' && document.examHtml.trim()) return { success: true, kind: 'GENERATED_HTML', source: 'document.examHtml', html: document.examHtml };
+    if (typeof quiz.examHtml === 'string' && quiz.examHtml.trim()) return { success: true, kind: 'GENERATED_HTML', source: 'legacy-examHtml', html: quiz.examHtml };
+    const value = document.remoteUrl || document.attachmentRef || quiz.pdfDataUrl;
     if (typeof value === 'string' && htmlDataPrefix.test(value)) {
       const html = decodeHtmlDataUrl(value);
       if (html) return { success: true, kind: 'GENERATED_HTML', source: 'legacy-data-html', html };
