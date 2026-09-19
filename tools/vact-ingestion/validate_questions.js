@@ -1,3 +1,4 @@
+const quality = require('./content_quality');
 function validateQuestion(q) {
   const issues = [];
 
@@ -6,9 +7,10 @@ function validateQuestion(q) {
     issues.push('Question text too short or missing');
   }
   if (!q.section) issues.push('UNKNOWN_SECTION');
-  if (q.validationIssues?.includes('MALFORMED_QUESTION_TEXT')) issues.push('MALFORMED_QUESTION_TEXT');
+  if (quality.isMalformedQuestionText(q.question) || q.validationIssues?.includes('MALFORMED_QUESTION_TEXT')) issues.push('MALFORMED_QUESTION_TEXT');
   if (q.quality?.requiresStimulus && !q.quality.stimulusPreserved) issues.push('MISSING_REQUIRED_CONTENT');
   if (q.quality?.requiresVisual && !q.quality.visualPreserved) issues.push('VISUAL_MISSING');
+  if (q.options?.some(quality.hasCriticalOptionSpillover)) issues.push('OPTION_SPILLOVER');
 
   // Check options
   if (!Array.isArray(q.options) || q.options.length !== 4) {

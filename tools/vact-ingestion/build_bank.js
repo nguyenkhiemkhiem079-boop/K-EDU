@@ -46,6 +46,10 @@ async function buildBank(options = {}) {
         const qIds = validated.map(q => q.id);
         const expected = (src.structureVersion === '2025+' || src.structureVersion === 'legacy') ? 120 : validated.length;
 
+        const sourceQuestionCount = validated.length;
+        const answerVerifiedCount = validated.filter(q => q.quality?.answerVerified === true && /^[A-D]$/.test(q.correctAnswer || '')).length;
+        const productionQuestionCount = validated.filter(q => q.status === 'production').length;
+        const expectedQuestionCount = (src.structureVersion === '2025+' || src.structureVersion === 'legacy') ? 120 : sourceQuestionCount;
         examRecords.push({
           id: validated[0]?.source?.examSetId || `vact_exam_${src.sourceId}`,
           sourceId: src.sourceId,
@@ -53,10 +57,15 @@ async function buildBank(options = {}) {
           year: src.year,
           structureVersion: src.structureVersion,
           questionIds: qIds,
-          expectedQuestionCount: expected,
-          extractedQuestionCount: validated.length,
-          productionQuestionCount: prodCount,
-          complete: validated.length >= 120 && prodCount >= 100,
+          expectedQuestionCount,
+          sourceQuestionCount,
+          answerVerifiedCount,
+          extractedQuestionCount: sourceQuestionCount,
+          productionQuestionCount,
+          sourceComplete: sourceQuestionCount === expectedQuestionCount,
+          answerComplete: answerVerifiedCount === expectedQuestionCount,
+          productionComplete: productionQuestionCount === expectedQuestionCount,
+          complete: productionQuestionCount === expectedQuestionCount,
           sourceBacked: true
         });
       }

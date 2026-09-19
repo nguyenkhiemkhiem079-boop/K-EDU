@@ -1,4 +1,5 @@
 const fs = require('fs');
+const quality = require('./content_quality');
 
 /**
  * Parses individual questions from extracted document pages.
@@ -34,6 +35,10 @@ function parseQuestions(docData, sourceRecord) {
   const qMarkerRegex = /(?:^|\n)\s*(?:Câu|Question|Bài)\s+(\d+)\s*[:.]/gim;
 
   const matches = [];
+  const examHeaders = [];
+  const headerRegex = /(?:^|\n)\s*(?:ĐỀ(?:\s+SỐ)?|ĐỀ THI|TEST|MOCK TEST)\s*(\d+)\b/giu;
+  let hm;
+  while ((hm = headerRegex.exec(fullDocText)) !== null) examHeaders.push({ index: hm.index, set: Number(hm[1]) || 1 });
   let m;
   while ((m = qMarkerRegex.exec(fullDocText)) !== null) {
     matches.push({
@@ -49,6 +54,7 @@ function parseQuestions(docData, sourceRecord) {
 
   // Keep track of active stimulus (shared reading passage)
   let currentStimulus = null;
+  let pendingStimulus = null;
   let stimulusUntilQNum = 0;
 
   for (let i = 0; i < matches.length; i++) {
@@ -74,14 +80,25 @@ function parseQuestions(docData, sourceRecord) {
     }
 
     const parsed = parseQuestionChunk(rawChunk, cur.qNum);
+    const effectiveStimulus = pendingStimulus && (quality.isPlaceholderStimulus(currentStimulus) || !currentStimulus) ? pendingStimulus : (currentStimulus || pendingStimulus);
+    if (pendingStimulus && cur.qNum > stimulusUntilQNum) pendingStimulus = null;
     if (parsed) {
+      if (parsed.trailingContent) {
+        pendingStimulus = parsed.trailingContent;
+        const range = parsed.trailingContent.match(/(?:câu|question)\s+(\d+)\s*(?:đến|-|–)\s*(\d+)/iu);
+        stimulusUntilQNum = range ? Number(range[2]) : cur.qNum + 4;
+      }
       questions.push({
         questionNumber: cur.qNum,
         sourcePage,
         rawChunk,
-        stimulus: currentStimulus,
+        stimulus: effectiveStimulus,
         ...parsed
       });
+      const header = [...examHeaders].reverse().find(h => h.index <= cur.index);
+      const setIndex = header?.set || 1;
+      questions[questions.length - 1].examSetIndex = setIndex;
+      questions[questions.length - 1].examSetId = `vact_exam_${sourceRecord.sourceId}${examHeaders.length ? `_set_${String(setIndex).padStart(3, '0')}` : ''}`;
     }
   }
 
@@ -168,11 +185,14 @@ function parseQuestionChunk(chunk, qNum) {
     questionText = content;
   }
 
+  const split = quality.splitTrailingContent(textD);
+  textD = split.head;
   return {
     questionText: cleanText(questionText),
     options,
     solutionText: cleanText(solutionText),
-    explicitAnswer
+    explicitAnswer,
+    trailingContent: split.trailingContent
   };
 }
 
@@ -180,7 +200,7 @@ function parseQuestionChunk(chunk, qNum) {
 // Keep the passage in the following question's lead text instead of corrupting option D.
 function findTrailingContentBoundary(text) {
   const boundaryPatterns = [
-    /(?:^|\n)\s*(?:Dựa vào thông tin dưới đây|Dựa vào đoạn[^\n]*|Đọc đoạn[^\n]*|Sử dụng (?:thông tin|dữ liệu)[^\n]*|Trả lời (?:các )?câu hỏi? từ[^\n]*)/iu,
+    /(?:\s+|^)(?:Dựa vào (?:các )?(?:thông tin|đoạn|bảng|biểu đồ|hình)[\s\S]*|Đọc (?:đoạn|bảng|biểu đồ|hình)[\s\S]*|Sử dụng (?:thông tin|dữ liệu)[\s\S]*|Trả lời (?:các )?câu hỏi? từ[\s\S]*)/iu,
     /(?:^|\n)\s*(?:Câu|Question|Bài)\s+\d+\s*[:.]/iu,
     /(?:^|\n)\s*(?:PHẦN|TIẾNG VIỆT|TIẾNG ANH|TOÁN HỌC|TƯ DUY LOGIC|SUY LUẬN KHOA HỌC)\b/iu
   ];
@@ -194,7 +214,7 @@ function findTrailingContentBoundary(text) {
 
 function cleanOption(str) {
   return str
-    .replace(/^\s*(?:\[[A-D]\]|[A-D])\s*(?:[.:)]|$)\s*/i, '')
+    .replace(/^\s*(?:\[[A-D]\]|[A-D])\s*(?:[.:)]|[-–—])\s+/i, '')
     .replace(/--\s*\d+\s+of\s+\d+\s*--/gi, '')
     .replace(/GROUP:\s*GÓC ÔN THI[^\n]*/gi, '')
     .replace(/\s+/g, ' ')

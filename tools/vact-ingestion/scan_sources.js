@@ -16,7 +16,12 @@ function loadManifest() {
     if (!source.fileHash) continue;
     const stable = `vact_src_${String(source.fileHash).replace(/[^a-f0-9]/gi, '').slice(0, 16).toLowerCase()}`;
     if (source.sourceId && source.sourceId !== stable) migration[source.sourceId] = stable;
-    source.sourceId = stable;
+  }
+  for (const source of manifest) {
+    const oldId = source.sourceId;
+    source.originalSourceId = oldId;
+    if (migration[oldId]) source.sourceId = migration[oldId];
+    if (source.pairedSourceId && migration[source.pairedSourceId]) source.pairedSourceId = migration[source.pairedSourceId];
   }
   const out = path.resolve('data', 'vact', 'id-migration.json');
   fs.mkdirSync(path.dirname(out), { recursive: true });

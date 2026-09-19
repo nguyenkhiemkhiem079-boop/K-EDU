@@ -3,12 +3,22 @@ const path = require('path');
 const root = path.resolve('data/vact');
 const sourcesPath = path.join(root, 'sources.json');
 const sources = JSON.parse(fs.readFileSync(sourcesPath, 'utf8'));
+const manifestPath = path.resolve('TÀI LIỆU', 'DGNL', 'V-ACT', 'source-manifest.json');
+const manifest = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, 'utf8')) : [];
 const migration = {};
 for (const s of sources) {
   if (!s.fileHash) continue;
   const stable = `vact_src_${String(s.fileHash).replace(/[^a-f0-9]/gi, '').slice(0, 16).toLowerCase()}`;
   if (s.sourceId && s.sourceId !== stable) migration[s.sourceId] = stable;
   s.sourceId = stable;
+}
+for (const m of manifest) {
+  const target = sources.find(s => s.fileHash && m.fileHash && s.fileHash === m.fileHash);
+  if (target && m.sourceId && target.sourceId) migration[m.sourceId] = target.sourceId;
+}
+for (const s of sources) {
+  if (s.pairedSourceId && migration[s.pairedSourceId]) s.pairedSourceId = migration[s.pairedSourceId];
+  if (s.originalSourceId === undefined && s.sourceId) s.originalSourceId = Object.keys(migration).find(k => migration[k] === s.sourceId) || null;
 }
 fs.writeFileSync(sourcesPath, JSON.stringify(sources, null, 2) + '\n');
 fs.writeFileSync(path.join(root, 'id-migration.json'), JSON.stringify(migration, null, 2) + '\n');

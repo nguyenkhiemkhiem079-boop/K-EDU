@@ -36,7 +36,7 @@ async function matchSolutions(parsedQuestions, sourceRecord) {
           if (expM) expl = cleanText(expM[0]);
         }
 
-        solutionMap.set(`${deriveExamKey(pairedSource)}:${sq.questionNumber}`, {
+        solutionMap.set(`${sq.examSetIndex || 1}:${sq.questionNumber}`, {
           answer: ans || null,
           explanation: expl || null,
           solutionSourceId: pairedSource.sourceId,
@@ -59,7 +59,7 @@ async function matchSolutions(parsedQuestions, sourceRecord) {
     let solutionSourcePage = null;
 
     // First check paired solution
-    const paired = solutionMap.get(`${deriveExamKey(sourceRecord)}:${q.questionNumber}`);
+    const paired = solutionMap.get(`${q.examSetIndex || 1}:${q.questionNumber}`);
     if (paired && paired.answer) {
       correctAnswer = paired.answer;
       explanation = paired.explanation;

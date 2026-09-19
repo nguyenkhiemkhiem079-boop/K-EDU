@@ -111,6 +111,13 @@
   function computeTextFingerprint(text) {
     if (!text) return '';
     return normalizeSignatureText(text)
+      .replace(/∩/g, ' OPINTERSECTION ').replace(/∪/g, ' OPUNION ')
+      .replace(/≤/g, ' OPLE ').replace(/≥/g, ' OPGE ')
+      .replace(/≠/g, ' OPNE ').replace(/∈/g, ' OPIN ').replace(/∉/g, ' OPNOTIN ')
+      .replace(/⊂/g, ' OPSUBSET ').replace(/⊆/g, ' OPSUBSETEQ ').replace(/√/g, ' OPSQRT ')
+      .replace(/×/g, ' OPTIMES ').replace(/÷/g, ' OPDIV ')
+      .replace(/\+/g, ' OPPLUS ').replace(/-/g, ' OPMINUS ')
+      .replace(/</g, ' OPLT ').replace(/>/g, ' OPGT ').replace(/=/g, ' OPEQ ').replace(/\^/g, ' OPPOWER ')
       .replace(/[^\p{L}\p{N}\s]/gu, ' ')
       .replace(/\s+/g, ' ')
       .trim();

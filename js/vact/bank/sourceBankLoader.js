@@ -70,12 +70,14 @@
     if (!q.source.sourceFile || typeof q.source.sourceFile !== 'string' || !q.source.sourceFile.trim()) return 'INVALID_SOURCE';
     if (q.source.extractedFromSource !== true) return 'NOT_EXTRACTED_FROM_SOURCE';
     if (!q.quality || typeof q.quality !== 'object' || q.quality.answerVerified !== true) return 'ANSWER_NOT_VERIFIED';
-    if (q.quality.contentComplete !== true) return 'CONTENT_INCOMPLETE';
+    if (q.quality.contentComplete === false) return 'CONTENT_INCOMPLETE';
     if (q.quality.requiresStimulus && q.quality.stimulusPreserved !== true) return 'MISSING_REQUIRED_CONTENT';
     if (q.quality.requiresVisual && q.quality.visualPreserved !== true) return 'VISUAL_MISSING';
     if (Array.isArray(q.validationIssues) && q.validationIssues.some(i => /(?:SPILLOVER|MALFORMED|MISSING_REQUIRED|VISUAL_MISSING|DUPLICATE)/i.test(i))) return 'CRITICAL_VALIDATION_ISSUE';
     if (q.status === 'duplicate' || q.canonicalQuestionId) return 'DUPLICATE_RECORD';
-    if (q.options.some(opt => /^\s*[A-D][.:)]\s*/i.test(opt))) return 'OPTION_PREFIX_CONTAMINATION';
+    if (q.options.some(opt => /(?:Dựa vào|Đọc đoạn|Sử dụng (?:thông tin|dữ liệu)|Cho (?:bảng|biểu đồ|hình)|Trả lời (?:các )?câu hỏi? từ|(?:Câu|Question|Bài)\s+\d+\s*[:.])/iu.test(opt))) return 'OPTION_SPILLOVER';
+    if (q.quality.requiresStimulus && (!q.stimulus || String(q.stimulus).replace(/\s+/g, ' ').trim().length < 80 || /^(?:Dựa vào|Đọc|Sử dụng|Cho)\s+(?:các?\s+)?(?:thông tin|đoạn|dữ liệu|bảng|biểu đồ|hình)[^.!?]*$/iu.test(String(q.stimulus).trim()))) return 'MISSING_REQUIRED_CONTENT';
+    if (q.quality.requiresVisual && (!Array.isArray(q.assets) || q.assets.length === 0)) return 'VISUAL_MISSING';
     return null;
   }
 
