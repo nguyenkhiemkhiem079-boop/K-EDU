@@ -551,7 +551,6 @@ input[type="number"],
 input[type="password"],
 input[type="file"],
 input:not([type]),
-.student-account-card input,
 select,
 textarea {
   width: 100%;
@@ -4224,46 +4223,43 @@ tr:hover td { background: var(--bg-card-hover); }
 .teacher-source-option.active { border-color:var(--primary); background:var(--primary-light); }
 .teacher-source-option span { font-size:.85rem; color:var(--text-secondary); }
 .teacher-source-option:focus-visible { outline:3px solid var(--primary); outline-offset:3px; }
-.account-mode-buttons { display:flex; flex-wrap:wrap; gap:.65rem; margin:1rem 0; }
-.account-password-settings { margin-top:1rem; }
-.account-password-settings summary { cursor:pointer; margin-bottom:1rem; font-weight:700; }
-.account-error { color:var(--rose); font-weight:600; }
 #studentJoinSection .duo-master-shortcut { display:none; }
-
-/* Student Account Card Layout & Uniform Input System */
-.student-account-card {
-  max-width: 720px;
-  margin: 0 auto 1.5rem;
-}
-.student-account-card .form-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 0.85rem;
-}
-.student-account-card .form-group {
-  margin-bottom: 0.5rem;
-}
-.student-account-card input {
-  width: 100%;
-  height: 48px;
-  padding: 0.75rem 1rem;
-  font-family: var(--font-sans);
-  font-size: 0.95rem;
-  font-weight: 600;
-  background: var(--bg-secondary);
-  border: 2px solid var(--border-color);
-  border-radius: var(--radius-md);
-  color: var(--text-primary);
-  box-sizing: border-box;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
-}
-.student-account-card input:focus {
-  outline: none;
-  border-color: var(--indigo);
-  box-shadow: 0 0 0 4px var(--indigo-light);
-}
 @media (max-width:600px) {
   .teacher-source-options { grid-template-columns:1fr; }
-  .student-account-card .form-row { grid-template-columns:1fr; gap:0.75rem; }
+}
+
+/* Phase 4: focused learning workspace rhythm and responsive exam priority. */
+.student-profile-card { max-width: 820px; padding: 1.5rem; }
+.student-profile-card .duo-hero-header { text-align:left; border-bottom:2px solid var(--border-color); padding-bottom:1rem; margin-bottom:1rem; }
+.student-profile-card .duo-hero-icons { font-size:2rem; float:right; margin:0; }
+.student-profile-form { display:grid; gap:1rem; }
+.student-profile-heading { display:flex; align-items:baseline; justify-content:space-between; gap:1rem; }
+.student-profile-heading h3 { margin:0; font-size:1.05rem; letter-spacing:.02em; color:var(--text-primary); }
+#studentProfileGreeting { color:var(--text-secondary); font-size:.9rem; font-weight:700; }
+.student-profile-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; margin:0; }
+.student-profile-grid .form-group { margin:0; }
+.student-profile-grid input, .teacher-workflow-card input, .teacher-workflow-card select { min-height:48px; box-sizing:border-box; }
+.student-profile-card #studentProfileSubmitButton { width:auto !important; justify-self:start; margin:0 !important; min-width:180px; }
+.split-exam-layout { grid-template-columns:minmax(0,7fr) minmax(280px,3fr); height:auto; min-height:70vh; align-items:start; }
+.pdf-viewer-pane { min-height:70vh; }
+.answer-sheet-pane { position:sticky; top:1rem; max-height:calc(100vh - 2rem); }
+.pdf-render-frame { min-height:calc(70vh - 64px); background:#fff; }
+.teacher-workflow-card, #teacherBankGeneratorCard { margin-bottom:1.25rem; }
+.teacher-subnav-bar, .nav-tabs { max-width:100%; overflow-x:auto; scrollbar-width:thin; }
+.teacher-topic-table-wrap, #teacherResultsTableWrap, #teacherQuizManagerWrap { overflow-x:auto; }
+.btn:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline:3px solid var(--sky); outline-offset:2px; }
+@media (max-width:768px) {
+  .main-content { padding-inline: .85rem; }
+  .student-profile-card { padding:1.1rem; }
+  .student-profile-card .duo-hero-icons { display:none; }
+  .student-profile-grid { grid-template-columns:1fr; gap:.85rem; }
+  .student-profile-heading { align-items:flex-start; flex-direction:column; gap:.25rem; }
+  .student-profile-card #studentProfileSubmitButton { width:100% !important; justify-self:stretch; }
+  .split-exam-layout, .split-exam-layout.view-both { display:flex; flex-direction:column; min-height:0; }
+  .split-exam-layout.view-pdf .pdf-viewer-pane, .split-exam-layout.view-both .pdf-viewer-pane { height:auto !important; min-height:55vh; }
+  .pdf-viewer-pane, .pdf-render-frame { min-height:55vh; }
+  .answer-sheet-pane, .split-exam-layout.view-both .answer-sheet-pane { position:static; max-height:none; width:100%; height:auto !important; }
+  .nav-actions { gap:.35rem; }
+  .user-gamify-bar { transform:scale(.88); transform-origin:right center; }
+  .teacher-subtab-btn { flex:0 0 auto; white-space:nowrap; }
 }
