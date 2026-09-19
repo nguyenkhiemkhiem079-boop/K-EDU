@@ -282,14 +282,14 @@ GIANG, 8"></textarea>
         <!-- Active Paused Exam Banner (Hidden by default) -->
         <div id="activePausedExamBanner" class="hidden" style="max-width:720px;margin:0 auto 1.25rem;"></div>
 
-        <div class="card duo-hero-card">
+        <div class="card duo-hero-card student-profile-card">
           <div class="duo-hero-header">
             <div class="duo-hero-icons">🦊 ⚡ 📚</div>
             <h2 class="duo-hero-title">Phòng Học & Luyện Thi Trực Tuyến</h2>
             <p class="duo-hero-desc">Lưu hồ sơ trên thiết bị này để bắt đầu học:</p>
           </div>
 
-          <form onsubmit="handleStudentFormSubmit(); return false;">
+          <form class="student-profile-form" onsubmit="handleStudentFormSubmit(); return false;">
             <!-- Special Master Role Shortcut Bar -->
             <div class="duo-master-shortcut">
               <div style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;font-weight:800;color:var(--text-primary);">
@@ -300,19 +300,18 @@ GIANG, 8"></textarea>
               </button>
             </div>
 
-            <div class="form-row">
-              <div class="form-group" style="flex-basis:100%;"><h3 style="margin:0;">HỒ SƠ HỌC SINH</h3></div>
+            <div class="student-profile-heading"><h3>HỒ SƠ HỌC SINH</h3><span id="studentProfileGreeting" class="hidden" aria-live="polite"></span></div>
+            <div class="form-row student-profile-grid">
               <div class="form-group">
-                <label>Họ và tên</label>
+                <label for="studentJoinName">Họ và tên</label>
                 <input type="text" id="studentJoinName" placeholder="Ví dụ: Nguyễn Văn An" required>
               </div>
               <div class="form-group">
-                <label>Lớp học</label>
+                <label for="studentJoinClass">Lớp học</label>
                 <input type="text" id="studentJoinClass" placeholder="Ví dụ: 10A1" required>
               </div>
             </div>
             <button type="submit" id="studentProfileSubmitButton" class="btn btn-primary" style="width:100%;margin-top:1rem;">BẮT ĐẦU HỌC</button>
-            <p id="studentProfileGreeting" class="hidden" style="text-align:center;font-weight:700;margin:1rem 0 0;"></p>
 
             <!-- Role Master Khiem Active Banner -->
             <div id="masterTeacherDetectedPill" class="duo-master-banner hidden">

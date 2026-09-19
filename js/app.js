@@ -5057,9 +5057,9 @@ function renderLocalStudentGreeting() {
   const submitButton = document.getElementById('studentProfileSubmitButton');
   if (!greeting) return;
   if (profile?.name && profile?.className) {
-    greeting.textContent = `Xin chào, ${profile.name} — Lớp ${profile.className}. CHỈNH SỬA HỒ SƠ bằng hai ô phía trên.`;
+    greeting.textContent = `Xin chào, ${profile.name} · Lớp ${profile.className}`;
     greeting.classList.remove('hidden');
-    if (submitButton) submitButton.textContent = 'CHỈNH SỬA HỒ SƠ';
+    if (submitButton) submitButton.textContent = 'LƯU HỒ SƠ';
   } else {
     greeting.classList.add('hidden');
     if (submitButton) submitButton.textContent = 'BẮT ĐẦU HỌC';
