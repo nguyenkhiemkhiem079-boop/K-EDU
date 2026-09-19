@@ -20,6 +20,11 @@
     "error": null
   },
   {
+    "test": "verify_exam_document_renderer.js",
+    "passed": true,
+    "error": null
+  },
+  {
     "test": "verify_generation_app_integration.js",
     "passed": true,
     "error": null

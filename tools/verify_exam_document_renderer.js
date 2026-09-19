@@ -1,0 +1,26 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const vact = require('../js/vact');
+const source = fs.readFileSync(path.resolve(__dirname, '..', 'js/examDocumentRenderer.js'), 'utf8');
+const ctx = { window: {}, Blob, URL, atob, console: { info() {} } }; ctx.window = ctx;
+vm.createContext(ctx); vm.runInContext(source, ctx);
+const renderer = ctx.ExamDocumentRenderer;
+(async () => {
+  const generated = { id: 'html', examHtml: '<h1>Câu 1</h1><table class="answer-key-table"><tr><td>Đáp án</td></tr></table>', answerKeys: [{ correct: 'A' }] };
+  const resolved = await renderer.resolveQuizDocument(generated);
+  assert.equal(resolved.kind, 'GENERATED_HTML');
+  assert.ok(renderer.buildExamSrcdoc(resolved.html).includes('<html>'));
+  assert.ok(!renderer.sanitizeStudentExamHtml(resolved.html).includes('answer-key-table'));
+  assert.equal(generated.answerKeys[0].correct, 'A');
+  const legacy = await renderer.resolveQuizDocument({ id: 'legacy', pdfDataUrl: 'data:text/html;charset=utf-8,' + encodeURIComponent('<p>Câu 1</p>') });
+  assert.equal(legacy.kind, 'GENERATED_HTML'); assert.ok(legacy.html.includes('Câu 1'));
+  assert.equal((await renderer.resolveQuizDocument({ id: 'missing', pdfDataUrl: 'blob:expired' })).code, 'DOCUMENT_NOT_FOUND');
+  assert.equal((await renderer.resolveQuizDocument({ id: 'remote', pdfDataUrl: 'https://example.com/a.pdf' })).kind, 'REMOTE_PDF');
+  const full = vact.VACTExamGenerator.generateFull120({ difficulty: 'balanced', seed: 'renderer-full' });
+  const fullQuiz = vact.VACTExamGenerator.formatExamAsQuiz(full, { title: 'Full renderer', timeLimitMinutes: 150 });
+  const fullResolved = await renderer.resolveQuizDocument(fullQuiz);
+  assert.equal(full.generatedTotal, 120); assert.equal(fullResolved.kind, 'GENERATED_HTML'); assert.ok(fullResolved.html.length > 0);
+  console.log('Exam renderer resolves generated, legacy, remote, missing, and Full120 documents.');
+})().catch(error => { console.error(error); process.exitCode = 1; });
