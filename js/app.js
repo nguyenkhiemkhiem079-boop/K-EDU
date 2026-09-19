@@ -3322,7 +3322,6 @@ async function triggerAutoGenerateMathExam() {
     };
 
     const saveRes = await persistTeacherQuiz(autoQuiz);
-    await StorageEngine.savePdfBlob(newQuizId, dataUrl);
 
     // Gán trạng thái đang chỉnh sửa đề này để nếu thầy cô muốn sửa thêm thì bấm "Lưu Thay Đổi"
     AppState.editingQuizId = newQuizId;
