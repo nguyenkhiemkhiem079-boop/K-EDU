@@ -9,6 +9,8 @@ const STORE_PDFS = 'pdf_store';
 const STORE_SUBMISSIONS = 'submission_photos';
 const STORE_QUIZZES = 'quiz_store';
 const QUIZ_INDEX_KEY = 'quiz_index';
+const QUIZ_SYNC_QUEUE_KEY = 'quiz_sync_queue';
+const RESULT_SYNC_QUEUE_KEY = 'result_sync_queue';
 
 function classifyQuizAttachment(quiz = {}) {
   const value = quiz.pdfDataUrl;
@@ -48,6 +50,7 @@ const StorageEngine = {
     }
     await this.purgeSampleQuizzes();
     this.seedStudentRosterIfEmpty();
+    window.addEventListener?.('online', () => this.processSyncQueues());
   },
 
   async purgeSampleQuizzes() {
@@ -129,6 +132,33 @@ const StorageEngine = {
         resolve(null);
       }
     });
+  },
+
+  async enqueueSync(kind, id, action = 'save') {
+    const key = kind === 'quiz' ? QUIZ_SYNC_QUEUE_KEY : RESULT_SYNC_QUEUE_KEY;
+    const queue = await this.get(key) || [];
+    const next = queue.filter(item => item.id !== id || item.action !== action);
+    next.push({ id, action, attempts: 0, queuedAt: new Date().toISOString() });
+    await this.set(key, next);
+  },
+
+  async processSyncQueues() {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+    if (!window.FirebaseEngine?.isActive) return;
+    for (const [kind, key] of [['quiz', QUIZ_SYNC_QUEUE_KEY], ['result', RESULT_SYNC_QUEUE_KEY]]) {
+      const queue = await this.get(key) || []; const remaining = [];
+      for (const item of queue) {
+        try {
+          if (item.action === 'delete') { if (kind === 'quiz') await window.FirebaseEngine.deleteQuiz(item.id); }
+          else {
+            const record = kind === 'quiz' ? await this.getQuiz(item.id) : await this.get(item.id.replace(STORAGE_PREFIX, ''));
+            const response = kind === 'quiz' ? await window.FirebaseEngine.saveQuiz(record) : await window.FirebaseEngine.saveResult(record);
+            if (!response || response.success === false) throw new Error(response?.error || 'FIREBASE_SYNC_FAILED');
+          }
+        } catch (error) { if ((item.attempts || 0) < 2) remaining.push({ ...item, attempts: (item.attempts || 0) + 1, error: error.message }); }
+      }
+      await this.set(key, remaining);
+    }
   },
 
   async saveQuizRecordToIndexedDB(quiz) {
@@ -396,18 +426,18 @@ const StorageEngine = {
     const deletedIds = this.getDeletedQuizIds();
     if (deletedIds.delete(quizToSave.id)) await this.set('deleted_quizzes', Array.from(deletedIds));
 
-    let cloudResult = null;
-    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
-      try { cloudResult = await window.FirebaseEngine.saveQuiz(quizToSave); }
-      catch (error) { cloudResult = { success: false, error: error.message, code: 'FIREBASE_SYNC_FAILED' }; }
-    }
+    const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+    quizToSave.cloudSync = { status: offline ? 'pending' : (window.FirebaseEngine?.isActive ? 'pending' : 'unavailable'), lastAttemptAt: null, lastSuccessAt: null, errorCode: null, errorMessage: null };
+    await this.saveQuizRecordToIndexedDB(quizToSave);
+    await this.enqueueSync('quiz', quizToSave.id);
+    if (!offline) this.processSyncQueues();
     return {
       success: true,
       localSaved: true,
       local: { quizRecord: !!(recordResult.success || fallbackSaved), attachment: attachmentSaved, fallback: localStorageFallback },
-      cloudSaved: !!cloudResult?.success,
-      cloud: cloudResult?.success ? { state: 'saved' } : { state: window.FirebaseEngine?.isActive ? 'failed' : 'unavailable', error: cloudResult?.error || null },
-      code: cloudResult && !cloudResult.success ? 'FIREBASE_SYNC_FAILED' : null
+      cloudSaved: false,
+      cloud: { state: quizToSave.cloudSync.status },
+      code: null
     };
   },
 
@@ -524,13 +554,8 @@ const StorageEngine = {
     deletedIds.add(quizId);
     localStorage.setItem(STORAGE_PREFIX + 'deleted_quizzes', JSON.stringify(Array.from(deletedIds)));
 
-    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
-      try {
-        await window.FirebaseEngine.deleteQuiz(quizId);
-      } catch (e) {
-        console.warn('Firebase deleteQuiz error:', e);
-      }
-    }
+    await this.enqueueSync('quiz', quizId, 'delete');
+    if (!(typeof navigator !== 'undefined' && navigator.onLine === false)) this.processSyncQueues();
     await this.remove('quiz:' + quizId);
     await this.deleteQuizRecordFromIndexedDB(quizId);
     const quizIndex = await this.get(QUIZ_INDEX_KEY);
@@ -566,16 +591,16 @@ const StorageEngine = {
     const resultKey = `result:${result.quizId}:${identity}_${now}`;
     result.id = resultKey;
     const localSaved = await this.set(resultKey, result);
-    let cloudSaved = false;
-    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
-      try {
-        const response = await window.FirebaseEngine.saveResult(result);
-        cloudSaved = typeof response === 'string' ? !!response : !!(response && response.success);
-      } catch (error) { console.warn('Cloud result save failed:', error); }
+    if (!localSaved) {
+      let cloudOnly = null;
+      try { if (window.FirebaseEngine?.isActive) cloudOnly = await window.FirebaseEngine.saveResult(result); } catch (_) {}
+      if (!cloudOnly) throw new Error('Không lưu được kết quả. Bài làm vẫn được giữ để thử nộp lại.');
+      return typeof cloudOnly === 'string' ? cloudOnly : resultKey;
     }
-    if (!localSaved && !cloudSaved) throw new Error('Không lưu được kết quả. Bài làm vẫn được giữ để thử nộp lại.');
     this._lastSubmitRecord = { quizId: result.quizId, name: result.name, className: result.className, studentId: result.studentId, studentUid: result.studentUid, time: now, resultKey };
     await this.set(`submitted:${result.quizId}:${identity}`, '1');
+    await this.enqueueSync('result', resultKey);
+    if (!(typeof navigator !== 'undefined' && navigator.onLine === false)) this.processSyncQueues();
     return resultKey;
   },
 

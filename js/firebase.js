@@ -261,7 +261,7 @@ const FirebaseEngine = {
         contentType: mimeType,
         cacheControl: 'public, max-age=86400'
       });
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Storage upload timeout')), 3500));
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('FIREBASE_STORAGE_TIMEOUT')), 15000));
       const uploadTask = await Promise.race([uploadPromise, timeoutPromise]);
       const downloadUrl = await uploadTask.ref.getDownloadURL();
       console.log('☁️ PDF/Document uploaded to Firebase Storage:', downloadUrl);
@@ -331,7 +331,7 @@ const FirebaseEngine = {
       }
 
       const setPromise = this.db.collection('quizzes').doc(quiz.id).set(quizToSave);
-      const setTimer = new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore save timeout')), 4000));
+      const setTimer = new Promise((_, reject) => setTimeout(() => reject(new Error('FIREBASE_SYNC_TIMEOUT')), 15000));
       await Promise.race([setPromise, setTimer]);
 
       console.log('☁️ Quiz saved to Firestore with embedded content:', quiz.id);
