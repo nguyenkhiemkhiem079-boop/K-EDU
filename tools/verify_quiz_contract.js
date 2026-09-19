@@ -1,0 +1,10 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs'); const path = require('node:path'); const vm = require('node:vm');
+const source = fs.readFileSync(path.resolve(__dirname, '..', 'js/quizContract.js'), 'utf8'); const ctx={window:{}}; ctx.window=ctx; vm.createContext(ctx); vm.runInContext(source,ctx);
+const C=ctx.QuizContract;
+const raw={id:'M1',title:'Math',subject:'math',timeLimit:45,answerKeys:[{num:1,type:'mcq',correct:'A'}],examHtml:'<p>Câu 1</p>',assignType:'classes',assignedClasses:['10A'],showLeaderboard:false,difficultyMode:'hard'};
+const q=C.normalizeQuiz(raw); assert.equal(q.schemaVersion,1); assert.equal(q.sourceType,'math_generated'); assert.equal(q.subject,'toan'); assert.equal(q.document.kind,'generated_html'); assert.equal(q.assignment.type,'classes'); assert.equal(q.settings.showLeaderboard,false); assert.equal(q.totalQuestions,1); assert.ok(C.validateQuiz(q).valid); assert.equal(raw.schemaVersion,undefined);
+const legacy=C.migrateLegacyQuiz({id:'L',title:'Legacy',questionsCount:2,timeLimit:30,answerKeys:[{},{}],pdfDataUrl:'data:text/html;charset=utf-8,'+encodeURIComponent('<p>Câu 1</p>'),vactMeta:{profileId:'vact_mini_100',generatedTotal:100,isComplete:true}}); assert.equal(legacy.document.kind,'generated_html'); assert.equal(C.normalizeQuiz(legacy).schemaVersion,1); assert.equal(JSON.stringify(C.normalizeQuiz(legacy)),JSON.stringify(legacy));
+const full=C.normalizeQuiz({id:'F',title:'Full',subject:'vact',timeLimit:150,answerKeys:Array.from({length:120},(_,i)=>({num:i+1})),examHtml:'<p>Câu 1</p>',vactMeta:{profileId:'vact_full',generatedTotal:120,isComplete:true}}); assert.equal(full.sourceType,'vact_full_120'); assert.equal(full.totalQuestions,120); assert.ok(C.validateQuiz(full).valid);
+const upload=C.normalizeQuiz({id:'U',title:'Upload',timeLimit:0,pdfDataUrl:'data:application/pdf;base64,AA==',answerKeys:[]}); assert.equal(upload.document.kind,'uploaded_pdf'); assert.equal(upload.totalQuestions,0);
+console.log('Quiz contract normalizes Math, legacy, V-ACT, and uploads without mutation.');

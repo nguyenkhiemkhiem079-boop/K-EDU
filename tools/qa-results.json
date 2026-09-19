@@ -15,6 +15,11 @@
     "error": null
   },
   {
+    "test": "verify_cross_engine_quiz_contract.js",
+    "passed": true,
+    "error": null
+  },
+  {
     "test": "verify_duplicates.js",
     "passed": true,
     "error": null
@@ -41,6 +46,11 @@
   },
   {
     "test": "verify_project_integrity.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_quiz_contract.js",
     "passed": true,
     "error": null
   },
