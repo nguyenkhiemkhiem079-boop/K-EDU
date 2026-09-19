@@ -4800,6 +4800,7 @@ async function renderSampleQuizzes(filterName = '', filterClass = '') {
   if (AppState.selectedGradeFilter && AppState.selectedGradeFilter !== 'all') {
     const targetGrade = AppState.selectedGradeFilter;
     displayedQuizzes = displayedQuizzes.filter(q => {
+      if (q.sourceType === 'vact_mini_100' || q.sourceType === 'vact_full_120' || q.subject === 'vact') return true;
       if (q.targetClass && q.targetClass.toString() === targetGrade) return true;
       const gradeFromTitle = detectGradeFromTitle(q.title);
       if (gradeFromTitle && gradeFromTitle.toString() === targetGrade) return true;
@@ -4811,6 +4812,7 @@ async function renderSampleQuizzes(filterName = '', filterClass = '') {
   if (AppState.selectedTermFilter && AppState.selectedTermFilter !== 'all') {
     const targetTerm = AppState.selectedTermFilter;
     displayedQuizzes = displayedQuizzes.filter(q => {
+      if (q.sourceType === 'vact_mini_100' || q.sourceType === 'vact_full_120' || q.subject === 'vact') return true;
       const qTerm = q.examTerm || detectTermFromTitle(q.title);
       return qTerm === targetTerm;
     });
@@ -4819,9 +4821,9 @@ async function renderSampleQuizzes(filterName = '', filterClass = '') {
   // 3. Filter by student specific assignment if assigned to specific students
   if (filterName) {
     displayedQuizzes = displayedQuizzes.filter(q => {
-      if (q.assignType === 'students' && Array.isArray(q.assignedStudents)) {
+      if ((q.assignment?.type || q.assignType) === 'students' && Array.isArray(q.assignment?.students || q.assignedStudents)) {
         const studentTag = `${filterName} (${filterClass})`.toLowerCase();
-        return q.assignedStudents.some(s => s.toLowerCase() === studentTag || s.toLowerCase().includes(filterName.toLowerCase()));
+        return (q.assignment?.students || q.assignedStudents).some(s => s.toLowerCase() === studentTag || s.toLowerCase().includes(filterName.toLowerCase()));
       }
       return true;
     });
