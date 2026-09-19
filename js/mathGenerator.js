@@ -1623,7 +1623,7 @@ const MathEngine = {
       topic = 'all',
       sourceMode = 'hybrid', // 'hybrid' (Mặc định: Ưu tiên kho tài liệu, tự động bổ sung nếu thiếu) | 'document' | 'synthetic'
       mcqCount = 12,
-      essayMatrix = { TH: 1, VD: 1, VDC: 1 },
+      essayMatrix = { TH: 1, VD: 1, VDC: 0 },
       timeLimit = 45,
       title = '',
       batchSeenSignatures = null
@@ -2162,7 +2162,7 @@ const MathEngine = {
       sourceMode = 'hybrid',
       difficultyMode = 'mixed',
       mcqCount = 12,
-      essayMatrix = { TH: 1, VD: 1, VDC: 1 }
+      essayMatrix = { TH: 1, VD: 1, VDC: 0 }
     } = config;
 
     const gStr = (track && track.startsWith('dgnl')) ? 'DGNL' : grade.toString();

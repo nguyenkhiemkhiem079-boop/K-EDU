@@ -2836,26 +2836,40 @@ function setExamDifficultyMode(mode) {
 window.setExamDifficultyMode = setExamDifficultyMode;
 document.addEventListener('DOMContentLoaded', () => {
   updateMathGenEssaySummary();
+  updateMathGenBatchPolicyNotice();
+  updateMathGenBatchButtonText();
   updateMathGenCapacityStatus();
   ['mathGenGradeSelect', 'mathGenTermSelect', 'mathGenTopicSelect', 'mathGenSourceSelect', 'mathGenMcqCountSelect'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('change', updateMathGenCapacityStatus);
   });
+  const policyEl = document.getElementById('mathGenDeduplicatePolicySelect');
+  if (policyEl) {
+    policyEl.addEventListener('change', () => {
+      updateMathGenBatchPolicyNotice();
+      updateMathGenBatchButtonText();
+    });
+  }
 });
 
 function updateMathGenBatchButtonText() {
   const count = parseInt(document.getElementById('mathGenBatchCountSelect')?.value || '1', 10);
+  const policy = document.getElementById('mathGenDeduplicatePolicySelect')?.value || 'variant_shuffle';
   const btn = document.getElementById('btnAutoGenerateMathExam');
   if (!btn) return;
   if (count > 1) {
-    btn.innerHTML = `⚡ TỰ ĐỘNG SINH ${count} ĐỀ TOÁN (KHÔNG TRÙNG LẶP) & NẠP HỆ THỐNG 🚀`;
+    if (policy === 'variant_shuffle') {
+      btn.innerHTML = `⚡ TỰ ĐỘNG SINH ${count} MÃ ĐỀ TOÁN (ĐẢO MÃ ĐỀ) & NẠP HỆ THỐNG 🚀`;
+    } else {
+      btn.innerHTML = `⚡ TỰ ĐỘNG SINH ${count} ĐỀ TOÁN (100% ĐỘC LẬP) & NẠP HỆ THỐNG 🚀`;
+    }
   } else {
     btn.innerHTML = `⚡ TỰ ĐỘNG SINH ĐỀ TOÁN & NẠP VÀO PHIẾU ĐÁP ÁN 🚀`;
   }
 }
 
 function updateMathGenBatchPolicyNotice() {
-  const policy = document.getElementById('mathGenDeduplicatePolicySelect')?.value || 'disjoint';
+  const policy = document.getElementById('mathGenDeduplicatePolicySelect')?.value || 'variant_shuffle';
   const notice = document.getElementById('mathGenBatchNotice');
   const badge = document.getElementById('mathGenBatchStatusBadge');
   if (policy === 'disjoint') {
@@ -2903,7 +2917,7 @@ async function triggerAutoGenerateMathExam() {
     const grade = document.getElementById('mathGenGradeSelect')?.value || (isKhtn ? '8' : '10');
     const term = document.getElementById('mathGenTermSelect')?.value || 'GK1';
     let topic = document.getElementById('mathGenTopicSelect')?.value || 'all';
-    const sourceMode = document.getElementById('mathGenSourceSelect')?.value || 'document';
+    const sourceMode = document.getElementById('mathGenSourceSelect')?.value || (isKhtn ? 'document' : 'hybrid');
     const difficultyMode = document.getElementById('mathGenDifficultyMode')?.value || 'mixed';
     const discipline = isKhtn ? (document.getElementById('mathGenDisciplineSelect')?.value || 'all') : 'all';
     if (isKhtn && discipline !== 'all') topic = discipline;
@@ -2917,7 +2931,7 @@ async function triggerAutoGenerateMathExam() {
     const countVDC = Math.max(0, parseInt(document.getElementById('mathGenCountVDCSelect')?.value || '0', 10) || 0);
 
     const batchCount = parseInt(document.getElementById('mathGenBatchCountSelect')?.value || '1', 10);
-    const deduplicatePolicy = document.getElementById('mathGenDeduplicatePolicySelect')?.value || 'disjoint';
+    const deduplicatePolicy = document.getElementById('mathGenDeduplicatePolicySelect')?.value || 'variant_shuffle';
     const batchTitlePrefix = (document.getElementById('mathGenBatchTitlePrefixInput')?.value || '').trim();
 
     // Lấy thời gian làm bài từ ô nhập (ưu tiên ô mathGenTimeLimitInput hoặc teacherExamTimeLimitInput)
