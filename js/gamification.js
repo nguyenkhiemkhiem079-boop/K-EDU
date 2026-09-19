@@ -872,7 +872,8 @@ const WeeklyHonorEngine = {
 /* ================= 🎮 CORE GAMIFICATION ENGINE ================= */
 const GamificationEngine = {
   getUserProfile() {
-    const raw = localStorage.getItem('khiemedu_profile' + (window.StudentAccounts?.uid ? '_' + window.StudentAccounts.uid : ''));
+    const studentId = window.LocalStudentProfile?.getStudentId?.();
+    const raw = localStorage.getItem('khiemedu_profile' + (studentId ? '_' + studentId : ''));
     if (!raw) {
       const initial = {
         name: 'Nguyễn Văn An',
@@ -895,8 +896,9 @@ const GamificationEngine = {
         equippedTitle: '',
         penalties: []
       };
-      if (window.StudentAccounts?.uid) {
-        Object.assign(initial, { name: window.StudentAccounts.profile?.name || '', className: window.StudentAccounts.profile?.className || '',
+      const localProfile = window.LocalStudentProfile?.getProfile?.();
+      if (localProfile) {
+        Object.assign(initial, { name: localProfile.name || '', className: localProfile.className || '',
           xp: 0, streak: 0, perfectStreak: 0, examsCount: 0, perfectCount: 0, totalCorrectAnswers: 0,
           unlockedBadges: [], unlockedFrames: ['frame-target'] });
       }
@@ -922,7 +924,8 @@ const GamificationEngine = {
   },
 
   saveUserProfile(profile) {
-    localStorage.setItem('khiemedu_profile' + (window.StudentAccounts?.uid ? '_' + window.StudentAccounts.uid : ''), JSON.stringify(profile));
+    const studentId = window.LocalStudentProfile?.getStudentId?.();
+    localStorage.setItem('khiemedu_profile' + (studentId ? '_' + studentId : ''), JSON.stringify(profile));
   },
 
   resetUserProfile(cleanStats = true) {

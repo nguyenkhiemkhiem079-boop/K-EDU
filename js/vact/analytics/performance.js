@@ -84,8 +84,8 @@
    */
   function getStudentKey(query = {}) {
     if (typeof query === 'string') return query.trim().toLowerCase();
-    const uid = query.studentUid || query.uid;
-    if (uid) return `uid_${uid}`.toLowerCase();
+    const studentId = query.studentId || query.studentUid || query.uid;
+    if (studentId) return `id_${studentId}`.toLowerCase();
     const name = (query.studentName || query.name || 'default').trim().toLowerCase();
     const cls = (query.studentClass || query.className || 'default').trim().toLowerCase();
     return `${cls}_${name}`;
@@ -175,8 +175,8 @@
     const testId = String(params.testId || `vact_test_${Date.now()}`);
     const studentName = String(params.studentName || params.name || 'Học Sinh');
     const studentClass = String(params.studentClass || params.className || 'V-ACT');
-    const studentUid = params.studentUid || null;
-    const studentKey = getStudentKey({ studentUid, studentName, studentClass });
+    const studentId = params.studentId || params.studentUid || null;
+    const studentKey = getStudentKey({ studentId, studentName, studentClass });
 
     const requestedCount = Number.isInteger(params.requestedCount) ? params.requestedCount : (params.generatedCount || 0);
     const generatedCount = Number.isInteger(params.generatedCount) ? params.generatedCount : requestedCount;
@@ -229,7 +229,8 @@
       duration,
       studentName,
       studentClass,
-      studentUid,
+      studentId,
+      studentUid: params.studentUid || null,
       review
     };
 

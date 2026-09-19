@@ -263,6 +263,7 @@
       submittedAt: new Date().toISOString(),
       studentName: meta.studentName || 'Học Sinh',
       studentClass: meta.studentClass || 'V-ACT',
+      studentId: meta.studentId || null,
       studentUid: meta.studentUid || null
     };
   }

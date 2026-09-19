@@ -279,45 +279,6 @@ GIANG, 8"></textarea>
       
       <!-- Student Profile & Exam Feed Arena -->
       <div id="studentJoinSection">
-        <div class="card student-account-card" id="studentAccountCard">
-          <div class="card-header"><h2>Tài khoản học sinh</h2></div>
-          <div id="studentAccountCredentials">
-            <div class="account-mode-buttons">
-              <button type="button" class="btn btn-secondary" onclick="StudentAccounts.setMode('login')">Đăng nhập</button>
-              <button type="button" class="btn btn-secondary" onclick="StudentAccounts.setMode('register')">Tạo tài khoản</button>
-            </div>
-            <form onsubmit="StudentAccounts.submit(); return false;">
-              <div class="form-row">
-                <div class="form-group"><label for="studentAccountUsername">Tên đăng nhập</label><input id="studentAccountUsername" type="text" minlength="3" maxlength="40" autocomplete="username" placeholder="Ví dụ: an.nguyen hoặc Nguyễn Văn An" required></div>
-                <div class="form-group"><label for="studentAccountPassword">Mật khẩu</label><input id="studentAccountPassword" type="password" autocomplete="current-password" required></div>
-                <div class="form-group hidden" id="studentAccountConfirmGroup"><label for="studentAccountConfirm">Nhập lại mật khẩu</label><input id="studentAccountConfirm" type="password" autocomplete="new-password"></div>
-              </div>
-              <div class="form-row hidden" id="studentAccountProfileFields">
-                <div class="form-group"><label for="studentAccountName">Họ và tên</label><input id="studentAccountName" type="text" maxlength="100" autocomplete="name" placeholder="Ví dụ: Nguyễn Văn An"></div>
-                <div class="form-group"><label for="studentAccountClass">Lớp học</label><input id="studentAccountClass" type="text" maxlength="40" placeholder="Ví dụ: 10A1"></div>
-              </div>
-              <div class="account-mode-buttons">
-                <button type="submit" class="btn btn-primary" id="studentAccountLoginButton" data-account-action>Đăng nhập</button>
-                <button type="submit" class="btn btn-primary hidden" id="studentAccountRegisterButton" data-account-action>Tạo tài khoản</button>
-                <button type="button" class="btn btn-primary hidden" id="studentCompleteProfileButton" data-account-action onclick="StudentAccounts.completeProfile()">Hoàn thiện hồ sơ</button>
-              </div>
-            </form>
-          </div>
-          <div id="studentAccountSignedIn" class="hidden">
-            <p id="studentAccountIdentity"></p>
-            <button type="button" class="btn btn-secondary" data-account-action onclick="StudentAccounts.logout()">Đăng xuất</button>
-            <details class="account-password-settings"><summary>Đổi mật khẩu</summary>
-              <form onsubmit="StudentAccounts.changePassword(); return false;">
-                <div class="form-row">
-                  <div class="form-group"><label for="studentCurrentPassword">Mật khẩu hiện tại</label><input id="studentCurrentPassword" type="password" autocomplete="current-password" required></div>
-                  <div class="form-group"><label for="studentNewPassword">Mật khẩu mới</label><input id="studentNewPassword" type="password" minlength="8" autocomplete="new-password" required></div>
-                </div>
-                <button type="submit" class="btn btn-primary" data-account-action>Lưu mật khẩu mới</button>
-              </form>
-            </details>
-          </div>
-          <p id="studentAccountStatus" role="status" aria-live="polite">Đăng nhập để làm bài và lưu kết quả theo tài khoản.</p>
-        </div>
         <!-- Active Paused Exam Banner (Hidden by default) -->
         <div id="activePausedExamBanner" class="hidden" style="max-width:720px;margin:0 auto 1.25rem;"></div>
 
@@ -325,7 +286,7 @@ GIANG, 8"></textarea>
           <div class="duo-hero-header">
             <div class="duo-hero-icons">🦊 ⚡ 📚</div>
             <h2 class="duo-hero-title">Phòng Học & Luyện Thi Trực Tuyến</h2>
-            <p class="duo-hero-desc">Nhập Tên và Lớp học của bạn để xem danh sách bài thi được giao:</p>
+            <p class="duo-hero-desc">Lưu hồ sơ trên thiết bị này để bắt đầu học:</p>
           </div>
 
           <form onsubmit="handleStudentFormSubmit(); return false;">
@@ -340,15 +301,18 @@ GIANG, 8"></textarea>
             </div>
 
             <div class="form-row">
+              <div class="form-group" style="flex-basis:100%;"><h3 style="margin:0;">HỒ SƠ HỌC SINH</h3></div>
               <div class="form-group">
-                <label>👤 Học sinh đang đăng nhập</label>
-                <input type="text" id="studentJoinName" placeholder="Họ tên từ tài khoản" readonly required>
+                <label>Họ và tên</label>
+                <input type="text" id="studentJoinName" placeholder="Ví dụ: Nguyễn Văn An" required>
               </div>
               <div class="form-group">
-                <label>🏫 Lớp Học</label>
-                <input type="text" id="studentJoinClass" placeholder="Lớp từ tài khoản" readonly required>
+                <label>Lớp học</label>
+                <input type="text" id="studentJoinClass" placeholder="Ví dụ: 10A1" required>
               </div>
             </div>
+            <button type="submit" id="studentProfileSubmitButton" class="btn btn-primary" style="width:100%;margin-top:1rem;">BẮT ĐẦU HỌC</button>
+            <p id="studentProfileGreeting" class="hidden" style="text-align:center;font-weight:700;margin:1rem 0 0;"></p>
 
             <!-- Role Master Khiem Active Banner -->
             <div id="masterTeacherDetectedPill" class="duo-master-banner hidden">
@@ -1951,7 +1915,6 @@ GIANG, 8"></textarea>
 
   <!-- Firebase App & Services (Compat version for script tags) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
 
@@ -1969,7 +1932,7 @@ GIANG, 8"></textarea>
   <script src="js/question-bank/stats.js?v=5.2"></script>
   <script src="js/mathGenerator.js?v=5.4"></script>
   <script src="js/khtnGenerator.js?v=5.2"></script>
-  <script src="js/studentAccounts.js?v=6.3"></script>
+  <script src="js/localStudentProfile.js?v=1.0"></script>
   <script src="js/teacherWorkspace.js?v=6.0"></script>
   <!-- V-ACT Core Architecture & Engines -->
   <script src="js/vact/taxonomy.js"></script>
@@ -1993,7 +1956,7 @@ GIANG, 8"></textarea>
   <script src="js/vact/sources/sourceManager.js"></script>
   <script src="js/vact/adaptive/weaknessGenerator.js"></script>
   <script src="js/vact/review/reviewManager.js"></script>
-  <script src="js/app.js?v=6.4"></script>
+  <script src="js/app.js?v=6.5"></script>
   <script src="js/studentAnalytics.js?v=5.0"></script>
   <!-- BATCH EXAM RESULTS MODAL -->
   <div id="batchGenResultsModal" class="hidden" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.7);backdrop-filter:blur(4px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.25rem;">

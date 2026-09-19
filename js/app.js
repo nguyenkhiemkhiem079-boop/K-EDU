@@ -258,10 +258,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   initSeparatedTeacherGrids(10, 2);
   await loadStudentRoster();
   initSavedStudentSession();
-  if (window.StudentAccounts) {
-    try { await window.StudentAccounts.init(); }
-    catch (error) { window.StudentAccounts.message(error.message, true); }
-  }
+  await window.LocalStudentProfile?.init();
+  restoreLocalStudentProfile();
   renderTeacherQuizManager();
   renderTeacherRosterManager();
   renderTeacherAnalyticsDashboard();
@@ -4860,7 +4858,8 @@ async function renderSampleQuizzes(filterName = '', filterClass = '') {
         const qKey = (q.id || '').toString().trim().toUpperCase();
         const qSubs = allResults.filter(r => (r.quizId || '').toString().trim().toUpperCase() === qKey);
         const activeStudentName = (filterName || AppState.studentName || document.getElementById('studentJoinName')?.value || '').trim().toLowerCase();
-        const mySubs = window.StudentAccounts?.uid ? qSubs.filter(r => r.studentUid === window.StudentAccounts.uid)
+        const studentId = window.LocalStudentProfile?.getStudentId();
+        const mySubs = studentId ? qSubs.filter(r => r.studentId === studentId || r.studentUid === studentId)
           : activeStudentName ? qSubs.filter(r => (r.name || '').trim().toLowerCase() === activeStudentName) : [];
         const hasCompleted = mySubs.length > 0;
         const myBestScore = hasCompleted ? Math.max(...mySubs.map(r => r.totalScore || 0)) : 0;
@@ -5035,8 +5034,36 @@ function handleStudentFormSubmit() {
     showToast('⚠️ Vui lòng nhập Tên và Lớp học của bạn!', 'warn');
     return;
   }
+  window.LocalStudentProfile?.updateProfile({ name: currentName, className: currentClass, avatar: AppState.studentAvatar || '' });
+  renderLocalStudentGreeting();
   updatePersonalizedExamFeed();
   document.getElementById('sampleQuizzesList')?.scrollIntoView({ behavior: 'smooth' });
+}
+
+function restoreLocalStudentProfile() {
+  const profile = window.LocalStudentProfile?.getProfile();
+  if (!profile) return;
+  const nameEl = document.getElementById('studentJoinName');
+  const classEl = document.getElementById('studentJoinClass');
+  if (nameEl && profile.name) nameEl.value = profile.name;
+  if (classEl && profile.className) classEl.value = profile.className;
+  if (profile.avatar) AppState.studentAvatar = profile.avatar;
+  renderLocalStudentGreeting();
+}
+
+function renderLocalStudentGreeting() {
+  const profile = window.LocalStudentProfile?.getProfile();
+  const greeting = document.getElementById('studentProfileGreeting');
+  const submitButton = document.getElementById('studentProfileSubmitButton');
+  if (!greeting) return;
+  if (profile?.name && profile?.className) {
+    greeting.textContent = `Xin chào, ${profile.name} — Lớp ${profile.className}. CHỈNH SỬA HỒ SƠ bằng hai ô phía trên.`;
+    greeting.classList.remove('hidden');
+    if (submitButton) submitButton.textContent = 'CHỈNH SỬA HỒ SƠ';
+  } else {
+    greeting.classList.add('hidden');
+    if (submitButton) submitButton.textContent = 'BẮT ĐẦU HỌC';
+  }
 }
 
 /* Join Exam Directly by Quiz ID */
@@ -5045,15 +5072,6 @@ function stripGeneratedAnswerTable(html) {
 }
 
 async function startExamWithQuizId(quizId) {
-  if (window.StudentAccounts) {
-    if (!window.StudentAccounts.ready) {
-      showToast('Vui lòng đăng nhập và hoàn thiện hồ sơ học sinh trước khi làm bài.', 'warn');
-      document.getElementById('studentAccountCard')?.scrollIntoView({ behavior: 'smooth' });
-      return;
-    }
-    document.getElementById('studentJoinName').value = window.StudentAccounts.profile.name;
-    document.getElementById('studentJoinClass').value = window.StudentAccounts.profile.className;
-  }
   const className = document.getElementById('studentJoinClass').value.trim();
   const name = document.getElementById('studentJoinName').value.trim();
   const statusEl = document.getElementById('joinQuizStatus');
@@ -5063,6 +5081,8 @@ async function startExamWithQuizId(quizId) {
     document.getElementById('studentJoinName').focus();
     return;
   }
+  window.LocalStudentProfile?.updateProfile({ name, className, avatar: AppState.studentAvatar || '' });
+  renderLocalStudentGreeting();
 
   statusEl.innerHTML = '<span style="color:var(--indigo);">⏳ Đang tải đề thi...</span>';
   let quiz = await StorageEngine.getQuiz(quizId);
@@ -5081,7 +5101,8 @@ async function startExamWithQuizId(quizId) {
     return;
   }
 
-  const alreadySubmitted = await StorageEngine.hasSubmitted(quizId, className, name, window.StudentAccounts?.uid);
+  const studentId = window.LocalStudentProfile?.getStudentId();
+  const alreadySubmitted = await StorageEngine.hasSubmitted(quizId, className, name, studentId);
   if (alreadySubmitted) {
     statusEl.innerHTML = '<span style="color:var(--amber);">⚠️ Bạn đã hoàn thành và nộp bài cho đề thi này rồi!</span>';
     return;
@@ -5105,7 +5126,7 @@ async function startExamWithQuizId(quizId) {
   ExamVault.store(quizId, quiz.answerKeys || [], { subject: quiz.subject || quiz.subjectLabel || 'toan' });
   AppState.currentQuiz = { ...quiz, answerKeys: ExamVault.getPublicKeys(quizId) };
   AppState.currentQuizId = quizId;
-  AppState.studentUid = window.StudentAccounts?.uid || null;
+  AppState.studentId = studentId || null;
   AppState.studentName = name;
   AppState.studentClass = className;
 
@@ -5520,11 +5541,12 @@ function initAntiCheatListeners() {
 /* ================= PAUSE & RESUME EXAM ENGINE ================= */
 function getPausedExamStorageKey(name, quizId) {
   const cleanName = (name || '').trim().toUpperCase();
-  return 'khiemedu_paused_exam_' + (window.StudentAccounts?.uid || cleanName) + '_' + quizId;
+  return 'khiemedu_paused_exam_' + (window.LocalStudentProfile?.getStudentId?.() || cleanName) + '_' + quizId;
 }
 
 function getActivePausedStorageKey() {
-  return 'khiemedu_active_paused_session' + (window.StudentAccounts?.uid ? '_' + window.StudentAccounts.uid : '');
+  const studentId = window.LocalStudentProfile?.getStudentId?.();
+  return 'khiemedu_active_paused_session' + (studentId ? '_' + studentId : '');
 }
 
 function getPausedExamSession(name, quizId) {
@@ -5532,6 +5554,9 @@ function getPausedExamSession(name, quizId) {
     const key = getPausedExamStorageKey(name, quizId);
     const raw = localStorage.getItem(key);
     if (raw) return JSON.parse(raw);
+    const legacyKey = 'khiemedu_paused_exam_' + (name || '').trim().toUpperCase() + '_' + quizId;
+    const legacyRaw = localStorage.getItem(legacyKey);
+    if (legacyRaw) return JSON.parse(legacyRaw);
   } catch (e) {}
   return null;
 }
@@ -5554,7 +5579,7 @@ function saveCurrentExamSessionToPaused() {
     quizExamTerm: AppState.currentQuiz.examTerm,
     timeLimit: AppState.currentQuiz.timeLimit,
     studentName: AppState.studentName,
-    studentUid: AppState.studentUid || null,
+    studentId: AppState.studentId || window.LocalStudentProfile?.getStudentId?.() || null,
     studentClass: AppState.studentClass,
     studentAvatar: AppState.studentAvatar,
     studentAnswers: { ...AppState.studentAnswers },
@@ -5833,7 +5858,6 @@ async function submitStudentExam(isAuto = false) {
   });
 
   try {
-    if (AppState.studentUid && window.StudentAccounts?.uid !== AppState.studentUid) throw new Error('Tài khoản đã thay đổi. Đăng nhập lại tài khoản đang làm bài để nộp kết quả.');
     if (AppState.timerInterval) clearInterval(AppState.timerInterval);
     if (AppState.leaderboardTimer) clearInterval(AppState.leaderboardTimer);
 
@@ -5899,7 +5923,7 @@ async function submitStudentExam(isAuto = false) {
         }, submittedAnswers, {
           studentName: AppState.studentName,
           className: AppState.studentClass,
-          studentUid: AppState.studentUid || null,
+          studentId: AppState.studentId || window.LocalStudentProfile?.getStudentId?.() || null,
           duration: timeTakenSeconds,
           mode: vMeta.mode || (vMeta.profileId ? (vMeta.profileId === 'vact_full' ? 'full_120' : 'mini_100') : 'section_mini'),
           profileId: vMeta.profileId || null,
@@ -5922,10 +5946,11 @@ async function submitStudentExam(isAuto = false) {
     const scorePct = total ? Math.round((correctCount / total) * 100) : 0;
 
     // Kiểm tra xem bài thi này học sinh đã từng nộp trước đó chưa (Retake)
-    const isRetake = await StorageEngine.hasSubmitted(AppState.currentQuizId, AppState.studentClass, AppState.studentName, AppState.studentUid);
+    const studentId = AppState.studentId || window.LocalStudentProfile?.getStudentId?.() || null;
+    const isRetake = await StorageEngine.hasSubmitted(AppState.currentQuizId, AppState.studentClass, AppState.studentName, studentId);
 
     const resultRecord = {
-      studentUid: AppState.studentUid || null,
+      studentId,
       quizId: AppState.currentQuizId,
       quizTitle: quiz.title,
       subjectLabel: quiz.subjectLabel || quiz.subject || 'Toán học',
@@ -5979,7 +6004,7 @@ async function submitStudentExam(isAuto = false) {
           submittedAt: new Date().toISOString(),
           studentName: AppState.studentName,
           studentClass: AppState.studentClass,
-          studentUid: AppState.studentUid || null,
+          studentId,
           review: reviewData,
           sectionResults: vactAttempt?.sectionBreakdown || null
         });
@@ -8835,16 +8860,6 @@ async function handleStartMini100Click() {
   const nameEl = document.getElementById('studentJoinName');
   const classEl = document.getElementById('studentJoinClass');
 
-  if (window.StudentAccounts) {
-    if (!window.StudentAccounts.ready) {
-      showToast('Vui lòng đăng nhập và hoàn thiện hồ sơ học sinh trước khi làm bài.', 'warn');
-      document.getElementById('studentAccountCard')?.scrollIntoView({ behavior: 'smooth' });
-      return;
-    }
-    if (nameEl) nameEl.value = window.StudentAccounts.profile.name;
-    if (classEl) classEl.value = window.StudentAccounts.profile.className;
-  }
-
   const name = nameEl?.value?.trim();
   const className = classEl?.value?.trim();
 
@@ -8854,6 +8869,7 @@ async function handleStartMini100Click() {
     nameEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
+  window.LocalStudentProfile?.updateProfile({ name, className, avatar: AppState.studentAvatar || '' });
 
   const examGen = window.KEDUVACT?.VACTExamGenerator || window.VACTExamGenerator;
   if (!examGen) {
@@ -8981,16 +8997,6 @@ async function handleStartFull120Click() {
   const nameEl = document.getElementById('studentJoinName');
   const classEl = document.getElementById('studentJoinClass');
 
-  if (window.StudentAccounts) {
-    if (!window.StudentAccounts.ready) {
-      showToast('Vui lòng đăng nhập và hoàn thiện hồ sơ học sinh trước khi làm bài.', 'warn');
-      document.getElementById('studentAccountCard')?.scrollIntoView({ behavior: 'smooth' });
-      return;
-    }
-    if (nameEl) nameEl.value = window.StudentAccounts.profile.name;
-    if (classEl) classEl.value = window.StudentAccounts.profile.className;
-  }
-
   const name = nameEl?.value?.trim();
   const className = classEl?.value?.trim();
 
@@ -9000,6 +9006,7 @@ async function handleStartFull120Click() {
     nameEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
+  window.LocalStudentProfile?.updateProfile({ name, className, avatar: AppState.studentAvatar || '' });
 
   const examGen = window.KEDUVACT?.VACTExamGenerator || window.VACTExamGenerator;
   if (!examGen || typeof examGen.generateFull120 !== 'function') {
@@ -9058,9 +9065,9 @@ function updateVactStudentDashboard() {
 
   const name = (document.getElementById('studentJoinName')?.value || AppState.studentName || '').trim();
   const className = (document.getElementById('studentJoinClass')?.value || AppState.studentClass || '').trim();
-  const studentUid = window.StudentAccounts?.uid || AppState.studentUid || null;
+  const studentId = window.LocalStudentProfile?.getStudentId?.() || AppState.studentId || null;
 
-  const html = analytics.renderDashboardHtml({ studentName: name, studentClass: className, studentUid });
+  const html = analytics.renderDashboardHtml({ studentName: name, studentClass: className, studentId });
   container.innerHTML = html;
 }
 
@@ -9075,9 +9082,9 @@ function handleOpenWrongQuestionsModal(attemptId = null) {
 
   const name = (document.getElementById('studentJoinName')?.value || AppState.studentName || '').trim();
   const className = (document.getElementById('studentJoinClass')?.value || AppState.studentClass || '').trim();
-  const studentUid = window.StudentAccounts?.uid || AppState.studentUid || null;
+  const studentId = window.LocalStudentProfile?.getStudentId?.() || AppState.studentId || null;
 
-  const wrongQuestions = analytics.getWrongQuestions({ studentName: name, studentClass: className, studentUid }, { attemptId });
+  const wrongQuestions = analytics.getWrongQuestions({ studentName: name, studentClass: className, studentId }, { attemptId });
 
   if (title) {
     title.innerHTML = `<span>🔍</span> <span>Ôn Lại Câu Hỏi Chưa Đạt (${wrongQuestions.length} câu)</span>`;
@@ -9172,19 +9179,9 @@ async function handleStartWeaknessPracticeClick() {
   const nameEl = document.getElementById('studentJoinName');
   const classEl = document.getElementById('studentJoinClass');
 
-  if (window.StudentAccounts) {
-    if (!window.StudentAccounts.ready) {
-      showToast('Vui lòng đăng nhập và hoàn thiện hồ sơ học sinh trước khi luyện tập.', 'warn');
-      document.getElementById('studentAccountCard')?.scrollIntoView({ behavior: 'smooth' });
-      return;
-    }
-    if (nameEl) nameEl.value = window.StudentAccounts.profile.name;
-    if (classEl) classEl.value = window.StudentAccounts.profile.className;
-  }
-
   const name = (nameEl?.value || AppState.studentName || '').trim();
   const className = (classEl?.value || AppState.studentClass || '').trim();
-  const studentUid = window.StudentAccounts?.uid || AppState.studentUid || null;
+  const studentId = window.LocalStudentProfile?.getStudentId?.() || AppState.studentId || null;
 
   if (!name || !className) {
     showToast('⚠️ Vui lòng nhập Họ Tên và Lớp học của bạn để hệ thống tải dữ liệu điểm yếu!', 'warn');
@@ -9192,6 +9189,7 @@ async function handleStartWeaknessPracticeClick() {
     nameEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
+  window.LocalStudentProfile?.updateProfile({ name, className, avatar: AppState.studentAvatar || '' });
 
   const loader = window.KEDUVACT?.sourceBankLoader || window.sourceBankLoader;
   if (loader && loader.getStatus() !== 'ready') {
@@ -9212,7 +9210,7 @@ async function handleStartWeaknessPracticeClick() {
   try {
     showToast('🎯 Đang phân tích năng lực và tạo đề luyện điểm yếu...', 'info');
     const weaknessResult = adaptive.generateWeaknessTest({
-      studentId: { studentName: name, studentClass: className, studentUid },
+      studentId: { studentName: name, studentClass: className, studentId },
       count: 20,
       minimumQuestions: 5,
       minimumAttempts: 1,
@@ -9318,9 +9316,9 @@ function openVactAttemptReview(attemptId) {
   if (!analytics) return;
   const name = (document.getElementById('studentJoinName')?.value || AppState.studentName || '').trim();
   const className = (document.getElementById('studentJoinClass')?.value || AppState.studentClass || '').trim();
-  const studentUid = window.StudentAccounts?.uid || AppState.studentUid || null;
+  const studentId = window.LocalStudentProfile?.getStudentId?.() || AppState.studentId || null;
 
-  const attempt = analytics.getAttemptById(attemptId, { studentName: name, studentClass: className, studentUid });
+  const attempt = analytics.getAttemptById(attemptId, { studentName: name, studentClass: className, studentId });
   if (!attempt) {
     showToast('Không tìm thấy dữ liệu xem lại của bài thi này.', 'warn');
     return;

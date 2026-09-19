@@ -479,13 +479,14 @@ const StorageEngine = {
         this._lastSubmitRecord.quizId === result.quizId &&
         this._lastSubmitRecord.name === result.name &&
         this._lastSubmitRecord.className === result.className &&
-        this._lastSubmitRecord.studentUid === result.studentUid &&
+        (this._lastSubmitRecord.studentId || this._lastSubmitRecord.studentUid) === (result.studentId || result.studentUid) &&
         (now - this._lastSubmitRecord.time < 5000)) {
       console.warn('[StorageEngine] Blocked rapid duplicate submission for:', result.name, result.quizId);
       return this._lastSubmitRecord.resultKey;
     }
 
-    const resultKey = `result:${result.quizId}:${result.studentUid || result.className + '_' + result.name}_${now}`;
+    const identity = result.studentId || result.studentUid || result.className + '_' + result.name;
+    const resultKey = `result:${result.quizId}:${identity}_${now}`;
     result.id = resultKey;
     const localSaved = await this.set(resultKey, result);
     let cloudSaved = false;
@@ -496,23 +497,23 @@ const StorageEngine = {
       } catch (error) { console.warn('Cloud result save failed:', error); }
     }
     if (!localSaved && !cloudSaved) throw new Error('Không lưu được kết quả. Bài làm vẫn được giữ để thử nộp lại.');
-    this._lastSubmitRecord = { quizId: result.quizId, name: result.name, className: result.className, studentUid: result.studentUid, time: now, resultKey };
-    await this.set(`submitted:${result.quizId}:${result.studentUid || result.className + '_' + result.name}`, '1');
+    this._lastSubmitRecord = { quizId: result.quizId, name: result.name, className: result.className, studentId: result.studentId, studentUid: result.studentUid, time: now, resultKey };
+    await this.set(`submitted:${result.quizId}:${identity}`, '1');
     return resultKey;
   },
 
-  async hasSubmitted(quizId, className, name, studentUid = null) {
-    const sub = await this.get(`submitted:${quizId}:${studentUid || className + '_' + name}`);
+  async hasSubmitted(quizId, className, name, studentId = null) {
+    const sub = await this.get(`submitted:${quizId}:${studentId || className + '_' + name}`);
     if (sub) return true;
     const results = await this.getResultsByQuiz(quizId);
-    return results.some(r => studentUid ? r.studentUid === studentUid : (r.className || '').trim().toLowerCase() === (className || '').trim().toLowerCase() && (r.name || '').trim().toLowerCase() === (name || '').trim().toLowerCase());
+    return results.some(r => studentId ? (r.studentId === studentId || r.studentUid === studentId) : (r.className || '').trim().toLowerCase() === (className || '').trim().toLowerCase() && (r.name || '').trim().toLowerCase() === (name || '').trim().toLowerCase());
   },
 
   async deleteResult(resultId, quizId = null, className = null, name = null) {
     // 1. Remove from LocalStorage
     const cleanKey = resultId.replace(STORAGE_PREFIX, '');
     const originalResult = await this.get(cleanKey) || await this.get(resultId);
-    if (originalResult?.studentUid) await this.remove(`submitted:${originalResult.quizId}:${originalResult.studentUid}`);
+    if (originalResult?.studentId || originalResult?.studentUid) await this.remove(`submitted:${originalResult.quizId}:${originalResult.studentId || originalResult.studentUid}`);
     await this.remove(cleanKey);
     await this.remove(resultId);
 
