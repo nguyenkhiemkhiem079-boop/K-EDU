@@ -15,6 +15,11 @@
     "error": null
   },
   {
+    "test": "verify_cloud_sync.js",
+    "passed": true,
+    "error": null
+  },
+  {
     "test": "verify_cross_engine_quiz_contract.js",
     "passed": true,
     "error": null
