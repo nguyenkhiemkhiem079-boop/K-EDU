@@ -2340,7 +2340,7 @@ function selectDgnlPackage(pkg = 'mini') {
       cardMini.style.boxShadow = 'none';
     }
     if (timeInput) timeInput.value = 150;
-    if (btn) btn.innerHTML = '🚀 TẠO ĐỀ ĐÁNH GIÁ NĂNG LỰC FULL TEST (120 CÂU — 150 PHÚT)';
+    if (btn) btn.innerHTML = '🚀 TẠO FULL V-ACT 120 — ĐHQG TP.HCM (120 CÂU — 150 PHÚT)';
   } else {
     if (radioMini) radioMini.checked = true;
     if (cardMini) {
@@ -2354,7 +2354,7 @@ function selectDgnlPackage(pkg = 'mini') {
       cardFull.style.boxShadow = 'none';
     }
     if (timeInput) timeInput.value = 90;
-    if (btn) btn.innerHTML = '🚀 TẠO ĐỀ ĐÁNH GIÁ NĂNG LỰC MINI TEST (100 CÂU — 90 PHÚT)';
+    if (btn) btn.innerHTML = '🚀 TẠO MINI V-ACT 100 — ĐHQG TP.HCM (100 CÂU — 90 PHÚT)';
   }
 }
 
@@ -2707,7 +2707,70 @@ function updateMathGenEssaySummary() {
   if (badge) {
     badge.innerHTML = `Tổng: <strong>${total} câu tự luận</strong> (TH: ${cTH} · VD: ${cVD} · VDC: ${cVDC})`;
   }
+  updateMathGenCapacityStatus();
 }
+
+function updateMathGenCapacityStatus() {
+  const container = document.getElementById('mathGenCapacityStatusBar');
+  if (!container) return;
+
+  const currentSubject = document.getElementById('examSubjectSelect')?.value || 'toan';
+  if (currentSubject === 'khtn') {
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = 'block';
+
+  const grade = document.getElementById('mathGenGradeSelect')?.value || '10';
+  const term = document.getElementById('mathGenTermSelect')?.value || 'GK1';
+  const topic = document.getElementById('mathGenTopicSelect')?.value || 'all';
+  const sourceMode = document.getElementById('mathGenSourceSelect')?.value || 'hybrid';
+  const mcqCount = parseInt(document.getElementById('mathGenMcqCountSelect')?.value || '12', 10);
+  const countTH = Math.max(0, parseInt(document.getElementById('mathGenCountTHSelect')?.value || '0', 10) || 0);
+  const countVD = Math.max(0, parseInt(document.getElementById('mathGenCountVDSelect')?.value || '0', 10) || 0);
+  const countVDC = Math.max(0, parseInt(document.getElementById('mathGenCountVDCSelect')?.value || '0', 10) || 0);
+
+  if (typeof MathEngine === 'undefined' || typeof MathEngine.getGenerationCapacity !== 'function') {
+    return;
+  }
+
+  const cap = MathEngine.getGenerationCapacity({
+    grade,
+    term,
+    topic,
+    sourceMode,
+    mcqCount,
+    essayMatrix: { TH: countTH, VD: countVD, VDC: countVDC }
+  });
+
+  const mcqEl = document.getElementById('mathGenCapMcq');
+  const thEl = document.getElementById('mathGenCapTH');
+  const vdEl = document.getElementById('mathGenCapVD');
+  const vdcEl = document.getElementById('mathGenCapVDC');
+  const noteEl = document.getElementById('mathGenCapacityNote');
+
+  if (mcqEl) mcqEl.textContent = `Trắc nghiệm tài liệu: ${cap.mcq.documentAvailable}`;
+  if (thEl) thEl.textContent = `TH: ${cap.essay.TH.documentAvailable}`;
+  if (vdEl) vdEl.textContent = `VD: ${cap.essay.VD.documentAvailable}`;
+  if (vdcEl) vdcEl.textContent = `VDC đã duyệt: ${cap.essay.VDC.approvedAvailable}`;
+
+  if (noteEl) {
+    if (!cap.feasible) {
+      const blockerMsgs = (cap.blockers || []).map(b => {
+        if (b.code === 'VDC_APPROVED_SOURCE_SHORTAGE') {
+          return `⛔ Ngân hàng hiện chưa có đủ câu VDC trường chuyên đã duyệt (Yêu cầu: ${b.requested}, Khả dụng: ${b.available})`;
+        }
+        return `⛔ ${b.part || 'Thiếu nguồn'}: Yêu cầu ${b.requested}, khả dụng ${b.available}`;
+      });
+      noteEl.innerHTML = `<span style="color:#dc2626;">${escapeHtml(blockerMsgs.join(' · '))}</span>`;
+    } else if (sourceMode === 'hybrid') {
+      noteEl.innerHTML = `<span style="color:#059669;">✨ Hybrid có thể bổ sung tự động</span>`;
+    } else {
+      noteEl.innerHTML = `<span style="color:#2563eb;">📚 Chế độ tài liệu thật (đủ câu)</span>`;
+    }
+  }
+}
+window.updateMathGenCapacityStatus = updateMathGenCapacityStatus;
 
 // Global state to store latest generated batch exams for preview and copy
 AppState.latestBatchGeneratedExams = [];
@@ -2773,6 +2836,11 @@ function setExamDifficultyMode(mode) {
 window.setExamDifficultyMode = setExamDifficultyMode;
 document.addEventListener('DOMContentLoaded', () => {
   updateMathGenEssaySummary();
+  updateMathGenCapacityStatus();
+  ['mathGenGradeSelect', 'mathGenTermSelect', 'mathGenTopicSelect', 'mathGenSourceSelect', 'mathGenMcqCountSelect'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', updateMathGenCapacityStatus);
+  });
 });
 
 function updateMathGenBatchButtonText() {
@@ -3047,8 +3115,33 @@ async function triggerAutoGenerateMathExam() {
       essayMatrix: { TH: countTH, VD: countVD, VDC: countVDC },
       timeLimit: timeLimitVal
     });
-    if (!generated || !generated.totalQuestions) {
-      showToast('Không có câu hỏi phù hợp. Hãy đổi bộ lọc hoặc bổ sung ngân hàng.', 'warn');
+    // Strict completeness verification (P0 Requirement 9)
+    const actualMcq = generated?.mcqCount ?? 0;
+    const actualTH = generated?.essay?.TH?.length ?? 0;
+    const actualVD = generated?.essay?.VD?.length ?? 0;
+    const actualVDC = generated?.essay?.VDC?.length ?? 0;
+
+    const isIncomplete = !generated || !generated.isComplete ||
+      actualMcq !== mcqCount ||
+      actualTH !== countTH ||
+      actualVD !== countVD ||
+      actualVDC !== countVDC;
+
+    if (isIncomplete) {
+      const shortages = (generated && generated.generationDiagnostics && generated.generationDiagnostics.shortages) || [];
+      let detailMsg = '';
+      if (shortages.length > 0) {
+        detailMsg = shortages.map(s => `[${s.code}] ${s.part}: yêu cầu ${s.requested}, khả dụng ${s.available}`).join('; ');
+      } else {
+        detailMsg = `Trắc nghiệm: ${actualMcq}/${mcqCount}, TH: ${actualTH}/${countTH}, VD: ${actualVD}/${countVD}, VDC: ${actualVDC}/${countVDC}`;
+      }
+      showToast(`Không thể tạo và lưu đề do thiếu câu hỏi: ${detailMsg}`, 'error');
+      const alertEl = document.getElementById('mathGenSourceAlert');
+      if (alertEl) {
+        alertEl.classList.remove('hidden');
+        alertEl.style.display = 'block';
+        alertEl.innerHTML = `❌ <strong>Không đủ câu hỏi để hoàn thành đề:</strong> ${escapeHtml(detailMsg)}<br><small style="color:var(--text-secondary);">Vui lòng điều chỉnh bộ lọc hoặc sử dụng chế độ Hybrid để bổ sung tự động.</small>`;
+      }
       return;
     }
 
@@ -8641,6 +8734,16 @@ async function handleStartMini100Click() {
     }
   }
 
+  // Requirement 18: Recheck readiness before proceeding
+  const vactCoverage = window.KEDUVACT?.VACTCoverage || window.VACTCoverage;
+  if (vactCoverage && typeof vactCoverage.getProfileReadiness === 'function') {
+    const readiness = vactCoverage.getProfileReadiness('vact_mini_100') || vactCoverage.getProfileReadiness('vact_mini');
+    if (!readiness || !readiness.ready) {
+      showToast(`Ngân hàng câu hỏi chưa đủ điều kiện tạo đề Mini V-ACT 100 (${readiness?.totalAvailable || 0}/${readiness?.totalRequired || 100} câu). Vui lòng thử lại sau.`, 'error');
+      return;
+    }
+  }
+
   const nameEl = document.getElementById('studentJoinName');
   const classEl = document.getElementById('studentJoinClass');
 
@@ -8674,8 +8777,17 @@ async function handleStartMini100Click() {
     showToast('⚡ Đang tổng hợp bài luyện Mini V-ACT 100...', 'info');
     const examResult = examGen.generateMini100();
 
-    if (!examResult || !examResult.questions || examResult.questions.length === 0) {
-      showToast('Không có câu hỏi khả dụng trong ngân hàng để tạo đề.', 'error');
+    // Requirement 16: Block incomplete before format & save
+    if (
+      !examResult ||
+      !examResult.isComplete ||
+      examResult.requestedTotal !== 100 ||
+      examResult.generatedTotal !== 100 ||
+      !examResult.questions ||
+      examResult.questions.length !== 100
+    ) {
+      const generatedCount = examResult?.generatedTotal ?? examResult?.questions?.length ?? 0;
+      showToast(`Không thể tạo đề Mini V-ACT 100: Chỉ tạo được ${generatedCount}/100 câu hỏi hoàn chỉnh. Đã hủy lưu đề thi để tránh đề thi không đầy đủ.`, 'error');
       return;
     }
 
@@ -8686,12 +8798,7 @@ async function handleStartMini100Click() {
 
     await StorageEngine.saveQuiz(quizRecord);
 
-    if (!examResult.isComplete) {
-      showToast(`Đã tạo ${examResult.generatedTotal}/${examResult.requestedTotal} câu (ngân hàng chưa đủ 100 câu). Đang vào bài thi...`, 'warn');
-    } else {
-      showToast(`Đã tạo thành công bài thi Mini V-ACT 100 (${examResult.generatedTotal} câu)!`, 'success');
-    }
-
+    showToast(`Đã tạo thành công bài thi Mini V-ACT 100 (${examResult.generatedTotal} câu)!`, 'success');
     await startExamWithQuizId(quizRecord.id);
   } catch (err) {
     console.error('Failed to start Mini V-ACT 100:', err);
@@ -8773,6 +8880,16 @@ async function handleStartFull120Click() {
     }
   }
 
+  // Requirement 18: Recheck readiness before proceeding
+  const vactCoverage = window.KEDUVACT?.VACTCoverage || window.VACTCoverage;
+  if (vactCoverage && typeof vactCoverage.getProfileReadiness === 'function') {
+    const readiness = vactCoverage.getProfileReadiness('vact_full');
+    if (!readiness || !readiness.ready) {
+      showToast(`Ngân hàng câu hỏi chưa đủ điều kiện tạo đề Full V-ACT 120 (${readiness?.totalAvailable || 0}/${readiness?.totalRequired || 120} câu). Vui lòng thử lại sau.`, 'error');
+      return;
+    }
+  }
+
   const nameEl = document.getElementById('studentJoinName');
   const classEl = document.getElementById('studentJoinClass');
 
@@ -8806,8 +8923,17 @@ async function handleStartFull120Click() {
     showToast('🏆 Đang mô phỏng kỳ thi Full V-ACT 120 (150 phút)...', 'info');
     const examResult = examGen.generateFull120();
 
-    if (!examResult || !examResult.questions || examResult.questions.length === 0) {
-      showToast('Không có câu hỏi khả dụng trong ngân hàng để tạo đề.', 'error');
+    // Requirement 17: Block incomplete before format & save
+    if (
+      !examResult ||
+      !examResult.isComplete ||
+      examResult.requestedTotal !== 120 ||
+      examResult.generatedTotal !== 120 ||
+      !examResult.questions ||
+      examResult.questions.length !== 120
+    ) {
+      const generatedCount = examResult?.generatedTotal ?? examResult?.questions?.length ?? 0;
+      showToast(`Không thể tạo đề Full V-ACT 120: Chỉ tạo được ${generatedCount}/120 câu hỏi hoàn chỉnh. Đã hủy lưu đề thi để tránh đề thi không đầy đủ.`, 'error');
       return;
     }
 
@@ -8818,12 +8944,7 @@ async function handleStartFull120Click() {
 
     await StorageEngine.saveQuiz(quizRecord);
 
-    if (!examResult.isComplete) {
-      showToast(`Đã tạo ${examResult.generatedTotal}/${examResult.requestedTotal} câu (chưa đủ 120 câu do giới hạn ngân hàng). Đang bắt đầu làm bài...`, 'warn');
-    } else {
-      showToast(`Đã tạo thành công bài thi Full V-ACT 120 (${examResult.generatedTotal} câu)!`, 'success');
-    }
-
+    showToast(`Đã tạo thành công bài thi Full V-ACT 120 (${examResult.generatedTotal} câu)!`, 'success');
     await startExamWithQuizId(quizRecord.id);
   } catch (err) {
     console.error('Failed to start Full V-ACT 120:', err);
