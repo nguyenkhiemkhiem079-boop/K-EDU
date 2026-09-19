@@ -2149,6 +2149,140 @@ const MathEngine = {
   },
 
   /**
+   * Tính toán sức chứa câu hỏi (capacity preflight) theo cấu hình đề thi mong muốn
+   * @param {Object} config
+   * @returns {Object}
+   */
+  getGenerationCapacity(config = {}) {
+    const {
+      track = 'toan',
+      grade = '10',
+      term = 'GK1',
+      topic = 'all',
+      sourceMode = 'hybrid',
+      difficultyMode = 'mixed',
+      mcqCount = 12,
+      essayMatrix = { TH: 1, VD: 1, VDC: 1 }
+    } = config;
+
+    const gStr = (track && track.startsWith('dgnl')) ? 'DGNL' : grade.toString();
+    const reqTH = Math.max(0, parseInt(essayMatrix?.TH ?? 0, 10) || 0);
+    const reqVD = Math.max(0, parseInt(essayMatrix?.VD ?? 0, 10) || 0);
+    const reqVDC = Math.max(0, parseInt(essayMatrix?.VDC ?? 0, 10) || 0);
+
+    const docBank = resolveDocBank();
+    let docQuestions = [];
+    if (docBank) {
+      docQuestions = docBank.query({ subject: 'toan', grade: gStr, topic: topic, type: 'mcq' });
+    }
+
+    let recentDocIds = new Set();
+    try {
+      if (typeof AppState !== 'undefined' && AppState.recentDocQuestionIds) {
+        recentDocIds = AppState.recentDocQuestionIds;
+      } else if (typeof localStorage !== 'undefined') {
+        const stored = JSON.parse(localStorage.getItem('khiemedu_recent_doc_question_ids') || '[]');
+        recentDocIds = new Set(stored);
+      }
+    } catch (_) {}
+
+    const unseenDocQuestions = docQuestions.filter(q => !recentDocIds.has(q.id));
+    const recentDocQuestions = docQuestions.filter(q => recentDocIds.has(q.id));
+
+    const mcqTemplates = GradeEngines.getTemplates(gStr, 'mcq', 'TH', topic);
+    const templateMcqAvailable = Array.isArray(mcqTemplates) && mcqTemplates.length > 0;
+
+    let docEssays = [];
+    if (docBank) {
+      docEssays = docBank.query({
+        grade: gStr,
+        topic: topic === 'all' ? undefined : topic,
+        type: 'essay'
+      }).filter(eq => (eq.subject || 'toan') === 'toan');
+    }
+
+    const specializedPolicy = typeof SpecializedBankPolicy !== 'undefined' ? SpecializedBankPolicy : (typeof require === 'function' ? require('./specializedBankPolicy') : null);
+
+    const docTH = docEssays.filter(eq => ['TH', 'NB'].includes((eq.level || '').toUpperCase())).length;
+    const docVD = docEssays.filter(eq => (eq.level || '').toUpperCase() === 'VD').length;
+    const docVDC = docEssays.filter(eq => (eq.level || '').toUpperCase() === 'VDC' && (specializedPolicy ? specializedPolicy.isApproved(eq) === true : false)).length;
+
+    const thTemplates = GradeEngines.getTemplates(gStr, 'essay', 'TH', topic);
+    const vdTemplates = GradeEngines.getTemplates(gStr, 'essay', 'VD', topic);
+
+    const blockers = [];
+
+    // VDC strict policy check: VDC cannot be refilled by templates in hybrid or document mode
+    if (sourceMode !== 'synthetic' && reqVDC > docVDC) {
+      blockers.push({
+        code: 'VDC_APPROVED_SOURCE_SHORTAGE',
+        requested: reqVDC,
+        available: docVDC,
+        message: `Ngân hàng hiện chưa có đủ câu VDC trường chuyên đã duyệt (yêu cầu ${reqVDC}, khả dụng ${docVDC}).`
+      });
+    }
+
+    if (sourceMode === 'document') {
+      if (mcqCount > docQuestions.length) {
+        blockers.push({
+          code: 'DOCUMENT_POOL_SHORTAGE',
+          requested: mcqCount,
+          available: docQuestions.length,
+          message: `Ngân hàng tài liệu chỉ có ${docQuestions.length}/${mcqCount} câu trắc nghiệm phù hợp.`
+        });
+      }
+      if (reqTH > docTH) {
+        blockers.push({
+          code: 'DOCUMENT_POOL_SHORTAGE',
+          requested: reqTH,
+          available: docTH,
+          message: `Ngân hàng tài liệu chỉ có ${docTH}/${reqTH} câu tự luận Thông hiểu.`
+        });
+      }
+      if (reqVD > docVD) {
+        blockers.push({
+          code: 'DOCUMENT_POOL_SHORTAGE',
+          requested: reqVD,
+          available: docVD,
+          message: `Ngân hàng tài liệu chỉ có ${docVD}/${reqVD} câu tự luận Vận dụng.`
+        });
+      }
+    }
+
+    const estimatedHybridCapacity = sourceMode === 'document'
+      ? docQuestions.length
+      : (templateMcqAvailable ? Math.max(docQuestions.length, mcqCount) : docQuestions.length);
+
+    return {
+      mcq: {
+        requested: mcqCount,
+        documentAvailable: docQuestions.length,
+        recentExcluded: docQuestions.length - unseenDocQuestions.length,
+        reusableRecent: recentDocQuestions.length,
+        estimatedHybridCapacity
+      },
+      essay: {
+        TH: {
+          requested: reqTH,
+          documentAvailable: docTH,
+          templateFallbackAvailable: Array.isArray(thTemplates) && thTemplates.length > 0
+        },
+        VD: {
+          requested: reqVD,
+          documentAvailable: docVD,
+          templateFallbackAvailable: Array.isArray(vdTemplates) && vdTemplates.length > 0
+        },
+        VDC: {
+          requested: reqVDC,
+          approvedAvailable: docVDC
+        }
+      },
+      feasible: blockers.length === 0,
+      blockers
+    };
+  },
+
+  /**
    * Sinh hàng loạt N đề thi (5, 10, 20 đề...) với cơ chế chống trùng lặp chéo
    * @param {Object} config
    *   - batchCount: số lượng đề thi cần sinh (mặc định: 5)
