@@ -4,9 +4,38 @@
 
 const STORAGE_PREFIX = 'khiemedu_';
 const DB_NAME = 'KhiemEdu_DB';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STORE_PDFS = 'pdf_store';
 const STORE_SUBMISSIONS = 'submission_photos';
+const STORE_QUIZZES = 'quiz_store';
+const QUIZ_INDEX_KEY = 'quiz_index';
+
+function classifyQuizAttachment(quiz = {}) {
+  const value = quiz.pdfDataUrl;
+  if (quiz.examHtml && typeof value === 'string' && value.startsWith('data:text/html')) return 'generated_html';
+  if (typeof value === 'string' && value.startsWith('data:application/pdf')) return 'data_pdf';
+  if (value instanceof Blob || (typeof value === 'string' && value.startsWith('blob:'))) return 'blob_file';
+  if (typeof value === 'string' && /^https?:\/\//.test(value)) return 'remote_url';
+  return 'none';
+}
+
+function normalizeQuizForPersistence(quiz = {}) {
+  const normalized = { ...quiz };
+  if (!normalized.id || !normalized.title) return { success: false, code: 'INVALID_QUIZ', quiz: normalized };
+  if (!normalized.examHtml && typeof normalized.pdfDataUrl === 'string' && normalized.pdfDataUrl.startsWith('data:text/html')) {
+    try { normalized.examHtml = decodeURIComponent(normalized.pdfDataUrl.slice(normalized.pdfDataUrl.indexOf(',') + 1)); }
+    catch (_) { return { success: false, code: 'INVALID_GENERATED_HTML', quiz: normalized }; }
+  }
+  normalized.updatedAt = normalized.updatedAt || new Date().toISOString();
+  if (!normalized.createdAt) normalized.createdAt = normalized.updatedAt;
+  if (classifyQuizAttachment(normalized) === 'generated_html') delete normalized.pdfDataUrl;
+  return { success: true, quiz: normalized, attachmentType: classifyQuizAttachment(normalized) };
+}
+
+function toQuizIndexItem(quiz) {
+  return ['id', 'title', 'subject', 'targetClass', 'examTerm', 'timeLimit', 'totalQuestions', 'createdAt', 'updatedAt']
+    .reduce((item, key) => { if (quiz[key] !== undefined) item[key] = quiz[key]; return item; }, {});
+}
 
 const StorageEngine = {
   db: null,
@@ -63,7 +92,7 @@ const StorageEngine = {
       const timer = setTimeout(() => {
         console.warn('IndexedDB open timeout, falling back');
         resolve(null);
-      }, 1000);
+      }, 10000);
 
       try {
         const req = indexedDB.open(DB_NAME, DB_VERSION);
@@ -74,6 +103,9 @@ const StorageEngine = {
           }
           if (!db.objectStoreNames.contains(STORE_SUBMISSIONS)) {
             db.createObjectStore(STORE_SUBMISSIONS);
+          }
+          if (!db.objectStoreNames.contains(STORE_QUIZZES)) {
+            db.createObjectStore(STORE_QUIZZES, { keyPath: 'id' });
           }
         };
         req.onsuccess = (e) => {
@@ -99,6 +131,73 @@ const StorageEngine = {
     });
   },
 
+  async saveQuizRecordToIndexedDB(quiz) {
+    if (!this.db) await this.initIndexedDB();
+    if (!this.db) return { success: false, code: 'INDEXEDDB_UNAVAILABLE' };
+    return new Promise(resolve => {
+      let settled = false;
+      const finish = result => { if (!settled) { settled = true; clearTimeout(timer); resolve(result); } };
+      const timer = setTimeout(() => finish({ success: false, code: 'INDEXEDDB_TIMEOUT' }), 10000);
+      try {
+        const tx = this.db.transaction([STORE_QUIZZES], 'readwrite');
+        tx.objectStore(STORE_QUIZZES).put(quiz);
+        tx.oncomplete = () => finish({ success: true, quizRecord: true });
+        tx.onerror = () => finish({ success: false, code: 'INDEXEDDB_WRITE_FAILED', error: tx.error });
+        tx.onabort = () => finish({ success: false, code: 'INDEXEDDB_WRITE_FAILED', error: tx.error });
+      } catch (error) { finish({ success: false, code: 'INDEXEDDB_WRITE_FAILED', error }); }
+    });
+  },
+
+  async getQuizRecordFromIndexedDB(quizId) {
+    if (!this.db) await this.initIndexedDB();
+    if (!this.db) return { success: false, code: 'INDEXEDDB_UNAVAILABLE', quiz: null };
+    return new Promise(resolve => {
+      let settled = false;
+      const finish = result => { if (!settled) { settled = true; clearTimeout(timer); resolve(result); } };
+      const timer = setTimeout(() => finish({ success: false, code: 'INDEXEDDB_TIMEOUT', quiz: null }), 10000);
+      try {
+        const tx = this.db.transaction([STORE_QUIZZES], 'readonly');
+        const req = tx.objectStore(STORE_QUIZZES).get(quizId);
+        req.onsuccess = () => finish({ success: true, quiz: req.result || null });
+        req.onerror = () => finish({ success: false, code: 'INDEXEDDB_READ_FAILED', quiz: null, error: req.error });
+      } catch (error) { finish({ success: false, code: 'INDEXEDDB_READ_FAILED', quiz: null, error }); }
+    });
+  },
+
+  async deleteQuizRecordFromIndexedDB(quizId) {
+    if (!this.db) await this.initIndexedDB();
+    if (!this.db) return { success: false, code: 'INDEXEDDB_UNAVAILABLE' };
+    return new Promise(resolve => {
+      try {
+        const tx = this.db.transaction([STORE_QUIZZES], 'readwrite');
+        tx.objectStore(STORE_QUIZZES).delete(quizId);
+        tx.oncomplete = () => resolve({ success: true });
+        tx.onerror = () => resolve({ success: false, code: 'INDEXEDDB_WRITE_FAILED', error: tx.error });
+        tx.onabort = () => resolve({ success: false, code: 'INDEXEDDB_WRITE_FAILED', error: tx.error });
+      } catch (error) { resolve({ success: false, code: 'INDEXEDDB_WRITE_FAILED', error }); }
+    });
+  },
+
+  async listQuizRecordsFromIndexedDB() {
+    if (!this.db) await this.initIndexedDB();
+    if (!this.db) return { success: false, code: 'INDEXEDDB_UNAVAILABLE', quizzes: [] };
+    return new Promise(resolve => {
+      try {
+        const tx = this.db.transaction([STORE_QUIZZES], 'readonly');
+        const req = tx.objectStore(STORE_QUIZZES).getAll();
+        req.onsuccess = () => resolve({ success: true, quizzes: req.result || [] });
+        req.onerror = () => resolve({ success: false, code: 'INDEXEDDB_READ_FAILED', quizzes: [], error: req.error });
+      } catch (error) { resolve({ success: false, code: 'INDEXEDDB_READ_FAILED', quizzes: [], error }); }
+    });
+  },
+
+  async updateQuizIndex(quiz) {
+    const index = await this.get(QUIZ_INDEX_KEY);
+    const items = Array.isArray(index) ? index.filter(item => item.id !== quiz.id) : [];
+    items.push(toQuizIndexItem(quiz));
+    return this.set(QUIZ_INDEX_KEY, items);
+  },
+
   async savePdfBlob(quizId, base64OrBlob) {
     if (typeof base64OrBlob === 'string' && base64OrBlob.startsWith('blob:')) {
       try {
@@ -110,13 +209,14 @@ const StorageEngine = {
     if (!this.db) await this.initIndexedDB();
     if (this.db) {
       return new Promise((resolve) => {
-        const timer = setTimeout(() => resolve(false), 800);
+        const timer = setTimeout(() => { console.warn('INDEXEDDB_TIMEOUT saving attachment', quizId); resolve(false); }, 10000);
         try {
           const tx = this.db.transaction([STORE_PDFS], 'readwrite');
           const store = tx.objectStore(STORE_PDFS);
           store.put(base64OrBlob, 'pdf_' + quizId);
           tx.oncomplete = () => { clearTimeout(timer); resolve(true); };
-          tx.onerror = () => { clearTimeout(timer); resolve(false); };
+          tx.onerror = () => { clearTimeout(timer); console.warn('ATTACHMENT_WRITE_FAILED', tx.error); resolve(false); };
+          tx.onabort = () => { clearTimeout(timer); console.warn('ATTACHMENT_WRITE_FAILED', tx.error); resolve(false); };
         } catch (e) {
           clearTimeout(timer);
           resolve(false);
@@ -134,7 +234,7 @@ const StorageEngine = {
     if (!this.db) await this.initIndexedDB();
     if (this.db) {
       const localPdf = await new Promise((resolve) => {
-        const timer = setTimeout(() => resolve(null), 800);
+        const timer = setTimeout(() => { console.warn('INDEXEDDB_TIMEOUT reading attachment', quizId); resolve(null); }, 10000);
         try {
           const tx = this.db.transaction([STORE_PDFS], 'readonly');
           const store = tx.objectStore(STORE_PDFS);
@@ -195,7 +295,8 @@ const StorageEngine = {
       }
       return true;
     } catch (e) {
-      console.error('Storage set error:', e);
+      this.lastError = (e && (e.name === 'QuotaExceededError' || e.code === 22)) ? 'LOCAL_STORAGE_QUOTA' : 'LOCAL_STORAGE_WRITE_FAILED';
+      console.error(this.lastError, e);
       return false;
     }
   },
@@ -271,82 +372,54 @@ const StorageEngine = {
   },
 
   async saveQuiz(quiz) {
-    const previousQuiz = await this.get('quiz:' + quiz.id);
-    const quizToSave = { ...quiz };
-    quizToSave.updatedAt = new Date().toISOString();
+    const normalized = normalizeQuizForPersistence(quiz);
+    if (!normalized.success) return { success: false, localSaved: false, code: normalized.code, error: 'Đề thi cần có mã và tiêu đề.' };
+    const quizToSave = normalized.quiz;
+    const attachmentType = normalized.attachmentType;
+    const recordResult = await this.saveQuizRecordToIndexedDB(quizToSave);
+    const localStorageFallback = recordResult.code === 'INDEXEDDB_UNAVAILABLE';
+    const fallbackSaved = localStorageFallback ? await this.set('quiz:' + quizToSave.id, quizToSave) : false;
+    if (!recordResult.success && !fallbackSaved) return { success: false, localSaved: false, code: recordResult.code, error: 'Không thể lưu đề vào bộ nhớ thiết bị.' };
 
-    // Preserve examHtml for auto-generated or HTML exams
-    if (!quizToSave.examHtml && quizToSave.pdfDataUrl && typeof quizToSave.pdfDataUrl === 'string' && quizToSave.pdfDataUrl.startsWith('data:text/html')) {
-      try {
-        const separator = quizToSave.pdfDataUrl.indexOf(',');
-      const parts = [quizToSave.pdfDataUrl.slice(0, separator), quizToSave.pdfDataUrl.slice(separator + 1)];
-        if (parts.length > 1) {
-          quizToSave.examHtml = parts[0].includes(';base64') ? new TextDecoder().decode(Uint8Array.from(atob(parts[1]), c => c.charCodeAt(0))) : decodeURIComponent(parts[1]);
-        }
-      } catch (e) {}
+    let attachmentSaved = attachmentType === 'none' || attachmentType === 'generated_html' || attachmentType === 'remote_url';
+    if (!attachmentSaved) attachmentSaved = await this.savePdfBlob(quizToSave.id, quizToSave.pdfDataUrl);
+    const localComplete = attachmentSaved || attachmentType === 'generated_html';
+    if (!localComplete) {
+      await this.deleteQuizRecordFromIndexedDB(quizToSave.id);
+      if (fallbackSaved) await this.remove('quiz:' + quizToSave.id);
+      return { success: false, localSaved: false, code: 'ATTACHMENT_WRITE_FAILED', error: 'Không thể lưu tệp đính kèm của đề thi.' };
     }
 
-    // 1. Save to LocalStorage IMMEDIATELY (guaranteed 0ms local persistence, UI updates instantly)
-    const localCacheQuiz = { ...quizToSave };
-    if (typeof localCacheQuiz.pdfDataUrl === 'string' && (localCacheQuiz.pdfDataUrl.startsWith('data:') || localCacheQuiz.pdfDataUrl.startsWith('blob:'))) {
-      if (typeof localCacheQuiz.pdfDataUrl === 'string' && localCacheQuiz.pdfDataUrl.length > 300000) {
-        delete localCacheQuiz.pdfDataUrl;
-      }
-    }
-    if (localCacheQuiz.pdfDataUrl instanceof Blob || (typeof localCacheQuiz.pdfDataUrl === 'string' && localCacheQuiz.pdfDataUrl.startsWith('blob:'))) delete localCacheQuiz.pdfDataUrl;
-    const localSaved = await this.set('quiz:' + quiz.id, localCacheQuiz);
-    if (this.channel) {
-      this.channel.postMessage({ type: 'quizzes_updated', quizId: quiz.id });
-    }
+    await this.updateQuizIndex(quizToSave);
+    if (this.channel) this.channel.postMessage({ type: 'quizzes_updated', quizId: quizToSave.id });
+    const deletedIds = this.getDeletedQuizIds();
+    if (deletedIds.delete(quizToSave.id)) await this.set('deleted_quizzes', Array.from(deletedIds));
 
-    // 2. Save PDF / HTML to IndexedDB safely in background
-    const hasAttachment = quizToSave.pdfDataUrl && ((typeof quizToSave.pdfDataUrl === 'string' && (quizToSave.pdfDataUrl.startsWith('data:') || quizToSave.pdfDataUrl.startsWith('blob:'))) || quizToSave.pdfDataUrl instanceof Blob);
-    let attachmentSaved = false;
-    if (hasAttachment) {
-      try {
-        attachmentSaved = await this.savePdfBlob(quiz.id, quizToSave.pdfDataUrl);
-      } catch (e) {
-        console.warn('savePdfBlob non-fatal error:', e);
-      }
-    }
-
-    // 3. Push to Firebase Cloud in background/parallel (safe from crashes)
     let cloudResult = null;
     if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
-      try {
-        cloudResult = await window.FirebaseEngine.saveQuiz(quizToSave);
-        if (cloudResult && cloudResult.downloadUrl) {
-          quizToSave.pdfDataUrl = cloudResult.downloadUrl;
-          quiz.pdfDataUrl = cloudResult.downloadUrl;
-          await this.set('quiz:' + quiz.id, quizToSave);
-        }
-      } catch (e) {
-        console.warn('FirebaseEngine saveQuiz warning:', e);
-      }
-    }
-
-    const localComplete = !!(localSaved && (!hasAttachment || attachmentSaved || localCacheQuiz.examHtml || (typeof localCacheQuiz.pdfDataUrl === 'string' && localCacheQuiz.pdfDataUrl.startsWith('data:'))));
-    const success = localComplete || !!(cloudResult && cloudResult.success);
-    if (success) {
-      const deletedIds = this.getDeletedQuizIds();
-      if (deletedIds.delete(quiz.id)) await this.set('deleted_quizzes', Array.from(deletedIds));
-    } else if (localSaved) {
-      if (previousQuiz) await this.set('quiz:' + quiz.id, previousQuiz);
-      else await this.remove('quiz:' + quiz.id);
+      try { cloudResult = await window.FirebaseEngine.saveQuiz(quizToSave); }
+      catch (error) { cloudResult = { success: false, error: error.message, code: 'FIREBASE_SYNC_FAILED' }; }
     }
     return {
-      success,
-      localSaved: localComplete,
-      cloudSaved: !!(cloudResult && cloudResult.success),
-      error: !localComplete && !(cloudResult && cloudResult.success) ? 'Không lưu được đề hoặc file đính kèm. Hãy kiểm tra dung lượng lưu trữ và kết nối.' : (cloudResult && cloudResult.error ? cloudResult.error : null)
+      success: true,
+      localSaved: true,
+      local: { quizRecord: !!(recordResult.success || fallbackSaved), attachment: attachmentSaved, fallback: localStorageFallback },
+      cloudSaved: !!cloudResult?.success,
+      cloud: cloudResult?.success ? { state: 'saved' } : { state: window.FirebaseEngine?.isActive ? 'failed' : 'unavailable', error: cloudResult?.error || null },
+      code: cloudResult && !cloudResult.success ? 'FIREBASE_SYNC_FAILED' : null
     };
   },
 
   async getQuiz(id) {
-    let localQuiz = await this.get('quiz:' + id);
+    const indexed = await this.getQuizRecordFromIndexedDB(id);
+    if (indexed.success && indexed.quiz) return indexed.quiz;
+    const localQuiz = await this.get('quiz:' + id);
     if (localQuiz) {
-      if (!localQuiz.pdfDataUrl && localQuiz.examHtml) {
-        localQuiz.pdfDataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(localQuiz.examHtml);
+      const migration = await this.saveQuizRecordToIndexedDB(normalizeQuizForPersistence(localQuiz).quiz);
+      if (migration.success) {
+        await this.updateQuizIndex(localQuiz);
+        await this.remove('quiz:' + id);
+        await this.set('quiz_storage_migration_v3', { completedAt: new Date().toISOString() });
       }
       return localQuiz;
     }
@@ -355,14 +428,8 @@ const StorageEngine = {
       try {
         const cloudQuiz = await window.FirebaseEngine.getQuiz(id);
         if (cloudQuiz) {
-          if (!cloudQuiz.pdfDataUrl && cloudQuiz.examHtml) {
-            cloudQuiz.pdfDataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(cloudQuiz.examHtml);
-          }
-          const quizToCache = { ...cloudQuiz };
-          if (quizToCache.pdfDataUrl && quizToCache.pdfDataUrl.startsWith('data:') && quizToCache.pdfDataUrl.length > 300000) {
-            delete quizToCache.pdfDataUrl;
-          }
-          await this.set('quiz:' + id, quizToCache);
+          await this.saveQuizRecordToIndexedDB(normalizeQuizForPersistence(cloudQuiz).quiz);
+          await this.updateQuizIndex(cloudQuiz);
           return cloudQuiz;
         }
       } catch (err) {
@@ -383,17 +450,29 @@ const StorageEngine = {
 
   async getAllQuizzes() {
     const deletedIds = this.getDeletedQuizIds();
+    const indexedResult = await this.listQuizRecordsFromIndexedDB();
+    const indexedList = indexedResult.success ? indexedResult.quizzes.filter(q => q && !deletedIds.has(q.id)) : [];
     const localKeys = await this.list('quiz:');
     const localList = [];
     for (const key of localKeys) {
       const q = await this.get(key);
       if (q && !deletedIds.has(q.id)) {
-        if (!q.pdfDataUrl && q.examHtml) {
-          q.pdfDataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(q.examHtml);
-        }
         localList.push(q);
+        const migration = await this.saveQuizRecordToIndexedDB(normalizeQuizForPersistence(q).quiz);
+        if (migration.success) {
+          await this.updateQuizIndex(q);
+          await this.remove(key);
+          await this.set('quiz_storage_migration_v3', { completedAt: new Date().toISOString() });
+        }
       }
     }
+
+    const quizMap = new Map();
+    [...indexedList, ...localList].forEach(q => {
+      const existing = quizMap.get(q.id);
+      if (!existing || new Date(q.updatedAt || q.createdAt || 0) >= new Date(existing.updatedAt || existing.createdAt || 0)) quizMap.set(q.id, q);
+    });
+    const primaryLocalList = Array.from(quizMap.values());
 
     if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
       try {
@@ -402,14 +481,11 @@ const StorageEngine = {
           // Merge local và cloud thông minh theo ID
           const quizMap = new Map();
           // Đưa đề local vào trước (bỏ qua đề đã xóa)
-          localList.forEach(q => { if (q && q.id && !deletedIds.has(q.id)) quizMap.set(q.id, q); });
+          primaryLocalList.forEach(q => { if (q && q.id && !deletedIds.has(q.id)) quizMap.set(q.id, q); });
 
           // Cloud cập nhật hoặc bổ sung
           cloudQuizzes.forEach(cq => {
             if (!cq || !cq.id || deletedIds.has(cq.id)) return;
-            if (!cq.pdfDataUrl && cq.examHtml) {
-              cq.pdfDataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(cq.examHtml);
-            }
             const existing = quizMap.get(cq.id);
             if (!existing) {
               quizMap.set(cq.id, cq);
@@ -425,13 +501,10 @@ const StorageEngine = {
           const merged = Array.from(quizMap.values());
           merged.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
-          // Cập nhật bộ nhớ đệm LocalStorage
+          // Keep full records in IndexedDB, localStorage only has a lightweight index.
           for (const q of merged) {
-            const cacheItem = { ...q };
-            if (cacheItem.pdfDataUrl && cacheItem.pdfDataUrl.startsWith('data:') && cacheItem.pdfDataUrl.length > 300000) {
-              delete cacheItem.pdfDataUrl;
-            }
-            await this.set('quiz:' + q.id, cacheItem);
+            await this.saveQuizRecordToIndexedDB(normalizeQuizForPersistence(q).quiz);
+            await this.updateQuizIndex(q);
           }
           return merged;
         }
@@ -440,8 +513,8 @@ const StorageEngine = {
       }
     }
 
-    localList.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-    return localList;
+    primaryLocalList.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    return primaryLocalList;
   },
 
   async deleteQuiz(quizId) {
@@ -458,6 +531,9 @@ const StorageEngine = {
       }
     }
     await this.remove('quiz:' + quizId);
+    await this.deleteQuizRecordFromIndexedDB(quizId);
+    const quizIndex = await this.get(QUIZ_INDEX_KEY);
+    if (Array.isArray(quizIndex)) await this.set(QUIZ_INDEX_KEY, quizIndex.filter(item => item.id !== quizId));
     await this.removePdfBlob(quizId);
 
     const resultKeys = await this.list(`result:${quizId}:`);
@@ -1205,3 +1281,4 @@ const StorageEngine = {
 };
 
 window.StorageEngine = StorageEngine;
+window.KEDUStorageInternals = { classifyQuizAttachment, normalizeQuizForPersistence, DB_VERSION, STORE_QUIZZES };
