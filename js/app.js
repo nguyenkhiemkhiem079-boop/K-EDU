@@ -2953,7 +2953,21 @@ async function triggerAutoGenerateMathExam() {
       }
 
       const firstGen = generatedList[0];
-      const incomplete = generatedList.find(gen => !gen.totalQuestions || gen.mcqCount < mcqCount || gen.essayCount < countTH + countVD + countVDC);
+      const incomplete = generatedList.find(gen => {
+        if (!gen.totalQuestions || gen.mcqCount < mcqCount) return true;
+        if (isKhtn) {
+          return gen.essayCount < countTH + countVD + countVDC;
+        } else {
+          if (gen.isComplete === false) return true;
+          const diag = gen.generationDiagnostics?.generated;
+          if (diag) {
+            if (Number(diag.TH ?? 0) < countTH) return true;
+            if (Number(diag.VD ?? 0) < countVD) return true;
+            if (Number(diag.VDC ?? 0) < countVDC) return true;
+          }
+          return gen.essayCount < countTH + countVD + countVDC;
+        }
+      });
       if (incomplete) {
         const warning = incomplete.warning || 'Ngân hàng chưa đủ câu độc nhất cho cả bộ đề.';
         showToast(warning, 'warn');
@@ -3103,6 +3117,38 @@ async function triggerAutoGenerateMathExam() {
     }
 
     // ================= TRƯỜNG HỢP 2: TẠO 1 ĐỀ THI ĐƠN LẺ TIÊU CHUẨN =================
+    // Capacity preflight check for normal Math (Requirements 12 & 13)
+    if (!isKhtn && typeof MathEngine !== 'undefined' && typeof MathEngine.getGenerationCapacity === 'function') {
+      const capacity = MathEngine.getGenerationCapacity({
+        track,
+        grade,
+        term,
+        topic,
+        sourceMode,
+        difficultyMode,
+        mcqCount,
+        essayMatrix: { TH: countTH, VD: countVD, VDC: countVDC }
+      });
+
+      if (capacity && capacity.feasible === false) {
+        const hardBlocker = (capacity.blockers || []).find(b =>
+          b.code === 'VDC_APPROVED_SOURCE_SHORTAGE' ||
+          (sourceMode === 'document' && b.code === 'DOCUMENT_POOL_SHORTAGE')
+        );
+        if (hardBlocker) {
+          const msg = hardBlocker.message || `[${hardBlocker.code}] Yêu cầu ${hardBlocker.requested}, khả dụng ${hardBlocker.available}`;
+          showToast(`❌ Không thể sinh đề: ${msg}`, 'error');
+          const alertEl = document.getElementById('mathGenSourceAlert');
+          if (alertEl) {
+            alertEl.classList.remove('hidden');
+            alertEl.style.display = 'block';
+            alertEl.innerHTML = `❌ <strong>Không đủ điều kiện tạo đề:</strong> ${escapeHtml(msg)}<br><small style="color:var(--text-secondary);">Vui lòng kiểm tra lại cấu hình số câu hoặc chuyển sang chế độ phù hợp.</small>`;
+          }
+          return;
+        }
+      }
+    }
+
     const generated = activeEngine.generateExam({
       track,
       grade,
@@ -3115,26 +3161,54 @@ async function triggerAutoGenerateMathExam() {
       essayMatrix: { TH: countTH, VD: countVD, VDC: countVDC },
       timeLimit: timeLimitVal
     });
-    // Strict completeness verification (P0 Requirement 9)
-    const actualMcq = generated?.mcqCount ?? 0;
-    const actualTH = generated?.essay?.TH?.length ?? 0;
-    const actualVD = generated?.essay?.VD?.length ?? 0;
-    const actualVDC = generated?.essay?.VDC?.length ?? 0;
+    function formatGenerationShortage(s) {
+      const label = s.part || s.type || s.code || 'Nguồn câu hỏi';
+      const actual = s.available ?? s.generated ?? 0;
+      return `[${s.code || 'SHORTAGE'}] ${label}: yêu cầu ${s.requested}, hiện có ${actual}`;
+    }
 
-    const isIncomplete = !generated || !generated.isComplete ||
-      actualMcq !== mcqCount ||
-      actualTH !== countTH ||
-      actualVD !== countVD ||
-      actualVDC !== countVDC;
+    let isIncomplete = false;
+    let detailMsg = '';
+
+    if (isKhtn) {
+      // KHTN completeness verification (Requirements 2, 3, 4)
+      const actualMcq = generated?.mcqCount ?? 0;
+      const essayKeys = (generated?.answerKeys || []).filter(k => k.type === 'essay');
+      const actualTH = essayKeys.filter(k => k.level === 'TH').length;
+      const actualVD = essayKeys.filter(k => k.level === 'VD').length;
+      const actualVDC = essayKeys.filter(k => k.level === 'VDC').length;
+      const expectedTotalEssay = countTH + countVD + countVDC;
+      const actualTotalEssay = generated?.essayCount ?? essayKeys.length;
+
+      if (!generated || actualMcq !== mcqCount || actualTotalEssay !== expectedTotalEssay) {
+        isIncomplete = true;
+        detailMsg = `Không thể tạo đủ đề KHTN: Trắc nghiệm ${actualMcq}/${mcqCount}, TH ${actualTH}/${countTH}, VD ${actualVD}/${countVD}, VDC ${actualVDC}/${countVDC}.`;
+      }
+    } else {
+      // Normal ToanMath completeness verification (Requirements 1, 10, 14)
+      const diagGenerated = generated?.generationDiagnostics?.generated || {};
+      const actualMcq = generated?.mcqCount ?? 0;
+      const actualTH = Number(diagGenerated.TH ?? 0);
+      const actualVD = Number(diagGenerated.VD ?? 0);
+      const actualVDC = Number(diagGenerated.VDC ?? 0);
+
+      isIncomplete = !generated || !generated.isComplete ||
+        actualMcq !== mcqCount ||
+        actualTH !== countTH ||
+        actualVD !== countVD ||
+        actualVDC !== countVDC;
+
+      if (isIncomplete) {
+        const shortages = (generated && generated.generationDiagnostics && generated.generationDiagnostics.shortages) || [];
+        if (shortages.length > 0) {
+          detailMsg = shortages.map(s => formatGenerationShortage(s)).join('; ');
+        } else {
+          detailMsg = `Trắc nghiệm: ${actualMcq}/${mcqCount}, TH: ${actualTH}/${countTH}, VD: ${actualVD}/${countVD}, VDC: ${actualVDC}/${countVDC}`;
+        }
+      }
+    }
 
     if (isIncomplete) {
-      const shortages = (generated && generated.generationDiagnostics && generated.generationDiagnostics.shortages) || [];
-      let detailMsg = '';
-      if (shortages.length > 0) {
-        detailMsg = shortages.map(s => `[${s.code}] ${s.part}: yêu cầu ${s.requested}, khả dụng ${s.available}`).join('; ');
-      } else {
-        detailMsg = `Trắc nghiệm: ${actualMcq}/${mcqCount}, TH: ${actualTH}/${countTH}, VD: ${actualVD}/${countVD}, VDC: ${actualVDC}/${countVDC}`;
-      }
       showToast(`Không thể tạo và lưu đề do thiếu câu hỏi: ${detailMsg}`, 'error');
       const alertEl = document.getElementById('mathGenSourceAlert');
       if (alertEl) {
