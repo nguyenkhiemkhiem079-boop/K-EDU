@@ -9,6 +9,7 @@ console.log('--- Starting V-ACT Legacy Question Bank Adapter Verification ---');
 
 const internalBank = vact.VACTInternalBank;
 assert.ok(internalBank, 'VACTInternalBank must exist');
+internalBank.setMode('legacy');
 assert.ok(typeof internalBank.query === 'function', 'internalBank.query must be a function');
 assert.ok(typeof internalBank.getDiagnostics === 'function', 'internalBank.getDiagnostics must be a function');
 assert.ok(typeof internalBank.getCoverage === 'function', 'internalBank.getCoverage must be a function');
@@ -151,5 +152,7 @@ assert.ok(qSecSkillDiff.every(q => q.section === 'logic_data' && q.skill === 'lo
 
 const qLimit = internalBank.query({ section: 'math', limit: 15 });
 assert.equal(qLimit.length, 15, 'Query limit must be respected');
+
+internalBank.setMode('source_backed');
 
 console.log('--- ALL V-ACT LEGACY ADAPTER TESTS PASSED SUCCESSFULLY ---');

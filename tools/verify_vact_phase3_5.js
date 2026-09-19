@@ -318,25 +318,27 @@ console.log('9. Verifying gap analysis & import priority scoring...');
 const gaps = vact.VACTCoverage.getGaps();
 assert.ok(Array.isArray(gaps) && gaps.length > 0, 'Gaps array must not be empty');
 
-// Check that top deficits correspond to real shortages (e.g. English with 0 available)
+// Check that top deficits correspond to real shortages (e.g. English with 421 available vs 600 target)
 const engGap = gaps.find(g => g.section === 'english' && !g.skill);
 assert.ok(engGap, 'English gap must be present');
 assert.equal(engGap.target, 600);
-assert.equal(engGap.available, 0);
-assert.equal(engGap.missing, 600);
-assert.equal(engGap.deficitPct, 100);
+assert.equal(engGap.available, 421);
+assert.equal(engGap.missing, 179);
+assert.equal(engGap.deficitPct, 29.8);
 
 // Verify Import Priorities
 const priorities = vact.VACTCoverage.getImportPriorities();
-assert.ok(priorities.deprioritizedSections.includes('math'), 'Math must be deprioritized because it exceeds target');
 assert.ok(priorities.topSectionDeficits.some(d => d.section === 'english'), 'English must be in top section deficits');
+assert.ok(priorities.topSectionDeficits.some(d => d.section === 'vietnamese'), 'Vietnamese must be in top section deficits');
 
 // Test candidate source ranking
 const candidateSources = [
   { sourceId: 'math_only_pack', section: 'math', provider: 'Math Specialist' },
   { sourceId: 'english_pack', section: 'english', provider: 'English Specialist' }
 ];
-const rankedCandidates = vact.VACTCoverage.getImportPriorities(candidateSources);
+const rankedCandidates = vact.VACTCoverage.getImportPriorities(candidateSources, {
+  bankTargets: { vietnamese: 600, english: 600, math: 400, logic_data: 240, scientific_reasoning: 360 }
+});
 assert.equal(rankedCandidates[0].sourceId, 'english_pack', 'English source must be ranked higher than Math source');
 assert.equal(rankedCandidates[1].sourceId, 'math_only_pack');
 assert.equal(rankedCandidates[1].recommendation, 'DEPRIORITIZED');

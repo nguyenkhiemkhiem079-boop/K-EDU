@@ -11,6 +11,7 @@ const selectCanonical = vact.selectCanonicalQuestion;
 assert.ok(coverage, 'VACTCoverage must exist');
 assert.ok(typeof deduplicator === 'function', 'deduplicateVACTQuestions must be a function');
 assert.ok(typeof selectCanonical === 'function', 'selectCanonicalQuestion must be a function');
+vact.VACTInternalBank.setMode('legacy');
 
 // 1. Deduplication: duplicate questions collapse to one unique record
 console.log('1. Verifying deduplication logic on duplicate questions...');
@@ -175,5 +176,7 @@ assert.equal(shortageTest2.reason, null);
 const shortageTest3 = coverage.checkShortage({ section: 'vietnamese', requested: 10 });
 assert.equal(shortageTest3.missing, 3); // available is 7, requested 10 -> missing 3
 assert.equal(shortageTest3.fulfilled, false);
+
+vact.VACTInternalBank.setMode('source_backed');
 
 console.log('--- ALL V-ACT COVERAGE & DEDUPLICATION TESTS PASSED SUCCESSFULLY ---');

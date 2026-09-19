@@ -117,7 +117,7 @@
     }
 
     // 4. Validate Difficulty
-    const validDifficulties = ['easy', 'medium', 'hard', 'balanced'];
+    const validDifficulties = ['easy', 'medium', 'hard', 'balanced', 'mixed'];
     if (!validDifficulties.includes(difficulty)) {
       throw new Error(`Difficulty must be one of: ${validDifficulties.join(', ')}`);
     }
@@ -161,24 +161,27 @@
       activePool = [...unseenCandidates];
       if (recentCandidates.length > 0) {
         recentFallbackUsed = true;
+        // Shuffle recent candidates before appending so older seen questions are preferred
+        shuffle(recentCandidates, rng);
         activePool.push(...recentCandidates);
       }
     }
 
-    // 7. Partition active pool by difficulty
+    // 7. Partition active pool by difficulty (including unclassified bucket)
     const byDifficulty = {
       easy: [],
       medium: [],
-      hard: []
+      hard: [],
+      unclassified: []
     };
 
     for (let i = 0; i < activePool.length; i++) {
       const q = activePool[i];
-      const diff = q.difficulty || 'medium';
-      if (byDifficulty[diff]) {
+      const diff = q.difficulty;
+      if (diff && byDifficulty[diff]) {
         byDifficulty[diff].push(q);
       } else {
-        byDifficulty.medium.push(q);
+        byDifficulty.unclassified.push(q);
       }
     }
 
@@ -186,67 +189,84 @@
     shuffle(byDifficulty.easy, rng);
     shuffle(byDifficulty.medium, rng);
     shuffle(byDifficulty.hard, rng);
+    shuffle(byDifficulty.unclassified, rng);
 
-    // 8. Difficulty Selection & Balanced Redistribution
+    // 8. Difficulty Selection & Balanced / Unclassified-Compatible Redistribution
     const selected = [];
     const selectedSigs = new Set();
 
-    const targetDistribution = { easy: 0, medium: 0, hard: 0 };
-    const actualDistribution = { easy: 0, medium: 0, hard: 0 };
+    const targetDistribution = { easy: 0, medium: 0, hard: 0, unclassified: 0 };
+    const actualDistribution = { easy: 0, medium: 0, hard: 0, unclassified: 0 };
     let redistributed = false;
 
-    if (difficulty === 'balanced') {
-      // Calculate target quotas based on balanced weights
-      const tEasy = Math.round(requestedCount * DEFAULT_BALANCED_WEIGHTS.easy);
-      const tHard = Math.round(requestedCount * DEFAULT_BALANCED_WEIGHTS.hard);
-      const tMed = requestedCount - tEasy - tHard;
+    const pickFromBucket = (diff, needed) => {
+      let picked = 0;
+      const bucket = byDifficulty[diff] || [];
+      for (let i = 0; i < bucket.length && picked < needed; i++) {
+        const q = bucket[i];
+        const sig = computeVACTQuestionSignature(q);
+        if (!selectedSigs.has(sig)) {
+          selectedSigs.add(sig);
+          selected.push(q);
+          const actualKey = (q.difficulty && actualDistribution[q.difficulty] !== undefined) ? q.difficulty : 'unclassified';
+          actualDistribution[actualKey]++;
+          picked++;
+        }
+      }
+      return picked;
+    };
 
-      targetDistribution.easy = tEasy;
-      targetDistribution.medium = tMed;
-      targetDistribution.hard = tHard;
+    if (difficulty === 'balanced' || difficulty === 'mixed') {
+      const totalClassified = byDifficulty.easy.length + byDifficulty.medium.length + byDifficulty.hard.length;
+      
+      if (totalClassified >= requestedCount && byDifficulty.unclassified.length === 0) {
+        // Standard balanced distribution when classification is complete
+        const tEasy = Math.round(requestedCount * DEFAULT_BALANCED_WEIGHTS.easy);
+        const tHard = Math.round(requestedCount * DEFAULT_BALANCED_WEIGHTS.hard);
+        const tMed = requestedCount - tEasy - tHard;
 
-      // First pass: collect up to quota from each group
-      const pickFromBucket = (diff, needed) => {
-        let picked = 0;
-        const bucket = byDifficulty[diff];
-        for (let i = 0; i < bucket.length && picked < needed; i++) {
-          const q = bucket[i];
-          const sig = computeVACTQuestionSignature(q);
-          if (!selectedSigs.has(sig)) {
-            selectedSigs.add(sig);
-            selected.push(q);
-            actualDistribution[diff]++;
-            picked++;
+        targetDistribution.easy = tEasy;
+        targetDistribution.medium = tMed;
+        targetDistribution.hard = tHard;
+
+        const pickedEasy = pickFromBucket('easy', tEasy);
+        const pickedMed = pickFromBucket('medium', tMed);
+        const pickedHard = pickFromBucket('hard', tHard);
+
+        let remainingNeeded = requestedCount - (pickedEasy + pickedMed + pickedHard);
+
+        if (remainingNeeded > 0) {
+          redistributed = true;
+          const priorityOrder = ['medium', 'easy', 'hard', 'unclassified'];
+          for (const diff of priorityOrder) {
+            if (remainingNeeded <= 0) break;
+            const picked = pickFromBucket(diff, remainingNeeded);
+            remainingNeeded -= picked;
           }
         }
-        return picked;
-      };
-
-      const pickedEasy = pickFromBucket('easy', tEasy);
-      const pickedMed = pickFromBucket('medium', tMed);
-      const pickedHard = pickFromBucket('hard', tHard);
-
-      const totalPicked = pickedEasy + pickedMed + pickedHard;
-      let remainingNeeded = requestedCount - totalPicked;
-
-      // Second pass: demand redistribution if any group was short
-      if (remainingNeeded > 0) {
+      } else {
+        // When classification is incomplete (difficulty = null), select uniformly/mixed
+        // to prioritize valid source-backed section quota over artificial difficulty quotas
         redistributed = true;
-        // Priority order for surplus filling: medium -> easy -> hard
-        const priorityOrder = ['medium', 'easy', 'hard'];
+        targetDistribution.unclassified = requestedCount;
+        let remainingNeeded = requestedCount;
+
+        // Try balanced picking if some classified exist
+        if (totalClassified > 0) {
+          const tEasy = Math.round(requestedCount * DEFAULT_BALANCED_WEIGHTS.easy);
+          const tHard = Math.round(requestedCount * DEFAULT_BALANCED_WEIGHTS.hard);
+          const tMed = requestedCount - tEasy - tHard;
+          remainingNeeded -= pickFromBucket('easy', tEasy);
+          remainingNeeded -= pickFromBucket('medium', tMed);
+          remainingNeeded -= pickFromBucket('hard', tHard);
+        }
+
+        // Fill remaining needed from unclassified, then medium, easy, hard
+        const priorityOrder = ['unclassified', 'medium', 'easy', 'hard'];
         for (const diff of priorityOrder) {
           if (remainingNeeded <= 0) break;
-          const bucket = byDifficulty[diff];
-          for (let i = 0; i < bucket.length && remainingNeeded > 0; i++) {
-            const q = bucket[i];
-            const sig = computeVACTQuestionSignature(q);
-            if (!selectedSigs.has(sig)) {
-              selectedSigs.add(sig);
-              selected.push(q);
-              actualDistribution[diff]++;
-              remainingNeeded--;
-            }
-          }
+          const picked = pickFromBucket(diff, remainingNeeded);
+          remainingNeeded -= picked;
         }
       }
     } else {
@@ -274,7 +294,7 @@
 
     if (missingCount > 0) {
       let reason = 'POOL_SHORTAGE';
-      if (difficulty !== 'balanced') {
+      if (difficulty !== 'balanced' && difficulty !== 'mixed') {
         reason = byDifficulty[difficulty].length < requestedCount ? 'DIFFICULTY_SHORTAGE' : 'POOL_SHORTAGE';
       }
       shortages.push({
@@ -290,7 +310,17 @@
       });
     }
 
-    // 11. Return Canonical Generated Test Object
+    // 11. Calculate recent reuse stats
+    let reusedRecent = 0;
+    for (let i = 0; i < selected.length; i++) {
+      const sig = computeVACTQuestionSignature(selected[i]);
+      if (excludeSet.has(sig)) {
+        reusedRecent++;
+      }
+    }
+    const excludedRecent = Math.max(0, recentCandidates.length - reusedRecent);
+
+    // 12. Return Canonical Generated Test Object
     const testId = `vact_mini_${section}_${Date.now()}_${Math.floor(rng() * 100000).toString(36)}`;
 
     return {
@@ -305,7 +335,18 @@
       questions: selected,
       questionSignatures: selected.map(q => computeVACTQuestionSignature(q)),
       shortages,
+      required: requestedCount,
+      available: pool.length,
+      selected: generatedCount,
+      excludedRecent,
+      reusedRecent,
       diagnostics: {
+        section,
+        required: requestedCount,
+        available: pool.length,
+        selected: generatedCount,
+        excludedRecent,
+        reusedRecent,
         recentFallbackUsed,
         availablePoolSize: pool.length,
         difficultyDistribution: {

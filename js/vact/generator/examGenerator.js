@@ -317,6 +317,7 @@
       answerKeys.push({
         num,
         id: q.id,
+        questionId: q.id,
         type: 'mcq',
         score: 1, // Normalized per-question score
         correct: q.correctAnswer,
@@ -328,12 +329,21 @@
         options: q.options || [],
         level: q.difficulty || 'medium',
         source: q.source || null,
+        questionSourceId: q.source?.questionSourceId || q.source?.sourceId || null,
+        questionSourceFile: q.source?.questionSourceFile || q.source?.sourceFile || null,
+        questionSourcePage: q.source?.questionSourcePage || q.source?.sourcePage || null,
+        solutionSourceId: q.source?.solutionSourceId || null,
+        solutionSourceFile: q.source?.solutionSourceFile || null,
+        solutionSourcePage: q.source?.solutionSourcePage || null,
+        examSetId: q.source?.examSetId || null,
+        answerVerified: Boolean(q.quality?.answerVerified !== false),
         quality: q.quality || null,
         stimulus: q.stimulus || null
       });
 
       questionsList.push({
         id: q.id,
+        questionId: q.id,
         num,
         question: q.question,
         options: q.options || [],
@@ -341,7 +351,16 @@
         skill: q.skill || null,
         difficulty: q.difficulty,
         stimulus: q.stimulus || null,
-        source: q.source || null
+        source: q.source || null,
+        questionSourceId: q.source?.questionSourceId || q.source?.sourceId || null,
+        questionSourceFile: q.source?.questionSourceFile || q.source?.sourceFile || null,
+        questionSourcePage: q.source?.questionSourcePage || q.source?.sourcePage || null,
+        solutionSourceId: q.source?.solutionSourceId || null,
+        solutionSourceFile: q.source?.solutionSourceFile || null,
+        solutionSourcePage: q.source?.solutionSourcePage || null,
+        examSetId: q.source?.examSetId || null,
+        answerVerified: Boolean(q.quality?.answerVerified !== false),
+        quality: q.quality || null
       });
     }
 

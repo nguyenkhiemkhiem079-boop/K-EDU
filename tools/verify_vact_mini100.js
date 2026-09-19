@@ -31,24 +31,24 @@ const liveMini = examGenerator.generateMini100({
 
 assert.equal(liveMini.profileId, 'vact_mini_100');
 assert.equal(liveMini.requestedTotal, 100);
-assert.equal(liveMini.isComplete, false, 'Live Mini 100 must be marked isComplete: false due to bank shortages');
-assert.equal(liveMini.missingTotal, 43, 'Should be missing exactly 43 questions (18 Viet + 25 Eng)');
-assert.equal(liveMini.generatedTotal, 57, 'Should generate exactly 57 questions (7 Viet + 0 Eng + 25 Math + 10 Logic + 15 Science)');
-assert.equal(liveMini.questions.length, 57);
+assert.equal(liveMini.isComplete, true, 'Live Mini 100 must be marked isComplete: true with production bank');
+assert.equal(liveMini.missingTotal, 0, 'Should be missing 0 questions');
+assert.equal(liveMini.generatedTotal, 100, 'Should generate exactly 100 questions');
+assert.equal(liveMini.questions.length, 100);
 
 // 3. Section Isolation: No cross-section replacement
 console.log('3. Verifying strict section isolation (NO compensating shortages with math)...');
 const sec = liveMini.sections;
 
 assert.equal(sec.vietnamese.requested, 25);
-assert.equal(sec.vietnamese.generated, 7);
-assert.equal(sec.vietnamese.missing, 18);
-assert.equal(sec.vietnamese.isComplete, false);
+assert.equal(sec.vietnamese.generated, 25);
+assert.equal(sec.vietnamese.missing, 0);
+assert.equal(sec.vietnamese.isComplete, true);
 
 assert.equal(sec.english.requested, 25);
-assert.equal(sec.english.generated, 0);
-assert.equal(sec.english.missing, 25);
-assert.equal(sec.english.isComplete, false);
+assert.equal(sec.english.generated, 25);
+assert.equal(sec.english.missing, 0);
+assert.equal(sec.english.isComplete, true);
 
 assert.equal(sec.math.requested, 25);
 assert.equal(sec.math.generated, 25, 'Math must NOT exceed requested 25 to fill language gaps');
@@ -65,7 +65,7 @@ assert.equal(sec.scientific_reasoning.generated, 15);
 assert.equal(sec.scientific_reasoning.missing, 0);
 assert.equal(sec.scientific_reasoning.isComplete, true);
 
-console.log('- Sections successfully isolated: Viet(7/25), Eng(0/25), Math(25/25), Logic(10/10), Sci(15/15)');
+console.log('- Sections successfully isolated: Viet(25/25), Eng(25/25), Math(25/25), Logic(10/10), Sci(15/15)');
 
 // 4. Deduplication across the entire exam
 console.log('4. Verifying anti-duplication across entire Mini 100...');
@@ -85,36 +85,37 @@ for (let i = 0; i < liveMini.questions.length; i++) {
 // 6. Complete Mini 100 simulation (using mock complete bank)
 console.log('6. Verifying complete Mini 100 generation when bank is sufficient...');
 const mockQuestions = [];
-// 25 Vietnamese, 25 English, 25 Math, 10 Logic, 15 Science
+const mockSource = { sourceId: 'vact_mock_src', sourceFile: 'mock.pdf', extractedFromSource: true, provider: 'mock' };
+const mockQuality = { answerVerified: true, sourceVerified: true };
 for (let i = 1; i <= 25; i++) {
   mockQuestions.push({
     id: `mock_viet_${i}`, section: 'vietnamese', skill: 'language_usage', difficulty: 'medium',
     questionType: 'single_choice', question: `Câu hỏi tiếng Việt số ${i}`, options: ['A', 'B', 'C', 'D'],
-    correctAnswer: 'A', source: { provider: 'mock' }
+    correctAnswer: 'A', status: 'production', quality: mockQuality, source: mockSource
   });
   mockQuestions.push({
     id: `mock_eng_${i}`, section: 'english', skill: 'reading_comprehension', difficulty: 'medium',
     questionType: 'single_choice', question: `English test question ${i}`, options: ['A', 'B', 'C', 'D'],
-    correctAnswer: 'B', source: { provider: 'mock' }
+    correctAnswer: 'B', status: 'production', quality: mockQuality, source: mockSource
   });
   mockQuestions.push({
     id: `mock_math_${i}`, section: 'math', skill: 'algebra', difficulty: 'medium',
     questionType: 'single_choice', question: `Câu hỏi toán số ${i}`, options: ['A', 'B', 'C', 'D'],
-    correctAnswer: 'C', source: { provider: 'mock' }
+    correctAnswer: 'C', status: 'production', quality: mockQuality, source: mockSource
   });
 }
 for (let i = 1; i <= 10; i++) {
   mockQuestions.push({
     id: `mock_logic_${i}`, section: 'logic_data', skill: 'logical_reasoning', difficulty: 'medium',
     questionType: 'single_choice', question: `Câu hỏi logic số ${i}`, options: ['A', 'B', 'C', 'D'],
-    correctAnswer: 'D', source: { provider: 'mock' }
+    correctAnswer: 'D', status: 'production', quality: mockQuality, source: mockSource
   });
 }
 for (let i = 1; i <= 15; i++) {
   mockQuestions.push({
     id: `mock_sci_${i}`, section: 'scientific_reasoning', skill: 'physics', difficulty: 'medium',
     questionType: 'single_choice', question: `Câu hỏi khoa học số ${i}`, options: ['A', 'B', 'C', 'D'],
-    correctAnswer: 'A', source: { provider: 'mock' }
+    correctAnswer: 'A', status: 'production', quality: mockQuality, source: mockSource
   });
 }
 
@@ -141,10 +142,10 @@ assert.equal(quizObj.id, liveMini.id);
 assert.equal(quizObj.subject, 'vact');
 assert.equal(quizObj.subjectLabel, 'Mini V-ACT 100');
 assert.equal(quizObj.timeLimit, 90);
-assert.equal(quizObj.answerKeys.length, 57);
+assert.equal(quizObj.answerKeys.length, 100);
 assert.ok(quizObj.examHtml.includes('PHẦN 1 —'));
 assert.ok(quizObj.examHtml.includes('Tiếng Việt'));
-assert.ok(quizObj.vactMeta.isComplete === false);
+assert.ok(quizObj.vactMeta.isComplete === true);
 
 // 8. Section Breakdown / Grading Analytics
 console.log('8. Verifying computeSectionBreakdown analytics...');

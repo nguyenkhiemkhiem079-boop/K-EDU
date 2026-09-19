@@ -352,6 +352,14 @@
       }
     }
 
+    const debugReport = {
+      vietnamese: `${sectionResults[VACT_SECTIONS.VIETNAMESE]?.available ?? 0}/${sectionResults[VACT_SECTIONS.VIETNAMESE]?.required ?? 0}`,
+      english: `${sectionResults[VACT_SECTIONS.ENGLISH]?.available ?? 0}/${sectionResults[VACT_SECTIONS.ENGLISH]?.required ?? 0}`,
+      math: `${sectionResults[VACT_SECTIONS.MATH]?.available ?? 0}/${sectionResults[VACT_SECTIONS.MATH]?.required ?? 0}`,
+      logic_data: `${sectionResults[VACT_SECTIONS.LOGIC_DATA]?.available ?? 0}/${sectionResults[VACT_SECTIONS.LOGIC_DATA]?.required ?? 0}`,
+      scientific_reasoning: `${sectionResults[VACT_SECTIONS.SCIENTIFIC_REASONING]?.available ?? 0}/${sectionResults[VACT_SECTIONS.SCIENTIFIC_REASONING]?.required ?? 0}`
+    };
+
     return {
       profileId: profile.id,
       profileName: profile.name,
@@ -360,7 +368,8 @@
       totalAvailable,
       totalMissing,
       sections: sectionResults,
-      shortages
+      shortages,
+      debugReport
     };
   }
 

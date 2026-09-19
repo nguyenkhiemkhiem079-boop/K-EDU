@@ -1491,6 +1491,14 @@ const MathEngine = {
    * 100% trắc nghiệm chuẩn hóa, không pha trộn Toán phổ thông SGK
    */
   generateDgnlExam(config = {}) {
+    // [DEPRECATED] This method uses the old synthetic 40/30/30 structure and should NOT
+    // be called from the Teacher Hub or Student V-ACT flows.
+    // Use KEDUVACT.VACTExamGenerator.generateMini100() or generateFull120() instead,
+    // which are backed by the verified 1,758-question source bank.
+    console.warn(
+      '[MathEngine.generateDgnlExam] DEPRECATED: This method uses a synthetic question structure.\n' +
+      'Use KEDUVACT.VACTExamGenerator.generateMini100() or generateFull120() for production V-ACT exams.'
+    );
     const difficultyMode = config.difficultyMode || 'mixed';
     if (!['basic', 'advanced', 'mixed'].includes(difficultyMode)) throw new Error('Chế độ độ khó không hợp lệ.');
     if (difficultyMode === 'advanced') return this.generateExam({ ...config, track: 'dgnl', grade: 'DGNL', sourceMode: 'document', mcqCount: config.packageType === 'full' ? 120 : 100, essayMatrix: { TH: 0, VD: 0, VDC: 0 } });

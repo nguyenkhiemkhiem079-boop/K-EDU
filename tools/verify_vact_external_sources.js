@@ -29,6 +29,7 @@ const invalidFixtureUrl = pathToFileURL(invalidFixturePath).href;
 const dupFixtureUrl = pathToFileURL(dupFixturePath).href;
 
 (async function runTests() {
+  vact.VACTInternalBank.setMode('legacy');
   // =========================================================================
   // 1. UNIFIED SOURCE INTERFACE
   // =========================================================================
@@ -269,6 +270,8 @@ const dupFixtureUrl = pathToFileURL(dupFixturePath).href;
   const vactCovResult = await vact.VACTCoverage.getCombinedCoverage();
   assert.ok(vactCovResult.summary);
   assert.ok(vactCovResult.sections);
+
+  vact.VACTInternalBank.setMode('source_backed');
 
   console.log('--- ALL V-ACT EXTERNAL QUESTION SOURCE TESTS PASSED SUCCESSFULLY ---');
 })();

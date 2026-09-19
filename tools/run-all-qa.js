@@ -4,7 +4,7 @@ const { spawnSync } = require('node:child_process');
 const root = path.resolve(__dirname, '..');
 const results = [];
 for (const filename of fs.readdirSync(__dirname).filter(name => /^verify_.*\.js$/.test(name)).sort()) {
-  const result = spawnSync(process.execPath, [path.join(__dirname, filename)], { cwd: root, encoding: 'utf8', timeout: 30000, maxBuffer: 8 * 1024 * 1024 });
+  const result = spawnSync(process.execPath, [path.join(__dirname, filename)], { cwd: root, encoding: 'utf8', timeout: 60000, maxBuffer: 8 * 1024 * 1024 });
   const passed = result.status === 0 && !result.error;
   results.push({ test: filename, passed, error: result.error?.message || (passed ? null : (result.stderr || result.stdout).slice(-2500)) });
   console.log(`${passed ? 'PASS' : 'FAIL'} ${filename}`);

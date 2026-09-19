@@ -68,5 +68,75 @@
     "test": "verify_subject_difficulty.js",
     "passed": true,
     "error": null
+  },
+  {
+    "test": "verify_vact_adaptive_production.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_vact_analytics.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_vact_core.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_vact_coverage.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_vact_e2e_flows.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_vact_external_sources.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_vact_full120.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_vact_legacy_adapter.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_vact_mini100.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_vact_phase3_5.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_vact_runtime_bank.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_vact_section_generator.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_vact_source_provenance.js",
+    "passed": true,
+    "error": null
+  },
+  {
+    "test": "verify_vact_teacher_generation.js",
+    "passed": true,
+    "error": null
   }
 ]

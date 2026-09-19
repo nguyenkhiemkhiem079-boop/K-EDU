@@ -18,6 +18,8 @@ const E2E_STUDENT = {
   studentUid: 'usr_e2e_flow'
 };
 
+vact.VACTInternalBank.setMode('legacy');
+
 performanceAnalytics.clearAttempts(E2E_STUDENT);
 
 (async function runE2E() {
@@ -236,6 +238,7 @@ performanceAnalytics.clearAttempts(E2E_STUDENT);
 
   // Cleanup
   performanceAnalytics.clearAttempts(E2E_STUDENT);
+  vact.VACTInternalBank.setMode('source_backed');
 
   console.log('--- ALL V-ACT END-TO-END PRACTICE FLOWS VERIFIED SUCCESSFULLY ---');
 })();

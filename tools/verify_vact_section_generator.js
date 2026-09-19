@@ -7,6 +7,7 @@ console.log('--- Starting V-ACT Section Mini Test Generator Verification ---');
 const generator = vact.VACTSectionTestGenerator;
 assert.ok(generator, 'VACTSectionTestGenerator must exist');
 assert.ok(typeof generator.generate === 'function', 'generator.generate must be a function');
+vact.VACTInternalBank.setMode('legacy');
 
 // 1. 10 Math questions
 console.log('1. Verifying generation of 10 Math questions...');
@@ -181,5 +182,7 @@ assert.deepEqual(
   runB.questions.map(q => q.id),
   'Same seed must yield identical question order'
 );
+
+vact.VACTInternalBank.setMode('source_backed');
 
 console.log('--- ALL V-ACT SECTION MINI TEST GENERATOR TESTS PASSED SUCCESSFULLY ---');
