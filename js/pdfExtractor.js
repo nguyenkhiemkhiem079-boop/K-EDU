@@ -6,6 +6,11 @@
 const PdfExtractor = {
   models: { gemini: 'gemini-3.5-flash-lite', claude: 'claude-sonnet-4-6' },
   async extractTextFromPdf(file) {
+    const detailed = await this.extractTextFromPdfDetailed(file);
+    return detailed.fullText;
+  },
+
+  async extractTextFromPdfDetailed(file) {
     if (typeof pdfjsLib === 'undefined') {
       throw new Error('Thư viện PDF.js chưa được nạp.');
     }
@@ -13,14 +18,16 @@ const PdfExtractor = {
     const buffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
     let fullText = '';
+    const pages = [];
 
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const textContent = await page.getTextContent();
       const pageText = textContent.items.map(item => item.str + (item.hasEOL ? '\n' : ' ')).join('');
       fullText += pageText + '\n';
+      pages.push({ page: i, text: pageText });
     }
-    return fullText;
+    return { fullText, pages, pageCount: pdf.numPages };
   },
 
   async parseQuestions(text, apiKey = '', provider = 'offline') {
@@ -99,14 +106,32 @@ Nội dung:
   validateQuestions(questions) {
     if (!Array.isArray(questions)) throw new Error('AI phải trả về danh sách câu hỏi.');
     const seen = new Set();
-    return questions.filter(q => {
-      if (!q || typeof q.question !== 'string' || !['mcq', 'truefalse', 'essay'].includes(q.type)) throw new Error('Cấu trúc câu hỏi AI không hợp lệ.');
-      if (q.type === 'mcq' && (!Array.isArray(q.options) || q.options.length !== 4 || q.options.some(o => typeof o !== 'string'))) throw new Error('Câu trắc nghiệm phải có đủ bốn phương án.');
-      const signature = q.question.normalize('NFC').trim().replace(/\s+/g, ' ');
-      if (!signature || seen.has(signature)) return false;
-      seen.add(signature);
-      return true;
+    const diagnostics = [];
+    const validated = questions.map((q, index) => {
+      if (!q || typeof q.question !== 'string' || !['mcq', 'truefalse', 'essay'].includes(q.type)) {
+        diagnostics.push({ index, code: 'INVALID_QUESTION_SHAPE' });
+        return { ...(q || {}), status: 'review_required', validationIssues: ['INVALID_QUESTION_SHAPE'] };
+      }
+      const signature = q.question.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').trim().replace(/\s+/g, ' ');
+      const issues = Array.isArray(q.validationIssues) ? [...q.validationIssues] : [];
+      if (!signature) issues.push('EMPTY_QUESTION');
+      if (seen.has(signature)) issues.push('DUPLICATE_QUESTION');
+      if (signature) seen.add(signature);
+      let options = Array.isArray(q.options) ? q.options.filter(option => typeof option === 'string').map(option => option.trim()) : [];
+      if (q.type === 'mcq') {
+        if (options.length !== 4 || options.some(option => !option)) issues.push('INVALID_OPTIONS');
+        const optionSignatures = options.map(option => option.replace(/^\s*(?:\[[A-D]\]|[A-D])\s*[.):]\s*/i, '').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim().toLowerCase());
+        if (new Set(optionSignatures).size !== optionSignatures.length) issues.push('DUPLICATE_OPTIONS');
+      }
+      let correctAnswer = q.correctAnswer || '';
+      if (q.type === 'mcq' && !/^[A-D]$/.test(String(correctAnswer || '').trim().toUpperCase())) { issues.push('MISSING_OR_INVALID_ANSWER'); correctAnswer = ''; }
+      if (q.type === 'essay' && !String(correctAnswer || '').trim()) issues.push('MISSING_ESSAY_ANSWER');
+      const record = { ...q, options, correctAnswer, status: issues.length ? 'review_required' : 'review_required', validationIssues: [...new Set(issues)] };
+      if (record.validationIssues.length) diagnostics.push({ index, code: 'REVIEW_REQUIRED', issues: record.validationIssues });
+      return record;
     });
+    validated.diagnostics = diagnostics;
+    return validated;
   },
 
   // Smart Offline Parser using Regular Expressions & Pattern Recognition
@@ -229,18 +254,19 @@ Nội dung:
 
       if (title.length > 5) {
         questions.push({
-          id: parsedNum,
+          id: `pdf_q_${parsedNum}_${qIndex}`,
           type,
           question: title,
-          options: opts.length ? opts : (type === 'mcq' ? ['A. ', 'B. ', 'C. ', 'D. '] : (type === 'truefalse' ? ['Đúng', 'Sai'] : [])),
+          options: opts.length ? opts : (type === 'truefalse' ? ['Đúng', 'Sai'] : []),
           correctAnswer: correct,
-          explanation
+          explanation,
+          validationIssues: numbers.get(parsedNum) > 1 ? ['DUPLICATE_QUESTION_NUMBER'] : []
         });
         qIndex++;
       }
     }
 
-    return questions;
+    return this.validateQuestions(questions);
   }
 };
 

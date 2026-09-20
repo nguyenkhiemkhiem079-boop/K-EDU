@@ -42,9 +42,9 @@ function computeQuestionId(sourceId, qNum, questionText) {
   return `vact_q_${hash}`;
 }
 
-function normalizeQuestion(matchedQ, sourceRecord) {
+function normalizeQuestion(matchedQ, sourceRecord, sourcePageOverride = null, examSetIdOverride = null) {
   const section = inferSection(matchedQ.questionNumber, sourceRecord);
-  const examSetId = matchedQ.examSetId || deriveExamSetId(sourceRecord);
+  const examSetId = examSetIdOverride || matchedQ.examSetId || deriveExamSetId(sourceRecord);
   const qId = computeQuestionId(sourceRecord.sourceId, matchedQ.questionNumber, matchedQ.questionText);
 
   const stimulus = matchedQ.stimulus || null;
@@ -69,17 +69,17 @@ function normalizeQuestion(matchedQ, sourceRecord) {
     source: {
       sourceId: sourceRecord.sourceId,
       sourceFile: sourceRecord.path || sourceRecord.filename,
-      sourcePage: matchedQ.sourcePage || null,
+      sourcePage: matchedQ.sourcePage || sourcePageOverride || null,
       questionNumber: matchedQ.questionNumber || null,
       examSetId,
       examSetIndex: matchedQ.examSetIndex || null,
       extractedFromSource: true,
       questionSourceId: sourceRecord.sourceId,
       questionSourceFile: sourceRecord.path || sourceRecord.filename,
-      questionSourcePage: matchedQ.sourcePage || null,
+      questionSourcePage: matchedQ.sourcePage || sourcePageOverride || null,
       solutionSourceId: matchedQ.solutionSourceId || (sourceRecord.documentRole === 'combined' ? sourceRecord.sourceId : null),
       solutionSourceFile: matchedQ.solutionSourceFile || (sourceRecord.documentRole === 'combined' ? (sourceRecord.path || sourceRecord.filename) : null),
-      solutionSourcePage: matchedQ.solutionSourcePage !== undefined ? matchedQ.solutionSourcePage : (sourceRecord.documentRole === 'combined' ? (matchedQ.sourcePage || null) : null)
+      solutionSourcePage: matchedQ.solutionSourcePage !== undefined ? matchedQ.solutionSourcePage : (sourceRecord.documentRole === 'combined' ? (matchedQ.sourcePage || sourcePageOverride || null) : null)
     },
     quality: {
       sourceVerified: true,
@@ -92,8 +92,13 @@ function normalizeQuestion(matchedQ, sourceRecord) {
       visualPreserved,
       contentComplete: !malformed && (!requiresStimulus || stimulusPreserved) && visualPreserved
     },
+    parseDiagnostics: matchedQ.parseDiagnostics || null,
     status: 'production',
-    validationIssues: malformed ? ['MALFORMED_QUESTION_TEXT'] : []
+    validationIssues: [
+      ...(malformed ? ['MALFORMED_QUESTION_TEXT'] : []),
+      ...(matchedQ.parseDiagnostics?.duplicateQuestionNumber ? ['DUPLICATE_QUESTION_NUMBER'] : []),
+      ...(matchedQ.parseDiagnostics && (!Number.isInteger(matchedQ.parseDiagnostics.sourcePage) || matchedQ.parseDiagnostics.sourcePage < 1) ? ['MISSING_SOURCE_PAGE'] : [])
+    ]
   };
 }
 

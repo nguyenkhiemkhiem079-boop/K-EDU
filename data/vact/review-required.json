@@ -19479,5 +19479,197 @@
       "OPTION_TOO_LONG",
       "OPTION_SPILLOVER"
     ]
+  },
+  {
+    "id": "vact_q_f12409550a57",
+    "section": "math",
+    "skill": null,
+    "difficulty": null,
+    "questionType": "single_choice",
+    "stimulus": null,
+    "question": "Phương trình\tsin3 cos3 2\tm x m x\t− =\t vô nghiệm với những giá trị nào của m",
+    "options": [
+      "2 2 m −  ",
+      "2 m ",
+      "2 2 m −  ",
+      "2 2 m −  "
+    ],
+    "correctAnswer": "D",
+    "explanation": "Đáp án:\nD.\t2 2\tm\t−  \nGiải thích:\nPhương trình vô nghiệm2\n2 4 2 2\tm m\t   −  \nDựa vào thông tin dưới đây để trả lời các câu từ 67 đến 68:\nCho bất phương trình\t( \t)\t\n2\tlog 5 1x m\t− \t .",
+    "source": {
+      "sourceId": "vact_src_83656d2067cf1582",
+      "sourceFile": "TÀI LIỆU/DGNL/V-ACT/00_OFFICIAL/VACT_2025_OFFICIAL_DOT2_QUESTION.pdf",
+      "sourcePage": 21,
+      "questionNumber": 66,
+      "examSetId": "vact_exam_vact_2025_official_dot2_question",
+      "extractedFromSource": true,
+      "questionSourceId": "vact_src_83656d2067cf1582",
+      "questionSourceFile": "TÀI LIỆU/DGNL/V-ACT/00_OFFICIAL/VACT_2025_OFFICIAL_DOT2_QUESTION.pdf",
+      "questionSourcePage": 21,
+      "solutionSourceId": "vact_src_3f561154b90327d3",
+      "solutionSourceFile": "VACT_2025_OFFICIAL_DOT2_SOLUTION.pdf",
+      "solutionSourcePage": 46
+    },
+    "quality": {
+      "sourceVerified": true,
+      "answerVerified": true,
+      "extractionVerified": true,
+      "reviewed": false,
+      "requiresStimulus": false,
+      "requiresVisual": false,
+      "stimulusPreserved": true,
+      "visualPreserved": true,
+      "contentComplete": true
+    },
+    "status": "review_required",
+    "signature": "ce9dd03886c25f35435048e27dafa1b207a6a9c32ffcbdf3133346620e62ad4d",
+    "alternateSources": [],
+    "validationIssues": [
+      "DUPLICATE_OPTIONS"
+    ]
+  },
+  {
+    "id": "vact_q_55f249b287a7",
+    "section": "math",
+    "skill": null,
+    "difficulty": null,
+    "questionType": "single_choice",
+    "stimulus": null,
+    "question": "Trong không gian với hệ tọa độOxyz\t , cho hai vectơ\t( \t)\t0;1;3\ta =\t và\t( \t)\t2;3;1\tb = −\t . Nếu2 3 4\tx a b\t+ =\t thì\ntọa độ của vectơx\t là:",
+    "options": [
+      "9 5 4; ; 2 2 x   = − −    ",
+      "9 5 4; ; 2 2 x   = −    ",
+      "9 5 4; ; 2 2 x   = −    ",
+      "9 5 4; ; 2 2 x   = − −     ."
+    ],
+    "correctAnswer": "A",
+    "explanation": "Hướng dẫn giải\n( \t)\n3 3 9 9 5\n2 3 4 2 4;6; 2 0; ; 4; ; .\n2 2 2 2 2\nx a b x b a    \n+ =  = − = − − = − −\t   \n   \nSử dụng thông tin dưới đây trả lời câu hỏi từ 67 đến 69\nCho hàm số hàm số\t( )\n2 1\n1\nx m\nf x x\n+ −\n= + .",
+    "source": {
+      "sourceId": "vact_src_8ef539cd1de92b2b",
+      "sourceFile": "TÀI LIỆU/DGNL/V-ACT/01_FULL_TESTS/VACT_2025_MOCK_006_QUESTION.pdf",
+      "sourcePage": 20,
+      "questionNumber": 66,
+      "examSetId": "vact_exam_vact_2025_mock_006_question",
+      "extractedFromSource": true,
+      "questionSourceId": "vact_src_8ef539cd1de92b2b",
+      "questionSourceFile": "TÀI LIỆU/DGNL/V-ACT/01_FULL_TESTS/VACT_2025_MOCK_006_QUESTION.pdf",
+      "questionSourcePage": 20,
+      "solutionSourceId": "vact_src_46ce83f0ab5d39db",
+      "solutionSourceFile": "VACT_2025_MOCK_006_SOLUTION.pdf",
+      "solutionSourcePage": 37
+    },
+    "quality": {
+      "sourceVerified": true,
+      "answerVerified": true,
+      "extractionVerified": true,
+      "reviewed": false,
+      "requiresStimulus": false,
+      "requiresVisual": false,
+      "stimulusPreserved": true,
+      "visualPreserved": true,
+      "contentComplete": true
+    },
+    "status": "review_required",
+    "signature": "2b7385772c4d3ea7ad7edbe76b6b612e728b4b8a5108847a607cc35c82528777",
+    "alternateSources": [],
+    "validationIssues": [
+      "DUPLICATE_OPTIONS"
+    ]
+  },
+  {
+    "id": "vact_q_9e7da0ef351e",
+    "section": "math",
+    "skill": null,
+    "difficulty": null,
+    "questionType": "single_choice",
+    "stimulus": "Sử dụng thông tin dưới đây trả lời câu hỏi từ 85 đến 87 Cho phương trìnhsin 3.cos x x m − = .",
+    "question": "Khi\t0\tm =\t , phương trình đã cho có nghiệm là",
+    "options": [
+      "2 3 k   +",
+      "2 2 3 k   +",
+      "2 3 k   +",
+      "3 k   + ."
+    ],
+    "correctAnswer": "D",
+    "explanation": "Hướng dẫn giải\nKhi\t0\tm =\t , ta có phương trình:\n( \t)\tsin 3.cos 0 sin 0 .\n3 3 3\nx x x x k k x k\n\n\t\n\t\n\n\t\n \n− =  − =  − =   = +\t \n ",
+    "source": {
+      "sourceId": "vact_src_218313a1de131946",
+      "sourceFile": "TÀI LIỆU/DGNL/V-ACT/01_FULL_TESTS/VACT_2025_MOCK_010_QUESTION.pdf",
+      "sourcePage": 26,
+      "questionNumber": 85,
+      "examSetId": "vact_exam_vact_2025_mock_010_question",
+      "extractedFromSource": true,
+      "questionSourceId": "vact_src_218313a1de131946",
+      "questionSourceFile": "TÀI LIỆU/DGNL/V-ACT/01_FULL_TESTS/VACT_2025_MOCK_010_QUESTION.pdf",
+      "questionSourcePage": 26,
+      "solutionSourceId": "vact_src_e251b05bf1006de9",
+      "solutionSourceFile": "VACT_2025_MOCK_010_SOLUTION.pdf",
+      "solutionSourcePage": 47
+    },
+    "quality": {
+      "sourceVerified": true,
+      "answerVerified": true,
+      "extractionVerified": true,
+      "reviewed": false,
+      "requiresStimulus": false,
+      "requiresVisual": false,
+      "stimulusPreserved": true,
+      "visualPreserved": true,
+      "contentComplete": true
+    },
+    "status": "review_required",
+    "signature": "63b388e08d459c44c57ace47a73ace80cec497addd466f5927d22ff0c78682d2",
+    "alternateSources": [],
+    "validationIssues": [
+      "DUPLICATE_OPTIONS"
+    ]
+  },
+  {
+    "id": "vact_q_035778726594",
+    "section": "math",
+    "skill": null,
+    "difficulty": null,
+    "questionType": "single_choice",
+    "stimulus": null,
+    "question": "Giả sử\t( )\n0\nlim\nx x f x L\n→ =\t . Trong các khẳng định sau, khẳng định nào sai?",
+    "options": [
+      "( ) 0 lim x x f x L → =",
+      "( ) 0 3 3 lim x x f x L → =",
+      "( ) 0 lim x x f x L → =",
+      "( ) 0 lim x x f x L →   − = −   ."
+    ],
+    "correctAnswer": "C",
+    "explanation": "Hướng dẫn giải\nTheo định lý ta có\t( )\n0\nlim\nx x\nf x L\n→\n=\t nếu\t0\tL \t .",
+    "source": {
+      "sourceId": "vact_src_93a66dacbca49e5d",
+      "sourceFile": "TÀI LIỆU/DGNL/V-ACT/01_FULL_TESTS/VACT_2025_MOCK_014_QUESTION.pdf",
+      "sourcePage": 22,
+      "questionNumber": 63,
+      "examSetId": "vact_exam_vact_2025_mock_014_question",
+      "extractedFromSource": true,
+      "questionSourceId": "vact_src_93a66dacbca49e5d",
+      "questionSourceFile": "TÀI LIỆU/DGNL/V-ACT/01_FULL_TESTS/VACT_2025_MOCK_014_QUESTION.pdf",
+      "questionSourcePage": 22,
+      "solutionSourceId": "vact_src_baf8f109ffbaa351",
+      "solutionSourceFile": "VACT_2025_MOCK_014_SOLUTION.pdf",
+      "solutionSourcePage": 38
+    },
+    "quality": {
+      "sourceVerified": true,
+      "answerVerified": true,
+      "extractionVerified": true,
+      "reviewed": false,
+      "requiresStimulus": false,
+      "requiresVisual": false,
+      "stimulusPreserved": true,
+      "visualPreserved": true,
+      "contentComplete": true
+    },
+    "status": "review_required",
+    "signature": "401f2ddb88116e2656302dfd2bce96d50b323608c009a889fc7226978328a48e",
+    "alternateSources": [],
+    "validationIssues": [
+      "DUPLICATE_OPTIONS"
+    ]
   }
 ]

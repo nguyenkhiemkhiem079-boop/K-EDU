@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-19T15:30:58.056Z",
+  "timestamp": "2026-09-20T14:18:14.149Z",
   "files": [
     "english-001.json",
     "logic-data-001.json",
@@ -7,7 +7,7 @@
     "scientific-001.json",
     "vietnamese-001.json"
   ],
-  "changed": 0,
-  "reviewRequired": 404,
+  "changed": 4,
+  "reviewRequired": 408,
   "policy": "safe-no-content-invention"
 }

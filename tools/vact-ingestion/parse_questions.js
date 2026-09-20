@@ -47,6 +47,8 @@ function parseQuestions(docData, sourceRecord) {
       markerLen: m[0].length
     });
   }
+  const questionNumberCounts = new Map();
+  for (const match of matches) questionNumberCounts.set(match.qNum, (questionNumberCounts.get(match.qNum) || 0) + 1);
 
   if (matches.length === 0) {
     return questions;
@@ -95,6 +97,11 @@ function parseQuestions(docData, sourceRecord) {
         stimulus: effectiveStimulus,
         ...parsed
       });
+      questions[questions.length - 1].parseDiagnostics = {
+        duplicateQuestionNumber: (questionNumberCounts.get(cur.qNum) || 0) > 1,
+        optionCount: Array.isArray(parsed.options) ? parsed.options.length : 0,
+        sourcePage: Number.isInteger(sourcePage) && sourcePage > 0 ? sourcePage : null
+      };
       const header = [...examHeaders].reverse().find(h => h.index <= cur.index);
       const setIndex = header?.set || 1;
       questions[questions.length - 1].examSetIndex = setIndex;
@@ -149,6 +156,7 @@ function parseQuestionChunk(chunk, qNum) {
   let options = [];
   let solutionText = '';
   let explicitAnswer = null;
+  let textD = '';
 
   if (hasABCD(optMatches)) {
     const idxA = optMatches.findIndex(o => o.label === 'A');
@@ -163,7 +171,6 @@ function parseQuestionChunk(chunk, qNum) {
     const afterD = content.slice(optMatches[idxD].index + optMatches[idxD].len);
 
     const solMarkerMatch = afterD.match(/(?:^|\n)\s*(?:Đáp án(?:\s+đúng\s+là|\s*:|\s+là)|Hướng dẫn giải|Phương pháp giải|Lời giải)[\s\S]*/i);
-    let textD = '';
     const boundary = findTrailingContentBoundary(afterD);
     if (solMarkerMatch) {
       textD = afterD.slice(0, Math.min(solMarkerMatch.index, boundary)).trim();

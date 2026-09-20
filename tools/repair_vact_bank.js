@@ -6,6 +6,7 @@ const quality = require('./vact-ingestion/content_quality');
 const dir = path.resolve('data/vact/questions');
 const files = fs.readdirSync(dir).filter(f => f.endsWith('.json'));
 const strip = quality.stripOptionLabel;
+const optionSignature = value => String(value ?? '').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
 let changed = 0; let review = 0;
 const priorReviewPath = path.resolve('data/vact/review-required.json');
 const priorReview = fs.existsSync(priorReviewPath) ? JSON.parse(fs.readFileSync(priorReviewPath, 'utf8')) : [];
@@ -45,6 +46,7 @@ for (const file of files) {
     if (!q.correctAnswer || !/^[A-D]$/.test(q.correctAnswer)) issues.push('ANSWER_UNVERIFIED');
     if (q.options?.some(o => String(o).length > 500)) issues.push('OPTION_TOO_LONG');
     if (!Array.isArray(q.options) || q.options.length !== 4 || q.options.some(o => !String(o).trim())) issues.push('INVALID_OPTIONS');
+    if (Array.isArray(q.options) && new Set(q.options.map(optionSignature)).size !== q.options.length) issues.push('DUPLICATE_OPTIONS');
     if (q.options?.some(quality.hasCriticalOptionSpillover)) issues.push('OPTION_SPILLOVER');
     if (quality.isMalformedQuestionText(q.question)) issues.push('MALFORMED_QUESTION_TEXT');
     if (!q.quality.contentComplete) issues.push('MISSING_REQUIRED_CONTENT');

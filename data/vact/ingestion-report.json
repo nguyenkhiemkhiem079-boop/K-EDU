@@ -3,14 +3,14 @@
   "ingestableSources": 87,
   "rawParsedCount": 1258,
   "normalizedUniqueCount": 1258,
-  "productionCount": 854,
-  "reviewRequiredCount": 404,
+  "productionCount": 850,
+  "reviewRequiredCount": 408,
   "invalidCount": 0,
   "duplicatesRemoved": 8,
   "bySection": {
     "english": 373,
     "logic_data": 28,
-    "math": 176,
+    "math": 172,
     "scientific_reasoning": 47,
     "vietnamese": 230
   },
@@ -18,5 +18,5 @@
   "sourceCompleteExams": 0,
   "answerCompleteExams": 0,
   "productionCompleteExams": 0,
-  "generatedAt": "2026-09-19T15:30:58.256Z"
+  "generatedAt": "2026-09-20T14:18:14.598Z"
 }

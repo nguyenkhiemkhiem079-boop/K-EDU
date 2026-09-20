@@ -63,6 +63,8 @@
       const opt = q.options[i];
       if (typeof opt !== 'string' || !opt.trim()) return 'EMPTY_OPTION';
     }
+    const optionSignatures = q.options.map(option => String(option).replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim().toLowerCase());
+    if (new Set(optionSignatures).size !== optionSignatures.length) return 'DUPLICATE_OPTIONS';
     if (!['A', 'B', 'C', 'D'].includes(q.correctAnswer)) return 'INVALID_ANSWER';
     if (!q.source || typeof q.source !== 'object') return 'INVALID_SOURCE';
     if (!q.source.sourceId || typeof q.source.sourceId !== 'string' || !q.source.sourceId.trim()) return 'INVALID_SOURCE';
