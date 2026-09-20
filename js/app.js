@@ -138,6 +138,17 @@ const AppState = {
   teacherQuizSearchQuery: ''
 };
 
+async function ensureLegacyGenerationModules(subject = 'toan', sourceMode = 'hybrid') {
+  const loader = window.KEDUModuleLoader;
+  if (loader?.ensureGenerationModules) {
+    return loader.ensureGenerationModules({ subject, sourceMode });
+  }
+  return {
+    engine: subject === 'khtn' ? (typeof KhtnEngine !== 'undefined' ? KhtnEngine : null) : (typeof MathEngine !== 'undefined' ? MathEngine : null),
+    documentBank: typeof DocumentQuestionBank !== 'undefined' ? DocumentQuestionBank : null
+  };
+}
+
 /* ================= TOANMATH SEMESTER BADGE HELPERS ================= */
 function detectTermFromTitle(title = '') {
   if (/giữa\s*(học\s*)?kỳ\s*1|giữa\s*kì\s*1|gk1/i.test(title)) return 'GK1';
@@ -2749,6 +2760,9 @@ function updateMathGenCapacityStatus() {
   const countVDC = Math.max(0, parseInt(document.getElementById('mathGenCountVDCSelect')?.value || '0', 10) || 0);
 
   if (typeof MathEngine === 'undefined' || typeof MathEngine.getGenerationCapacity !== 'function') {
+    window.KEDUModuleLoader?.ensureGenerationModules({ subject: 'toan', sourceMode })
+      .then(() => updateMathGenCapacityStatus())
+      .catch(error => console.warn('[ModuleLoader] Math capacity module unavailable', { message: error?.message || String(error) }));
     return;
   }
 
@@ -2797,7 +2811,12 @@ AppState.latestBatchGeneratedExams = [];
  * Render widget thống kê từ DocumentQuestionBank.getStats()
  */
 function renderDocumentBankStats() {
-  if (typeof DocumentQuestionBank === 'undefined' || typeof DocumentQuestionBank.getStats !== 'function') return;
+  if (typeof DocumentQuestionBank === 'undefined' || typeof DocumentQuestionBank.getStats !== 'function') {
+    window.KEDUModuleLoader?.ensureDocumentBank?.()
+      .then(() => renderDocumentBankStats())
+      .catch(error => console.warn('[ModuleLoader] Document bank statistics unavailable', { message: error?.message || String(error) }));
+    return;
+  }
   const stats = DocumentQuestionBank.getStats();
   const difficultyTable = document.getElementById('docBankDifficultyBreakdown');
   if (difficultyTable) {
@@ -2920,15 +2939,7 @@ function syncExamTimeLimits(newVal, source = '') {
 async function triggerAutoGenerateMathExam() {
   const currentSubject = document.getElementById('examSubjectSelect')?.value || 'toan';
   const isKhtn = (currentSubject === 'khtn');
-  const activeEngine = isKhtn 
-    ? (typeof KhtnEngine !== 'undefined' ? KhtnEngine : null)
-    : (typeof MathEngine !== 'undefined' ? MathEngine : null);
   const subjectDisplayName = isKhtn ? 'Khoa học Tự nhiên' : 'Toán';
-
-  if (!activeEngine) {
-    showToast(`⚠️ Bộ sinh đề ${subjectDisplayName} chưa sẵn sàng, vui lòng thử lại.`, 'warn');
-    return;
-  }
 
   try {
     const track = isKhtn ? 'khtn' : (document.getElementById('mathGenTrackSelect')?.value || 'toan');
@@ -2936,6 +2947,12 @@ async function triggerAutoGenerateMathExam() {
     const term = document.getElementById('mathGenTermSelect')?.value || 'GK1';
     let topic = document.getElementById('mathGenTopicSelect')?.value || 'all';
     const sourceMode = document.getElementById('mathGenSourceSelect')?.value || (isKhtn ? 'document' : 'hybrid');
+    const loaded = await ensureLegacyGenerationModules(currentSubject, sourceMode);
+    const activeEngine = loaded.engine;
+    if (!activeEngine) {
+      showToast(`⚠️ Bộ sinh đề ${subjectDisplayName} chưa sẵn sàng, vui lòng thử lại.`, 'warn');
+      return;
+    }
     const difficultyMode = document.getElementById('mathGenDifficultyMode')?.value || 'mixed';
     const discipline = isKhtn ? (document.getElementById('mathGenDisciplineSelect')?.value || 'all') : 'all';
     if (isKhtn && discipline !== 'all') topic = discipline;
@@ -4726,6 +4743,7 @@ async function autoRepairCorruptedQuizzes() {
   if (isRepairRunning) return;
   isRepairRunning = true;
   try {
+    await ensureLegacyGenerationModules('toan', 'hybrid');
     const allQuizzes = await StorageEngine.getAllQuizzes({ includePrivate: true });
     for (const q of allQuizzes) {
       if (!q || !q.title) continue;
