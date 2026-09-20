@@ -2,7 +2,7 @@
   'use strict';
   const MARKER = 'data_repair_v1';
   let report = { scanned: 0, canonical: 0, migratable: 0, recoverable: 0, unrecoverable: 0, migrated: 0, resultsMigrated: 0, items: [] };
-  const isCanonical = quiz => quiz && quiz.schemaVersion === 1 && quiz.document && quiz.assignment && quiz.settings && quiz.metadata;
+  const isCanonical = quiz => quiz && quiz.schemaVersion === 2 && quiz.document && quiz.assignment && quiz.settings && quiz.metadata;
   async function repairQuiz(rawQuiz, options = {}) {
     if (!rawQuiz || !rawQuiz.id || !rawQuiz.title) return { status: 'unrecoverable', code: 'INVALID_QUIZ', quiz: rawQuiz };
     const staleBlob = typeof rawQuiz.pdfDataUrl === 'string' && rawQuiz.pdfDataUrl.startsWith('blob:');
@@ -12,7 +12,7 @@
     }
     const quiz = window.QuizContract ? window.QuizContract.migrateLegacyQuiz(rawQuiz) : { ...rawQuiz };
     const validation = window.QuizContract?.validateQuiz ? window.QuizContract.validateQuiz(quiz) : { valid: true, errors: [] };
-    if (!validation.valid && !(quiz.document?.kind === 'uploaded_pdf' && quiz.document?.attachmentRef)) return { status: 'unrecoverable', code: validation.errors.join(','), quiz: rawQuiz };
+    if (!validation.valid && !(quiz.document?.kind === 'uploaded_pdf' && quiz.document?.attachmentRef)) return { status: 'review_required', code: 'QUIZ_INVALID', errors: validation.errors, quiz: rawQuiz };
     return { status: isCanonical(rawQuiz) ? 'canonical' : 'migratable', quiz, changed: !isCanonical(rawQuiz) };
   }
   function repairResult(raw) {
@@ -22,7 +22,7 @@
   }
   async function scan(options = {}) {
     report = { scanned: 0, canonical: 0, migratable: 0, recoverable: 0, unrecoverable: 0, migrated: 0, resultsMigrated: 0, items: [] };
-    const storage = options.storage || window.StorageEngine; const quizzes = options.quizzes || await storage?.getAllQuizzes?.() || []; const results = options.results || await storage?.getAllResults?.() || [];
+    const storage = options.storage || window.StorageEngine; const quizzes = options.quizzes || await storage?.getAllQuizzes?.({ includePrivate: true }) || []; const results = options.results || await storage?.getAllResults?.() || [];
     for (const quiz of quizzes) { const item = await repairQuiz(quiz, { storage }); report.scanned++; report[item.status] = (report[item.status] || 0) + 1; report.items.push({ id: quiz.id, type: 'quiz', status: item.status, code: item.code || null }); }
     for (const result of results) { const item = repairResult(result); if (item.status === 'migratable') report.resultsMigrated++; report.items.push({ id: result.id, type: 'result', status: item.status }); }
     return getReport();
@@ -32,7 +32,7 @@
     if (!storage) return scanReport;
     const backup = { at: new Date().toISOString(), report: scanReport, version: 1 };
     await storage.set?.(MARKER + '_backup', backup);
-    const quizzes = options.quizzes || await storage.getAllQuizzes();
+    const quizzes = options.quizzes || await storage.getAllQuizzes({ includePrivate: true });
     for (const raw of quizzes) { const item = await repairQuiz(raw, { storage }); if (item.status === 'migratable') { await storage.saveQuiz(item.quiz); report.migrated++; } }
     const results = options.results || await storage.getAllResults();
     for (const raw of results) { const item = repairResult(raw); if (item.status === 'migratable') { await storage.set(raw.id.replace(/^khiemedu_/, ''), item.result); report.resultsMigrated++; } }

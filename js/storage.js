@@ -4,10 +4,11 @@
 
 const STORAGE_PREFIX = 'khiemedu_';
 const DB_NAME = 'KhiemEdu_DB';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 const STORE_PDFS = 'pdf_store';
 const STORE_SUBMISSIONS = 'submission_photos';
 const STORE_QUIZZES = 'quiz_store';
+const STORE_PRIVATE_QUIZZES = 'quiz_private_store';
 const QUIZ_INDEX_KEY = 'quiz_index';
 const QUIZ_SYNC_QUEUE_KEY = 'quiz_sync_queue';
 const RESULT_SYNC_QUEUE_KEY = 'result_sync_queue';
@@ -32,6 +33,38 @@ function normalizeQuizForPersistence(quiz = {}) {
   if (!normalized.createdAt) normalized.createdAt = normalized.updatedAt;
   if (classifyQuizAttachment(normalized) === 'generated_html') delete normalized.pdfDataUrl;
   return { success: true, quiz: normalized, attachmentType: classifyQuizAttachment(normalized) };
+}
+
+function containsPrivateAnswerData(quiz = {}) {
+  return Array.isArray(quiz.answerKeys) && quiz.answerKeys.some(key => Object.prototype.hasOwnProperty.call(key || {}, 'correct') || Object.prototype.hasOwnProperty.call(key || {}, 'correctAnswer') || Object.prototype.hasOwnProperty.call(key || {}, 'explanation') || Object.prototype.hasOwnProperty.call(key || {}, 'keyFormula'));
+}
+
+function toPublicAnswerKey(key = {}) {
+  const publicKey = JSON.parse(JSON.stringify(key));
+  delete publicKey.correct;
+  delete publicKey.correctAnswer;
+  delete publicKey.explanation;
+  delete publicKey.pitfall;
+  delete publicKey.keyFormula;
+  return publicKey;
+}
+
+function toPublicQuizPayload(quiz = {}) {
+  const publicQuiz = JSON.parse(JSON.stringify(quiz));
+  publicQuiz.answerKeys = Array.isArray(publicQuiz.answerKeys) ? publicQuiz.answerKeys.map(toPublicAnswerKey) : [];
+  if (Array.isArray(publicQuiz.questions)) publicQuiz.questions = publicQuiz.questions.map(toPublicAnswerKey);
+  delete publicQuiz.privateAnswerKeys;
+  delete publicQuiz.answerKey;
+  return publicQuiz;
+}
+
+function toPrivateQuizPayload(quiz = {}) {
+  return {
+    id: quiz.id,
+    quizId: quiz.id,
+    updatedAt: quiz.updatedAt,
+    answerKeys: Array.isArray(quiz.answerKeys) ? JSON.parse(JSON.stringify(quiz.answerKeys)) : []
+  };
 }
 
 function toQuizIndexItem(quiz) {
@@ -110,6 +143,9 @@ const StorageEngine = {
           if (!db.objectStoreNames.contains(STORE_QUIZZES)) {
             db.createObjectStore(STORE_QUIZZES, { keyPath: 'id' });
           }
+          if (!db.objectStoreNames.contains(STORE_PRIVATE_QUIZZES)) {
+            db.createObjectStore(STORE_PRIVATE_QUIZZES, { keyPath: 'id' });
+          }
         };
         req.onsuccess = (e) => {
           clearTimeout(timer);
@@ -149,13 +185,22 @@ const StorageEngine = {
       const queue = await this.get(key) || []; const remaining = [];
       for (const item of queue) {
         try {
-          if (item.action === 'delete') { if (kind === 'quiz') await window.FirebaseEngine.deleteQuiz(item.id); }
+          if (item.action === 'delete') {
+            if (kind === 'quiz') {
+              const deleted = await window.FirebaseEngine.deleteQuiz(item.id);
+              if (deleted === false || (deleted && deleted.success === false)) throw new Error('FIREBASE_DELETE_FAILED');
+            }
+          }
           else {
             const record = kind === 'quiz' ? await this.getQuiz(item.id) : await this.get(item.id.replace(STORAGE_PREFIX, ''));
+            if (!record) throw new Error('SYNC_RECORD_NOT_FOUND');
             const response = kind === 'quiz' ? await window.FirebaseEngine.saveQuiz(record) : await window.FirebaseEngine.saveResult(record);
             if (!response || response.success === false) throw new Error(response?.error || 'FIREBASE_SYNC_FAILED');
           }
-        } catch (error) { if ((item.attempts || 0) < 2) remaining.push({ ...item, attempts: (item.attempts || 0) + 1, error: error.message }); }
+        } catch (error) {
+          console.error('[StorageEngine] sync failure', { kind, id: item.id, action: item.action, error: error?.message || String(error) });
+          if ((item.attempts || 0) < 2) remaining.push({ ...item, attempts: (item.attempts || 0) + 1, error: error.message });
+        }
       }
       await this.set(key, remaining);
     }
@@ -178,6 +223,20 @@ const StorageEngine = {
     });
   },
 
+  async savePrivateQuizRecordToIndexedDB(quiz) {
+    if (!this.db) await this.initIndexedDB();
+    if (!this.db) return { success: false, code: 'INDEXEDDB_UNAVAILABLE' };
+    return new Promise(resolve => {
+      try {
+        const tx = this.db.transaction([STORE_PRIVATE_QUIZZES], 'readwrite');
+        tx.objectStore(STORE_PRIVATE_QUIZZES).put(quiz);
+        tx.oncomplete = () => resolve({ success: true, privateQuizRecord: true });
+        tx.onerror = () => resolve({ success: false, code: 'INDEXEDDB_PRIVATE_WRITE_FAILED', error: tx.error });
+        tx.onabort = () => resolve({ success: false, code: 'INDEXEDDB_PRIVATE_WRITE_FAILED', error: tx.error });
+      } catch (error) { resolve({ success: false, code: 'INDEXEDDB_PRIVATE_WRITE_FAILED', error }); }
+    });
+  },
+
   async getQuizRecordFromIndexedDB(quizId) {
     if (!this.db) await this.initIndexedDB();
     if (!this.db) return { success: false, code: 'INDEXEDDB_UNAVAILABLE', quiz: null };
@@ -194,6 +253,19 @@ const StorageEngine = {
     });
   },
 
+  async getPrivateQuizRecordFromIndexedDB(quizId) {
+    if (!this.db) await this.initIndexedDB();
+    if (!this.db) return { success: false, code: 'INDEXEDDB_UNAVAILABLE', quiz: null };
+    return new Promise(resolve => {
+      try {
+        const tx = this.db.transaction([STORE_PRIVATE_QUIZZES], 'readonly');
+        const req = tx.objectStore(STORE_PRIVATE_QUIZZES).get(quizId);
+        req.onsuccess = () => resolve({ success: true, quiz: req.result || null });
+        req.onerror = () => resolve({ success: false, code: 'INDEXEDDB_PRIVATE_READ_FAILED', quiz: null, error: req.error });
+      } catch (error) { resolve({ success: false, code: 'INDEXEDDB_PRIVATE_READ_FAILED', quiz: null, error }); }
+    });
+  },
+
   async deleteQuizRecordFromIndexedDB(quizId) {
     if (!this.db) await this.initIndexedDB();
     if (!this.db) return { success: false, code: 'INDEXEDDB_UNAVAILABLE' };
@@ -205,6 +277,20 @@ const StorageEngine = {
         tx.onerror = () => resolve({ success: false, code: 'INDEXEDDB_WRITE_FAILED', error: tx.error });
         tx.onabort = () => resolve({ success: false, code: 'INDEXEDDB_WRITE_FAILED', error: tx.error });
       } catch (error) { resolve({ success: false, code: 'INDEXEDDB_WRITE_FAILED', error }); }
+    });
+  },
+
+  async deletePrivateQuizRecordFromIndexedDB(quizId) {
+    if (!this.db) await this.initIndexedDB();
+    if (!this.db) return { success: false, code: 'INDEXEDDB_UNAVAILABLE' };
+    return new Promise(resolve => {
+      try {
+        const tx = this.db.transaction([STORE_PRIVATE_QUIZZES], 'readwrite');
+        tx.objectStore(STORE_PRIVATE_QUIZZES).delete(quizId);
+        tx.oncomplete = () => resolve({ success: true });
+        tx.onerror = () => resolve({ success: false, code: 'INDEXEDDB_PRIVATE_DELETE_FAILED', error: tx.error });
+        tx.onabort = () => resolve({ success: false, code: 'INDEXEDDB_PRIVATE_DELETE_FAILED', error: tx.error });
+      } catch (error) { resolve({ success: false, code: 'INDEXEDDB_PRIVATE_DELETE_FAILED', error }); }
     });
   },
 
@@ -301,7 +387,7 @@ const StorageEngine = {
   },
 
   async removePdfBlob(quizId) {
-    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
+    if (window.FirebaseEngine && window.FirebaseEngine.isActive && typeof window.FirebaseEngine.deletePdf === 'function') {
       await window.FirebaseEngine.deletePdf(quizId);
     }
     if (!this.db) await this.initIndexedDB();
@@ -406,10 +492,20 @@ const StorageEngine = {
     const normalized = normalizeQuizForPersistence(quiz);
     if (!normalized.success) return { success: false, localSaved: false, code: normalized.code, error: 'Đề thi cần có mã và tiêu đề.' };
     const quizToSave = normalized.quiz;
+    if (window.QuizContract?.validateQuiz) {
+      const validation = window.QuizContract.validateQuiz(quizToSave);
+      if (!validation.valid) return { success: false, localSaved: false, code: 'QUIZ_INVALID', errors: validation.errors, error: 'Đề thi không hợp lệ và chưa được lưu.' };
+    }
+    const publicQuiz = toPublicQuizPayload(quizToSave);
+    const privateQuiz = toPrivateQuizPayload(quizToSave);
     const attachmentType = normalized.attachmentType;
-    const recordResult = await this.saveQuizRecordToIndexedDB(quizToSave);
+    const privateRecordResult = await this.savePrivateQuizRecordToIndexedDB(privateQuiz);
+    const privateStorageFallback = privateRecordResult.code === 'INDEXEDDB_UNAVAILABLE';
+    const privateFallbackSaved = privateStorageFallback ? await this.set('quiz_private:' + quizToSave.id, privateQuiz) : false;
+    if (!privateRecordResult.success && !privateFallbackSaved) return { success: false, localSaved: false, code: privateRecordResult.code || 'PRIVATE_ANSWER_WRITE_FAILED', error: 'Không thể lưu đáp án riêng tư của đề thi.' };
+    const recordResult = await this.saveQuizRecordToIndexedDB(publicQuiz);
     const localStorageFallback = recordResult.code === 'INDEXEDDB_UNAVAILABLE';
-    const fallbackSaved = localStorageFallback ? await this.set('quiz:' + quizToSave.id, quizToSave) : false;
+    const fallbackSaved = localStorageFallback ? await this.set('quiz:' + quizToSave.id, publicQuiz) : false;
     if (!recordResult.success && !fallbackSaved) return { success: false, localSaved: false, code: recordResult.code, error: 'Không thể lưu đề vào bộ nhớ thiết bị.' };
 
     let attachmentSaved = attachmentType === 'none' || attachmentType === 'generated_html' || attachmentType === 'remote_url';
@@ -417,7 +513,9 @@ const StorageEngine = {
     const localComplete = attachmentSaved || attachmentType === 'generated_html';
     if (!localComplete) {
       await this.deleteQuizRecordFromIndexedDB(quizToSave.id);
+      await this.deletePrivateQuizRecordFromIndexedDB(quizToSave.id);
       if (fallbackSaved) await this.remove('quiz:' + quizToSave.id);
+      if (privateFallbackSaved) await this.remove('quiz_private:' + quizToSave.id);
       return { success: false, localSaved: false, code: 'ATTACHMENT_WRITE_FAILED', error: 'Không thể lưu tệp đính kèm của đề thi.' };
     }
 
@@ -428,46 +526,91 @@ const StorageEngine = {
 
     const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
     quizToSave.cloudSync = { status: offline ? 'pending' : (window.FirebaseEngine?.isActive ? 'pending' : 'unavailable'), lastAttemptAt: null, lastSuccessAt: null, errorCode: null, errorMessage: null };
-    await this.saveQuizRecordToIndexedDB(quizToSave);
+    publicQuiz.cloudSync = quizToSave.cloudSync;
+    await this.saveQuizRecordToIndexedDB(publicQuiz);
+    if (privateRecordResult.success) await this.savePrivateQuizRecordToIndexedDB(privateQuiz);
+    else if (privateFallbackSaved) await this.set('quiz_private:' + quizToSave.id, privateQuiz);
     await this.enqueueSync('quiz', quizToSave.id);
     if (!offline) this.processSyncQueues();
     return {
       success: true,
       localSaved: true,
-      local: { quizRecord: !!(recordResult.success || fallbackSaved), attachment: attachmentSaved, fallback: localStorageFallback },
+      local: { quizRecord: !!(recordResult.success || fallbackSaved), privateAnswerKey: !!(privateRecordResult.success || privateFallbackSaved), attachment: attachmentSaved, fallback: localStorageFallback || privateStorageFallback },
       cloudSaved: false,
       cloud: { state: quizToSave.cloudSync.status },
       code: null
     };
   },
 
-  async getQuiz(id) {
+  async getQuiz(id, options = {}) {
+    const includePrivate = options.includePrivate === true;
+    const mergePrivate = async publicQuiz => {
+      if (!publicQuiz) return null;
+      let record = publicQuiz;
+      if (containsPrivateAnswerData(record)) {
+        const legacyPrivate = toPrivateQuizPayload(record);
+        const savedPrivate = await this.savePrivateQuizRecordToIndexedDB(legacyPrivate);
+        if (!savedPrivate.success) await this.set('quiz_private:' + id, legacyPrivate);
+        record = toPublicQuizPayload(record);
+        await this.saveQuizRecordToIndexedDB(record);
+      }
+      if (!includePrivate) return window.QuizContract ? window.QuizContract.normalizeQuiz(record, { public: true }) : record;
+      const privateRecord = await this.getPrivateQuizRecordFromIndexedDB(id);
+      let privateQuiz = privateRecord.success ? privateRecord.quiz : null;
+      if (!privateQuiz) privateQuiz = await this.get('quiz_private:' + id);
+      if (!privateQuiz || !Array.isArray(privateQuiz.answerKeys)) return window.QuizContract ? window.QuizContract.normalizeQuiz(record) : record;
+      const merged = { ...record, answerKeys: privateQuiz.answerKeys };
+      return window.QuizContract ? window.QuizContract.normalizeQuiz(merged) : merged;
+    };
     const indexed = await this.getQuizRecordFromIndexedDB(id);
-    if (indexed.success && indexed.quiz) return window.QuizContract ? window.QuizContract.normalizeQuiz(indexed.quiz) : indexed.quiz;
+    if (indexed.success && indexed.quiz) return mergePrivate(indexed.quiz);
     const localQuiz = await this.get('quiz:' + id);
     if (localQuiz) {
-      const migration = await this.saveQuizRecordToIndexedDB(normalizeQuizForPersistence(localQuiz).quiz);
+      const stored = normalizeQuizForPersistence(localQuiz).quiz;
+      const migrationPrivate = containsPrivateAnswerData(stored) ? toPrivateQuizPayload(stored) : null;
+      if (migrationPrivate) {
+        const privateMigration = await this.savePrivateQuizRecordToIndexedDB(migrationPrivate);
+        if (!privateMigration.success) await this.set('quiz_private:' + id, migrationPrivate);
+      }
+      const migration = await this.saveQuizRecordToIndexedDB(toPublicQuizPayload(stored));
       if (migration.success) {
         await this.updateQuizIndex(localQuiz);
         await this.remove('quiz:' + id);
-        await this.set('quiz_storage_migration_v3', { completedAt: new Date().toISOString() });
+        await this.set('quiz_storage_migration_v4', { completedAt: new Date().toISOString() });
       }
-      return window.QuizContract ? window.QuizContract.normalizeQuiz(localQuiz) : localQuiz;
+      return mergePrivate(stored);
     }
 
     if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
       try {
         const cloudQuiz = await window.FirebaseEngine.getQuiz(id);
         if (cloudQuiz) {
-          await this.saveQuizRecordToIndexedDB(normalizeQuizForPersistence(cloudQuiz).quiz);
+          await this.saveQuizRecordToIndexedDB(toPublicQuizPayload(normalizeQuizForPersistence(cloudQuiz).quiz));
           await this.updateQuizIndex(cloudQuiz);
-          return window.QuizContract ? window.QuizContract.normalizeQuiz(cloudQuiz) : cloudQuiz;
+          return mergePrivate(cloudQuiz);
         }
       } catch (err) {
         console.warn('Firebase getQuiz failed, falling back to local:', err);
       }
     }
     return null;
+  },
+
+  async _getPrivateAnswerKeys(quizId) {
+    const indexed = await this.getPrivateQuizRecordFromIndexedDB(quizId);
+    if (indexed.success && Array.isArray(indexed.quiz?.answerKeys)) return indexed.quiz.answerKeys;
+    const local = await this.get('quiz_private:' + quizId);
+    return Array.isArray(local?.answerKeys) ? local.answerKeys : [];
+  },
+
+  async cachePublicQuiz(quiz) {
+    const normalized = normalizeQuizForPersistence(quiz);
+    if (!normalized.success) return null;
+    const publicQuiz = toPublicQuizPayload(normalized.quiz);
+    const stored = await this.saveQuizRecordToIndexedDB(publicQuiz);
+    if (!stored.success) await this.set('quiz:' + publicQuiz.id, publicQuiz);
+    await this.updateQuizIndex(publicQuiz);
+    return window.QuizContract ? window.QuizContract.normalizeQuiz(publicQuiz, { public: true }) : publicQuiz;
   },
 
   getDeletedQuizIds() {
@@ -479,17 +622,22 @@ const StorageEngine = {
     }
   },
 
-  async getAllQuizzes() {
+  async getAllQuizzes(options = {}) {
     const deletedIds = this.getDeletedQuizIds();
     const indexedResult = await this.listQuizRecordsFromIndexedDB();
-    const indexedList = indexedResult.success ? indexedResult.quizzes.filter(q => q && !deletedIds.has(q.id)) : [];
+    const indexedList = indexedResult.success ? indexedResult.quizzes.filter(q => q && !deletedIds.has(q.id)).map(q => toPublicQuizPayload(q)) : [];
     const localKeys = await this.list('quiz:');
     const localList = [];
     for (const key of localKeys) {
       const q = await this.get(key);
       if (q && !deletedIds.has(q.id)) {
         localList.push(q);
-        const migration = await this.saveQuizRecordToIndexedDB(normalizeQuizForPersistence(q).quiz);
+        const stored = normalizeQuizForPersistence(q).quiz;
+        if (containsPrivateAnswerData(stored)) {
+          const privateMigration = await this.savePrivateQuizRecordToIndexedDB(toPrivateQuizPayload(stored));
+          if (!privateMigration.success) await this.set('quiz_private:' + stored.id, toPrivateQuizPayload(stored));
+        }
+        const migration = await this.saveQuizRecordToIndexedDB(toPublicQuizPayload(stored));
         if (migration.success) {
           await this.updateQuizIndex(q);
           await this.remove(key);
@@ -512,19 +660,19 @@ const StorageEngine = {
           // Merge local và cloud thông minh theo ID
           const quizMap = new Map();
           // Đưa đề local vào trước (bỏ qua đề đã xóa)
-          primaryLocalList.forEach(q => { if (q && q.id && !deletedIds.has(q.id)) quizMap.set(q.id, q); });
+          primaryLocalList.forEach(q => { if (q && q.id && !deletedIds.has(q.id)) quizMap.set(q.id, toPublicQuizPayload(q)); });
 
           // Cloud cập nhật hoặc bổ sung
           cloudQuizzes.forEach(cq => {
             if (!cq || !cq.id || deletedIds.has(cq.id)) return;
             const existing = quizMap.get(cq.id);
             if (!existing) {
-              quizMap.set(cq.id, cq);
+              quizMap.set(cq.id, toPublicQuizPayload(cq));
             } else {
               const cloudTime = new Date(cq.updatedAt || cq.createdAt || 0).getTime();
               const localTime = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
               if (cloudTime >= localTime) {
-                quizMap.set(cq.id, cq);
+                quizMap.set(cq.id, toPublicQuizPayload(cq));
               }
             }
           });
@@ -534,10 +682,11 @@ const StorageEngine = {
 
           // Keep full records in IndexedDB, localStorage only has a lightweight index.
           for (const q of merged) {
-            await this.saveQuizRecordToIndexedDB(normalizeQuizForPersistence(q).quiz);
+            await this.saveQuizRecordToIndexedDB(toPublicQuizPayload(normalizeQuizForPersistence(q).quiz));
             await this.updateQuizIndex(q);
           }
-          return merged;
+          if (options.includePrivate) return Promise.all(merged.map(q => this.getQuiz(q.id, { includePrivate: true })));
+          return merged.map(q => window.QuizContract ? window.QuizContract.normalizeQuiz(q, { public: true }) : q);
         }
       } catch (e) {
         console.warn('Firebase getAllQuizzes failed, using local list:', e);
@@ -545,7 +694,8 @@ const StorageEngine = {
     }
 
     primaryLocalList.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-    return primaryLocalList;
+    if (options.includePrivate) return Promise.all(primaryLocalList.map(q => this.getQuiz(q.id, { includePrivate: true })));
+    return primaryLocalList.map(q => window.QuizContract ? window.QuizContract.normalizeQuiz(q, { public: true }) : q);
   },
 
   async deleteQuiz(quizId) {
@@ -554,10 +704,14 @@ const StorageEngine = {
     deletedIds.add(quizId);
     localStorage.setItem(STORAGE_PREFIX + 'deleted_quizzes', JSON.stringify(Array.from(deletedIds)));
 
+    const pendingQuizQueue = await this.get(QUIZ_SYNC_QUEUE_KEY) || [];
+    await this.set(QUIZ_SYNC_QUEUE_KEY, pendingQuizQueue.filter(item => item.id !== quizId));
     await this.enqueueSync('quiz', quizId, 'delete');
     if (!(typeof navigator !== 'undefined' && navigator.onLine === false)) this.processSyncQueues();
     await this.remove('quiz:' + quizId);
     await this.deleteQuizRecordFromIndexedDB(quizId);
+    await this.remove('quiz_private:' + quizId);
+    await this.deletePrivateQuizRecordFromIndexedDB(quizId);
     const quizIndex = await this.get(QUIZ_INDEX_KEY);
     if (Array.isArray(quizIndex)) await this.set(QUIZ_INDEX_KEY, quizIndex.filter(item => item.id !== quizId));
     await this.removePdfBlob(quizId);
@@ -593,7 +747,8 @@ const StorageEngine = {
     const localSaved = await this.set(resultKey, result);
     if (!localSaved) {
       let cloudOnly = null;
-      try { if (window.FirebaseEngine?.isActive) cloudOnly = await window.FirebaseEngine.saveResult(result); } catch (_) {}
+      try { if (window.FirebaseEngine?.isActive) cloudOnly = await window.FirebaseEngine.saveResult(result); }
+      catch (error) { console.error('[StorageEngine] result cloud fallback failed', error); }
       if (!cloudOnly) throw new Error('Không lưu được kết quả. Bài làm vẫn được giữ để thử nộp lại.');
       return typeof cloudOnly === 'string' ? cloudOnly : resultKey;
     }
@@ -1307,4 +1462,4 @@ const StorageEngine = {
 };
 
 window.StorageEngine = StorageEngine;
-window.KEDUStorageInternals = { classifyQuizAttachment, normalizeQuizForPersistence, DB_VERSION, STORE_QUIZZES };
+window.KEDUStorageInternals = { classifyQuizAttachment, normalizeQuizForPersistence, toPublicQuizPayload, toPrivateQuizPayload, containsPrivateAnswerData, DB_VERSION, STORE_QUIZZES, STORE_PRIVATE_QUIZZES };

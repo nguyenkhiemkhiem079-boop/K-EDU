@@ -14,7 +14,7 @@ context.window = context;
 vm.createContext(context);
 vm.runInContext(source, context);
 const { normalizeQuizForPersistence, DB_VERSION, STORE_QUIZZES } = context.KEDUStorageInternals;
-assert.equal(DB_VERSION, 3);
+assert.equal(DB_VERSION, 4);
 assert.equal(STORE_QUIZZES, 'quiz_store');
 
 const full = vact.VACTExamGenerator.generateFull120({ difficulty: 'balanced', seed: 'storage-roundtrip' });

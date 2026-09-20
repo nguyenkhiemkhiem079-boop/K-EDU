@@ -3,6 +3,35 @@
  * Supports cloud sync of quizzes, results, and rosters with fallback to LocalStorage/IndexedDB.
  */
 
+function toPublicQuizPayload(quiz = {}) {
+  const publicQuiz = JSON.parse(JSON.stringify(quiz));
+  publicQuiz.answerKeys = Array.isArray(publicQuiz.answerKeys) ? publicQuiz.answerKeys.map(key => {
+    const safe = { ...key };
+    delete safe.correct;
+    delete safe.correctAnswer;
+    delete safe.explanation;
+    delete safe.pitfall;
+    delete safe.keyFormula;
+    return safe;
+  }) : [];
+  if (Array.isArray(publicQuiz.questions)) publicQuiz.questions = publicQuiz.questions.map(question => {
+    const safe = { ...question };
+    delete safe.correct;
+    delete safe.correctAnswer;
+    delete safe.explanation;
+    delete safe.pitfall;
+    delete safe.keyFormula;
+    return safe;
+  });
+  delete publicQuiz.privateAnswerKeys;
+  delete publicQuiz.answerKey;
+  return publicQuiz;
+}
+
+function toPrivateAnswerPayload(quiz = {}) {
+  return { quizId: quiz.id, updatedAt: quiz.updatedAt || new Date().toISOString(), answerKeys: Array.isArray(quiz.answerKeys) ? JSON.parse(JSON.stringify(quiz.answerKeys)) : [] };
+}
+
 const FirebaseEngine = {
   isActive: false,
   app: null,
@@ -330,11 +359,14 @@ const FirebaseEngine = {
         if (downloadUrl && quizToSave.examHtml?.length > 500000) delete quizToSave.examHtml;
       }
 
-      const setPromise = this.db.collection('quizzes').doc(quiz.id).set(quizToSave);
+      const publicQuiz = toPublicQuizPayload(quizToSave);
+      const privateAnswerPayload = toPrivateAnswerPayload(quizToSave);
+      const privateSetPromise = this.db.collection('quiz_answer_keys').doc(quiz.id).set(privateAnswerPayload);
+      const publicSetPromise = this.db.collection('quizzes').doc(quiz.id).set(publicQuiz);
       const setTimer = new Promise((_, reject) => setTimeout(() => reject(new Error('FIREBASE_SYNC_TIMEOUT')), 15000));
-      await Promise.race([setPromise, setTimer]);
+      await Promise.race([Promise.all([privateSetPromise, publicSetPromise]), setTimer]);
 
-      console.log('☁️ Quiz saved to Firestore with embedded content:', quiz.id);
+      console.log('☁️ Quiz saved to Firestore with public/private answer separation:', quiz.id);
       return { success: true, downloadUrl };
     } catch (e) {
       console.error('Firestore saveQuiz error:', e);
@@ -414,6 +446,7 @@ const FirebaseEngine = {
     if (!this.isActive) return false;
     try {
       await this.db.collection('quizzes').doc(quizId).delete();
+      await this.db.collection('quiz_answer_keys').doc(quizId).delete();
       await this.deletePdf(quizId);
       console.log('☁️ Quiz deleted from Firestore:', quizId);
       return true;

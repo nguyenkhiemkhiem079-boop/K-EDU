@@ -176,6 +176,8 @@
     if (!q.source.sourceId || !q.source.sourceFile) return false;
     if (!q.quality || q.quality.answerVerified !== true) return false;
     if (!Array.isArray(q.options) || q.options.length !== 4) return false;
+    const normalizedOptions = q.options.map(option => String(option || '').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim().toLowerCase());
+    if (new Set(normalizedOptions).size !== normalizedOptions.length) return false;
     for (let i = 0; i < q.options.length; i++) {
       if (typeof q.options[i] !== 'string' || !q.options[i].trim()) return false;
     }

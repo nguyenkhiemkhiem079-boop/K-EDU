@@ -70,6 +70,11 @@
     "error": null
   },
   {
+    "test": "verify_phase3_roundtrip.js",
+    "passed": true,
+    "error": null
+  },
+  {
     "test": "verify_project_integrity.js",
     "passed": true,
     "error": null

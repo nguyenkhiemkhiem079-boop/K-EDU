@@ -66,12 +66,14 @@
   }
 
   function isProductionVACTQuestion(q) {
+    const optionSignatures = Array.isArray(q?.options) ? q.options.map(option => String(option || '').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim().toLowerCase()) : [];
     return Boolean(
       q && typeof q === 'object' &&
       q.status === 'production' &&
       typeof q.question === 'string' && q.question.trim() &&
       Array.isArray(q.options) && q.options.length === 4 &&
       q.options.every(option => typeof option === 'string' && option.trim()) &&
+      new Set(optionSignatures).size === optionSignatures.length &&
       ['A', 'B', 'C', 'D'].includes(q.correctAnswer) &&
       q.source && q.source.extractedFromSource === true &&
       typeof q.source.sourceId === 'string' && q.source.sourceId.trim() &&

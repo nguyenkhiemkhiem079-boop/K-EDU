@@ -3943,7 +3943,7 @@ async function publishBatchExams() {
 
 /* ================= EDIT & MANAGE SINGLE EXAM ================= */
 async function editTeacherQuiz(quizId) {
-  const quiz = await StorageEngine.getQuiz(quizId);
+  const quiz = await StorageEngine.getQuiz(quizId, { includePrivate: true });
   if (!quiz) {
     showToast('❌ Không tìm thấy đề thi cần chỉnh sửa.', 'error');
     return;
@@ -4127,7 +4127,7 @@ async function publishTeacherQuiz() {
 
   const isEditing = !!AppState.editingQuizId;
   const id = isEditing ? AppState.editingQuizId : generateQuizCode();
-  const previousQuiz = isEditing ? await StorageEngine.getQuiz(id) : null;
+  const previousQuiz = isEditing ? await StorageEngine.getQuiz(id, { includePrivate: true }) : null;
   const title = document.getElementById('teacherExamTitleInput').value.trim() || (AppState.teacherFileName ? AppState.teacherFileName.replace(/\.[^/.]+$/, '').replace(/[_\-]+/g, ' ') : 'Đề Kiểm Tra');
   const examSubjectVal = document.getElementById('examSubjectSelect')?.value || 'toan';
   const examSubjectLabel = (typeof SUBJECT_LABELS !== 'undefined' ? SUBJECT_LABELS[examSubjectVal] : null) || 'Toán học';
@@ -4698,7 +4698,7 @@ async function autoRepairCorruptedQuizzes() {
   if (isRepairRunning) return;
   isRepairRunning = true;
   try {
-    const allQuizzes = await StorageEngine.getAllQuizzes();
+    const allQuizzes = await StorageEngine.getAllQuizzes({ includePrivate: true });
     for (const q of allQuizzes) {
       if (!q || !q.title) continue;
       const needsRepair = (!q.totalQuestions || q.totalQuestions === 0 || !q.answerKeys || q.answerKeys.length === 0);
@@ -5086,7 +5086,7 @@ async function startExamWithQuizId(quizId) {
     statusEl.innerHTML = '<span style="color:var(--indigo);">☁️ Đang tìm đề thi trên Firebase Cloud...</span>';
     quiz = await window.FirebaseEngine.getQuiz(quizId);
     if (quiz) {
-      await persistTeacherQuiz(quiz);
+      quiz = await StorageEngine.cachePublicQuiz(quiz);
     }
   }
 
@@ -5108,9 +5108,14 @@ async function startExamWithQuizId(quizId) {
     return;
   }
 
-  // Giấu đáp án đúng vào ExamVault; AppState.currentQuiz chỉ chứa bản công khai
-  // (không có trường `correct`) để tránh lộ đáp án qua Console trình duyệt.
-  ExamVault.store(quizId, quiz.answerKeys || [], { subject: quiz.subject || quiz.subjectLabel || 'toan' });
+  // Public quiz data is intentionally answer-free. Only the private local answer
+  // store is joined into the in-memory vault used after submission.
+  const privateAnswerKeys = await StorageEngine._getPrivateAnswerKeys(quizId);
+  if ((quiz.answerKeys || []).length > 0 && privateAnswerKeys.length !== (quiz.answerKeys || []).length) {
+    statusEl.innerHTML = '<span style="color:var(--rose);">⚠️ Không tải được đáp án bảo mật của đề thi. Vui lòng thử lại hoặc liên hệ giáo viên.</span>';
+    return;
+  }
+  ExamVault.store(quizId, privateAnswerKeys, { subject: quiz.subject || quiz.subjectLabel || 'toan' });
   AppState.currentQuiz = { ...quiz, answerKeys: ExamVault.getPublicKeys(quizId) };
   AppState.currentQuizId = quizId;
   AppState.studentId = studentId || null;
