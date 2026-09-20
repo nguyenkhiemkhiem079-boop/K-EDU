@@ -48,6 +48,7 @@
     "verify_subject_difficulty.js": { "category": "behavioral_unit", "scope": "Subject and difficulty filtering" },
     "verify_test_integrity.js": { "category": "static_contract", "scope": "Verification-suite classification completeness" },
     "verify_ui_contract.js": { "category": "static_contract", "scope": "Required UI controls and labels" },
+    "verify_vact_content_encoding.js": { "category": "data_quality", "scope": "V-ACT corruption detection, quarantine, runtime guard, and production encoding" },
     "verify_vact_adaptive_production.js": { "category": "property_fuzz", "scope": "Adaptive production profile behavior" },
     "verify_vact_analytics.js": { "category": "integration_mock", "scope": "V-ACT analytics and coverage reporting" },
     "verify_vact_core.js": { "category": "behavioral_unit", "scope": "V-ACT canonical schema and core behavior" },

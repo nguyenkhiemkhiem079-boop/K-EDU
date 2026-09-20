@@ -1,14 +1,14 @@
 {
-  "timestamp": "2026-09-19T15:30:20.797Z",
+  "timestamp": "2026-09-20T17:11:26.519Z",
   "summary": {
-    "totalRaw": 854,
-    "totalMapped": 854,
-    "totalUniqueUsable": 854,
+    "totalRaw": 708,
+    "totalMapped": 708,
+    "totalUniqueUsable": 708,
     "duplicatesRemoved": 0,
-    "probableDuplicates": 17,
-    "reviewRequiredPairs": 30,
-    "questionsScanned": 854,
-    "candidateComparisons": 364231
+    "probableDuplicates": 15,
+    "reviewRequiredPairs": 10,
+    "questionsScanned": 708,
+    "candidateComparisons": 250278
   },
   "coverage": {
     "targets": {
@@ -42,19 +42,19 @@
         "deficit": 227
       },
       "math": {
-        "available": 176,
+        "available": 35,
         "target": 600,
-        "deficit": 424
+        "deficit": 565
       },
       "logic_data": {
-        "available": 28,
+        "available": 27,
         "target": 240,
-        "deficit": 212
+        "deficit": 213
       },
       "scientific_reasoning": {
-        "available": 47,
+        "available": 43,
         "target": 360,
-        "deficit": 313,
+        "deficit": 317,
         "skills": {
           "physics": 0,
           "chemistry": 0,
@@ -73,8 +73,8 @@
   "duplicates": {
     "totalDuplicatesRemoved": 0,
     "duplicateGroupsCount": 0,
-    "probableDuplicatesCount": 17,
-    "reviewRequiredCount": 30,
+    "probableDuplicatesCount": 15,
+    "reviewRequiredCount": 10,
     "sampleNearDuplicates": [
       {
         "q1Id": "vact_q_1c3e50a762b7",
@@ -149,12 +149,12 @@
         "q2Preview": "Due to the heavy rain, there were ______ cars on the road this morning"
       },
       {
-        "q1Id": "vact_q_6578340c3cb1",
-        "q2Id": "vact_q_6b69ffb77e2f",
-        "similarity": 0.769,
-        "status": "REVIEW_REQUIRED",
-        "q1Preview": "Câu nào dưới đây không thể đúng?",
-        "q2Preview": "Nếu D sống ở tầng 4 thì câu nào dưới đây không thể đúng?"
+        "q1Id": "vact_q_e86629fc7e37",
+        "q2Id": "vact_q_d2fe3f611e44",
+        "similarity": 0.941,
+        "status": "PROBABLE_DUPLICATE",
+        "q1Preview": "Hộp trắng đựng hai quả bóng màu gì?",
+        "q2Preview": "Hộp xanh lá cây đựng 2 quả bóng màu gì?"
       }
     ]
   },
@@ -193,9 +193,9 @@
     {
       "section": "math",
       "target": 600,
-      "available": 176,
-      "missing": 424,
-      "deficitPct": 70.7
+      "available": 35,
+      "missing": 565,
+      "deficitPct": 94.2
     },
     {
       "section": "vietnamese",
@@ -207,9 +207,9 @@
     {
       "section": "scientific_reasoning",
       "target": 360,
-      "available": 47,
-      "missing": 313,
-      "deficitPct": 86.9
+      "available": 43,
+      "missing": 317,
+      "deficitPct": 88.1
     },
     {
       "section": "english",
@@ -221,9 +221,9 @@
     {
       "section": "logic_data",
       "target": 240,
-      "available": 28,
-      "missing": 212,
-      "deficitPct": 88.3
+      "available": 27,
+      "missing": 213,
+      "deficitPct": 88.8
     },
     {
       "section": "scientific_reasoning",
@@ -299,17 +299,117 @@
     }
   ],
   "readiness": {
-    "full120": {
+    "vact_mini_30": {
+      "runtimeReady": true,
       "ready": true,
-      "totalRequired": 120,
+      "totalRequired": 30,
       "totalMissing": 0,
-      "shortages": []
+      "shortages": [],
+      "longTermCoverageTarget": {
+        "total": 2400,
+        "sections": {
+          "vietnamese": 600,
+          "english": 600,
+          "math": 600,
+          "logic_data": 240,
+          "scientific_reasoning": 360
+        },
+        "scientificSkills": {
+          "physics": 40,
+          "chemistry": 40,
+          "biology": 40,
+          "history": 40,
+          "geography": 40,
+          "economics_law": 40,
+          "technology": 40,
+          "society": 40,
+          "interdisciplinary": 40
+        }
+      }
     },
-    "mini100": {
+    "vact_mini_60": {
+      "runtimeReady": true,
+      "ready": true,
+      "totalRequired": 60,
+      "totalMissing": 0,
+      "shortages": [],
+      "longTermCoverageTarget": {
+        "total": 2400,
+        "sections": {
+          "vietnamese": 600,
+          "english": 600,
+          "math": 600,
+          "logic_data": 240,
+          "scientific_reasoning": 360
+        },
+        "scientificSkills": {
+          "physics": 40,
+          "chemistry": 40,
+          "biology": 40,
+          "history": 40,
+          "geography": 40,
+          "economics_law": 40,
+          "technology": 40,
+          "society": 40,
+          "interdisciplinary": 40
+        }
+      }
+    },
+    "vact_mini_100": {
+      "runtimeReady": true,
       "ready": true,
       "totalRequired": 100,
       "totalMissing": 0,
-      "shortages": []
+      "shortages": [],
+      "longTermCoverageTarget": {
+        "total": 2400,
+        "sections": {
+          "vietnamese": 600,
+          "english": 600,
+          "math": 600,
+          "logic_data": 240,
+          "scientific_reasoning": 360
+        },
+        "scientificSkills": {
+          "physics": 40,
+          "chemistry": 40,
+          "biology": 40,
+          "history": 40,
+          "geography": 40,
+          "economics_law": 40,
+          "technology": 40,
+          "society": 40,
+          "interdisciplinary": 40
+        }
+      }
+    },
+    "vact_full": {
+      "runtimeReady": true,
+      "ready": true,
+      "totalRequired": 120,
+      "totalMissing": 0,
+      "shortages": [],
+      "longTermCoverageTarget": {
+        "total": 2400,
+        "sections": {
+          "vietnamese": 600,
+          "english": 600,
+          "math": 600,
+          "logic_data": 240,
+          "scientific_reasoning": 360
+        },
+        "scientificSkills": {
+          "physics": 40,
+          "chemistry": 40,
+          "biology": 40,
+          "history": 40,
+          "geography": 40,
+          "economics_law": 40,
+          "technology": 40,
+          "society": 40,
+          "interdisciplinary": 40
+        }
+      }
     }
   }
 }

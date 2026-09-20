@@ -1,6 +1,6 @@
 # Báo cáo Nhập liệu & Thẩm định Nguồn Đề V-ACT (K-EDU)
 
-*Ngày lập báo cáo: 2026-09-18T08:44:49.426Z*
+*Ngày lập báo cáo: 2026-09-20T17:13:12.240Z*
 
 ---
 
@@ -22,10 +22,10 @@
 > [!IMPORTANT]
 > **Nguyên tắc Provenance**: 100% câu hỏi trong báo cáo này được trích xuất trực tiếp từ các tệp PDF nguồn thực tế trong kho `TÀI LIỆU/DGNL/V-ACT/`. Không có câu hỏi tổng hợp hay câu hỏi suy đoán từ AI.
 
-- **Tổng số câu hỏi trích xuất thô (Raw Extracted)**: 6703 câu
-- **Tổng số câu hỏi độc bản (Unique Questions)**: 6695 câu
+- **Tổng số câu hỏi trích xuất thô (Raw Extracted)**: 1258 câu
+- **Tổng số câu hỏi độc bản (Unique Questions)**: 1258 câu
 - **Số câu hỏi trùng lặp được phát hiện & gộp (Duplicates Merged)**: 8 câu
-- **Tỷ lệ trùng lặp liên tài liệu**: 0.1%
+- **Tỷ lệ trùng lặp liên tài liệu**: 0.6%
 
 ---
 
@@ -33,9 +33,9 @@
 
 | Trạng thái | Số lượng | Tỷ lệ | Mô tả |
 | :--- | :--- | :--- | :--- |
-| 🟢 **production** | **1758** | **26.3%** | Có đáp án xác thực, 4 phương án chuẩn A-D, đủ điều kiện thi |
-| 🟡 **review_required** | **3226** | **48.2%** | Thiếu đáp án xác thực từ tài liệu nguồn, cần chuyên gia duyệt |
-| 🔴 **invalid** | **1711** | **25.6%** | Không đủ 4 phương án, bị lỗi font hoặc văn bản vỡ |
+| 🟢 **production** | **708** | **56.3%** | Có đáp án xác thực, 4 phương án chuẩn A-D, đủ điều kiện thi |
+| 🟡 **review_required** | **550** | **43.7%** | Thiếu đáp án xác thực từ tài liệu nguồn, cần chuyên gia duyệt |
+| 🔴 **invalid** | **0** | **0.0%** | Không đủ 4 phương án, bị lỗi font hoặc văn bản vỡ |
 
 ---
 
@@ -43,19 +43,21 @@
 
 | Phân phần V-ACT | Số câu Production | Tỷ lệ trên tổng | Trạng thái cung ứng |
 | :--- | :--- | :--- | :--- |
-| **Tiếng Việt (Vietnamese)** | 415 câu | 23.6% | Sẵn sàng |
-| **Tiếng Anh (English)** | 421 câu | 23.9% | Sẵn sàng |
-| **Toán học (Math)** | 427 câu | 24.3% | Sẵn sàng |
-| **Tư duy Logic & Số liệu (Logic/Data)** | 209 câu | 11.9% | Sẵn sàng |
-| **Giải quyết Vấn đề Khoa học (Scientific Reasoning)** | 286 câu | 16.3% | Sẵn sàng |
-| **TỔNG PRODUCTION QUESTIONS** | **1758** | **100.0%** | **Nguồn gốc thực 100%** |
+| **Tiếng Việt (Vietnamese)** | 230 câu | 32.5% | Sẵn sàng |
+| **Tiếng Anh (English)** | 373 câu | 52.7% | Sẵn sàng |
+| **Toán học (Math)** | 35 câu | 4.9% | Sẵn sàng |
+| **Tư duy Logic & Số liệu (Logic/Data)** | 27 câu | 3.8% | Sẵn sàng |
+| **Giải quyết Vấn đề Khoa học (Scientific Reasoning)** | 43 câu | 6.1% | Sẵn sàng |
+| **TỔNG PRODUCTION QUESTIONS** | **708** | **100.0%** | **Nguồn gốc thực 100%** |
 
 ---
 
 ## 5. Năng lực Cung ứng Đề thi (Exam Readiness)
 
-- **Mini V-ACT 100 Ready**: **YES** (Yêu cầu $ge 25$ Việt, $ge 25$ Anh, $ge 25$ Toán, $ge 10$ Logic, $ge 15$ Khoa học)
-- **Full V-ACT 120 Ready**: **YES** (Yêu cầu $ge 30$ Việt, $ge 30$ Anh, $ge 30$ Toán, $ge 12$ Logic, $ge 18$ Khoa học)
-- **Số đề thi hoàn chỉnh nguyên gốc (Registered Full Exams)**: 42 đề
-  - Hoàn chỉnh 120/120: 14 đề
-  - Chưa hoàn chỉnh: 28 đề
+- **vact_mini_30 Ready**: **YES** (30/30; thiếu 0)
+- **vact_mini_60 Ready**: **YES** (60/60; thiếu 0)
+- **vact_mini_100 Ready**: **YES** (100/100; thiếu 0)
+- **vact_full Ready**: **YES** (120/120; thiếu 0)
+- **Số đề thi hoàn chỉnh nguyên gốc (Registered Full Exams)**: 56 đề
+  - Hoàn chỉnh 120/120: 0 đề
+  - Chưa hoàn chỉnh: 0 đề

@@ -276,52 +276,6 @@
     "validationIssues": []
   },
   {
-    "id": "vact_q_6b69ffb77e2f",
-    "section": "logic_data",
-    "skill": null,
-    "difficulty": null,
-    "questionType": "single_choice",
-    "stimulus": null,
-    "question": "Nếu D sống ở tầng 4 thì câu nào dưới đây không thể đúng?",
-    "options": [
-      "C ở tầng 2 và A ở tầng 3",
-      "E ở tầng 2 và A ở tầng 3",
-      "E ở tầng 2 và B ở tầng 3",
-      "C ở tầng 2 và B ở tầng 3."
-    ],
-    "correctAnswer": "C",
-    "explanation": "Đáp án đúng là C\nPhương pháp giải\nGiải toán tư duy logic bằng phương pháp suy luận đơn giản\nLời giải\n\nD sống ở tầng 4 nên tầng 4 có 2 phòng ngủ.\nKhi đó tầng 2 và tầng 4 đều có 2 phòng ngủ.\nF<D nên F ở tầng thấp hơn D\nMà tầng 3 có ít hơn 3 phòng.\n=> F ở tầng 1\n=> Tầng 1 có 3 phòng.\n=> Tầng 5 có 2 phòng và tầng 3 có 1 phòng\n=> Tần 6 có 1 phòng.\nXét đáp án C: E ở tầng 2 và B ở tầng 3=> C ở tầng 5\n=> B<C (mâu thuẫn với C sống ở tầng thấp hơn B).\nDựa vào thông tin dưới đây để trả lời các câu sau từ câu 99 - 102:\nBảng số liệu dưới đây biểu thị khối lượng, đơn giá và đơn giá trung bình của một số loại thực phẩm\nmà siêu thị mini nọ bán được trong 3 ngày liên tiếp: ngày thứ nhất, ngày thứ hai và ngày thứ ba.\nBiết trong 3 ngày này:\n Tổng khối lượng thịt heo bán được gấp đôi tổng khối lượng cá hồi bán được.\n Tổng khối lượng thịt bò bán được nhiều hơn tổng khối lượng thịt gà bán được là 20kg.\n Tổng khối lượng tôm sú bán được bằng tổng khối lượng mực sữa bán được.",
-    "source": {
-      "sourceId": "vact_src_4cf37b4c5ce74ee2",
-      "sourceFile": "TÀI LIỆU/DGNL/V-ACT/00_OFFICIAL/VACT_2025_OFFICIAL_DOT1_QUESTION.pdf",
-      "sourcePage": 29,
-      "questionNumber": 98,
-      "examSetId": "vact_exam_vact_2025_official_dot1_question",
-      "extractedFromSource": true,
-      "questionSourceId": "vact_src_4cf37b4c5ce74ee2",
-      "questionSourceFile": "TÀI LIỆU/DGNL/V-ACT/00_OFFICIAL/VACT_2025_OFFICIAL_DOT1_QUESTION.pdf",
-      "questionSourcePage": 29,
-      "solutionSourceId": "vact_src_e847c66fe1b6aafe",
-      "solutionSourceFile": "VACT_2025_OFFICIAL_DOT1_SOLUTION.pdf",
-      "solutionSourcePage": 66
-    },
-    "quality": {
-      "sourceVerified": true,
-      "answerVerified": true,
-      "extractionVerified": true,
-      "reviewed": false,
-      "requiresStimulus": false,
-      "requiresVisual": false,
-      "stimulusPreserved": true,
-      "visualPreserved": true,
-      "contentComplete": true
-    },
-    "status": "production",
-    "signature": "5138d20a1dec22a3c4ccdd93933a6b86566b262ec16956d20373e296190200c6",
-    "alternateSources": [],
-    "validationIssues": []
-  },
-  {
     "id": "vact_q_e86629fc7e37",
     "section": "logic_data",
     "skill": null,

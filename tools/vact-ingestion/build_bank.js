@@ -8,6 +8,7 @@ const { normalizeQuestion } = require('./normalize_questions');
 const { validateQuestions } = require('./validate_questions');
 const { deduplicateQuestions } = require('./deduplicate_questions');
 const { generateIngestionReport } = require('./report_ingestion');
+const { createContentCorruptionReport } = require('./content_corruption_report');
 const { VACT_PROFILES } = require('../../js/vact/profiles');
 
 async function buildBank(options = {}) {
@@ -89,6 +90,7 @@ async function buildBank(options = {}) {
   const production = uniqueQuestions.filter(q => q.status === 'production');
   const reviewRequired = uniqueQuestions.filter(q => q.status === 'review_required');
   const invalid = uniqueQuestions.filter(q => q.status === 'invalid');
+  const corruptionReport = createContentCorruptionReport(uniqueQuestions);
 
   console.log(`[4/6] Quality categorization:`);
   console.log(`   - Production Ready : ${production.length}`);
@@ -149,6 +151,13 @@ async function buildBank(options = {}) {
     productionCount: production.length,
     reviewRequiredCount: reviewRequired.length,
     invalidCount: invalid.length,
+    contentCorruption: {
+      affectedRecords: corruptionReport.affectedRecords,
+      affectedProductionRecords: corruptionReport.affectedProductionRecords,
+      studentVisibleAffectedRecords: corruptionReport.studentVisibleAffectedRecords,
+      explanationOnlyRecords: corruptionReport.explanationOnlyRecords,
+      issueCounts: corruptionReport.issueCounts
+    },
     bySection,
     profileReadiness,
     mini100Ready,

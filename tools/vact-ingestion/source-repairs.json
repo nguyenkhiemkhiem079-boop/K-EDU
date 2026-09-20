@@ -1,0 +1,20 @@
+[
+  {
+    "id": "vact_q_aad83b457b68",
+    "sourceFile": "TÀI LIỆU/DGNL/V-ACT/01_FULL_TESTS/VACT_2025_MOCK_013_QUESTION.pdf",
+    "sourcePage": 26,
+    "solutionSourceFile": "VACT_2025_MOCK_013_SOLUTION.pdf",
+    "solutionSourcePage": 48,
+    "correctAnswer": "B",
+    "question": "Tập xác định của hàm số là",
+    "stimulus": "Sử dụng thông tin dưới đây trả lời câu hỏi từ 85 đến 87. Cho hàm số $y=f(x)=\\frac{2\\cos x}{\\cos x+3}$.",
+    "options": [
+      "$D=\\mathbb{R}\\setminus\\{1\\}$.",
+      "$D=\\mathbb{R}$.",
+      "$D=\\mathbb{R}\\setminus\\{1;2\\}$.",
+      "$D=[-1;1]$."
+    ],
+    "explanation": "Ta có $\\cos x+3>0$ với mọi $x\\in\\mathbb{R}$ nên $D=\\mathbb{R}$.",
+    "repairBasis": "Transcribed from the cited question page and the solution continuation on pages 48-49; answer B is highlighted in the solution source."
+  }
+]

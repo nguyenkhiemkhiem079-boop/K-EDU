@@ -3,20 +3,95 @@
   "ingestableSources": 87,
   "rawParsedCount": 1258,
   "normalizedUniqueCount": 1258,
-  "productionCount": 850,
-  "reviewRequiredCount": 408,
+  "productionCount": 708,
+  "reviewRequiredCount": 550,
   "invalidCount": 0,
   "duplicatesRemoved": 8,
   "bySection": {
+    "vietnamese": 230,
     "english": 373,
-    "logic_data": 28,
-    "math": 172,
-    "scientific_reasoning": 47,
-    "vietnamese": 230
+    "math": 35,
+    "logic_data": 27,
+    "scientific_reasoning": 43
   },
   "totalExams": 56,
   "sourceCompleteExams": 0,
   "answerCompleteExams": 0,
   "productionCompleteExams": 0,
-  "generatedAt": "2026-09-20T14:18:14.598Z"
+  "generatedAt": "2026-09-20T17:13:12.167Z",
+  "sourcesByCategory": {
+    "OFFICIAL": 6,
+    "FULL_TEST": 50,
+    "SUBJECT_BANK": 31,
+    "PENDING": 6,
+    "DUPLICATE": 13
+  },
+  "totalRaw": 1258,
+  "uniqueCount": 1258,
+  "duplicateCount": 8,
+  "docsProcessed": 87,
+  "docsFailed": 0,
+  "profileReadiness": {
+    "vact_mini_30": {
+      "runtimeReady": true,
+      "required": 30,
+      "generated": 30,
+      "missing": {
+        "vietnamese": 0,
+        "english": 0,
+        "math": 0,
+        "logic_data": 0,
+        "scientific_reasoning": 0
+      }
+    },
+    "vact_mini_60": {
+      "runtimeReady": true,
+      "required": 60,
+      "generated": 60,
+      "missing": {
+        "vietnamese": 0,
+        "english": 0,
+        "math": 0,
+        "logic_data": 0,
+        "scientific_reasoning": 0
+      }
+    },
+    "vact_mini_100": {
+      "runtimeReady": true,
+      "required": 100,
+      "generated": 100,
+      "missing": {
+        "vietnamese": 0,
+        "english": 0,
+        "math": 0,
+        "logic_data": 0,
+        "scientific_reasoning": 0
+      }
+    },
+    "vact_full": {
+      "runtimeReady": true,
+      "required": 120,
+      "generated": 120,
+      "missing": {
+        "vietnamese": 0,
+        "english": 0,
+        "math": 0,
+        "logic_data": 0,
+        "scientific_reasoning": 0
+      }
+    }
+  },
+  "mini100Ready": true,
+  "full120Ready": true,
+  "contentCorruption": {
+    "baselineProductionRecords": 850,
+    "affectedProductionRecordsBeforeRepair": 143,
+    "quarantinedRecords": 142,
+    "successfullyRepairedRecords": 1,
+    "repairedIds": [
+      "vact_q_aad83b457b68"
+    ],
+    "remainingReviewRequiredRecords": 550,
+    "remainingCorruptedProductionRecords": 0
+  }
 }

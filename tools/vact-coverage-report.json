@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-09-19T15:30:20.990Z",
+  "generatedAt": "2026-09-20T17:11:07.477Z",
   "bankSummary": {
-    "totalRaw": 854,
-    "totalMapped": 854,
-    "totalUniqueUsable": 854,
+    "totalRaw": 708,
+    "totalMapped": 708,
+    "totalUniqueUsable": 708,
     "duplicatesCount": 0,
     "duplicateGroupsCount": 0,
     "invalidCount": 0,
@@ -28,30 +28,30 @@
         }
       },
       "math": {
-        "total": 176,
+        "total": 35,
         "difficulty": {
           "easy": 0,
           "medium": 0,
           "hard": 0,
-          "unclassified": 176
+          "unclassified": 35
         }
       },
       "logic_data": {
-        "total": 28,
+        "total": 27,
         "difficulty": {
           "easy": 0,
           "medium": 0,
           "hard": 0,
-          "unclassified": 28
+          "unclassified": 27
         }
       },
       "scientific_reasoning": {
-        "total": 47,
+        "total": 43,
         "difficulty": {
           "easy": 0,
           "medium": 0,
           "hard": 0,
-          "unclassified": 47
+          "unclassified": 43
         },
         "skills": {
           "physics": 0,
@@ -68,7 +68,7 @@
       }
     },
     "qualityStatus": {
-      "usable": 854,
+      "usable": 708,
       "invalid": 0,
       "duplicate": 0,
       "unsupported": 0,
@@ -77,9 +77,333 @@
     },
     "duplicateGroups": []
   },
+  "profileReadiness": {
+    "vact_mini_30": {
+      "profileId": "vact_mini_30",
+      "profileName": "Mini V-ACT 30 Luyện Tập Nhanh",
+      "runtimeReady": true,
+      "longTermCoverageTarget": {
+        "total": 2400,
+        "sections": {
+          "vietnamese": 600,
+          "english": 600,
+          "math": 600,
+          "logic_data": 240,
+          "scientific_reasoning": 360
+        },
+        "scientificSkills": {
+          "physics": 40,
+          "chemistry": 40,
+          "biology": 40,
+          "history": 40,
+          "geography": 40,
+          "economics_law": 40,
+          "technology": 40,
+          "society": 40,
+          "interdisciplinary": 40
+        }
+      },
+      "ready": true,
+      "totalRequired": 30,
+      "totalAvailable": 30,
+      "totalMissing": 0,
+      "sections": {
+        "vietnamese": {
+          "required": 8,
+          "available": 230,
+          "missing": 0,
+          "ready": true,
+          "reason": null
+        },
+        "english": {
+          "required": 8,
+          "available": 373,
+          "missing": 0,
+          "ready": true,
+          "reason": null
+        },
+        "math": {
+          "required": 7,
+          "available": 35,
+          "missing": 0,
+          "ready": true,
+          "reason": null
+        },
+        "logic_data": {
+          "required": 3,
+          "available": 27,
+          "missing": 0,
+          "ready": true,
+          "reason": null
+        },
+        "scientific_reasoning": {
+          "required": 4,
+          "available": 43,
+          "missing": 0,
+          "ready": true,
+          "reason": null
+        }
+      },
+      "shortages": [],
+      "debugReport": {
+        "vietnamese": "230/8",
+        "english": "373/8",
+        "math": "35/7",
+        "logic_data": "27/3",
+        "scientific_reasoning": "43/4"
+      }
+    },
+    "vact_mini_60": {
+      "profileId": "vact_mini_60",
+      "profileName": "Mini V-ACT 60 Luyện Tập",
+      "runtimeReady": true,
+      "longTermCoverageTarget": {
+        "total": 2400,
+        "sections": {
+          "vietnamese": 600,
+          "english": 600,
+          "math": 600,
+          "logic_data": 240,
+          "scientific_reasoning": 360
+        },
+        "scientificSkills": {
+          "physics": 40,
+          "chemistry": 40,
+          "biology": 40,
+          "history": 40,
+          "geography": 40,
+          "economics_law": 40,
+          "technology": 40,
+          "society": 40,
+          "interdisciplinary": 40
+        }
+      },
+      "ready": true,
+      "totalRequired": 60,
+      "totalAvailable": 60,
+      "totalMissing": 0,
+      "sections": {
+        "vietnamese": {
+          "required": 15,
+          "available": 230,
+          "missing": 0,
+          "ready": true,
+          "reason": null
+        },
+        "english": {
+          "required": 15,
+          "available": 373,
+          "missing": 0,
+          "ready": true,
+          "reason": null
+        },
+        "math": {
+          "required": 15,
+          "available": 35,
+          "missing": 0,
+          "ready": true,
+          "reason": null
+        },
+        "logic_data": {
+          "required": 6,
+          "available": 27,
+          "missing": 0,
+          "ready": true,
+          "reason": null
+        },
+        "scientific_reasoning": {
+          "required": 9,
+          "available": 43,
+          "missing": 0,
+          "ready": true,
+          "reason": null
+        }
+      },
+      "shortages": [],
+      "debugReport": {
+        "vietnamese": "230/15",
+        "english": "373/15",
+        "math": "35/15",
+        "logic_data": "27/6",
+        "scientific_reasoning": "43/9"
+      }
+    },
+    "vact_mini_100": {
+      "profileId": "vact_mini_100",
+      "profileName": "Mini V-ACT 100 Luyện Tập",
+      "runtimeReady": true,
+      "longTermCoverageTarget": {
+        "total": 2400,
+        "sections": {
+          "vietnamese": 600,
+          "english": 600,
+          "math": 600,
+          "logic_data": 240,
+          "scientific_reasoning": 360
+        },
+        "scientificSkills": {
+          "physics": 40,
+          "chemistry": 40,
+          "biology": 40,
+          "history": 40,
+          "geography": 40,
+          "economics_law": 40,
+          "technology": 40,
+          "society": 40,
+          "interdisciplinary": 40
+        }
+      },
+      "ready": true,
+      "totalRequired": 100,
+      "totalAvailable": 100,
+      "totalMissing": 0,
+      "sections": {
+        "vietnamese": {
+          "required": 25,
+          "available": 230,
+          "missing": 0,
+          "ready": true,
+          "reason": null
+        },
+        "english": {
+          "required": 25,
+          "available": 373,
+          "missing": 0,
+          "ready": true,
+          "reason": null
+        },
+        "math": {
+          "required": 25,
+          "available": 35,
+          "missing": 0,
+          "ready": true,
+          "reason": null
+        },
+        "logic_data": {
+          "required": 10,
+          "available": 27,
+          "missing": 0,
+          "ready": true,
+          "reason": null
+        },
+        "scientific_reasoning": {
+          "required": 15,
+          "available": 43,
+          "missing": 0,
+          "ready": true,
+          "reason": null
+        }
+      },
+      "shortages": [],
+      "debugReport": {
+        "vietnamese": "230/25",
+        "english": "373/25",
+        "math": "35/25",
+        "logic_data": "27/10",
+        "scientific_reasoning": "43/15"
+      }
+    },
+    "vact_full": {
+      "profileId": "vact_full",
+      "profileName": "V-ACT ĐHQG-HCM Chính Thức",
+      "runtimeReady": true,
+      "longTermCoverageTarget": {
+        "total": 2400,
+        "sections": {
+          "vietnamese": 600,
+          "english": 600,
+          "math": 600,
+          "logic_data": 240,
+          "scientific_reasoning": 360
+        },
+        "scientificSkills": {
+          "physics": 40,
+          "chemistry": 40,
+          "biology": 40,
+          "history": 40,
+          "geography": 40,
+          "economics_law": 40,
+          "technology": 40,
+          "society": 40,
+          "interdisciplinary": 40
+        }
+      },
+      "ready": true,
+      "totalRequired": 120,
+      "totalAvailable": 120,
+      "totalMissing": 0,
+      "sections": {
+        "vietnamese": {
+          "required": 30,
+          "available": 230,
+          "missing": 0,
+          "ready": true,
+          "reason": null
+        },
+        "english": {
+          "required": 30,
+          "available": 373,
+          "missing": 0,
+          "ready": true,
+          "reason": null
+        },
+        "math": {
+          "required": 30,
+          "available": 35,
+          "missing": 0,
+          "ready": true,
+          "reason": null
+        },
+        "logic_data": {
+          "required": 12,
+          "available": 27,
+          "missing": 0,
+          "ready": true,
+          "reason": null
+        },
+        "scientific_reasoning": {
+          "required": 18,
+          "available": 43,
+          "missing": 0,
+          "ready": true,
+          "reason": null
+        }
+      },
+      "shortages": [],
+      "debugReport": {
+        "vietnamese": "230/30",
+        "english": "373/30",
+        "math": "35/30",
+        "logic_data": "27/12",
+        "scientific_reasoning": "43/18"
+      }
+    }
+  },
   "mini100Readiness": {
     "profileId": "vact_mini_100",
     "profileName": "Mini V-ACT 100 Luyện Tập",
+    "runtimeReady": true,
+    "longTermCoverageTarget": {
+      "total": 2400,
+      "sections": {
+        "vietnamese": 600,
+        "english": 600,
+        "math": 600,
+        "logic_data": 240,
+        "scientific_reasoning": 360
+      },
+      "scientificSkills": {
+        "physics": 40,
+        "chemistry": 40,
+        "biology": 40,
+        "history": 40,
+        "geography": 40,
+        "economics_law": 40,
+        "technology": 40,
+        "society": 40,
+        "interdisciplinary": 40
+      }
+    },
     "ready": true,
     "totalRequired": 100,
     "totalAvailable": 100,
@@ -101,21 +425,21 @@
       },
       "math": {
         "required": 25,
-        "available": 176,
+        "available": 35,
         "missing": 0,
         "ready": true,
         "reason": null
       },
       "logic_data": {
         "required": 10,
-        "available": 28,
+        "available": 27,
         "missing": 0,
         "ready": true,
         "reason": null
       },
       "scientific_reasoning": {
         "required": 15,
-        "available": 47,
+        "available": 43,
         "missing": 0,
         "ready": true,
         "reason": null
@@ -125,14 +449,36 @@
     "debugReport": {
       "vietnamese": "230/25",
       "english": "373/25",
-      "math": "176/25",
-      "logic_data": "28/10",
-      "scientific_reasoning": "47/15"
+      "math": "35/25",
+      "logic_data": "27/10",
+      "scientific_reasoning": "43/15"
     }
   },
   "fullReadiness": {
     "profileId": "vact_full",
     "profileName": "V-ACT ĐHQG-HCM Chính Thức",
+    "runtimeReady": true,
+    "longTermCoverageTarget": {
+      "total": 2400,
+      "sections": {
+        "vietnamese": 600,
+        "english": 600,
+        "math": 600,
+        "logic_data": 240,
+        "scientific_reasoning": 360
+      },
+      "scientificSkills": {
+        "physics": 40,
+        "chemistry": 40,
+        "biology": 40,
+        "history": 40,
+        "geography": 40,
+        "economics_law": 40,
+        "technology": 40,
+        "society": 40,
+        "interdisciplinary": 40
+      }
+    },
     "ready": true,
     "totalRequired": 120,
     "totalAvailable": 120,
@@ -154,21 +500,21 @@
       },
       "math": {
         "required": 30,
-        "available": 176,
+        "available": 35,
         "missing": 0,
         "ready": true,
         "reason": null
       },
       "logic_data": {
         "required": 12,
-        "available": 28,
+        "available": 27,
         "missing": 0,
         "ready": true,
         "reason": null
       },
       "scientific_reasoning": {
         "required": 18,
-        "available": 47,
+        "available": 43,
         "missing": 0,
         "ready": true,
         "reason": null
@@ -178,9 +524,9 @@
     "debugReport": {
       "vietnamese": "230/30",
       "english": "373/30",
-      "math": "176/30",
-      "logic_data": "28/12",
-      "scientific_reasoning": "47/18"
+      "math": "35/30",
+      "logic_data": "27/12",
+      "scientific_reasoning": "43/18"
     }
   }
 }

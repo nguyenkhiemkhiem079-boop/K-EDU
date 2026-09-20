@@ -33,6 +33,21 @@ function validateQuestion(q) {
   }
   if (q.source && (!Number.isInteger(q.source.sourcePage) || q.source.sourcePage < 1)) issues.push('MISSING_SOURCE_PAGE');
 
+  // Math/PDF extraction corruption is never production-safe. Keep the record
+  // available in review-required.json with provenance so it can be repaired
+  // against the original source page; do not silently strip or reinterpret a
+  // glyph here.
+  const extractionIssues = quality.getContentEncodingIssues(q);
+  if (extractionIssues.length) {
+    issues.push(...extractionIssues.codes);
+    issues.push(extractionIssues.studentVisible ? 'MATH_CONTENT_CORRUPTED' : 'MATH_EXPLANATION_REPAIR_REQUIRED');
+    q.status = 'review_required';
+    q.quality.extractionVerified = false;
+    q.quality.contentComplete = false;
+    q.validationIssues = [...new Set(issues)];
+    return q;
+  }
+
   // Determine status
   if (issues.some(i => i.includes('Expected 4 options') || i.includes('Question text too short') || i.includes('Missing or invalid source provenance') || ['UNKNOWN_SECTION','MALFORMED_QUESTION_TEXT','OPTION_SPILLOVER'].includes(i))) {
     q.status = 'invalid';

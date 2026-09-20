@@ -7,14 +7,15 @@
   'use strict';
   if (typeof module !== 'undefined' && module.exports) {
     const internalBankModule = require('./internalBank');
-    const defaultLoader = factory(internalBankModule.VACTInternalBank || internalBankModule);
+    const contentQuality = require('../../../tools/vact-ingestion/content_quality');
+    const defaultLoader = factory(internalBankModule.VACTInternalBank || internalBankModule, null, contentQuality);
     defaultLoader.createLoader = factory;
     module.exports = defaultLoader;
   } else {
     root.KEDUVACT = root.KEDUVACT || {};
     root.KEDUVACT.bank = root.KEDUVACT.bank || {};
     const internalBank = root.KEDUVACT.VACTInternalBank || root.KEDUVACT.bank.VACTInternalBank;
-    const loader = factory(internalBank);
+    const loader = factory(internalBank, null, root.KEDUVACT.contentQuality || null);
     loader.createLoader = factory;
     root.KEDUVACT.sourceBankLoader = loader;
     root.KEDUVACT.bank.sourceBankLoader = loader;
@@ -22,8 +23,47 @@
       window.sourceBankLoader = loader;
     }
   }
-})(typeof window !== 'undefined' ? window : globalThis, function (VACTInternalBank, customFetch) {
+})(typeof window !== 'undefined' ? window : globalThis, function (VACTInternalBank, customFetch, injectedQuality) {
   'use strict';
+
+  const PRIVATE_USE_GLYPH = /[\uE000-\uF8FF]/u;
+  const REPLACEMENT_GLYPH = /\uFFFD/u;
+  const CONTROL_GLYPH = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/u;
+  const MATH_OPERATOR = /[=+\-−×÷*/^<>≤≥∞π∫√∑∏→↔()[\]{}|]/u;
+  const MATH_FUNCTION = /\blim\b/iu;
+
+  function runtimeHasBrokenMathLayout(value) {
+    const text = String(value ?? '');
+    if (!text || (!MATH_OPERATOR.test(text) && !MATH_FUNCTION.test(text))) return false;
+    const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    return lines.filter(line => line.length <= 3).length >= 3 ||
+      /(?:\d+\s*\n\s*\d+\s*\n\s*[A-Za-z]|[A-Za-z]\s*\n\s*[=+\-−]\s*\n\s*\d+)/u.test(text);
+  }
+
+  function runtimeContentIssues(q) {
+    if (injectedQuality && typeof injectedQuality.getContentEncodingIssues === 'function') {
+      return injectedQuality.getContentEncodingIssues(q);
+    }
+    const fields = ['question', 'options', 'stimulus', 'explanation'];
+    const byField = {};
+    for (const field of fields) {
+      const value = Array.isArray(q?.[field]) ? q[field].join('\n') : String(q?.[field] ?? '');
+      const fieldIssues = [];
+      if (PRIVATE_USE_GLYPH.test(value)) fieldIssues.push('MATH_PRIVATE_USE_GLYPH', 'MATH_GLYPH_CORRUPTION');
+      else if (REPLACEMENT_GLYPH.test(value) || CONTROL_GLYPH.test(value)) fieldIssues.push('MATH_GLYPH_CORRUPTION');
+      if (q?.section === 'math' && runtimeHasBrokenMathLayout(value)) fieldIssues.push('MATH_LAYOUT_CORRUPTION', 'MATH_FORMULA_EXTRACTION_FAILED');
+      if (fieldIssues.length) byField[field] = [...new Set(fieldIssues)];
+    }
+    const result = [];
+    result.byField = byField;
+    result.studentVisible = ['question', 'options', 'stimulus'].some(field => byField[field]);
+    result.explanationOnly = !result.studentVisible && Boolean(byField.explanation);
+    result.codes = [...new Set(Object.values(byField).flat())];
+    result.push(...result.codes);
+    if (result.studentVisible) result.push('MATH_CONTENT_CORRUPTED');
+    if (result.explanationOnly) result.push('MATH_EXPLANATION_REPAIR_REQUIRED');
+    return result;
+  }
 
   let _status = 'idle'; // 'idle' | 'loading' | 'ready' | 'error'
   let _error = null;
@@ -55,6 +95,9 @@
   function getQuestionValidationFailureReason(q, validSourceIds) {
     if (!q || typeof q !== 'object') return 'INVALID_OBJECT';
     if (!q.id || typeof q.id !== 'string' || !q.id.trim()) return 'MISSING_ID';
+    const contentIssues = runtimeContentIssues(q);
+    if (contentIssues.studentVisible) return 'MATH_CONTENT_CORRUPTED';
+    if (contentIssues.explanationOnly) return 'MATH_EXPLANATION_REPAIR_REQUIRED';
     if (q.status !== 'production') return 'INVALID_STATUS';
     if (!q.section || typeof q.section !== 'string' || !ALLOWED_SECTIONS.has(q.section.trim())) return 'INVALID_SECTION';
     if (!q.question || typeof q.question !== 'string' || !q.question.trim()) return 'EMPTY_QUESTION';

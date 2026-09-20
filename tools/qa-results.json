@@ -185,6 +185,11 @@
     "error": null
   },
   {
+    "test": "verify_vact_content_encoding.js",
+    "passed": true,
+    "error": null
+  },
+  {
     "test": "verify_vact_core.js",
     "passed": true,
     "error": null
