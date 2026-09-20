@@ -1,3 +1,9 @@
+const MATH_OPTION_LETTERS = Object.freeze(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']);
+const MATH_DIFFICULTY_LEVELS = Object.freeze({
+  basic: new Set(['NB', 'TH']),
+  advanced: new Set(['VD', 'VDC'])
+});
+
 function mathAssignScores(keys) {
   const essay = keys.filter(k => k.type === 'essay');
   const mcq = keys.filter(k => k.type !== 'essay');
@@ -6,7 +12,133 @@ function mathAssignScores(keys) {
   assign(mcq, essay.length ? 700 : 1000);
 }
 
-function mathQuestionSignature(text) { return String(text || '').normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s*\(Biến thể\s+\d+\)\s*$/iu, '').trim().replace(/\s+/g, ' '); }
+function hashMathSeed(seed) {
+  const value = String(seed);
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function createMathRandom(seed) {
+  if (seed === undefined || seed === null || seed === '') return Math.random;
+  let state = hashMathSeed(seed) || 0x6d2b79f5;
+  return () => {
+    state = Math.imul(state ^ (state >>> 15), 1 | state);
+    state ^= state + Math.imul(state ^ (state >>> 7), 61 | state);
+    return ((state ^ (state >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function withMathRandom(rng, callback) {
+  if (typeof rng !== 'function' || rng === Math.random) return callback();
+  const originalRandom = Math.random;
+  Math.random = rng;
+  try {
+    return callback();
+  } finally {
+    Math.random = originalRandom;
+  }
+}
+
+function normalizeMathQuestionText(value) {
+  return String(value || '')
+    .normalize('NFC')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/\s*\(Biến thể\s+\d+\)\s*$/iu, '')
+    .replace(/<\/?(?:span|div|p|br|strong|em|b|i|u|small|sup|sub)[^>]*>/giu, ' ')
+    .replace(/\\(?:\(|\)|\[|\])|\$/g, ' ')
+    .replace(/(?:\\,|\\;|\\:|\\!|\\quad|\\qquad)/g, ' ')
+    .replace(/[“”"'`*_~]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+function mathQuestionSignature(text) {
+  return normalizeMathQuestionText(text);
+}
+
+function normalizeMathAnswerValue(value, options) {
+  if (typeof value !== 'string') return '';
+  const raw = value.trim();
+  const letter = raw.match(/^([A-H])(?:[.)\]:]|\s|$)/i);
+  if (letter && MATH_OPTION_LETTERS.indexOf(letter[1].toUpperCase()) < options.length) {
+    return letter[1].toUpperCase();
+  }
+  const normalized = normalizeMathQuestionText(raw);
+  const matchingIndex = options.findIndex(option => normalizeMathQuestionText(option) === normalized);
+  return matchingIndex >= 0 ? MATH_OPTION_LETTERS[matchingIndex] : '';
+}
+
+function isMathPlaceholderAnswer(value) {
+  const normalized = normalizeMathQuestionText(value);
+  return !normalized || normalized === 'undefined' || normalized === 'null' || normalized === 'n/a' ||
+    normalized === 'not provided' || normalized === '12 | x=12' || normalized === '12 x=12';
+}
+
+function validateMathQuestionForProduction(question, context = {}) {
+  const q = question && typeof question === 'object' ? question : {};
+  const type = String(q.type || (Array.isArray(q.options) ? 'mcq' : 'essay')).toLowerCase();
+  const errors = [];
+  const content = q.question ?? q.content;
+  if (!String(content || '').trim()) errors.push('MISSING_CONTENT');
+
+  let normalizedAnswer = '';
+  if (type === 'mcq') {
+    const options = Array.isArray(q.options) ? q.options : [];
+    if (options.length < 2 || options.length > MATH_OPTION_LETTERS.length) errors.push('INVALID_OPTION_COUNT');
+    const normalizedOptions = options.map(option => normalizeMathQuestionText(option));
+    if (normalizedOptions.some(option => !option)) errors.push('EMPTY_OPTION');
+    if (new Set(normalizedOptions.filter(Boolean)).size !== normalizedOptions.filter(Boolean).length) errors.push('DUPLICATE_OPTION');
+    normalizedAnswer = normalizeMathAnswerValue(q.correctAnswer, options);
+    if (!normalizedAnswer) errors.push('MISSING_OR_INVALID_ANSWER');
+  } else if (type === 'essay') {
+    if (isMathPlaceholderAnswer(q.correctAnswer)) errors.push('MISSING_OR_PLACEHOLDER_ANSWER');
+  } else {
+    errors.push('INVALID_TYPE');
+  }
+
+  const level = String(q.level || '').toUpperCase();
+  if (context.difficultyMode && !isMathDifficultyAllowed(level, context.difficultyMode)) {
+    errors.push('DIFFICULTY_FILTERED');
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    type,
+    level,
+    normalizedAnswer
+  };
+}
+
+function isMathDifficultyAllowed(level, difficultyMode) {
+  if (!difficultyMode || difficultyMode === 'mixed') return true;
+  return MATH_DIFFICULTY_LEVELS[difficultyMode]?.has(String(level || '').toUpperCase()) || false;
+}
+
+function copyMathProvenance(source) {
+  const fields = [
+    'id', 'sourceId', 'sourceFile', 'sourcePage', 'questionSourceId', 'questionSourceFile',
+    'questionSourcePage', 'solutionSourceId', 'solutionSourceFile', 'solutionSourcePage',
+    'examSetId', 'quality', 'stimulus', 'assets', 'answerVerified', 'extractedFromSource', 'status'
+  ];
+  return fields.reduce((result, field) => {
+    if (source && source[field] !== undefined) result[field] = source[field];
+    return result;
+  }, {});
+}
+
+function normalizeMathTerm(value) {
+  return String(value || '').trim().toUpperCase();
+}
+
+function getMathQuestionTerm(question) {
+  return question?.term ?? question?.examTerm ?? question?.semester ?? question?.schoolTerm ?? null;
+}
 
 /**
  * KhiemEdu Math Engine & Dynamic Question Generator v2.0
@@ -1463,31 +1595,30 @@ const GradeEngines = {
 
 /* ================= 🚀 CORE MATH GENERATOR & ANTI-DUPLICATE GUARD ================= */
 const MathEngine = {
-  shuffleQuestionOptions(q) {
-    if (!q.options || q.options.length === 0) return q;
+  shuffleQuestionOptions(q, rng = Math.random) {
+    const validation = validateMathQuestionForProduction(q, { requireAnswer: true });
+    if (!validation.valid || validation.type !== 'mcq') {
+      const error = new Error(`Câu hỏi Toán không hợp lệ: ${validation.errors.join(', ')}`);
+      error.code = 'INVALID_MATH_QUESTION';
+      error.diagnostics = validation;
+      throw error;
+    }
     
     // Dynamic indices dựa theo số lượng options thực tế (hỗ trợ 2, 3, 4, ... lựa chọn)
     const indices = q.options.map((_, i) => i);
     for (let i = indices.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+      const j = Math.floor(rng() * (i + 1));
       [indices[i], indices[j]] = [indices[j], indices[i]];
     }
 
-    const letterMap = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-    // Nếu câu hỏi đã có sẵn correctAnswer chuẩn (ví dụ từ DocumentQuestionBank)
-    let correctOriginalIndex = 0;
-    if (q.correctAnswer && typeof q.correctAnswer === 'string') {
-      const foundIdx = letterMap.indexOf(q.correctAnswer.toUpperCase());
-      if (foundIdx !== -1 && foundIdx < q.options.length) {
-        correctOriginalIndex = foundIdx;
-      }
-    }
+    const letterMap = MATH_OPTION_LETTERS;
+    const correctOriginalIndex = letterMap.indexOf(validation.normalizedAnswer);
     const newCorrectIdx = indices.indexOf(correctOriginalIndex);
 
     return {
       ...q,
       options: indices.map(i => q.options[i]),
-      correctAnswer: letterMap[newCorrectIdx] || 'A'
+      correctAnswer: letterMap[newCorrectIdx]
     };
   },
 
@@ -1498,6 +1629,12 @@ const MathEngine = {
    * 100% trắc nghiệm chuẩn hóa, không pha trộn Toán phổ thông SGK
    */
   generateDgnlExam(config = {}) {
+    const rng = config._rng || createMathRandom(config.seed);
+    return withMathRandom(rng, () => this._generateDgnlExam({ ...config, _rng: rng }));
+  },
+
+  _generateDgnlExam(config = {}) {
+    const rng = config._rng || Math.random;
     // [DEPRECATED] This method uses the old synthetic 40/30/30 structure and should NOT
     // be called from the Teacher Hub or Student V-ACT flows.
     // Use KEDUVACT.VACTExamGenerator.generateMini100() or generateFull120() instead,
@@ -1508,7 +1645,7 @@ const MathEngine = {
     );
     const difficultyMode = config.difficultyMode || 'mixed';
     if (!['basic', 'advanced', 'mixed'].includes(difficultyMode)) throw new Error('Chế độ độ khó không hợp lệ.');
-    if (difficultyMode === 'advanced') return this.generateExam({ ...config, track: 'dgnl', grade: 'DGNL', sourceMode: 'document', mcqCount: config.packageType === 'full' ? 120 : 100, essayMatrix: { TH: 0, VD: 0, VDC: 0 } });
+    if (difficultyMode === 'advanced') return this._generateExam({ ...config, track: 'dgnl', grade: 'DGNL', sourceMode: 'document', mcqCount: config.packageType === 'full' ? 120 : 100, essayMatrix: { TH: 0, VD: 0, VDC: 0 }, _rng: rng });
     const allowedLevel = q => difficultyMode === 'mixed' || (difficultyMode === 'basic' ? ['NB', 'TH'] : ['VD', 'VDC']).includes(String(q.level || '').toUpperCase());
     const {
       packageType = 'mini', // 'mini' (100 câu) | 'full' (120 câu)
@@ -1541,6 +1678,7 @@ const MathEngine = {
 
     const selectedMcq = [];
     const seenSignatures = batchSeenSignatures || new Set();
+    const rejectedQuestions = [];
 
     const generateGroupQuestions = (pool, count, groupLabel) => {
       let chosen = 0;
@@ -1551,6 +1689,16 @@ const MathEngine = {
         const generator = pool[tIndex];
         const candidate = generator(chosen + cycle * 7);
         if (!allowedLevel(candidate)) continue;
+        const validation = validateMathQuestionForProduction(candidate);
+        if (!validation.valid) {
+          rejectedQuestions.push({
+            source: 'dgnl-template',
+            errors: validation.errors,
+            question: String(candidate?.question || '').slice(0, 160)
+          });
+          continue;
+        }
+        candidate.correctAnswer = validation.normalizedAnswer;
         const signature = mathQuestionSignature(candidate.question);
         if (!seenSignatures.has(signature)) {
           seenSignatures.add(signature);
@@ -1567,7 +1715,7 @@ const MathEngine = {
 
     const scorePerQ = Math.round((10.0 / totalQuestions) * 100) / 100;
     const answerKeys = selectedMcq.map((q, idx) => {
-      const shuffledQ = this.shuffleQuestionOptions(q);
+      const shuffledQ = this.shuffleQuestionOptions(q, rng);
       let topicName = 'ĐGNL Định Lượng';
       if (q.topic === 'dgnl_logic') topicName = 'ĐGNL Logic';
       else if (q.topic === 'dgnl_data') topicName = 'ĐGNL Số Liệu';
@@ -1604,7 +1752,16 @@ const MathEngine = {
       examHtml,
       packageType,
       warning: answerKeys.length < totalQuestions ? 'Ngân hàng ĐGNL chưa đủ câu độc nhất; đề được tạo với số câu thực tế.' : null,
-      targetExam
+      targetExam,
+      isComplete: answerKeys.length === totalQuestions,
+      generationDiagnostics: {
+        requested: { mcq: totalQuestions, total: totalQuestions },
+        generated: { mcq: answerKeys.length, total: answerKeys.length },
+        missing: Math.max(0, totalQuestions - answerKeys.length),
+        isComplete: answerKeys.length === totalQuestions,
+        seed: config.seed ?? null,
+        rejectedQuestions
+      }
     };
   },
 
@@ -1612,8 +1769,17 @@ const MathEngine = {
    * Sinh bộ đề thi chuẩn 100% TOANMATH với ANTI-DUPLICATE GUARD & TÍCH HỢP KHO TÀI LIỆU
    */
   generateExam(config = {}) {
+    const rng = config._rng || createMathRandom(config.seed);
+    return withMathRandom(rng, () => this._generateExam({ ...config, _rng: rng }));
+  },
+
+  _generateExam(config = {}) {
+    const rng = config._rng || Math.random;
     const difficultyMode = config.difficultyMode || 'mixed';
     if (!['basic', 'advanced', 'mixed'].includes(difficultyMode)) throw new Error('Chế độ độ khó không hợp lệ.');
+    if (!['document', 'hybrid', 'synthetic'].includes(config.sourceMode || 'hybrid')) {
+      throw new Error('sourceMode phải là document, hybrid hoặc synthetic.');
+    }
     const specializedPolicy = typeof SpecializedBankPolicy !== 'undefined' ? SpecializedBankPolicy : (typeof require === 'function' ? require('./specializedBankPolicy') : null);
 
     const {
@@ -1637,20 +1803,86 @@ const MathEngine = {
     const gStr = (track && track.startsWith('dgnl')) ? 'DGNL' : grade.toString();
     if (gStr === 'DGNL' && sourceMode === 'synthetic' && difficultyMode === 'mixed') {
       const pkg = mcqCount >= 150 ? 'full' : 'mini';
-      return this.generateDgnlExam({
+      return this._generateDgnlExam({
         packageType: pkg,
         targetExam: track === 'dgnl_hn' ? 'HSA' : (track === 'dgnl_bk' ? 'TSA' : 'HCM'),
         batchSeenSignatures,
         timeLimit: timeLimit || (pkg === 'full' ? 150 : 90),
-        title
+        title,
+        _rng: rng
       });
     }
 
     let warningMsg = null;
     let topicWarning = null;
+    const rejectedQuestions = [];
+    const operationalDiagnostics = [];
+    const termFilter = {
+      requested: normalizeMathTerm(term),
+      classifiedCount: 0,
+      unclassifiedCount: 0,
+      excludedCount: 0,
+      fallbackUsed: false
+    };
 
-    let mcqTemplates = GradeEngines.getTemplates(gStr, 'mcq', 'TH', topic);
-    const allMcqTemplates = GradeEngines.getTemplates(gStr, 'mcq', 'TH', 'all');
+    const acceptQuestion = (candidate, context = {}) => {
+      const candidateTerm = normalizeMathTerm(getMathQuestionTerm(candidate));
+      if (termFilter.requested && termFilter.requested !== 'ALL') {
+        if (candidateTerm) {
+          termFilter.classifiedCount++;
+          if (candidateTerm !== termFilter.requested) {
+            termFilter.excludedCount++;
+            rejectedQuestions.push({
+              source: context.source || 'unknown',
+              id: candidate?.id || null,
+              errors: ['TERM_FILTERED'],
+              question: String(candidate?.question || candidate?.content || '').slice(0, 160)
+            });
+            return null;
+          }
+        } else {
+          termFilter.unclassifiedCount++;
+          termFilter.fallbackUsed = true;
+        }
+      }
+      const validation = validateMathQuestionForProduction(candidate, {
+        difficultyMode: context.ignoreDifficulty ? null : difficultyMode
+      });
+      if (!validation.valid) {
+        rejectedQuestions.push({
+          source: context.source || 'unknown',
+          id: candidate?.id || null,
+          errors: validation.errors,
+          question: String(candidate?.question || candidate?.content || '').slice(0, 160)
+        });
+        return null;
+      }
+      if (context.requiredLevel) {
+        const acceptedLevels = context.requiredLevel === 'TH' ? new Set(['NB', 'TH']) : new Set([context.requiredLevel]);
+        if (!acceptedLevels.has(validation.level)) {
+          rejectedQuestions.push({
+            source: context.source || 'unknown',
+            id: candidate?.id || null,
+            errors: ['REQUIRED_LEVEL_MISMATCH'],
+            question: String(candidate?.question || candidate?.content || '').slice(0, 160)
+          });
+          return null;
+        }
+      }
+      const normalized = {
+        ...candidate,
+        type: validation.type,
+        question: String(candidate.question ?? candidate.content).trim()
+      };
+      if (validation.type === 'mcq') {
+        normalized.options = [...candidate.options];
+        normalized.correctAnswer = validation.normalizedAnswer;
+      }
+      return normalized;
+    };
+
+    let mcqTemplates = GradeEngines.getTemplates(gStr, 'mcq', 'all', topic);
+    const allMcqTemplates = GradeEngines.getTemplates(gStr, 'mcq', 'all', 'all');
 
     if (topic !== 'all') {
       if (mcqTemplates.warning) {
@@ -1676,7 +1908,9 @@ const MathEngine = {
         recentDocIds = new Set(stored);
         if (typeof AppState !== 'undefined') AppState.recentDocQuestionIds = recentDocIds;
       }
-    } catch (e) {}
+    } catch (e) {
+      operationalDiagnostics.push({ code: 'RECENT_QUESTION_STATE_UNAVAILABLE', message: String(e?.message || e) });
+    }
 
     let mcqDuplicateExhausted = false;
     let takenFromDocCount = 0;
@@ -1684,7 +1918,9 @@ const MathEngine = {
     // BƯỚC 1: LẤY CÂU HỎI TRỰC TIẾP TỪ KHO TÀI LIỆU (NẾU sourceMode LÀ 'document' HOẶC 'hybrid')
     const docBank = resolveDocBank();
     if (docBank && sourceMode !== 'synthetic') {
-      let docQuestions = docBank.query({ subject: 'toan', grade: gStr, topic: topic, type: 'mcq' });
+      let docQuestions = docBank.query({ subject: 'toan', grade: gStr, term, topic: topic, type: 'mcq' })
+        .map(q => acceptQuestion(q, { source: 'document-mcq' }))
+        .filter(Boolean);
 
       // Thứ tự ưu tiên tuyển chọn câu hỏi tài liệu:
       // 1. Câu hỏi tài liệu chưa dùng gần đây (unseen)
@@ -1706,19 +1942,15 @@ const MathEngine = {
         const sig = mathQuestionSignature(q.question);
         if (seenSignatures.has(sig)) return;
         seenSignatures.add(sig);
-        recentDocIds.add(q.id);
+        if (q.id) recentDocIds.add(q.id);
         selectedMcq.push({
+          ...q,
           id: q.id,
-          sourceFile: q.sourceFile,
-          curation: q.curation,
-          grade: q.grade,
-          level: q.level || 'TH',
           type: 'mcq',
-          topic: q.topic,
+          level: q.level || 'TH',
           source: q.source || 'Kho tài liệu ôn thi K-EDU',
-          question: q.question,
           options: [...q.options],
-          correctAnswer: q.correctAnswer || 'A',
+          correctAnswer: q.correctAnswer,
           explanation: q.explanation || ''
         });
       });
@@ -1731,7 +1963,9 @@ const MathEngine = {
           const arr = Array.from(recentDocIds).slice(-50000);
           localStorage.setItem('khiemedu_recent_doc_question_ids', JSON.stringify(arr));
         }
-      } catch (e) {}
+      } catch (e) {
+        operationalDiagnostics.push({ code: 'RECENT_QUESTION_STATE_SAVE_FAILED', message: String(e?.message || e) });
+      }
 
       if (sourceMode === 'hybrid' && takenFromDocCount < mcqCount) {
         const missing = mcqCount - takenFromDocCount;
@@ -1744,7 +1978,7 @@ const MathEngine = {
     const refillMcqDeck = () => {
       const arr = Array.from({ length: mcqTemplates.length }, (_, k) => k);
       for (let j = arr.length - 1; j > 0; j--) {
-        const r = Math.floor(Math.random() * (j + 1));
+        const r = Math.floor(rng() * (j + 1));
         [arr[j], arr[r]] = [arr[r], arr[j]];
       }
       mcqDeck.push(...arr);
@@ -1761,7 +1995,8 @@ const MathEngine = {
         attempts++;
         if (!mcqDeck.length) refillMcqDeck();
         const templateIdx = mcqDeck.pop();
-        const candidate = mcqTemplates[templateIdx](selectedMcq.length + 1);
+        const candidate = acceptQuestion(mcqTemplates[templateIdx](selectedMcq.length + 1), { source: 'template-mcq' });
+        if (!candidate) continue;
         const signature = mathQuestionSignature(candidate.question);
 
         if (!seenSignatures.has(signature)) {
@@ -1775,7 +2010,8 @@ const MathEngine = {
       if (!chosenQ) {
         for (let tIdx = 0; tIdx < mcqTemplates.length; tIdx++) {
           for (let retry = 0; retry < 5; retry++) {
-            const candidate = mcqTemplates[tIdx](selectedMcq.length + 1);
+            const candidate = acceptQuestion(mcqTemplates[tIdx](selectedMcq.length + 1), { source: 'template-mcq' });
+            if (!candidate) continue;
             const signature = mathQuestionSignature(candidate.question);
             if (!seenSignatures.has(signature)) {
               seenSignatures.add(signature);
@@ -1812,9 +2048,12 @@ const MathEngine = {
     if (docBank && sourceMode !== 'synthetic') {
       const docEssays = docBank.query({
         grade: gStr,
+        term,
         topic: topic === 'all' ? undefined : topic,
         type: 'essay'
-      }).filter(eq => (eq.subject || 'toan') === 'toan');
+      }).filter(eq => (eq.subject || 'toan') === 'toan')
+        .map(eq => acceptQuestion(eq, { source: 'document-essay' }))
+        .filter(Boolean);
 
       targetLevels.forEach(({ level, count }) => {
         if (count <= 0) return;
@@ -1843,15 +2082,11 @@ const MathEngine = {
           seenEssaySignatures.add(sig);
 
           selectedEssay.push({
+            ...eq,
             id: eq.id,
-            sourceFile: eq.sourceFile,
-            curation: eq.curation,
-            grade: eq.grade,
             level: eq.level || level,
             type: 'essay',
-            topic: eq.topic,
             source: eq.source || 'Kho tài liệu ôn thi K-EDU',
-            question: eq.question,
             correctAnswer: eq.correctAnswer,
             explanation: eq.explanation || ''
           });
@@ -1885,7 +2120,7 @@ const MathEngine = {
         const refillEssayDeck = () => {
           const arr = Array.from({ length: essayTemplates.length }, (_, k) => k);
           for (let j = arr.length - 1; j > 0; j--) {
-            const r = Math.floor(Math.random() * (j + 1));
+            const r = Math.floor(rng() * (j + 1));
             [arr[j], arr[r]] = [arr[r], arr[j]];
           }
           essayDeck.push(...arr);
@@ -1900,7 +2135,8 @@ const MathEngine = {
             attempts++;
             if (!essayDeck.length) refillEssayDeck();
             const idx = essayDeck.pop();
-            const candidate = essayTemplates[idx](essayIndex);
+            const candidate = acceptQuestion(essayTemplates[idx](essayIndex), { source: 'template-essay', requiredLevel: level });
+            if (!candidate) continue;
             const sig = mathQuestionSignature(candidate.question);
             if (!seenEssaySignatures.has(sig)) {
               seenEssaySignatures.add(sig);
@@ -1912,8 +2148,9 @@ const MathEngine = {
 
           if (!chosenEq) {
             for (let tIdx = 0; tIdx < essayTemplates.length; tIdx++) {
-              for (let retry = 0; retry < 5; retry++) {
-                const candidate = essayTemplates[tIdx](essayIndex);
+            for (let retry = 0; retry < 5; retry++) {
+                const candidate = acceptQuestion(essayTemplates[tIdx](essayIndex), { source: 'template-essay', requiredLevel: level });
+                if (!candidate) continue;
                 const sig = mathQuestionSignature(candidate.question);
                 if (!seenEssaySignatures.has(sig)) {
                   seenEssaySignatures.add(sig);
@@ -1942,12 +2179,17 @@ const MathEngine = {
     // ================= PHÂN BIỆT RÕ RÀNG TỪNG LOẠI THIẾU HỤT CÂU HỎI & DIAGNOSTICS =================
     const shortageWarnings = [];
     const shortageDetails = [];
+    const hasDifficultyRejection = rejectedQuestions.some(item => item.errors.includes('DIFFICULTY_FILTERED'));
+    const hasValidationRejection = rejectedQuestions.some(item => item.errors.some(code => code !== 'DIFFICULTY_FILTERED'));
+    const poolShortageCode = fallback => hasDifficultyRejection
+      ? 'DIFFICULTY_POOL_SHORTAGE'
+      : (hasValidationRejection ? 'VALIDATED_POOL_SHORTAGE' : fallback);
 
     // 1. Thiếu câu trắc nghiệm (MCQ)
     if (selectedMcq.length < mcqCount) {
       const code = mcqDuplicateExhausted
         ? 'DUPLICATE_EXHAUSTION'
-        : (sourceMode === 'document' ? 'DOCUMENT_POOL_SHORTAGE' : 'TEMPLATE_GENERATION_SHORTAGE');
+        : poolShortageCode(sourceMode === 'document' ? 'DOCUMENT_POOL_SHORTAGE' : 'TEMPLATE_GENERATION_SHORTAGE');
       const missing = mcqCount - selectedMcq.length;
       shortageDetails.push({
         type: 'mcq',
@@ -1971,7 +2213,7 @@ const MathEngine = {
 
     // 2. Thiếu tự luận Thông hiểu (TH)
     if (actualTH < reqTH) {
-      const code = essayDuplicateExhausted.TH ? 'DUPLICATE_EXHAUSTION' : (sourceMode === 'document' ? 'DOCUMENT_POOL_SHORTAGE' : 'TEMPLATE_GENERATION_SHORTAGE');
+      const code = essayDuplicateExhausted.TH ? 'DUPLICATE_EXHAUSTION' : poolShortageCode(sourceMode === 'document' ? 'DOCUMENT_POOL_SHORTAGE' : 'TEMPLATE_GENERATION_SHORTAGE');
       shortageDetails.push({
         type: 'essay_TH',
         code,
@@ -1989,7 +2231,7 @@ const MathEngine = {
 
     // 3. Thiếu tự luận Vận dụng (VD)
     if (actualVD < reqVD) {
-      const code = essayDuplicateExhausted.VD ? 'DUPLICATE_EXHAUSTION' : (sourceMode === 'document' ? 'DOCUMENT_POOL_SHORTAGE' : 'TEMPLATE_GENERATION_SHORTAGE');
+      const code = essayDuplicateExhausted.VD ? 'DUPLICATE_EXHAUSTION' : poolShortageCode(sourceMode === 'document' ? 'DOCUMENT_POOL_SHORTAGE' : 'TEMPLATE_GENERATION_SHORTAGE');
       shortageDetails.push({
         type: 'essay_VD',
         code,
@@ -2007,15 +2249,18 @@ const MathEngine = {
 
     // 4. Thiếu tự luận Vận dụng cao (VDC) - approved VDC shortage
     if (actualVDC < reqVDC) {
+      const vdcDifficultyExcluded = !isMathDifficultyAllowed('VDC', difficultyMode);
       shortageDetails.push({
         type: 'essay_VDC',
-        code: 'VDC_APPROVED_SOURCE_SHORTAGE',
+        code: vdcDifficultyExcluded ? 'DIFFICULTY_POOL_SHORTAGE' : 'VDC_APPROVED_SOURCE_SHORTAGE',
         requested: reqVDC,
         generated: actualVDC,
         missing: reqVDC - actualVDC,
-        reason: 'Ngân hàng hiện chưa có đủ câu VDC trường chuyên đã duyệt.'
+        reason: vdcDifficultyExcluded ? 'Chế độ độ khó hiện tại không cho phép câu VDC.' : 'Ngân hàng hiện chưa có đủ câu VDC trường chuyên đã duyệt.'
       });
-      shortageWarnings.push(`Tự luận VDC: Ngân hàng chỉ có ${actualVDC}/${reqVDC} câu VDC trường chuyên đã duyệt đạt chuẩn (SpecializedBankPolicy).`);
+      shortageWarnings.push(vdcDifficultyExcluded
+        ? `Tự luận VDC: Chế độ ${difficultyMode} không cho phép mức VDC.`
+        : `Tự luận VDC: Ngân hàng chỉ có ${actualVDC}/${reqVDC} câu VDC trường chuyên đã duyệt đạt chuẩn (SpecializedBankPolicy).`);
     }
 
     const allShortageMessages = [topicWarning, ...shortageWarnings].filter(Boolean);
@@ -2048,8 +2293,9 @@ const MathEngine = {
 
     // Xáo trộn vị trí các lựa chọn của từng câu trắc nghiệm
     selectedMcq.forEach((q, idx) => {
-      const shuffledQ = this.shuffleQuestionOptions(q);
+      const shuffledQ = this.shuffleQuestionOptions(q, rng);
       answerKeys.push({
+        ...copyMathProvenance(q),
         num: idx + 1,
         type: 'mcq',
         schoolName: q.curation?.schoolName,
@@ -2069,6 +2315,7 @@ const MathEngine = {
 
     selectedEssay.forEach((q, idx) => {
       answerKeys.push({
+        ...copyMathProvenance(q),
         num: selectedMcq.length + idx + 1,
         type: 'essay',
         schoolName: q.curation?.schoolName,
@@ -2077,7 +2324,7 @@ const MathEngine = {
         topic: resolveKeyTopic(q.topic),
         level: q.level || 'VD',
         source: q.source || '',
-        correct: q.correctAnswer || '12 | x=12',
+        correct: q.correctAnswer,
         score: essayScore,
         content: q.question,
         diagram: q.diagram || null,
@@ -2128,7 +2375,19 @@ const MathEngine = {
         documentEssayVD: Math.max(0, actualVD - generatedVD),
         generatedEssayVD: generatedVD
       },
-      shortages: shortageDetails
+      shortages: shortageDetails,
+      rejectedQuestions,
+      operationalDiagnostics,
+      seed: config.seed ?? null,
+      missing: Math.max(0, (mcqCount + reqTH + reqVD + reqVDC) - answerKeys.length),
+      isComplete,
+      filters: {
+        grade: gStr,
+        term,
+        topic,
+        difficultyMode
+      },
+      termFilter
     };
 
     return {
@@ -2171,9 +2430,42 @@ const MathEngine = {
     const reqVDC = Math.max(0, parseInt(essayMatrix?.VDC ?? 0, 10) || 0);
 
     const docBank = resolveDocBank();
+    const capacityDiagnostics = [];
+    const termFilter = {
+      requested: normalizeMathTerm(term),
+      classifiedCount: 0,
+      unclassifiedCount: 0,
+      excludedCount: 0,
+      fallbackUsed: false
+    };
+    const applyTermFilter = questions => questions.filter(question => {
+      if (!termFilter.requested || termFilter.requested === 'ALL') return true;
+      const questionTerm = normalizeMathTerm(getMathQuestionTerm(question));
+      if (!questionTerm) {
+        termFilter.unclassifiedCount++;
+        termFilter.fallbackUsed = true;
+        return true;
+      }
+      termFilter.classifiedCount++;
+      if (questionTerm !== termFilter.requested) {
+        termFilter.excludedCount++;
+        return false;
+      }
+      return true;
+    });
+    const acceptCapacityQuestion = (question, source) => {
+      const validation = validateMathQuestionForProduction(question, { difficultyMode });
+      if (!validation.valid) {
+        capacityDiagnostics.push({ source, id: question?.id || null, errors: validation.errors });
+        return null;
+      }
+      return question;
+    };
     let docQuestions = [];
     if (docBank) {
-      docQuestions = docBank.query({ subject: 'toan', grade: gStr, topic: topic, type: 'mcq' });
+      docQuestions = applyTermFilter(docBank.query({ subject: 'toan', grade: gStr, term, topic: topic, type: 'mcq' }))
+        .map(q => acceptCapacityQuestion(q, 'document-mcq'))
+        .filter(Boolean);
     }
 
     let recentDocIds = new Set();
@@ -2184,21 +2476,40 @@ const MathEngine = {
         const stored = JSON.parse(localStorage.getItem('khiemedu_recent_doc_question_ids') || '[]');
         recentDocIds = new Set(stored);
       }
-    } catch (_) {}
+    } catch (e) {
+      capacityDiagnostics.push({ code: 'RECENT_QUESTION_STATE_UNAVAILABLE', message: String(e?.message || e) });
+    }
 
+    const deduplicateQuestions = questions => {
+      const seen = new Set();
+      return questions.filter(q => {
+        const signature = mathQuestionSignature(q.question);
+        if (!signature || seen.has(signature)) return false;
+        seen.add(signature);
+        return true;
+      });
+    };
+    docQuestions = deduplicateQuestions(docQuestions);
     const unseenDocQuestions = docQuestions.filter(q => !recentDocIds.has(q.id));
     const recentDocQuestions = docQuestions.filter(q => recentDocIds.has(q.id));
 
-    const mcqTemplates = GradeEngines.getTemplates(gStr, 'mcq', 'TH', topic);
-    const templateMcqAvailable = Array.isArray(mcqTemplates) && mcqTemplates.length > 0;
+    const mcqTemplates = GradeEngines.getTemplates(gStr, 'mcq', 'all', topic);
+    const validatedMcqTemplates = (Array.isArray(mcqTemplates) ? mcqTemplates : []).filter(template => {
+      const level = String(template.level || '').toUpperCase();
+      return difficultyMode === 'mixed' || isMathDifficultyAllowed(level, difficultyMode);
+    });
+    const templateMcqAvailable = validatedMcqTemplates.length > 0;
 
     let docEssays = [];
     if (docBank) {
-      docEssays = docBank.query({
+      docEssays = applyTermFilter(docBank.query({
         grade: gStr,
+        term,
         topic: topic === 'all' ? undefined : topic,
         type: 'essay'
-      }).filter(eq => (eq.subject || 'toan') === 'toan');
+      })).filter(eq => (eq.subject || 'toan') === 'toan')
+        .map(eq => acceptCapacityQuestion(eq, 'document-essay'))
+        .filter(Boolean);
     }
 
     const specializedPolicy = typeof SpecializedBankPolicy !== 'undefined' ? SpecializedBankPolicy : (typeof require === 'function' ? require('./specializedBankPolicy') : null);
@@ -2207,10 +2518,22 @@ const MathEngine = {
     const docVD = docEssays.filter(eq => (eq.level || '').toUpperCase() === 'VD').length;
     const docVDC = docEssays.filter(eq => (eq.level || '').toUpperCase() === 'VDC' && (specializedPolicy ? specializedPolicy.isApproved(eq) === true : false)).length;
 
-    const thTemplates = GradeEngines.getTemplates(gStr, 'essay', 'TH', topic);
-    const vdTemplates = GradeEngines.getTemplates(gStr, 'essay', 'VD', topic);
+    const thTemplates = GradeEngines.getTemplates(gStr, 'essay', 'TH', topic)
+      .filter(template => difficultyMode === 'mixed' || isMathDifficultyAllowed(template.level || 'TH', difficultyMode));
+    const vdTemplates = GradeEngines.getTemplates(gStr, 'essay', 'VD', topic)
+      .filter(template => difficultyMode === 'mixed' || isMathDifficultyAllowed(template.level || 'VD', difficultyMode));
 
     const blockers = [];
+
+    if (reqTH > 0 && !isMathDifficultyAllowed('TH', difficultyMode)) {
+      blockers.push({ code: 'DIFFICULTY_MODE_EXCLUDES_LEVEL', requested: reqTH, level: 'TH', message: `Chế độ ${difficultyMode} không cho phép câu tự luận TH.` });
+    }
+    if (reqVD > 0 && !isMathDifficultyAllowed('VD', difficultyMode)) {
+      blockers.push({ code: 'DIFFICULTY_MODE_EXCLUDES_LEVEL', requested: reqVD, level: 'VD', message: `Chế độ ${difficultyMode} không cho phép câu tự luận VD.` });
+    }
+    if (reqVDC > 0 && !isMathDifficultyAllowed('VDC', difficultyMode)) {
+      blockers.push({ code: 'DIFFICULTY_MODE_EXCLUDES_LEVEL', requested: reqVDC, level: 'VDC', message: `Chế độ ${difficultyMode} không cho phép câu tự luận VDC.` });
+    }
 
     // VDC strict policy check: VDC cannot be refilled by templates in hybrid or document mode
     if (sourceMode !== 'synthetic' && reqVDC > docVDC) {
@@ -2249,9 +2572,37 @@ const MathEngine = {
       }
     }
 
+    if (sourceMode === 'synthetic' && reqTH > thTemplates.length) {
+      blockers.push({ code: 'TEMPLATE_GENERATION_SHORTAGE', requested: reqTH, available: thTemplates.length, level: 'TH', message: `Kho template đã kiểm định chỉ có ${thTemplates.length} nguồn tự luận TH khả dụng.` });
+    } else if (sourceMode === 'hybrid' && reqTH > docTH && thTemplates.length === 0) {
+      blockers.push({ code: 'TEMPLATE_GENERATION_SHORTAGE', requested: reqTH, available: docTH, level: 'TH', message: 'Không có template TH đã kiểm định để bổ sung phần thiếu.' });
+    }
+    if (sourceMode === 'synthetic' && reqVD > vdTemplates.length) {
+      blockers.push({ code: 'TEMPLATE_GENERATION_SHORTAGE', requested: reqVD, available: vdTemplates.length, level: 'VD', message: `Kho template đã kiểm định chỉ có ${vdTemplates.length} nguồn tự luận VD khả dụng.` });
+    } else if (sourceMode === 'hybrid' && reqVD > docVD && vdTemplates.length === 0) {
+      blockers.push({ code: 'TEMPLATE_GENERATION_SHORTAGE', requested: reqVD, available: docVD, level: 'VD', message: 'Không có template VD đã kiểm định để bổ sung phần thiếu.' });
+    }
+
+    if (sourceMode === 'synthetic' && mcqCount > validatedMcqTemplates.length) {
+      blockers.push({
+        code: 'TEMPLATE_GENERATION_SHORTAGE',
+        requested: mcqCount,
+        available: validatedMcqTemplates.length,
+        message: `Kho template đã kiểm định chỉ có ${validatedMcqTemplates.length} nguồn MCQ khả dụng cho chế độ synthetic.`
+      });
+    } else if (sourceMode === 'hybrid' && mcqCount > docQuestions.length && !templateMcqAvailable) {
+      blockers.push({
+        code: 'TEMPLATE_GENERATION_SHORTAGE',
+        requested: mcqCount,
+        available: docQuestions.length,
+        message: `Sau khi lọc nghiêm ngặt, không còn template MCQ phù hợp để bổ sung.`
+      });
+    }
+
+    const templateMcqCapacity = sourceMode === 'document' ? 0 : validatedMcqTemplates.length;
     const estimatedHybridCapacity = sourceMode === 'document'
       ? docQuestions.length
-      : (templateMcqAvailable ? Math.max(docQuestions.length, mcqCount) : docQuestions.length);
+      : (sourceMode === 'synthetic' ? templateMcqCapacity : docQuestions.length + templateMcqCapacity);
 
     return {
       mcq: {
@@ -2259,7 +2610,8 @@ const MathEngine = {
         documentAvailable: docQuestions.length,
         recentExcluded: docQuestions.length - unseenDocQuestions.length,
         reusableRecent: recentDocQuestions.length,
-        estimatedHybridCapacity
+        estimatedHybridCapacity,
+        capacityIsUpperBound: sourceMode === 'hybrid'
       },
       essay: {
         TH: {
@@ -2278,7 +2630,9 @@ const MathEngine = {
         }
       },
       feasible: blockers.length === 0,
-      blockers
+      blockers,
+      diagnostics: capacityDiagnostics,
+      termFilter
     };
   },
 
@@ -2290,10 +2644,17 @@ const MathEngine = {
    *   - titlePrefix: tiền tố tiêu đề đề thi
    */
   generateBatchExams(config = {}) {
+    const rng = config._rng || createMathRandom(config.seed);
+    return withMathRandom(rng, () => this._generateBatchExams({ ...config, _rng: rng }));
+  },
+
+  _generateBatchExams(config = {}) {
+    const rng = config._rng || Math.random;
     const {
       batchCount = 5,
       deduplicatePolicy = 'variant_shuffle',
       titlePrefix = '',
+      _rng,
       ...examConfig
     } = config;
 
@@ -2305,17 +2666,10 @@ const MathEngine = {
     if (deduplicatePolicy === 'disjoint') {
       const gStr = (examConfig.track && examConfig.track.startsWith('dgnl')) ? 'DGNL' : (examConfig.grade || '10').toString();
       const topic = examConfig.topic || 'all';
-      let docCount = 0;
-      const docBank = resolveDocBank();
-      if (docBank) {
-        docCount = docBank.query({ subject: 'toan', grade: gStr, topic, type: 'mcq' }).length;
-      }
-      const templates = GradeEngines.getTemplates(gStr, 'mcq', 'TH', topic);
-      const templateCount = Array.isArray(templates) ? templates.length : 0;
-      const availableUnique = examConfig.sourceMode === 'document' ? docCount : (docCount + templateCount * 12);
-
-      if (totalRequiredMcq > availableUnique) {
-        throw new Error(`Chế độ 100% độc lập cần ${totalRequiredMcq} câu độc nhất, nhưng bộ lọc hiện chỉ có ${availableUnique} câu khả dụng.`);
+      const capacity = this.getGenerationCapacity({ ...examConfig, mcqCount: reqMcq });
+      const sourceMode = examConfig.sourceMode || 'hybrid';
+      if (sourceMode === 'document' && totalRequiredMcq > capacity.mcq.documentAvailable) {
+        throw new Error(`Chế độ 100% độc lập cần ${totalRequiredMcq} câu độc nhất, nhưng bộ lọc tài liệu đã kiểm định chỉ có ${capacity.mcq.documentAvailable} câu khả dụng.`);
       }
     }
 
@@ -2324,7 +2678,7 @@ const MathEngine = {
     if (deduplicatePolicy === 'variant_shuffle') {
       // Chế độ 2: Đảo mã đề hoán vị chuẩn Bộ GD&ĐT (Mã 101, 102, 103...)
       const baseTitle = titlePrefix ? `${titlePrefix} — Mã Đề 101` : '';
-      const baseExam = this.generateExam({ ...examConfig, title: baseTitle });
+      const baseExam = this.generateExam({ ...examConfig, title: baseTitle, _rng: rng });
       baseExam.examCode = '101';
       baseExam.variantIndex = 1;
       exams.push(baseExam);
@@ -2339,14 +2693,14 @@ const MathEngine = {
         // Hoán vị ngẫu nhiên thứ tự các câu hỏi trắc nghiệm
         const shuffledMcq = [...baseMcq];
         for (let j = shuffledMcq.length - 1; j > 0; j--) {
-          const r = Math.floor(Math.random() * (j + 1));
+          const r = Math.floor(rng() * (j + 1));
           [shuffledMcq[j], shuffledMcq[r]] = [shuffledMcq[r], shuffledMcq[j]];
         }
 
         // Hoán vị ngẫu nhiên thứ tự các câu hỏi tự luận
         const shuffledEssay = [...baseEssay];
         for (let j = shuffledEssay.length - 1; j > 0; j--) {
-          const r = Math.floor(Math.random() * (j + 1));
+          const r = Math.floor(rng() * (j + 1));
           [shuffledEssay[j], shuffledEssay[r]] = [shuffledEssay[r], shuffledEssay[j]];
         }
 
@@ -2360,8 +2714,9 @@ const MathEngine = {
             correctAnswer: q.correct,
             explanation: q.explanation,
             diagram: q.diagram
-          });
+          }, rng);
           newKeys.push({
+            ...copyMathProvenance(q),
             num: idx + 1,
             type: 'mcq',
             topic: q.topic,
@@ -2379,6 +2734,7 @@ const MathEngine = {
         // Tự luận giữ nguyên nhưng đánh số tiếp theo
         shuffledEssay.forEach((q, idx) => {
           newKeys.push({
+            ...copyMathProvenance(q),
             num: shuffledMcq.length + idx + 1,
             type: 'essay',
             topic: q.topic,
@@ -2395,6 +2751,7 @@ const MathEngine = {
         const newExamHtml = this.renderExamToHtml(varTitle, newKeys, baseExam.timeLimit, baseExam.term);
         exams.push({
           title: varTitle,
+          difficultyMode: baseExam.difficultyMode,
           term: baseExam.term,
           timeLimit: baseExam.timeLimit,
           totalQuestions: newKeys.length,
@@ -2402,6 +2759,17 @@ const MathEngine = {
           essayCount: shuffledEssay.length,
           answerKeys: newKeys,
           examHtml: newExamHtml,
+          warning: baseExam.warning,
+          generationDiagnostics: baseExam.generationDiagnostics ? {
+            ...baseExam.generationDiagnostics,
+            variantOf: baseExam.examCode,
+            generated: {
+              ...baseExam.generationDiagnostics.generated,
+              total: newKeys.length
+            },
+            isComplete: baseExam.isComplete === true
+          } : null,
+          isComplete: baseExam.isComplete === true,
           examCode,
           variantIndex: i
         });
@@ -2416,7 +2784,8 @@ const MathEngine = {
         const exam = this.generateExam({
           ...examConfig,
           title: customTitle,
-          batchSeenSignatures
+          batchSeenSignatures,
+          _rng: rng
         });
         exam.examCode = examCode;
         exam.variantIndex = i;
@@ -2619,6 +2988,10 @@ const MathEngine = {
 </html>`;
   }
 };
+
+MathEngine.validateMathQuestionForProduction = validateMathQuestionForProduction;
+MathEngine.mathQuestionSignature = mathQuestionSignature;
+MathEngine.createSeededRandom = createMathRandom;
 
 if (typeof window !== 'undefined') {
   window.gcdEuclid = gcdEuclid;

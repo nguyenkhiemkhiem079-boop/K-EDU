@@ -65,6 +65,11 @@
     "error": null
   },
   {
+    "test": "verify_math_production_invariants.js",
+    "passed": true,
+    "error": null
+  },
+  {
     "test": "verify_project_integrity.js",
     "passed": true,
     "error": null
