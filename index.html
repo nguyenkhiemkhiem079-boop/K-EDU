@@ -262,6 +262,7 @@ GIANG, 8"></textarea>
             <span>⭐</span>
             <span id="topXpVal">0</span> XP
           </div>
+          <div class="kcoin-pill" title="K-Coin dùng trong Reward Shop"><span>🪙</span> <span id="topKCoinVal">0</span></div>
           <span class="level-badge" id="topLevelVal">Lv.1 Tân Binh</span>
         </div>
 
@@ -329,7 +330,7 @@ GIANG, 8"></textarea>
             </div>
 
             <div class="form-group">
-              <label>✨ Chọn Avatar Yêu Thích (32+ Linh Thú & Chiến Binh)</label>
+              <label>✨ Chọn Avatar Yêu Thích · Koboyo 3D</label>
               <div id="avatarSelector" style="margin-top:0.3rem;"></div>
             </div>
 
@@ -350,73 +351,38 @@ GIANG, 8"></textarea>
         <!-- Student Topic Feedback (Nhận Xét Của Em) In Lobby -->
         <div id="studentLobbyTopicFeedbackWrap" style="margin-bottom:1.5rem;"></div>
 
-        <!-- V-ACT Mini 100 Practice Card -->
-        <div class="card vact-mini-card" id="vactMini100Card" style="background:linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);color:#ffffff;border:2px solid #6366f1;border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:1.5rem;box-shadow:0 12px 32px rgba(79,70,229,0.25);">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
-            <div>
-              <div style="display:inline-flex;align-items:center;gap:0.4rem;background:rgba(255,255,255,0.15);padding:3px 10px;border-radius:999px;font-size:0.78rem;font-weight:800;letter-spacing:0.5px;margin-bottom:0.6rem;">
-                <span>⚡</span> <span>BÀI LUYỆN TỔNG HỢP K-EDU</span>
-              </div>
-              <h2 style="margin:0 0 0.4rem;font-size:1.45rem;color:#ffffff;display:flex;align-items:center;gap:0.5rem;">
-                <span>⚡</span> <span>MINI V-ACT 100</span>
-              </h2>
-              <div style="font-size:0.92rem;color:#c7d2fe;font-weight:600;display:flex;gap:1.2rem;flex-wrap:wrap;">
-                <span>📝 <strong>100 câu</strong></span>
-                <span>📚 <strong>Nhiều phần</strong> (Toán, Ngôn ngữ, Logic, Khoa học)</span>
-                <span>⏱️ <strong>90 phút</strong> (Luyện tập K-EDU)</span>
-              </div>
-            </div>
-            <div>
-              <button type="button" class="btn btn-primary btn-lg" id="btnStartMini100" onclick="handleStartMini100Click()" style="background:linear-gradient(135deg, #4f46e5, #7c3aed);border:none;font-weight:900;padding:0.85rem 1.6rem;font-size:1rem;box-shadow:0 6px 20px rgba(99,102,241,0.4);border-radius:var(--radius-md);cursor:pointer;">
-                BẮT ĐẦU MINI 100 🚀
-              </button>
-            </div>
+        <!-- V-ACT Practice Center -->
+        <div class="vact-practice-center" id="vactPracticeCenter">
+          <div class="vact-practice-nav" role="tablist" aria-label="Khu vực V-ACT">
+            <button type="button" class="vact-practice-nav-btn active" id="vactPracticeTabTrial" onclick="switchVactPracticeMode('trial')">Thi thử</button>
+            <button type="button" class="vact-practice-nav-btn" id="vactPracticeTabTopic" onclick="switchVactPracticeMode('topic')">Ôn theo chuyên đề</button>
           </div>
-          <div id="vactMini100WarningBox" style="margin-top:1rem;padding:0.75rem 1rem;background:rgba(245,158,11,0.15);border:1px solid #f59e0b;border-radius:var(--radius-md);color:#fde68a;font-size:0.85rem;font-weight:600;display:none;">
-            <div style="font-weight:800;color:#fbbf24;display:flex;align-items:center;gap:0.4rem;margin-bottom:0.2rem;">
-              <span>⚠️</span> <span>CẢNH BÁO ĐỘ SẴN SÀNG CỦA NGÂN HÀNG:</span>
-            </div>
-            <div id="vactMini100WarningText">
-              Ngân hàng hiện tại chỉ có 57/100 câu (Thiếu: 18 câu Tiếng Việt, 25 câu Tiếng Anh). Đề sẽ được tạo với các phần có sẵn.
-            </div>
-          </div>
-        </div>
 
-        <!-- V-ACT Full 120 Simulation Card -->
-        <div class="card vact-full-card" id="vactFull120Card" style="background:linear-gradient(135deg, #1e1b4b 0%, #2e1065 100%);color:#ffffff;border:2px solid #8b5cf6;border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:1.5rem;box-shadow:0 12px 32px rgba(139,92,246,0.25);">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
-            <div style="flex:1;min-width:280px;">
-              <div style="display:inline-flex;align-items:center;gap:0.4rem;background:rgba(255,255,255,0.15);padding:3px 10px;border-radius:999px;font-size:0.78rem;font-weight:800;letter-spacing:0.5px;margin-bottom:0.6rem;">
-                <span>🏆</span> <span>MÔ PHỎNG CẤU TRÚC V-ACT CHÍNH THỨC</span>
-              </div>
-              <h2 style="margin:0 0 0.4rem;font-size:1.45rem;color:#ffffff;display:flex;align-items:center;gap:0.5rem;">
-                <span>🏆</span> <span>FULL V-ACT</span>
-              </h2>
-              <div style="font-size:0.92rem;color:#ddd6fe;font-weight:600;display:flex;gap:1.2rem;flex-wrap:wrap;margin-bottom:0.75rem;">
-                <span>📝 <strong>120 câu</strong></span>
-                <span>⏱️ <strong>150 phút</strong></span>
-                <span>🏛️ <strong>Mô phỏng cấu trúc V-ACT</strong></span>
-              </div>
-              <!-- Section Composition -->
-              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(170px, 1fr));gap:0.45rem;background:rgba(0,0,0,0.2);padding:0.75rem;border-radius:var(--radius-md);font-size:0.82rem;font-weight:700;">
-                <div>🇻🇳 Tiếng Việt: <strong>30 câu</strong></div>
-                <div>🇬🇧 Tiếng Anh: <strong>30 câu</strong></div>
-                <div>📐 Toán học: <strong>30 câu</strong></div>
-                <div>🧩 Logic & Số liệu: <strong>12 câu</strong></div>
-                <div>🔬 Suy luận khoa học: <strong>18 câu</strong></div>
-              </div>
+          <div id="vactPracticeTrialPanel" role="tabpanel">
+            <div class="vact-practice-heading">
+              <div><span class="vact-kicker">K-EDU V-ACT</span><h2>Chọn nhịp học phù hợp với em</h2><p>Một bộ sinh duy nhất, bốn hồ sơ rõ ràng. Đề chỉ được mở khi ngân hàng đủ trọn số câu.</p></div>
+              <div class="vact-selected-meta" id="vactSelectedProfileMeta">Đang chọn Mini 30 · 30 câu · 40 phút</div>
             </div>
-            <div style="align-self:center;">
-              <button type="button" class="btn btn-primary btn-lg" id="btnStartFull120" onclick="handleStartFull120Click()" style="background:linear-gradient(135deg, #7c3aed, #a855f7);border:none;font-weight:900;padding:0.85rem 1.6rem;font-size:1rem;box-shadow:0 6px 20px rgba(168,85,247,0.4);border-radius:var(--radius-md);cursor:pointer;white-space:nowrap;">
-                BẮT ĐẦU FULL V-ACT 🏆
-              </button>
+            <div class="vact-profile-grid">
+              <article class="vact-profile-card is-selected" id="vactMini30Card" data-profile-id="vact_mini_30" onclick="selectVactStudentProfile('vact_mini_30')"><div class="vact-profile-mark">⚡</div><h3>Mini 30</h3><p>30 câu · 40 phút</p><span>Luyện nhanh</span><button type="button" class="btn btn-primary btn-sm" id="btnStartMini30" onclick="handleStartMini30Click(); event.stopPropagation();">Bắt đầu</button><div id="vactMini30WarningBox" class="vact-profile-warning"><span id="vactMini30WarningText"></span></div></article>
+              <article class="vact-profile-card" id="vactMini60Card" data-profile-id="vact_mini_60" onclick="selectVactStudentProfile('vact_mini_60')"><div class="vact-profile-mark">🎯</div><h3>Mini 60</h3><p>60 câu · 75 phút</p><span>Luyện tập</span><button type="button" class="btn btn-primary btn-sm" id="btnStartMini60" onclick="handleStartMini60Click(); event.stopPropagation();">Bắt đầu</button><div id="vactMini60WarningBox" class="vact-profile-warning"><span id="vactMini60WarningText"></span></div></article>
+              <article class="vact-profile-card" id="vactMini100Card" data-profile-id="vact_mini_100" onclick="selectVactStudentProfile('vact_mini_100')"><div class="vact-profile-mark">🧠</div><h3>Mini 100</h3><p>100 câu · 90 phút</p><span>Luyện toàn diện</span><button type="button" class="btn btn-primary btn-sm" id="btnStartMini100" onclick="handleStartMini100Click(); event.stopPropagation();">Bắt đầu</button><div id="vactMini100WarningBox" class="vact-profile-warning"><span id="vactMini100WarningText"></span></div></article>
+              <article class="vact-profile-card is-full" id="vactFull120Card" data-profile-id="vact_full" onclick="selectVactStudentProfile('vact_full')"><div class="vact-profile-mark">🏆</div><h3>Full 120</h3><p>120 câu · 150 phút</p><span>Mô phỏng kỳ thi</span><button type="button" class="btn btn-primary btn-sm" id="btnStartFull120" onclick="handleStartFull120Click(); event.stopPropagation();">Bắt đầu</button><div id="vactFull120WarningBox" class="vact-profile-warning"><span id="vactFull120WarningText"></span></div></article>
             </div>
           </div>
-          <div id="vactFull120WarningBox" style="margin-top:1rem;padding:0.75rem 1rem;background:rgba(245,158,11,0.15);border:1px solid #f59e0b;border-radius:var(--radius-md);color:#fde68a;font-size:0.85rem;font-weight:600;display:none;">
-            <div style="font-weight:800;color:#fbbf24;display:flex;align-items:center;gap:0.4rem;margin-bottom:0.2rem;">
-              <span>⚠️</span> <span>CẢNH BÁO ĐỘ SẴN SÀNG CỦA NGÂN HÀNG:</span>
+
+          <div id="vactPracticeTopicPanel" class="hidden" role="tabpanel">
+            <div class="vact-practice-heading"><div><span class="vact-kicker">ÔN THEO CHUYÊN ĐỀ</span><h2>Đi thẳng vào kỹ năng cần luyện</h2><p>Số câu khả dụng lấy từ ngân hàng production hiện tại. Chủ đề chưa có dữ liệu sẽ không thể sinh đề.</p></div><button type="button" class="btn btn-secondary btn-sm" onclick="handleStartWeaknessPracticeClick()">🎯 Luyện điểm yếu</button></div>
+            <div class="vact-topic-form">
+              <label>Phần<select id="vactTopicSectionSelect" onchange="renderVactTopicPracticeCenter()"></select></label>
+              <label>Kỹ năng<select id="vactTopicSkillSelect" onchange="renderVactTopicPracticeCenter()"></select></label>
+              <label>Số câu<select id="vactTopicCountSelect" onchange="renderVactTopicPracticeCenter()"><option value="5">5 câu</option><option value="10" selected>10 câu</option><option value="20">20 câu</option><option value="30">30 câu</option><option value="custom">Tùy chỉnh</option></select><input id="vactTopicCustomCount" type="number" min="1" max="200" placeholder="Nhập số câu" oninput="renderVactTopicPracticeCenter()"></label>
+              <label>Độ khó<select id="vactTopicDifficultySelect" onchange="renderVactTopicPracticeCenter()"><option value="mixed">Theo dữ liệu hiện có</option><option value="balanced">Cân bằng (chỉ khi đã phân loại)</option><option value="easy">Dễ</option><option value="medium">Trung bình</option><option value="hard">Khó</option></select></label>
             </div>
-            <div id="vactFull120WarningText"></div>
+            <div id="vactTopicDifficultyNote" class="vact-data-note"></div>
+            <div id="vactTopicCoverageGrid" class="vact-topic-coverage-grid"></div>
+            <div class="vact-topic-action-row"><div id="vactTopicPracticeStatus" aria-live="polite"></div><button type="button" class="btn btn-primary" id="btnGenerateVactTopicPractice" onclick="handleGenerateVactTopicPractice()" disabled>Sinh bài luyện</button></div>
+            <div id="vactTopicPracticeResult" class="vact-practice-result" aria-live="polite"></div>
           </div>
         </div>
 
@@ -1789,6 +1755,9 @@ GIANG, 8"></textarea>
             <button type="button" class="shop-cat-btn" id="btnShopCat_cosmetics" onclick="switchShopCategory('cosmetics')">
               <span>👑 Khung & Danh Hiệu</span>
             </button>
+            <button type="button" class="shop-cat-btn" id="btnShopCat_mascots" onclick="switchShopCategory('mascots')">
+              <span>🧸 Mascot Koboyo</span>
+            </button>
             <button type="button" class="shop-cat-btn" id="btnShopCat_wheel" onclick="switchShopCategory('wheel')">
               <span>🎰 Vòng Quay May Mắn</span>
             </button>
@@ -1800,6 +1769,11 @@ GIANG, 8"></textarea>
           <!-- Section 1: Standard Item Grid (perks, boosters, cosmetics) -->
           <div id="shopStandardItemsWrap">
             <div class="shop-items-grid" id="shopItemsGrid"></div>
+          </div>
+
+          <div id="shopMascotWrap" class="hidden">
+            <div class="koboyo-shop-heading"><div><strong>Reward Shop · K-Coin</strong><span>XP vẫn giữ nguyên để lên cấp. K-Coin dùng riêng để mở khóa mascot.</span></div><div class="kcoin-balance" id="shopKCoinBalance">0 K-Coin</div></div>
+            <div id="koboyoShopGrid" class="koboyo-shop-grid"></div>
           </div>
 
           <!-- Section 2: Lucky Spin Wheel (hidden by default) -->
@@ -1860,13 +1834,14 @@ GIANG, 8"></textarea>
         </div>
         <div style="display:flex;align-items:center;gap:1.75rem;flex-wrap:wrap;">
           <div id="gamifyUserAvatar" class="avatar-with-frame frame-gold" style="font-size:4rem;background:var(--bg-tertiary);border:3px solid var(--border-color);width:100px;height:100px;border-radius:var(--radius-full);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 0 var(--border-color);position:relative;">
-            🦊
+            <span>🦊</span>
           </div>
           <div style="flex:1;">
             <div style="display:flex;align-items:center;gap:0.85rem;flex-wrap:wrap;">
               <h2 id="gamifyUserName" style="font-size:1.85rem;color:var(--text-primary);margin:0;">Học Sinh</h2>
               <span class="level-badge" id="gamifyLevelName" style="font-size:0.85rem;padding:0.25rem 0.8rem;">Cấp 1: Tân Binh</span>
               <span id="gamifyUserLeagueBadge" class="level-badge" style="background:#fef3c7;color:#b45309;font-size:0.85rem;padding:0.25rem 0.8rem;">🥇 Hạng Vàng</span>
+              <span id="gamifyKCoinText" class="kcoin-balance">🪙 0 K-Coin</span>
             </div>
             <div style="margin-top:1rem;">
               <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:800;color:var(--text-secondary);margin-bottom:0.4rem;">
@@ -1934,6 +1909,7 @@ GIANG, 8"></textarea>
   <script src="js/storage.js?v=5.0"></script>
   <script src="js/sound.js?v=3.2"></script>
   <script src="js/gamification.js?v=5.0"></script>
+  <script src="js/gamification/economy.js?v=8.0"></script>
   <script src="js/pdfExtractor.js?v=5.0"></script>
   <script src="js/specializedBankPolicy.js?v=5.2"></script>
   <script src="js/question-bank/stats.js?v=5.2"></script>
@@ -1955,6 +1931,7 @@ GIANG, 8"></textarea>
   <script src="js/vact/generator/sectionTestGenerator.js"></script>
   <script src="js/vact/generator/examGenerator.js"></script>
   <script src="js/vact/analytics/performance.js"></script>
+  <script src="js/vact/practiceCenter.js?v=10.0"></script>
   <script src="js/vact/sources/config.js"></script>
   <script src="js/vact/sources/sourceRegistry.js"></script>
   <script src="js/vact/sources/internalSource.js"></script>
@@ -1965,7 +1942,7 @@ GIANG, 8"></textarea>
   <script src="js/quizContract.js?v=1.0"></script>
   <script src="js/dataRepair.js?v=1.0"></script>
   <script src="js/examDocumentRenderer.js?v=1.1"></script>
-  <script src="js/app.js?v=6.6"></script>
+  <script src="js/app.js?v=10.0"></script>
   <script src="js/studentAnalytics.js?v=5.0"></script>
   <!-- BATCH EXAM RESULTS MODAL -->
   <div id="batchGenResultsModal" class="hidden" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.7);backdrop-filter:blur(4px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.25rem;">

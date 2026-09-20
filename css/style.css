@@ -4272,3 +4272,74 @@ tr:hover td { background: var(--bg-card-hover); }
   .user-gamify-bar { display:none !important; }
   .avatar-category-bar { width:100%; max-width:100%; }
 }
+/* ================= PHASE 8–10 KOBoyo + V-ACT PRACTICE CENTER ================= */
+.kcoin-pill {
+  display:inline-flex;
+  align-items:center;
+  gap:.25rem;
+  padding:.35rem .65rem;
+  border:1px solid rgba(245,158,11,.45);
+  border-radius:999px;
+  background:linear-gradient(135deg,#fff7ed,#fef3c7);
+  color:#92400e;
+  font-size:.78rem;
+  font-weight:900;
+}
+.gamify-mascot-image { width:82%; height:82%; object-fit:contain; filter:drop-shadow(0 7px 5px rgba(30,41,59,.2)); }
+.koboyo-picker { margin-top:.9rem; padding:1rem; border:1.5px solid rgba(99,102,241,.24); border-radius:var(--radius-lg); background:linear-gradient(135deg,rgba(238,242,255,.8),rgba(255,255,255,.88)); }
+.koboyo-picker-heading,.koboyo-shop-heading { display:flex; align-items:center; justify-content:space-between; gap:.75rem; flex-wrap:wrap; margin-bottom:.7rem; color:var(--text-primary); font-weight:900; }
+.koboyo-picker-heading small,.koboyo-shop-heading span { color:var(--text-secondary); font-weight:700; font-size:.78rem; }
+.koboyo-picker-grid,.koboyo-inventory-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:.55rem; }
+.koboyo-avatar-btn,.koboyo-inventory-item { display:flex; flex-direction:column; align-items:center; gap:.25rem; min-width:0; padding:.5rem .35rem; border:1.5px solid var(--border-color); border-radius:var(--radius-md); background:var(--bg-card); color:var(--text-primary); cursor:pointer; transition:border-color .16s ease,transform .16s ease,box-shadow .16s ease; }
+.koboyo-avatar-btn:hover,.koboyo-inventory-item:hover { transform:translateY(-2px); border-color:var(--indigo); box-shadow:0 7px 16px rgba(79,70,229,.14); }
+.koboyo-avatar-btn.selected,.koboyo-inventory-item.equipped { border-color:var(--amber); box-shadow:0 0 0 2px rgba(245,158,11,.16); }
+.koboyo-avatar-btn.locked { filter:saturate(.6); opacity:.78; }
+.koboyo-avatar-art { width:58px; height:58px; display:grid; place-items:center; border-radius:50%; background:linear-gradient(145deg,#eef2ff,#fff7ed); }
+.koboyo-avatar-art img,.koboyo-inventory-item img { width:100%; height:100%; object-fit:contain; }
+.koboyo-avatar-name,.koboyo-inventory-item span { width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.7rem; font-weight:900; text-align:center; }
+.koboyo-avatar-state,.koboyo-inventory-item b { font-size:.62rem; color:var(--text-secondary); font-weight:800; }
+.koboyo-shop-heading { padding:.85rem 1rem; border-radius:var(--radius-md); background:linear-gradient(120deg,#eef2ff,#fff7ed); }
+.koboyo-shop-heading div:first-child { display:grid; gap:.18rem; }
+.kcoin-balance { display:inline-flex; align-items:center; gap:.3rem; padding:.35rem .7rem; border-radius:999px; background:#fef3c7; color:#92400e; font-size:.8rem; font-weight:900; }
+.koboyo-shop-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(235px,1fr)); gap:.8rem; }
+.koboyo-shop-card { display:grid; grid-template-columns:72px 1fr; gap:.7rem; align-items:center; padding:.85rem; border:1.5px solid var(--border-color); border-radius:var(--radius-lg); background:var(--bg-card); }
+.koboyo-shop-card.equipped { border-color:var(--amber); box-shadow:0 6px 18px rgba(245,158,11,.12); }
+.koboyo-shop-art { width:70px; height:70px; position:relative; border-radius:50%; background:linear-gradient(145deg,#eef2ff,#fff7ed); }
+.koboyo-shop-art img { width:100%; height:100%; object-fit:contain; }
+.koboyo-lock { position:absolute; right:-2px; bottom:-2px; display:grid; place-items:center; width:22px; height:22px; border-radius:50%; background:#0f172a; font-size:.75rem; }
+.koboyo-shop-copy { min-width:0; }
+.koboyo-shop-copy h3 { margin:0 0 .2rem; font-size:.92rem; color:var(--text-primary); }
+.koboyo-shop-copy p { min-height:2.4em; margin:.35rem 0 0; color:var(--text-secondary); font-size:.72rem; line-height:1.35; }
+.rarity-pill { display:inline-flex; padding:.13rem .4rem; border-radius:999px; font-size:.62rem; font-weight:900; text-transform:capitalize; }
+.rarity-starter { background:#dcfce7; color:#166534; }.rarity-rare { background:#dbeafe; color:#1d4ed8; }.rarity-epic { background:#ede9fe; color:#6d28d9; }.rarity-legendary { background:#fef3c7; color:#92400e; }
+.koboyo-shop-card > .btn { grid-column:1 / -1; width:100%; }
+.koboyo-inventory-panel { margin-bottom:1.4rem; padding:1rem; border:1.5px solid rgba(99,102,241,.24); border-radius:var(--radius-lg); background:linear-gradient(135deg,rgba(238,242,255,.75),rgba(255,255,255,.9)); }
+.koboyo-inventory-item { position:relative; min-height:115px; }
+.koboyo-inventory-item img { width:68px; height:68px; }
+
+.vact-practice-center { margin-bottom:1.5rem; padding:1.2rem; border:1.5px solid rgba(99,102,241,.2); border-radius:var(--radius-xl); background:linear-gradient(135deg,rgba(238,242,255,.65),rgba(255,247,237,.62)); box-shadow:0 14px 34px rgba(79,70,229,.1); }
+.vact-practice-nav { display:flex; gap:.45rem; margin-bottom:1.15rem; border-bottom:1px solid rgba(99,102,241,.18); }
+.vact-practice-nav-btn { padding:.6rem .9rem; border:0; border-bottom:3px solid transparent; background:transparent; color:var(--text-secondary); font-weight:900; cursor:pointer; }
+.vact-practice-nav-btn.active { border-bottom-color:var(--indigo); color:var(--indigo); }
+.vact-practice-heading { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; flex-wrap:wrap; margin-bottom:1rem; }
+.vact-practice-heading h2 { margin:.15rem 0 .25rem; color:var(--text-primary); font-size:1.35rem; }
+.vact-practice-heading p { margin:0; max-width:660px; color:var(--text-secondary); font-size:.88rem; line-height:1.45; }
+.vact-kicker { color:var(--indigo); font-size:.7rem; font-weight:900; letter-spacing:.12em; }
+.vact-selected-meta { align-self:center; padding:.55rem .8rem; border-radius:999px; background:var(--bg-card); color:var(--indigo); font-size:.8rem; font-weight:900; }
+.vact-profile-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.8rem; }
+.vact-profile-card { position:relative; min-height:190px; display:flex; flex-direction:column; align-items:flex-start; padding:1rem; border:2px solid rgba(99,102,241,.17); border-radius:var(--radius-lg); background:var(--bg-card); color:var(--text-primary); cursor:pointer; transition:border-color .15s ease,transform .15s ease,box-shadow .15s ease; }
+.vact-profile-card:hover { transform:translateY(-2px); border-color:var(--indigo); box-shadow:0 8px 20px rgba(79,70,229,.13); }
+.vact-profile-card.is-selected { border-color:var(--indigo); box-shadow:0 0 0 3px rgba(99,102,241,.12); }
+.vact-profile-card.is-full { background:linear-gradient(145deg,#fff,#f5f3ff); }
+.vact-profile-mark { display:grid; place-items:center; width:36px; height:36px; margin-bottom:.7rem; border-radius:12px; background:linear-gradient(135deg,#eef2ff,#fef3c7); font-size:1.2rem; }
+.vact-profile-card h3 { margin:0 0 .2rem; font-size:1.05rem; }.vact-profile-card p { margin:0 0 .2rem; color:var(--indigo); font-size:.82rem; font-weight:900; }.vact-profile-card > span { margin-bottom:.8rem; color:var(--text-secondary); font-size:.78rem; font-weight:700; }.vact-profile-card .btn { margin-top:auto; width:100%; }
+.vact-profile-warning { display:none; width:100%; margin-top:.6rem; padding:.45rem .55rem; border-radius:var(--radius-sm); background:#fffbeb; color:#92400e; font-size:.68rem; font-weight:800; line-height:1.35; }
+.vact-topic-form { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.7rem; margin-bottom:.75rem; }
+.vact-topic-form label { display:grid; gap:.3rem; color:var(--text-primary); font-size:.75rem; font-weight:900; }.vact-topic-form select,.vact-topic-form input { width:100%; min-height:38px; padding:.45rem .55rem; border:1.5px solid var(--border-color); border-radius:var(--radius-md); background:var(--bg-card); color:var(--text-primary); font-weight:700; box-sizing:border-box; }.vact-topic-form input { margin-top:.35rem; }
+.vact-data-note { margin:.6rem 0; padding:.65rem .75rem; border-left:3px solid var(--amber); border-radius:var(--radius-sm); background:rgba(254,243,199,.65); color:#92400e; font-size:.77rem; line-height:1.4; }
+.vact-topic-coverage-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:.55rem; }
+.vact-topic-coverage-card { display:grid; gap:.25rem; min-height:84px; padding:.7rem; text-align:left; border:1.5px solid var(--border-color); border-radius:var(--radius-md); background:var(--bg-card); color:var(--text-primary); cursor:pointer; }.vact-topic-coverage-card:hover:not(:disabled),.vact-topic-coverage-card.selected { border-color:var(--emerald); box-shadow:0 4px 12px rgba(16,185,129,.12); }.vact-topic-coverage-card strong { color:var(--emerald); font-size:.78rem; }.vact-topic-coverage-card small { color:var(--text-secondary); font-size:.68rem; }.vact-topic-coverage-card.unavailable { cursor:not-allowed; opacity:.68; }.vact-topic-coverage-card.unavailable strong { color:var(--text-secondary); }
+.vact-topic-action-row { display:flex; align-items:center; justify-content:space-between; gap:.75rem; flex-wrap:wrap; margin-top:.9rem; }.vact-ready-status,.vact-empty-status { font-size:.8rem; font-weight:900; }.vact-ready-status { color:var(--emerald); }.vact-empty-status { color:var(--rose); }.vact-practice-result { min-height:1.4em; margin-top:.7rem; color:var(--text-secondary); font-size:.8rem; font-weight:700; }
+
+@media (max-width: 900px) { .vact-profile-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }.vact-topic-form { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (max-width: 560px) { .vact-profile-grid,.vact-topic-form { grid-template-columns:1fr; }.vact-practice-center { padding:.85rem; }.koboyo-shop-card { grid-template-columns:62px 1fr; } }

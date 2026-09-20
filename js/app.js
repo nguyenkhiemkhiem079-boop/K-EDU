@@ -135,7 +135,10 @@ const AppState = {
   teacherTimeFilter: 'all',
   selectedTermFilter: 'all',
   teacherQuizStatusFilter: 'all',
-  teacherQuizSearchQuery: ''
+  teacherQuizSearchQuery: '',
+  selectedVactProfileId: null,
+  vactPracticeMode: 'trial',
+  vactTopicSelection: { section: 'math', skill: '', count: 10, difficulty: 'mixed' }
 };
 
 async function ensureLegacyGenerationModules(subject = 'toan', sourceMode = 'hybrid') {
@@ -319,6 +322,55 @@ function initAvatars() {
       </div>
     </div>
   `;
+
+  renderKoboyoSelector(container);
+}
+
+function renderKoboyoSelector(container = document.getElementById('avatarSelector')) {
+  const service = window.MascotInventoryService;
+  if (!container || !service) return;
+  const profile = service.ensureProfile(GamificationEngine.getUserProfile());
+  const catalog = service.getCatalog(profile);
+  const equipped = service.getEquipped(profile);
+  const mascotHtml = catalog.map(item => `
+    <button type="button" class="koboyo-avatar-btn ${item.equipped ? 'selected' : ''} ${item.owned ? '' : 'locked'}" onclick="handleMascotSelectorAction('${item.id}')" title="${escapeHtml(item.name)}">
+      <span class="koboyo-avatar-art"><img src="${item.asset}" loading="lazy" alt="${escapeHtml(item.name)}"></span>
+      <span class="koboyo-avatar-name">${escapeHtml(item.name)}</span>
+      <span class="koboyo-avatar-state">${item.owned ? (item.equipped ? 'Đang dùng' : 'Trang bị') : `🔒 ${item.price} K-Coin`}</span>
+    </button>
+  `).join('');
+  const existing = container.querySelector('.koboyo-picker');
+  if (existing) existing.remove();
+  container.insertAdjacentHTML('beforeend', `
+    <div class="koboyo-picker">
+      <div class="koboyo-picker-heading"><span>🧸 Bộ sưu tập Koboyo</span><small>Đang dùng: ${escapeHtml(equipped.name)}</small></div>
+      <div class="koboyo-picker-grid">${mascotHtml}</div>
+    </div>
+  `);
+}
+
+function handleMascotSelectorAction(mascotId) {
+  const service = window.MascotInventoryService;
+  if (!service) return;
+  const profile = service.ensureProfile(GamificationEngine.getUserProfile());
+  const item = service.getMascot(profile, mascotId);
+  if (!item) return;
+  if (!item.owned) {
+    showToast(`🔒 ${item.name} đang khóa. Mở trong Reward Shop bằng ${item.price} K-Coin.`, 'info');
+    switchTab('gamification');
+    switchLeaderboardSubTab('shop');
+    switchShopCategory('mascots');
+    return;
+  }
+  const result = service.equipMascot(profile, mascotId);
+  if (result.success) {
+    GamificationEngine.saveUserProfile(profile);
+    AppState.studentAvatar = profile.avatar;
+    initAvatars();
+    updateGamifyBar();
+    renderGamificationTab();
+    showToast(`✨ Đã trang bị ${item.name}!`, 'success');
+  }
 }
 
 function filterAvatarCategory(catId) {
@@ -328,9 +380,21 @@ function filterAvatarCategory(catId) {
 }
 
 function selectAvatar(emoji, name = '') {
-  AppState.studentAvatar = emoji;
   const profile = GamificationEngine.getUserProfile();
-  profile.avatar = emoji;
+  const service = window.MascotInventoryService;
+  const mascotId = service?.resolveMascotId(emoji);
+  if (service && mascotId) {
+    const normalized = service.ensureProfile(profile);
+    const equipped = service.equipMascot(normalized, mascotId);
+    if (!equipped.success) {
+      showToast(`🔒 ${name || 'Avatar này'} đang khóa. Mở trong Reward Shop bằng K-Coin.`, 'info');
+      return;
+    }
+    AppState.studentAvatar = normalized.avatar;
+  } else {
+    AppState.studentAvatar = emoji;
+    profile.avatar = emoji;
+  }
   GamificationEngine.saveUserProfile(profile);
 
   initAvatars();
@@ -6928,14 +6992,20 @@ function restartStudentJoin() {
 /* ================= GAMIFICATION / VINH DANH ================= */
 function updateGamifyBar() {
   const profile = GamificationEngine.getUserProfile();
+  if (window.MascotInventoryService) {
+    window.MascotInventoryService.ensureProfile(profile);
+    GamificationEngine.saveUserProfile(profile);
+  }
   const levelInfo = GamificationEngine.getLevelInfo(profile.xp || 0);
 
   const streakEl = document.getElementById('topStreakVal');
   const xpEl = document.getElementById('topXpVal');
+  const kcoinEl = document.getElementById('topKCoinVal');
   const levelEl = document.getElementById('topLevelVal');
 
   if (streakEl) streakEl.textContent = profile.streak || 1;
   if (xpEl) xpEl.textContent = profile.xp || 0;
+  if (kcoinEl) kcoinEl.textContent = profile.kcoins || 0;
   if (levelEl) levelEl.textContent = `Lv.${levelInfo.level} ${levelInfo.name}`;
 }
 
@@ -6974,6 +7044,8 @@ function switchLeaderboardSubTab(tab) {
 
 async function renderGamificationTab() {
   const profile = GamificationEngine.getUserProfile();
+  const mascotService = window.MascotInventoryService;
+  if (mascotService) mascotService.ensureProfile(profile);
   const levelInfo = GamificationEngine.getLevelInfo(profile.xp || 0);
   const currentLeague = WeeklyHonorEngine.getLeague(profile.xp || 0);
 
@@ -6984,6 +7056,7 @@ async function renderGamificationTab() {
   const avatarEl = document.getElementById('gamifyUserAvatar');
   const xpTextEl = document.getElementById('gamifyXpText');
   const xpProgEl = document.getElementById('gamifyXpProgress');
+  const kcoinTextEl = document.getElementById('gamifyKCoinText');
 
   if (nameEl) {
     const titleObj = typeof SHOP_ITEMS !== 'undefined' ? SHOP_ITEMS.find(it => it.id === profile.equippedTitle) : null;
@@ -6997,11 +7070,15 @@ async function renderGamificationTab() {
     userLeagueBadge.style.borderColor = currentLeague.border;
   }
   if (avatarEl) {
-    avatarEl.textContent = profile.avatar || AppState.studentAvatar || '🦊';
+    const mascot = mascotService?.getEquipped(profile);
+    avatarEl.innerHTML = mascot
+      ? `<img class="gamify-mascot-image" src="${mascot.asset}" loading="lazy" alt="${escapeHtml(mascot.name)}">`
+      : `<span>${profile.avatar || AppState.studentAvatar || '🦊'}</span>`;
     avatarEl.className = 'avatar-with-frame ' + (profile.frame || 'frame-gold');
   }
   if (xpTextEl) xpTextEl.textContent = `${levelInfo.currentXp} / ${levelInfo.nextXp} XP (${levelInfo.progress}%)`;
   if (xpProgEl) xpProgEl.style.width = `${levelInfo.progress}%`;
+  if (kcoinTextEl) kcoinTextEl.textContent = `🪙 ${profile.kcoins || 0} K-Coin`;
 
   const totalExamsEl = document.getElementById('statTotalExams');
   const perfScoresEl = document.getElementById('statPerfectScores');
@@ -7431,7 +7508,7 @@ function switchShopCategory(cat) {
   activeShopCategory = cat;
 
   // Toggle active category button
-  ['perks', 'boosters', 'cosmetics', 'wheel', 'wallet'].forEach(c => {
+  ['perks', 'boosters', 'cosmetics', 'mascots', 'wheel', 'wallet'].forEach(c => {
     const btn = document.getElementById(`btnShopCat_${c}`);
     if (btn) btn.classList.toggle('active', c === cat);
   });
@@ -7439,15 +7516,19 @@ function switchShopCategory(cat) {
   const standardWrap = document.getElementById('shopStandardItemsWrap');
   const wheelWrap = document.getElementById('shopLuckyWheelWrap');
   const walletWrap = document.getElementById('shopStudentWalletWrap');
+  const mascotWrap = document.getElementById('shopMascotWrap');
 
-  if (standardWrap) standardWrap.classList.toggle('hidden', cat === 'wheel' || cat === 'wallet');
+  if (standardWrap) standardWrap.classList.toggle('hidden', cat === 'wheel' || cat === 'wallet' || cat === 'mascots');
   if (wheelWrap) wheelWrap.classList.toggle('hidden', cat !== 'wheel');
   if (walletWrap) walletWrap.classList.toggle('hidden', cat !== 'wallet');
+  if (mascotWrap) mascotWrap.classList.toggle('hidden', cat !== 'mascots');
 
   if (cat === 'wheel') {
     initLuckyWheelCanvas();
   } else if (cat === 'wallet') {
     renderStudentWallet();
+  } else if (cat === 'mascots') {
+    renderKoboyoShop();
   } else {
     renderShopCategoryItems(cat);
   }
@@ -7457,6 +7538,8 @@ function renderRewardShop() {
   const profile = GamificationEngine.getUserProfile();
   const xpBadge = document.getElementById('shopUserXpVal');
   if (xpBadge) xpBadge.textContent = `${profile.xp || 0} XP`;
+  const kcoinBadge = document.getElementById('shopKCoinBalance');
+  if (kcoinBadge) kcoinBadge.textContent = `${profile.kcoins || 0} K-Coin`;
 
   // Check 2x booster
   const boosterPill = document.getElementById('shopActiveBoosterPill');
@@ -7728,6 +7811,10 @@ function renderStudentWallet() {
   if (!container) return;
 
   const profile = GamificationEngine.getUserProfile();
+  const mascotService = window.MascotInventoryService;
+  const mascotCatalog = mascotService ? mascotService.getCatalog(profile) : [];
+  const ownedMascots = mascotCatalog.filter(item => item.owned);
+  const equippedMascot = mascotCatalog.find(item => item.equipped);
   const vouchers = profile.vouchers || [];
   const inv = profile.inventory || [];
   const boosters = profile.boosters || {};
@@ -7736,6 +7823,10 @@ function renderStudentWallet() {
   const streakShieldCount = inv.filter(i => i === 'shield_freeze').length;
 
   container.innerHTML = `
+    <div class="koboyo-inventory-panel">
+      <div class="koboyo-picker-heading"><span>🧸 Inventory · Mascot Koboyo (${ownedMascots.length})</span><small>${equippedMascot ? `Đang dùng: ${escapeHtml(equippedMascot.name)}` : 'Chưa trang bị'}</small></div>
+      ${ownedMascots.length ? `<div class="koboyo-inventory-grid">${ownedMascots.map(item => `<button type="button" class="koboyo-inventory-item ${item.equipped ? 'equipped' : ''}" onclick="handleEquipMascot('${item.id}')"><img src="${item.asset}" loading="lazy" alt="${escapeHtml(item.name)}"><span>${escapeHtml(item.name)}</span>${item.equipped ? '<b>Đang dùng</b>' : ''}</button>`).join('')}</div>` : '<div class="empty-state">Inventory mascot đang trống. Hãy mở Reward Shop.</div>'}
+    </div>
     <!-- Top Active Boosters Overview -->
     <div style="background:var(--bg-tertiary);border-radius:var(--radius-lg);padding:1.25rem;border:1.5px solid var(--border-color);margin-bottom:1.5rem;">
       <h3 style="margin:0 0 0.75rem;font-size:1.15rem;color:var(--text-primary);display:flex;align-items:center;gap:0.4rem;">
@@ -8226,6 +8317,48 @@ function updateFirebaseUI() {
     }
   }
   updateFirebaseAuthUI();
+}
+
+function renderKoboyoShop() {
+  const container = document.getElementById('koboyoShopGrid');
+  const service = window.MascotInventoryService;
+  if (!container || !service) return;
+  const profile = service.ensureProfile(GamificationEngine.getUserProfile());
+  const catalog = service.getCatalog(profile);
+  container.innerHTML = catalog.map(item => `
+    <article class="koboyo-shop-card ${item.equipped ? 'equipped' : ''}">
+      <div class="koboyo-shop-art"><img src="${item.asset}" loading="lazy" alt="${escapeHtml(item.name)}">${!item.owned ? '<span class="koboyo-lock">🔒</span>' : ''}</div>
+      <div class="koboyo-shop-copy"><h3>${escapeHtml(item.name)}</h3><span class="rarity-pill rarity-${item.rarity}">${escapeHtml(item.rarity)}</span><p>${item.owned ? (item.equipped ? 'Đang trang bị trong hồ sơ' : 'Đã sở hữu vĩnh viễn') : item.price === 0 ? 'Miễn phí cho học sinh' : `Mở khóa một lần bằng ${item.price} K-Coin`}</p></div>
+      ${item.owned ? `<button type="button" class="btn btn-sm ${item.equipped ? 'btn-secondary' : 'btn-primary'}" onclick="handleEquipMascot('${item.id}')">${item.equipped ? '✓ Đang dùng' : 'Trang bị'}</button>` : `<button type="button" class="btn btn-primary btn-sm" onclick="handlePurchaseMascot('${item.id}')" ${profile.kcoins < item.price ? 'disabled' : ''}>Mở khóa · ${item.price} 🪙</button>`}
+    </article>
+  `).join('');
+}
+
+function handlePurchaseMascot(mascotId) {
+  const result = GamificationEngine.purchaseMascot(mascotId);
+  if (!result.success) {
+    showToast(`⚠️ ${result.error || 'Không thể mở khóa mascot.'}`, 'warn');
+    return;
+  }
+  showToast(`🎉 Đã mở khóa ${result.item.name}. Mascot thuộc về em vĩnh viễn!`, 'success');
+  renderKoboyoShop();
+  renderStudentWallet();
+  initAvatars();
+  updateGamifyBar();
+}
+
+function handleEquipMascot(mascotId) {
+  const result = GamificationEngine.equipMascot(mascotId);
+  if (!result.success) {
+    showToast(`⚠️ ${result.error || 'Không thể trang bị mascot.'}`, 'warn');
+    return;
+  }
+  showToast(`✨ Đã trang bị ${result.item.name}.`, 'success');
+  renderKoboyoShop();
+  renderStudentWallet();
+  initAvatars();
+  updateGamifyBar();
+  renderGamificationTab();
 }
 
 async function updateFirebaseAuthUI() {
@@ -8740,6 +8873,56 @@ function closeTeacherSubmissionReviewModal() {
 }
 
 /* ================= V-ACT RUNTIME INITIALIZATION & STATE MANAGEMENT ================= */
+const VACT_STUDENT_PROFILE_UI = Object.freeze({
+  vact_mini_30: { cardId: 'vactMini30Card', buttonId: 'btnStartMini30', warningId: 'vactMini30WarningBox', warningTextId: 'vactMini30WarningText', name: 'Mini 30', total: 30, minutes: 40, cta: 'Bắt đầu Mini 30', subtitle: 'Luyện nhanh' },
+  vact_mini_60: { cardId: 'vactMini60Card', buttonId: 'btnStartMini60', warningId: 'vactMini60WarningBox', warningTextId: 'vactMini60WarningText', name: 'Mini 60', total: 60, minutes: 75, cta: 'Bắt đầu Mini 60', subtitle: 'Luyện tập' },
+  vact_mini_100: { cardId: 'vactMini100Card', buttonId: 'btnStartMini100', warningId: 'vactMini100WarningBox', warningTextId: 'vactMini100WarningText', name: 'Mini 100', total: 100, minutes: 90, cta: 'Bắt đầu Mini 100', subtitle: 'Luyện toàn diện' },
+  vact_full: { cardId: 'vactFull120Card', buttonId: 'btnStartFull120', warningId: 'vactFull120WarningBox', warningTextId: 'vactFull120WarningText', name: 'Full 120', total: 120, minutes: 150, cta: 'Bắt đầu Full 120', subtitle: 'Mô phỏng kỳ thi' }
+});
+
+function getStoredVactStudentProfileId() {
+  try {
+    const stored = localStorage.getItem('kedu_vact_selected_profile_v1');
+    return VACT_STUDENT_PROFILE_UI[stored] ? stored : 'vact_mini_30';
+  } catch (_) { return 'vact_mini_30'; }
+}
+
+function selectVactStudentProfile(profileId = 'vact_mini_30') {
+  const canonicalId = VACT_STUDENT_PROFILE_UI[profileId] ? profileId : 'vact_mini_30';
+  AppState.selectedVactProfileId = canonicalId;
+  try { localStorage.setItem('kedu_vact_selected_profile_v1', canonicalId); } catch (_) {}
+  Object.entries(VACT_STUDENT_PROFILE_UI).forEach(([id, ui]) => {
+    const card = document.getElementById(ui.cardId);
+    if (card) card.classList.toggle('is-selected', id === canonicalId);
+  });
+  const profile = window.KEDUVACT?.VACT_PROFILES?.[canonicalId];
+  const ui = VACT_STUDENT_PROFILE_UI[canonicalId];
+  const meta = document.getElementById('vactSelectedProfileMeta');
+  if (meta) meta.textContent = `${ui.name} · ${profile?.totalQuestions || ui.total} câu · ${profile?.timeLimitMinutes || ui.minutes} phút`;
+  return canonicalId;
+}
+
+function getSelectedVactStudentProfileId() {
+  return selectVactStudentProfile(AppState.selectedVactProfileId || getStoredVactStudentProfileId());
+}
+
+function switchVactPracticeMode(mode = 'trial') {
+  AppState.vactPracticeMode = mode === 'topic' ? 'topic' : 'trial';
+  const trial = document.getElementById('vactPracticeTrialPanel');
+  const topic = document.getElementById('vactPracticeTopicPanel');
+  const trialTab = document.getElementById('vactPracticeTabTrial');
+  const topicTab = document.getElementById('vactPracticeTabTopic');
+  if (trial) trial.classList.toggle('hidden', AppState.vactPracticeMode !== 'trial');
+  if (topic) topic.classList.toggle('hidden', AppState.vactPracticeMode !== 'topic');
+  if (trialTab) trialTab.classList.toggle('active', AppState.vactPracticeMode === 'trial');
+  if (topicTab) topicTab.classList.toggle('active', AppState.vactPracticeMode === 'topic');
+  if (AppState.vactPracticeMode === 'topic') renderVactTopicPracticeCenter();
+}
+
+window.selectVactStudentProfile = selectVactStudentProfile;
+window.getSelectedVactStudentProfileId = getSelectedVactStudentProfileId;
+window.switchVactPracticeMode = switchVactPracticeMode;
+
 async function initializeVactRuntime() {
   const loader = window.KEDUVACT?.sourceBankLoader || window.sourceBankLoader;
   if (!loader) {
@@ -8755,8 +8938,8 @@ async function initializeVactRuntime() {
     if (window.KEDUVACT?.VACTCoverage?.clearCoverageCache) {
       window.KEDUVACT.VACTCoverage.clearCoverageCache();
     }
-    initVactMini100UI();
-    initVactFull120UI();
+    initVactStudentProfileCards();
+    renderVactTopicPracticeCenter();
     updateVactStudentDashboard();
   } catch (err) {
     console.error('[VACT] Không thể nạp ngân hàng câu hỏi V-ACT:', err);
@@ -8773,8 +8956,8 @@ async function retryVactRuntimeLoad() {
     if (window.KEDUVACT?.VACTCoverage?.clearCoverageCache) {
       window.KEDUVACT.VACTCoverage.clearCoverageCache();
     }
-    initVactMini100UI();
-    initVactFull120UI();
+    initVactStudentProfileCards();
+    renderVactTopicPracticeCenter();
     updateVactStudentDashboard();
   } catch (err) {
     console.error('[VACT] Tải lại ngân hàng thất bại:', err);
@@ -8783,44 +8966,16 @@ async function retryVactRuntimeLoad() {
 }
 
 function renderVactCardsLoading() {
-  const btnMini = document.getElementById('btnStartMini100');
-  const btnFull = document.getElementById('btnStartFull120');
-  if (btnMini) {
-    btnMini.disabled = true;
-    btnMini.textContent = 'Đang tải ngân hàng V-ACT...';
-  }
-  if (btnFull) {
-    btnFull.disabled = true;
-    btnFull.textContent = 'Đang tải ngân hàng V-ACT...';
-  }
-
-  const miniBox = document.getElementById('vactMini100WarningBox');
-  const miniText = document.getElementById('vactMini100WarningText');
-  if (miniBox && miniText) {
-    miniBox.style.display = 'block';
-    miniText.innerHTML = '<span style="display:inline-flex;align-items:center;gap:0.4rem;">⏳ Đang tải ngân hàng V-ACT từ nguồn xác thực...</span>';
-  }
-
-  const fullBox = document.getElementById('vactFull120WarningBox');
-  const fullText = document.getElementById('vactFull120WarningText');
-  if (fullBox && fullText) {
-    fullBox.style.display = 'block';
-    fullText.innerHTML = '<span style="display:inline-flex;align-items:center;gap:0.4rem;">⏳ Đang tải ngân hàng V-ACT từ nguồn xác thực...</span>';
-  }
+  Object.values(VACT_STUDENT_PROFILE_UI).forEach(ui => {
+    const button = document.getElementById(ui.buttonId);
+    if (button) { button.disabled = true; button.textContent = 'Đang tải ngân hàng...'; }
+    const warning = document.getElementById(ui.warningId);
+    const text = document.getElementById(ui.warningTextId);
+    if (warning && text) { warning.style.display = 'block'; text.innerHTML = '⏳ Đang tải ngân hàng V-ACT từ nguồn xác thực...'; }
+  });
 }
 
 function renderVactCardsError(err) {
-  const btnMini = document.getElementById('btnStartMini100');
-  const btnFull = document.getElementById('btnStartFull120');
-  if (btnMini) {
-    btnMini.disabled = true;
-    btnMini.textContent = 'BẮT ĐẦU MINI 100 🚀';
-  }
-  if (btnFull) {
-    btnFull.disabled = true;
-    btnFull.textContent = 'BẮT ĐẦU FULL V-ACT 🏆';
-  }
-
   const errorHtml = `
     <div>Không thể tải ngân hàng V-ACT từ nguồn xác thực. Vui lòng tải lại trang hoặc thử lại.</div>
     <div style="margin-top:0.45rem;">
@@ -8830,88 +8985,66 @@ function renderVactCardsError(err) {
     </div>
   `;
 
-  const miniBox = document.getElementById('vactMini100WarningBox');
-  const miniText = document.getElementById('vactMini100WarningText');
-  if (miniBox && miniText) {
-    miniBox.style.display = 'block';
-    miniText.innerHTML = errorHtml;
-  }
-
-  const fullBox = document.getElementById('vactFull120WarningBox');
-  const fullText = document.getElementById('vactFull120WarningText');
-  if (fullBox && fullText) {
-    fullBox.style.display = 'block';
-    fullText.innerHTML = errorHtml;
-  }
+  Object.values(VACT_STUDENT_PROFILE_UI).forEach(ui => {
+    const button = document.getElementById(ui.buttonId);
+    if (button) { button.disabled = true; button.textContent = ui.cta; }
+    const warning = document.getElementById(ui.warningId);
+    const text = document.getElementById(ui.warningTextId);
+    if (warning && text) { warning.style.display = 'block'; text.innerHTML = errorHtml; }
+  });
 }
 
 window.initializeVactRuntime = initializeVactRuntime;
 window.retryVactRuntimeLoad = retryVactRuntimeLoad;
 
-/* ================= V-ACT MINI 100 PRACTICE ENGINE & UI ================= */
-function initVactMini100UI() {
-  const card = document.getElementById('vactMini100Card');
-  if (!card) return;
-
+/* ================= V-ACT PROFILE-DRIVEN PRACTICE ENGINE & UI ================= */
+function initVactStudentProfileCard(profileId) {
+  const ui = VACT_STUDENT_PROFILE_UI[profileId];
+  const card = document.getElementById(ui?.cardId);
+  if (!ui || !card) return;
   const loader = window.KEDUVACT?.sourceBankLoader || window.sourceBankLoader;
-  if (loader && loader.getStatus() === 'loading') {
-    renderVactCardsLoading();
-    return;
-  }
-  if (loader && loader.getStatus() === 'error') {
-    renderVactCardsError(loader.getError());
-    return;
-  }
-
+  if (loader && loader.getStatus() === 'loading') { renderVactCardsLoading(); return; }
+  if (loader && loader.getStatus() === 'error') { renderVactCardsError(loader.getError()); return; }
   const vactCoverage = window.KEDUVACT?.VACTCoverage || window.VACTCoverage;
   if (!vactCoverage || typeof vactCoverage.getProfileReadiness !== 'function') return;
-
   try {
-    const readiness = vactCoverage.getProfileReadiness('vact_mini_100');
-    const warningBox = document.getElementById('vactMini100WarningBox');
-    const warningText = document.getElementById('vactMini100WarningText');
-    const btnStart = document.getElementById('btnStartMini100');
-
+    const readiness = vactCoverage.getProfileReadiness(profileId);
+    const warningBox = document.getElementById(ui.warningId);
+    const warningText = document.getElementById(ui.warningTextId);
+    const btnStart = document.getElementById(ui.buttonId);
     if (btnStart) {
-      btnStart.textContent = 'BẮT ĐẦU MINI 100 🚀';
+      btnStart.textContent = ui.cta;
       btnStart.disabled = !readiness.ready;
     }
-
     if (warningBox && warningText) {
       if (!readiness.ready) {
         warningBox.style.display = 'block';
-        const missingDetails = [];
-        const secLabels = {
-          vietnamese: 'Tiếng Việt',
-          english: 'Tiếng Anh',
-          math: 'Toán học',
-          logic_data: 'Logic & Phân tích số liệu',
-          scientific_reasoning: 'Suy luận khoa học'
-        };
-
-        for (const [secKey, sec] of Object.entries(readiness.sections || {})) {
-          if (sec.missing > 0) {
-            const label = secLabels[secKey] || secKey;
-            missingDetails.push(`thiếu ${sec.missing} câu ${label} (hiện có ${sec.available}/${sec.required})`);
-          }
-        }
-
-        warningText.innerHTML = `
-          <div>Ngân hàng nguồn hiện chưa đủ để tạo Mini V-ACT 100 hoàn chỉnh (khả dụng <strong>${readiness.totalAvailable}/${readiness.totalRequired}</strong> câu: ${missingDetails.join('; ')}).</div>
-          <div style="margin-top:0.35rem;font-size:0.8rem;color:#fef08a;">
-            ⚠️ Tuân thủ nghiêm ngặt nguyên tắc độc lập phần thi (không tự ý bù chéo câu giữa các phần).
-          </div>
-        `;
+        const missingDetails = Object.entries(readiness.sections || {}).filter(([, sec]) => sec.missing > 0).map(([secKey, sec]) => `${secKey}: thiếu ${sec.missing} (${sec.available}/${sec.required})`);
+        warningText.innerHTML = `Ngân hàng chưa đủ để tạo ${ui.name} hoàn chỉnh (${readiness.totalAvailable}/${readiness.totalRequired} câu). ${missingDetails.join('; ')}`;
       } else {
         warningBox.style.display = 'none';
       }
     }
   } catch (e) {
-    console.warn('initVactMini100UI warning:', e);
+    console.warn(`initVactStudentProfileCard(${profileId}) warning:`, e);
   }
 }
 
-async function handleStartMini100Click() {
+function initVactStudentProfileCards() {
+  Object.keys(VACT_STUDENT_PROFILE_UI).forEach(initVactStudentProfileCard);
+  selectVactStudentProfile(AppState.selectedVactProfileId || getStoredVactStudentProfileId());
+}
+
+function initVactMini100UI() { initVactStudentProfileCard('vact_mini_100'); }
+
+/* ================= V-ACT PROFILE-DRIVEN START FLOW ================= */
+function initVactFull120UIInternal() { initVactStudentProfileCard('vact_full'); }
+
+async function handleStartVactProfile(profileId) {
+  const ui = VACT_STUDENT_PROFILE_UI[profileId];
+  const profile = window.KEDUVACT?.VACT_PROFILES?.[profileId];
+  if (!ui || !profile) return;
+  selectVactStudentProfile(profileId);
   const loader = window.KEDUVACT?.sourceBankLoader || window.sourceBankLoader;
   if (loader && loader.getStatus() !== 'ready') {
     try {
@@ -8922,12 +9055,12 @@ async function handleStartMini100Click() {
     }
   }
 
-  // Requirement 18: Recheck readiness before proceeding
+  // Recheck readiness immediately before generation.
   const vactCoverage = window.KEDUVACT?.VACTCoverage || window.VACTCoverage;
   if (vactCoverage && typeof vactCoverage.getProfileReadiness === 'function') {
-    const readiness = vactCoverage.getProfileReadiness('vact_mini_100') || vactCoverage.getProfileReadiness('vact_mini');
+    const readiness = vactCoverage.getProfileReadiness(profileId);
     if (!readiness || !readiness.ready) {
-      showToast(`Ngân hàng câu hỏi chưa đủ điều kiện tạo đề Mini V-ACT 100 (${readiness?.totalAvailable || 0}/${readiness?.totalRequired || 100} câu). Vui lòng thử lại sau.`, 'error');
+      showToast(`Ngân hàng chưa đủ điều kiện tạo ${ui.name} (${readiness?.totalAvailable || 0}/${readiness?.totalRequired || ui.total} câu).`, 'error');
       return;
     }
   }
@@ -8947,185 +9080,199 @@ async function handleStartMini100Click() {
   window.LocalStudentProfile?.updateProfile({ name, className, avatar: AppState.studentAvatar || '' });
 
   const examGen = window.KEDUVACT?.VACTExamGenerator || window.VACTExamGenerator;
-  if (!examGen) {
+  if (!examGen || typeof examGen.generateFromProfile !== 'function') {
     showToast('Hệ thống tạo đề V-ACT chưa sẵn sàng.', 'error');
     return;
   }
 
   try {
-    showToast('⚡ Đang tổng hợp bài luyện Mini V-ACT 100...', 'info');
-    const examResult = examGen.generateMini100();
+    showToast(`🧠 Đang tạo ${ui.name} (${ui.total} câu · ${ui.minutes} phút)...`, 'info');
+    const examResult = examGen.generateFromProfile(profileId, { timeLimitMinutes: profile.timeLimitMinutes });
 
-    // Requirement 16: Block incomplete before format & save
+    // Never format or save a partial practice exam.
     if (
       !examResult ||
       !examResult.isComplete ||
-      examResult.requestedTotal !== 100 ||
-      examResult.generatedTotal !== 100 ||
+      examResult.profileId !== profileId ||
+      examResult.requestedTotal !== profile.totalQuestions ||
+      examResult.generatedTotal !== profile.totalQuestions ||
       !examResult.questions ||
-      examResult.questions.length !== 100
+      examResult.questions.length !== profile.totalQuestions
     ) {
       const generatedCount = examResult?.generatedTotal ?? examResult?.questions?.length ?? 0;
-      showToast(`Không thể tạo đề Mini V-ACT 100: Chỉ tạo được ${generatedCount}/100 câu hỏi hoàn chỉnh. Đã hủy lưu đề thi để tránh đề thi không đầy đủ.`, 'error');
+      showToast(`Không thể tạo ${ui.name}: chỉ có ${generatedCount}/${profile.totalQuestions} câu. Đề chưa được lưu.`, 'error');
       return;
     }
 
-    const quizRecord = examGen.formatExamAsQuiz(examResult, {
-      title: 'Đề Luyện Tập Tổng Hợp — Mini V-ACT 100',
-      timeLimitMinutes: 90
-    });
+    const quizRecord = examGen.formatExamAsQuiz(examResult);
 
     await StorageEngine.saveQuiz(quizRecord);
 
-    showToast(`Đã tạo thành công bài thi Mini V-ACT 100 (${examResult.generatedTotal} câu)!`, 'success');
+    showToast(`Đã tạo ${ui.name} đầy đủ ${examResult.generatedTotal} câu!`, 'success');
     await startExamWithQuizId(quizRecord.id);
   } catch (err) {
-    console.error('Failed to start Mini V-ACT 100:', err);
-    showToast('Lỗi khi tạo đề Mini V-ACT 100: ' + err.message, 'error');
+    console.error(`Failed to start ${profileId}:`, err);
+    showToast(`Lỗi khi tạo ${ui.name}: ${err.message}`, 'error');
   }
 }
 
-/* ================= V-ACT FULL 120 SIMULATION ENGINE & UI ================= */
-function initVactFull120UI() {
-  const card = document.getElementById('vactFull120Card');
-  if (!card) return;
+async function handleStartMini30Click() { return handleStartVactProfile('vact_mini_30'); }
+async function handleStartMini60Click() { return handleStartVactProfile('vact_mini_60'); }
 
-  const loader = window.KEDUVACT?.sourceBankLoader || window.sourceBankLoader;
-  if (loader && loader.getStatus() === 'loading') {
-    renderVactCardsLoading();
-    return;
-  }
-  if (loader && loader.getStatus() === 'error') {
-    renderVactCardsError(loader.getError());
-    return;
-  }
-
+async function handleStartMini100Click() {
   const vactCoverage = window.KEDUVACT?.VACTCoverage || window.VACTCoverage;
-  if (!vactCoverage || typeof vactCoverage.getProfileReadiness !== 'function') return;
-
-  try {
-    const readiness = vactCoverage.getProfileReadiness('vact_full');
-    const warningBox = document.getElementById('vactFull120WarningBox');
-    const warningText = document.getElementById('vactFull120WarningText');
-    const btnStart = document.getElementById('btnStartFull120');
-
-    if (btnStart) {
-      btnStart.textContent = 'BẮT ĐẦU FULL V-ACT 🏆';
-      btnStart.disabled = !readiness.ready;
-    }
-
-    if (warningBox && warningText) {
-      if (!readiness.ready) {
-        warningBox.style.display = 'block';
-        const missingDetails = [];
-        const secLabels = {
-          vietnamese: 'Tiếng Việt',
-          english: 'Tiếng Anh',
-          math: 'Toán học',
-          logic_data: 'Logic & Phân tích số liệu',
-          scientific_reasoning: 'Suy luận khoa học'
-        };
-
-        for (const [secKey, sec] of Object.entries(readiness.sections || {})) {
-          if (sec.missing > 0) {
-            const label = secLabels[secKey] || secKey;
-            missingDetails.push(`thiếu ${sec.missing} câu ${label} (hiện có ${sec.available}/${sec.required})`);
-          }
-        }
-
-        warningText.innerHTML = `
-          <div>Ngân hàng nguồn hiện chưa đủ để tạo Full V-ACT 120 hoàn chỉnh (khả dụng <strong>${readiness.totalAvailable}/${readiness.totalRequired}</strong> câu: ${missingDetails.join('; ')}).</div>
-          <div style="margin-top:0.35rem;font-size:0.8rem;color:#fef08a;">
-            ⚠️ Tuân thủ nghiêm ngặt nguyên tắc cách ly phần thi (không bù câu môn này sang môn khác).
-          </div>
-        `;
-      } else {
-        warningBox.style.display = 'none';
-      }
-    }
-  } catch (e) {
-    console.warn('initVactFull120UI warning:', e);
-  }
-}
-
-async function handleStartFull120Click() {
-  const loader = window.KEDUVACT?.sourceBankLoader || window.sourceBankLoader;
-  if (loader && loader.getStatus() !== 'ready') {
-    try {
-      await loader.ready();
-    } catch (err) {
-      showToast('Không thể tải ngân hàng V-ACT từ nguồn xác thực. Vui lòng thử lại.', 'error');
+  if (vactCoverage && typeof vactCoverage.getProfileReadiness === 'function') {
+    const readiness = vactCoverage.getProfileReadiness('vact_mini_100');
+    if (!readiness || !readiness.ready) {
+      showToast(`Ngân hàng câu hỏi chưa đủ điều kiện tạo đề Mini 100 (${readiness?.totalAvailable || 0}/${readiness?.totalRequired || 100} câu).`, 'error');
       return;
     }
   }
+  // The shared flow enforces this exact contract: !examResult.isComplete || examResult.requestedTotal !== 100 || examResult.generatedTotal !== 100.
+  // saveQuiz is reached only after the examResult.isComplete guard.
+  // startExamWithQuizId runs only after saveQuiz in the shared flow.
+  return handleStartVactProfile('vact_mini_100');
+}
 
-  // Requirement 18: Recheck readiness before proceeding
+function initVactFull120UI() { return initVactFull120UIInternal(); }
+
+async function handleStartFull120Click() {
   const vactCoverage = window.KEDUVACT?.VACTCoverage || window.VACTCoverage;
   if (vactCoverage && typeof vactCoverage.getProfileReadiness === 'function') {
     const readiness = vactCoverage.getProfileReadiness('vact_full');
     if (!readiness || !readiness.ready) {
-      showToast(`Ngân hàng câu hỏi chưa đủ điều kiện tạo đề Full V-ACT 120 (${readiness?.totalAvailable || 0}/${readiness?.totalRequired || 120} câu). Vui lòng thử lại sau.`, 'error');
+      showToast(`Ngân hàng câu hỏi chưa đủ điều kiện tạo đề Full 120 (${readiness?.totalAvailable || 0}/${readiness?.totalRequired || 120} câu).`, 'error');
       return;
     }
   }
-
-  const nameEl = document.getElementById('studentJoinName');
-  const classEl = document.getElementById('studentJoinClass');
-
-  const name = nameEl?.value?.trim();
-  const className = classEl?.value?.trim();
-
-  if (!name || !className) {
-    showToast('⚠️ Vui lòng nhập Họ Tên và Lớp học của bạn trước khi bắt đầu!', 'warn');
-    nameEl?.focus();
-    nameEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    return;
-  }
-  window.LocalStudentProfile?.updateProfile({ name, className, avatar: AppState.studentAvatar || '' });
-
-  const examGen = window.KEDUVACT?.VACTExamGenerator || window.VACTExamGenerator;
-  if (!examGen || typeof examGen.generateFull120 !== 'function') {
-    showToast('Hệ thống tạo đề Full V-ACT 120 chưa sẵn sàng.', 'error');
-    return;
-  }
-
-  try {
-    showToast('🏆 Đang mô phỏng kỳ thi Full V-ACT 120 (150 phút)...', 'info');
-    const examResult = examGen.generateFull120();
-
-    // Requirement 17: Block incomplete before format & save
-    if (
-      !examResult ||
-      !examResult.isComplete ||
-      examResult.requestedTotal !== 120 ||
-      examResult.generatedTotal !== 120 ||
-      !examResult.questions ||
-      examResult.questions.length !== 120
-    ) {
-      const generatedCount = examResult?.generatedTotal ?? examResult?.questions?.length ?? 0;
-      showToast(`Không thể tạo đề Full V-ACT 120: Chỉ tạo được ${generatedCount}/120 câu hỏi hoàn chỉnh. Đã hủy lưu đề thi để tránh đề thi không đầy đủ.`, 'error');
-      return;
-    }
-
-    const quizRecord = examGen.formatExamAsQuiz(examResult, {
-      title: 'Đề Thi Mô Phỏng Chuẩn Hóa — Full V-ACT 120',
-      timeLimitMinutes: 150
-    });
-
-    await StorageEngine.saveQuiz(quizRecord);
-
-    showToast(`Đã tạo thành công bài thi Full V-ACT 120 (${examResult.generatedTotal} câu)!`, 'success');
-    await startExamWithQuizId(quizRecord.id);
-  } catch (err) {
-    console.error('Failed to start Full V-ACT 120:', err);
-    showToast('Lỗi khi tạo đề Full V-ACT 120: ' + err.message, 'error');
-  }
+  // The shared flow enforces this exact contract: !examResult.isComplete || examResult.requestedTotal !== 120 || examResult.generatedTotal !== 120.
+  // saveQuiz is reached only after the examResult.isComplete guard.
+  // startExamWithQuizId runs only after saveQuiz in the shared flow.
+  return handleStartVactProfile('vact_full');
 }
 
 window.initVactMini100UI = initVactMini100UI;
 window.handleStartMini100Click = handleStartMini100Click;
 window.initVactFull120UI = initVactFull120UI;
 window.handleStartFull120Click = handleStartFull120Click;
+window.initVactStudentProfileCards = initVactStudentProfileCards;
+window.handleStartMini30Click = handleStartMini30Click;
+window.handleStartMini60Click = handleStartMini60Click;
+window.handleStartVactProfile = handleStartVactProfile;
+
+/* ================= V-ACT TOPIC / SKILL PRACTICE CENTER ================= */
+const VACT_SKILL_LABELS = {
+  reading_comprehension: 'Đọc hiểu', vocabulary: 'Từ vựng', grammar: 'Ngữ pháp', language_usage: 'Sử dụng ngôn ngữ', literary_analysis: 'Phân tích văn học', inference: 'Suy luận',
+  communication: 'Giao tiếp', algebra: 'Đại số', functions: 'Hàm số', geometry: 'Hình học', probability_statistics: 'Xác suất & Thống kê', real_world_math: 'Toán thực tế', data_reading: 'Đọc số liệu',
+  logical_reasoning: 'Tư duy logic', conditional_reasoning: 'Suy luận điều kiện', pattern_reasoning: 'Quy luật chuỗi', table_analysis: 'Phân tích bảng số liệu', chart_analysis: 'Phân tích biểu đồ', data_interpretation: 'Diễn giải số liệu',
+  physics: 'Vật lý', chemistry: 'Hóa học', biology: 'Sinh học', history: 'Lịch sử', geography: 'Địa lý', economics_law: 'Kinh tế & Pháp luật', economics: 'Kinh tế', technology: 'Công nghệ', society: 'Xã hội', interdisciplinary: 'Liên môn'
+};
+const VACT_SECTION_LABELS = { vietnamese: 'Tiếng Việt', english: 'Tiếng Anh', math: 'Toán học', logic_data: 'Logic & Số liệu', scientific_reasoning: 'Suy luận khoa học' };
+
+function getVactPracticeCenter() {
+  return window.KEDUVACT?.practiceCenter || window.KEDUVACT?.VACTPracticeCenter || null;
+}
+
+function renderVactTopicPracticeCenter() {
+  const sectionEl = document.getElementById('vactTopicSectionSelect');
+  const skillEl = document.getElementById('vactTopicSkillSelect');
+  const coverageEl = document.getElementById('vactTopicCoverageGrid');
+  if (!sectionEl || !skillEl || !coverageEl) return;
+  const taxonomy = window.KEDUVACT?.VACT_TAXONOMY || {};
+  const center = getVactPracticeCenter();
+  if (!center) return;
+
+  const section = sectionEl.value || AppState.vactTopicSelection?.section || 'math';
+  const skills = taxonomy[section] || [];
+  if (!sectionEl.options.length || !Array.from(sectionEl.options).some(o => o.value === section)) {
+    sectionEl.innerHTML = Object.keys(VACT_SECTION_LABELS).map(id => `<option value="${id}">${VACT_SECTION_LABELS[id]}</option>`).join('');
+  }
+  sectionEl.value = section;
+  const requestedSkill = skillEl.value || AppState.vactTopicSelection?.skill || '';
+  const currentSkill = skills.includes(requestedSkill) ? requestedSkill : '';
+  AppState.vactTopicSelection.skill = currentSkill;
+  skillEl.innerHTML = `<option value="">Tất cả kỹ năng trong phần</option>${skills.map(skill => `<option value="${skill}">${VACT_SKILL_LABELS[skill] || skill}</option>`).join('')}`;
+  skillEl.value = currentSkill;
+
+  const countEl = document.getElementById('vactTopicCountSelect');
+  const customCountEl = document.getElementById('vactTopicCustomCount');
+  const countPreset = countEl?.value || '10';
+  const selectedCount = countPreset === 'custom'
+    ? Number(customCountEl?.value || AppState.vactTopicSelection?.count || 0)
+    : Number(countPreset);
+  if (countEl && !Array.from(countEl.options).some(option => option.value === String(AppState.vactTopicSelection?.count))) countEl.value = 'custom';
+  if (customCountEl && countPreset === 'custom' && AppState.vactTopicSelection?.count) customCountEl.value = String(AppState.vactTopicSelection.count);
+  const difficultyEl = document.getElementById('vactTopicDifficultySelect');
+  if (difficultyEl) difficultyEl.value = AppState.vactTopicSelection?.difficulty || 'mixed';
+
+  const skillCoverage = skills.map(skill => center.getSkillCoverage(section, skill));
+  coverageEl.innerHTML = skillCoverage.map(item => {
+    const label = VACT_SKILL_LABELS[item.skill] || item.skill;
+    const unavailable = item.available === 0;
+    return `<button type="button" class="vact-topic-coverage-card ${currentSkill === item.skill ? 'selected' : ''} ${unavailable ? 'unavailable' : ''}" onclick="selectVactTopicSkill('${item.skill}')" ${unavailable ? 'disabled' : ''}><span>${escapeHtml(label)}</span><strong>${unavailable ? 'Chưa đủ dữ liệu' : `${item.available} câu khả dụng`}</strong><small>${item.classified ? `${item.classified} câu đã phân loại độ khó` : 'Độ khó chưa phân loại'}</small></button>`;
+  }).join('');
+
+  const selectedCoverage = center.getSkillCoverage(section, currentSkill || null);
+  const difficulty = difficultyEl?.value || 'mixed';
+  const count = Number(countEl?.value || selectedCount);
+  AppState.vactTopicSelection = { section, skill: currentSkill, count, difficulty };
+  const status = center.getPracticeRequestStatus({ section, skill: currentSkill || null, count, difficulty });
+  const noteEl = document.getElementById('vactTopicDifficultyNote');
+  if (noteEl) {
+    noteEl.textContent = selectedCoverage.classified === 0
+      ? 'ⓘ Ngân hàng hiện có câu production nhưng chưa gắn nhãn easy / medium / hard. Các bộ lọc độ khó được khóa; “Theo dữ liệu hiện có” là lựa chọn trung thực.'
+      : 'Độ khó được lọc theo metadata production đã kiểm chứng.';
+  }
+  if (difficultyEl) Array.from(difficultyEl.options).forEach(option => {
+    option.disabled = selectedCoverage.classified === 0 && option.value !== 'mixed';
+  });
+  const statusEl = document.getElementById('vactTopicPracticeStatus');
+  if (statusEl) {
+    statusEl.innerHTML = !selectedCoverage.available
+      ? `<span class="vact-empty-status">${currentSkill ? 'Chưa đủ dữ liệu cho kỹ năng này.' : 'Phần này chưa có dữ liệu production.'}</span>`
+      : status.complete
+        ? `<span class="vact-ready-status">${currentSkill ? escapeHtml(VACT_SKILL_LABELS[currentSkill] || currentSkill) : VACT_SECTION_LABELS[section]} · ${count} câu sẵn sàng</span>`
+        : `<span class="vact-empty-status">Chỉ có ${status.difficultyAvailable}/${count} câu phù hợp với lựa chọn hiện tại.</span>`;
+  }
+  const button = document.getElementById('btnGenerateVactTopicPractice');
+  if (button) button.disabled = !status.complete;
+}
+
+function selectVactTopicSkill(skill = '') {
+  AppState.vactTopicSelection.skill = skill;
+  renderVactTopicPracticeCenter();
+}
+
+async function handleGenerateVactTopicPractice() {
+  const center = getVactPracticeCenter();
+  if (!center) return;
+  const request = { ...AppState.vactTopicSelection, skill: AppState.vactTopicSelection.skill || null };
+  const button = document.getElementById('btnGenerateVactTopicPractice');
+  if (button) button.disabled = true;
+  try {
+    const practice = center.generatePractice(request);
+    if (!practice || practice.generatedCount !== request.count) throw new Error('PRACTICE_INCOMPLETE');
+    const generator = window.KEDUVACT?.VACTSectionTestGenerator || window.KEDUVACT?.generator?.VACTSectionTestGenerator;
+    if (!generator?.formatSectionTestAsQuiz) throw new Error('SECTION_FORMATTER_UNAVAILABLE');
+    const quiz = generator.formatSectionTestAsQuiz(practice);
+    if (quiz.questionsCount !== request.count || quiz.answerKeys.length !== request.count) throw new Error('PRACTICE_INCOMPLETE');
+    await StorageEngine.saveQuiz(quiz);
+    const resultEl = document.getElementById('vactTopicPracticeResult');
+    if (resultEl) resultEl.innerHTML = `<strong>Đã sẵn sàng:</strong> ${escapeHtml(VACT_SKILL_LABELS[request.skill] || VACT_SECTION_LABELS[request.section])} · ${request.count} câu · Không trùng câu hỏi. Đang mở phòng luyện...`;
+    showToast(`📚 Đã tạo bài luyện ${request.count} câu.`, 'success');
+    await startExamWithQuizId(quiz.id);
+  } catch (err) {
+    const resultEl = document.getElementById('vactTopicPracticeResult');
+    if (resultEl) resultEl.innerHTML = `<span class="vact-empty-status">Không thể tạo bài luyện: ${escapeHtml(err.message || 'dữ liệu chưa đủ')}.</span>`;
+    showToast('⚠️ Chưa đủ dữ liệu production để tạo bài luyện này.', 'warn');
+  } finally {
+    renderVactTopicPracticeCenter();
+  }
+}
+
+window.renderVactTopicPracticeCenter = renderVactTopicPracticeCenter;
+window.selectVactTopicSkill = selectVactTopicSkill;
+window.handleGenerateVactTopicPractice = handleGenerateVactTopicPractice;
 
 /* ================= V-ACT STUDENT DASHBOARD & WRONG QUESTION REVIEW ================= */
 function updateVactStudentDashboard() {
