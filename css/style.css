@@ -4252,6 +4252,9 @@ tr:hover td { background: var(--bg-card-hover); }
   .main-content { padding-inline: .85rem; }
   .student-profile-card { padding:1.1rem; }
   .student-profile-card .duo-hero-icons { display:none; }
+  .student-profile-form > *, .student-profile-form .form-row { min-width:0; max-width:100%; }
+  .student-profile-grid > *, .student-profile-card input, .student-profile-card select { min-width:0; max-width:100%; }
+  .student-profile-card .duo-code-box { min-width:0; max-width:100%; }
   .student-profile-grid { grid-template-columns:1fr; gap:.85rem; }
   .student-profile-heading { align-items:flex-start; flex-direction:column; gap:.25rem; }
   .student-profile-card #studentProfileSubmitButton { width:100% !important; justify-self:stretch; }
@@ -4262,4 +4265,10 @@ tr:hover td { background: var(--bg-card-hover); }
   .nav-actions { gap:.35rem; }
   .user-gamify-bar { transform:scale(.88); transform-origin:right center; }
   .teacher-subtab-btn { flex:0 0 auto; white-space:nowrap; }
+}
+@media (max-width:480px) {
+  /* Keep the compact navbar inside narrow in-app/browser viewports. */
+  .nav-actions { max-width:calc(100vw - 110px); overflow:hidden; }
+  .user-gamify-bar { display:none !important; }
+  .avatar-category-bar { width:100%; max-width:100%; }
 }

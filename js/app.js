@@ -708,6 +708,7 @@ function switchTeacherSubtab(subtabName) {
 
   if (subtabName === 'create') {
     renderDocumentBankStats();
+    updateMathGenEssaySummary();
   } else if (subtabName === 'manage') {
     renderTeacherQuizManager();
     renderTeacherRosterManager();
@@ -2726,7 +2727,7 @@ if (typeof window !== 'undefined') {
   window.previewDgnlExamDocument = previewDgnlExamDocument;
 }
 
-function updateMathGenEssaySummary() {
+function updateMathGenEssaySummary({ loadCapacity = true } = {}) {
   const cTH = Math.max(0, parseInt(document.getElementById('mathGenCountTHSelect')?.value || '0', 10) || 0);
   const cVD = Math.max(0, parseInt(document.getElementById('mathGenCountVDSelect')?.value || '0', 10) || 0);
   const cVDC = Math.max(0, parseInt(document.getElementById('mathGenCountVDCSelect')?.value || '0', 10) || 0);
@@ -2736,7 +2737,7 @@ function updateMathGenEssaySummary() {
   if (badge) {
     badge.innerHTML = `Tổng: <strong>${total} câu tự luận</strong> (TH: ${cTH} · VD: ${cVD} · VDC: ${cVDC})`;
   }
-  updateMathGenCapacityStatus();
+  if (loadCapacity) updateMathGenCapacityStatus();
 }
 
 function updateMathGenCapacityStatus() {
@@ -2872,10 +2873,11 @@ function setExamDifficultyMode(mode) {
 }
 window.setExamDifficultyMode = setExamDifficultyMode;
 document.addEventListener('DOMContentLoaded', () => {
-  updateMathGenEssaySummary();
+  // Keep optional generation modules out of the student-lobby critical path.
+  // The teacher create view initializes the capacity widget when opened.
+  updateMathGenEssaySummary({ loadCapacity: false });
   updateMathGenBatchPolicyNotice();
   updateMathGenBatchButtonText();
-  updateMathGenCapacityStatus();
   ['mathGenGradeSelect', 'mathGenTermSelect', 'mathGenTopicSelect', 'mathGenSourceSelect', 'mathGenMcqCountSelect'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('change', updateMathGenCapacityStatus);
@@ -4740,6 +4742,9 @@ function updatePersonalizedExamFeed() {
 
 let isRepairRunning = false;
 async function autoRepairCorruptedQuizzes() {
+  // Repair is a teacher maintenance operation. Student rendering must never
+  // request private answer keys or teacher-only cloud records as a side effect.
+  if (typeof TeacherAuth === 'undefined' || !TeacherAuth.isLoggedIn()) return;
   if (isRepairRunning) return;
   isRepairRunning = true;
   try {
@@ -8613,16 +8618,8 @@ async function handleQuickResetVinhDanh(type = 'all') {
   }
 }
 
-// Khởi tạo hiển thị widget Thống kê Ngân hàng câu hỏi DocumentQuestionBank
-if (typeof document !== 'undefined') {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      renderDocumentBankStats();
-    });
-  } else {
-    setTimeout(renderDocumentBankStats, 300);
-  }
-}
+// Document-bank statistics are initialized only when the teacher create view
+// is opened; loading them during student-lobby startup defeats lazy loading.
 
 /* ================= STORAGE RETENTION & AUTO-COMPACTION ENGINE ================= */
 async function checkAndRunAutoRetentionSweep() {

@@ -461,7 +461,11 @@ const StorageEngine = {
     }
 
     // 2. Sync with Cloud if active
-    if (window.FirebaseEngine && window.FirebaseEngine.isActive && typeof window.FirebaseEngine.getStudentRoster === 'function') {
+    const canReadCloudRoster = window.FirebaseEngine
+      && window.FirebaseEngine.isActive
+      && typeof window.FirebaseEngine.isTeacherAuthorized === 'function'
+      && await window.FirebaseEngine.isTeacherAuthorized();
+    if (canReadCloudRoster && typeof window.FirebaseEngine.getStudentRoster === 'function') {
       try {
         const cloudRoster = await window.FirebaseEngine.getStudentRoster();
         if (Array.isArray(cloudRoster) && cloudRoster.length > 0) {
@@ -479,7 +483,11 @@ const StorageEngine = {
   },
 
   async saveStudentRoster(roster) {
-    if (window.FirebaseEngine && window.FirebaseEngine.isActive && typeof window.FirebaseEngine.saveStudentRoster === 'function') {
+    const canWriteCloudRoster = window.FirebaseEngine
+      && window.FirebaseEngine.isActive
+      && typeof window.FirebaseEngine.isTeacherAuthorized === 'function'
+      && await window.FirebaseEngine.isTeacherAuthorized();
+    if (canWriteCloudRoster && typeof window.FirebaseEngine.saveStudentRoster === 'function') {
       try {
         await window.FirebaseEngine.saveStudentRoster(roster);
       } catch (err) {
@@ -663,6 +671,8 @@ const StorageEngine = {
     });
     const primaryLocalList = Array.from(quizMap.values());
 
+    // Public quiz metadata is intentionally readable by students. The answer
+    // key remains in the private store and is never joined on this path.
     if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
       try {
         const cloudQuizzes = await window.FirebaseEngine.getAllQuizzes();
@@ -808,7 +818,11 @@ const StorageEngine = {
     localStorage.setItem(STORAGE_PREFIX + 'deleted_results', JSON.stringify(Array.from(deletedRes)));
 
     // 4. Delete from Firebase Firestore if connected
-    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
+    const canWriteCloudResult = window.FirebaseEngine
+      && window.FirebaseEngine.isActive
+      && typeof window.FirebaseEngine.isTeacherAuthorized === 'function'
+      && await window.FirebaseEngine.isTeacherAuthorized();
+    if (canWriteCloudResult) {
       await window.FirebaseEngine.deleteResult(resultId);
     }
 
@@ -850,7 +864,11 @@ const StorageEngine = {
     res.penalizedAt = new Date().toISOString();
 
     await this.set(cleanKey, res);
-    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
+    const canWriteCloudResult = window.FirebaseEngine
+      && window.FirebaseEngine.isActive
+      && typeof window.FirebaseEngine.isTeacherAuthorized === 'function'
+      && await window.FirebaseEngine.isTeacherAuthorized();
+    if (canWriteCloudResult) {
       await window.FirebaseEngine.saveResult(res);
     }
     if (this.channel) {
@@ -1046,7 +1064,11 @@ const StorageEngine = {
       const result = await this.get(key);
       if (result && !deleted.has(key) && !deleted.has(result.id)) results.set(result.id || key, { ...result, key });
     }
-    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
+    const canReadCloudResults = window.FirebaseEngine
+      && window.FirebaseEngine.isActive
+      && typeof window.FirebaseEngine.isTeacherAuthorized === 'function'
+      && await window.FirebaseEngine.isTeacherAuthorized();
+    if (canReadCloudResults) {
       try {
         for (const result of await loadCloud() || []) {
           if (!result || deleted.has(result.id) || deleted.has(result.key)) continue;

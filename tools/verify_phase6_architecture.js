@@ -8,6 +8,7 @@ const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const html = read('index.html');
 const loader = read('js/runtime/moduleLoader.js');
 const app = read('js/app.js');
+const storage = read('js/storage.js');
 const architecture = read('docs/architecture.md');
 const checklist = read('docs/release-checklist.md');
 
@@ -22,6 +23,10 @@ assert.match(loader, /getMetrics/);
 assert.match(app, /ensureLegacyGenerationModules/);
 assert.match(app, /await ensureLegacyGenerationModules\(currentSubject, sourceMode\)/);
 assert.match(app, /ensureDocumentBank/);
+assert.match(app, /Repair is a teacher maintenance operation/);
+assert.match(app, /TeacherAuth\.isLoggedIn\(\)/);
+assert.match(storage, /const canReadCloudResults = window\.FirebaseEngine/);
+assert.match(storage, /await window\.FirebaseEngine\.isTeacherAuthorized\(\)/);
 assert.match(architecture, /Optional generation modules and bank loading/);
 assert.match(architecture, /compatibility fixture/);
 assert.match(checklist, /does not eagerly load/);
