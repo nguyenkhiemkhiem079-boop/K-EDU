@@ -207,30 +207,42 @@
       explanation: r.explanation || ''
     })) : [];
 
+    const normalizedProfile = params.profile || params.profileId || null;
+    const modeByProfile = {
+      vact_mini_30: 'mini_30',
+      vact_mini_60: 'mini_60',
+      vact_mini_100: 'mini_100',
+      vact_full: 'full_120'
+    };
     const attempt = {
       id: `vact_att_${testId}_${Date.now()}`,
       testId,
-      mode: params.mode || (params.profile === 'vact_full' ? 'full_120' : (params.profile === 'vact_mini_100' ? 'mini_100' : 'section_mini')),
-      profile: params.profile || null,
-      section: params.section || (params.profile ? 'composite' : (review[0]?.section || 'composite')),
+      mode: params.mode || modeByProfile[normalizedProfile] || 'section_mini',
+      profile: normalizedProfile,
+      profileId: normalizedProfile,
+      section: params.section || (normalizedProfile ? 'composite' : (review[0]?.section || 'composite')),
       skill: params.skill || null,
       requestedCount,
       generatedCount,
+      questionCount: generatedCount,
       questionIds: Array.isArray(params.questionIds) && params.questionIds.length ? params.questionIds : review.map(r => r.id),
       questionSignatures: Array.isArray(params.questionSignatures) && params.questionSignatures.length ? params.questionSignatures : review.map(r => r.signature),
       answers: typeof params.answers === 'object' && params.answers !== null ? { ...params.answers } : {},
       correct,
       incorrect,
+      wrong: incorrect,
       unanswered,
       scoreRaw,
       accuracy,
       startedAt,
       submittedAt,
       duration,
+      timeSpent: duration,
       studentName,
       studentClass,
       studentId,
       studentUid: params.studentUid || null,
+      createdAt: params.createdAt || submittedAt,
       review
     };
 

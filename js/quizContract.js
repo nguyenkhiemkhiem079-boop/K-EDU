@@ -19,9 +19,11 @@
   };
   const profileFromRaw = raw => raw?.vactMeta?.profileId || raw?.metadata?.vact?.profileId || raw?.profileId || null;
   const sourceType = raw => {
-    if (raw.sourceType) return String(raw.sourceType);
     const profileId = profileFromRaw(raw);
     if (profileId && PROFILE_SOURCE_TYPES[profileId]) return PROFILE_SOURCE_TYPES[profileId];
+    // Explicit profile identity is authoritative. A legacy sourceType must
+    // never relabel a Mini 30/60/full record as Mini 100 by question count.
+    if (raw.sourceType) return String(raw.sourceType);
     if (raw.vactMeta || raw.metadata?.vact || raw.subject === 'vact') return 'vact_unclassified';
     return normalSubject(raw.subject) === 'khtn'
       ? 'khtn_generated'
