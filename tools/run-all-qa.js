@@ -5,8 +5,10 @@ const root = path.resolve(__dirname, '..');
 const results = [];
 for (const filename of fs.readdirSync(__dirname).filter(name => /^verify_.*\.js$/.test(name)).sort()) {
   // The production V-ACT profile suite runs 2,000 deterministic generations
-  // (500 seeds × 4 profiles) and needs a bounded but realistic timeout.
-  const result = spawnSync(process.execPath, [path.join(__dirname, filename)], { cwd: root, encoding: 'utf8', timeout: 120000, maxBuffer: 8 * 1024 * 1024 });
+  // (500 seeds × 4 profiles). Keep a bounded timeout, but allow the measured
+  // CPU-heavy property suite to finish under slower CI/workspace runtimes.
+  const timeout = filename === 'verify_vact_profiles_hardening.js' ? 300000 : 120000;
+  const result = spawnSync(process.execPath, [path.join(__dirname, filename)], { cwd: root, encoding: 'utf8', timeout, maxBuffer: 8 * 1024 * 1024 });
   const passed = result.status === 0 && !result.error;
   results.push({ test: filename, passed, error: result.error?.message || (passed ? null : (result.stderr || result.stdout).slice(-2500)) });
   console.log(`${passed ? 'PASS' : 'FAIL'} ${filename}`);

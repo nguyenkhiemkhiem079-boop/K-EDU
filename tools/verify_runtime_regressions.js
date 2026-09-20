@@ -43,7 +43,7 @@ function memory() {
   assert.notEqual(await storage.saveResult({ quizId: 'q', name: 'An', className: '8B' }), first);
   assert.equal(await storage.hasSubmitted('q', '8A', 'An'), true);
   assert.equal(await storage.hasSubmitted('q', '8C', 'An'), false);
-  ctx.window.FirebaseEngine = { isActive: true, getResultsByQuiz: async () => [{ id: 'result:q:cloud', quizId: 'q', name: 'Bình', className: '8A' }], getAllResults: async () => [{ id: 'result:q:cloud', quizId: 'q', name: 'Bình', className: '8A' }] };
+  ctx.window.FirebaseEngine = { isActive: true, isTeacherAuthorized: async () => true, getResultsByQuiz: async () => [{ id: 'result:q:cloud', quizId: 'q', name: 'Bình', className: '8A' }], getAllResults: async () => [{ id: 'result:q:cloud', quizId: 'q', name: 'Bình', className: '8A' }] };
   assert.equal((await storage.getResultsByQuiz('q')).length, 3);
   assert.equal((await storage.getAllResults()).length, 3);
   ctx.window.FirebaseEngine.getAllResults = async () => { throw new Error('Offline'); };
