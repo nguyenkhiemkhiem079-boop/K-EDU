@@ -18,6 +18,7 @@
     const sectionTestGenerator = require('./generator/sectionTestGenerator');
     const examGenerator = require('./generator/examGenerator');
     const performanceAnalytics = require('./analytics/performance');
+    const practiceCenter = require('./practiceCenter');
     const sourceConfig = require('./sources/config');
     const internalSource = require('./sources/internalSource');
     const remoteJsonSource = require('./sources/remoteJsonSource');
@@ -25,12 +26,12 @@
     const sourceRegistry = require('./sources/sourceRegistry');
     const adaptivePractice = require('./adaptive/weaknessGenerator');
     const reviewManager = require('./review/reviewManager');
-    module.exports = factory(taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, sourceBankLoader, examBank, coverage, sectionTestGenerator, examGenerator, performanceAnalytics, sourceConfig, internalSource, remoteJsonSource, sourceManager, sourceRegistry, adaptivePractice, reviewManager);
+    module.exports = factory(taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, sourceBankLoader, examBank, coverage, sectionTestGenerator, examGenerator, performanceAnalytics, practiceCenter, sourceConfig, internalSource, remoteJsonSource, sourceManager, sourceRegistry, adaptivePractice, reviewManager);
   } else {
     root.KEDUVACT = root.KEDUVACT || {};
     // When loaded via script tags, individual modules attach to root.KEDUVACT
   }
-})(typeof window !== 'undefined' ? window : globalThis, function (taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, sourceBankLoader, examBank, coverage, sectionTestGenerator, examGenerator, performanceAnalytics, sourceConfig, internalSource, remoteJsonSource, sourceManager, sourceRegistry, adaptivePractice, reviewManager) {
+})(typeof window !== 'undefined' ? window : globalThis, function (taxonomy, signature, validator, deduplicator, schema, profiles, adapter, internalBank, sourceBankLoader, examBank, coverage, sectionTestGenerator, examGenerator, performanceAnalytics, practiceCenter, sourceConfig, internalSource, remoteJsonSource, sourceManager, sourceRegistry, adaptivePractice, reviewManager) {
   'use strict';
 
   return Object.freeze({
@@ -48,6 +49,8 @@
     ...sectionTestGenerator,
     ...examGenerator,
     performanceAnalytics,
+    practiceCenter,
+    VACTPracticeCenter: practiceCenter.VACTPracticeCenter,
     analytics: Object.freeze({
       performance: performanceAnalytics
     }),

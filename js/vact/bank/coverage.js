@@ -245,6 +245,37 @@
   }
 
   /**
+   * Returns truthful production coverage for a section skill. The economics
+   * alias is resolved only for backward compatibility; no question is created
+   * when a skill has no usable records.
+   */
+  function getSkillCoverage(section, skill) {
+    const canonicalSkill = skill === 'economics' ? 'economics_law' : skill;
+    const list = getUniqueUsableQuestions().filter(q => q.section === section && (!skill || q.skill === skill || q.skill === canonicalSkill));
+    const difficulty = { easy: 0, medium: 0, hard: 0, unclassified: 0 };
+    list.forEach(q => { difficulty[q.difficulty] !== undefined ? difficulty[q.difficulty]++ : difficulty.unclassified++; });
+    const classified = difficulty.easy + difficulty.medium + difficulty.hard;
+    return {
+      section: section || null,
+      skill: skill || null,
+      canonicalSkill,
+      available: list.length,
+      difficulty,
+      classified,
+      supportedDifficulties: classified > 0 ? ['mixed', 'balanced', 'easy', 'medium', 'hard'] : ['mixed'],
+      ready: list.length > 0
+    };
+  }
+
+  function getTopicCoverage() {
+    const result = {};
+    for (const section of Object.values(VACT_SECTIONS)) {
+      result[section] = (VACT_TAXONOMY[section] || []).map(skill => getSkillCoverage(section, skill));
+    }
+    return result;
+  }
+
+  /**
    * Evaluates shortage for a given request against bank capacity.
    *
    * @param {object} params
@@ -564,6 +595,8 @@
     getUniqueUsableQuestions,
     getSummary,
     getCapacity,
+    getSkillCoverage,
+    getTopicCoverage,
     checkShortage,
     getProfileReadiness,
     getCombinedCoverage,
