@@ -29,6 +29,7 @@
   };
 
   const VACT_TAXONOMY = taxonomyModule?.VACT_TAXONOMY || {};
+  const VACT_PROFILES = profilesModule?.VACT_PROFILES || {};
   const VACT_FULL_PROFILE = profilesModule?.VACT_FULL_PROFILE;
   const VACT_MINI_100_PROFILE = profilesModule?.VACT_MINI_100_PROFILE;
 
@@ -298,14 +299,9 @@
    * @returns {object} Readiness analysis with section shortages
    */
   function getProfileReadiness(profileOrId) {
-    let profile = profileOrId;
-    if (typeof profileOrId === 'string') {
-      if (profileOrId === 'vact_full' || profileOrId === 'full120') {
-        profile = VACT_FULL_PROFILE;
-      } else if (profileOrId === 'vact_mini_100' || profileOrId === 'mini100') {
-        profile = VACT_MINI_100_PROFILE;
-      }
-    }
+    const profile = profilesModule?.resolveVACTProfile
+      ? profilesModule.resolveVACTProfile(profileOrId)
+      : (typeof profileOrId === 'string' ? VACT_PROFILES[profileOrId] : VACT_PROFILES[profileOrId?.id]);
 
     if (!profile || !profile.sections) {
       throw new Error(`Invalid exam profile provided for readiness check: ${JSON.stringify(profileOrId)}`);
@@ -359,10 +355,19 @@
       logic_data: `${sectionResults[VACT_SECTIONS.LOGIC_DATA]?.available ?? 0}/${sectionResults[VACT_SECTIONS.LOGIC_DATA]?.required ?? 0}`,
       scientific_reasoning: `${sectionResults[VACT_SECTIONS.SCIENTIFIC_REASONING]?.available ?? 0}/${sectionResults[VACT_SECTIONS.SCIENTIFIC_REASONING]?.required ?? 0}`
     };
+    const longTermSectionTargets = Object.fromEntries(
+      Object.entries(VACT_BANK_TARGETS).filter(([key]) => key !== 'TOTAL')
+    );
 
     return {
       profileId: profile.id,
       profileName: profile.name,
+      runtimeReady: allReady,
+      longTermCoverageTarget: {
+        total: VACT_BANK_TARGETS.TOTAL,
+        sections: longTermSectionTargets,
+        scientificSkills: { ...VACT_SCIENTIFIC_TARGETS }
+      },
       ready: allReady,
       totalRequired,
       totalAvailable,

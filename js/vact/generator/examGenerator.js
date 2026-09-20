@@ -41,11 +41,65 @@
   };
 
   const VACT_SECTION_META = taxonomyModule?.VACT_SECTION_META || {};
+  const VACT_PROFILES = profilesModule?.VACT_PROFILES || {};
+  const VACT_MINI_30_PROFILE = profilesModule?.VACT_MINI_30_PROFILE;
+  const VACT_MINI_60_PROFILE = profilesModule?.VACT_MINI_60_PROFILE;
   const VACT_MINI_100_PROFILE = profilesModule?.VACT_MINI_100_PROFILE;
   const VACT_FULL_PROFILE = profilesModule?.VACT_FULL_PROFILE;
+  const resolveVACTProfile = profilesModule?.resolveVACTProfile || (profileOrId => {
+    if (typeof profileOrId === 'string') return VACT_PROFILES[profileOrId] || null;
+    return profileOrId?.id ? VACT_PROFILES[profileOrId.id] || null : null;
+  });
+  const validateVACTProfile = profilesModule?.validateVACTProfile || (() => ({ valid: true, errors: [] }));
 
   const computeVACTQuestionSignature = signatureModule?.computeVACTQuestionSignature || (q => q.id);
   const VACTSectionTestGenerator = sectionGenModule?.VACTSectionTestGenerator;
+
+  function seededIdFragment(seed) {
+    let hash = 2166136261;
+    const value = String(seed);
+    for (let i = 0; i < value.length; i++) {
+      hash ^= value.charCodeAt(i);
+      hash = Math.imul(hash, 16777619);
+    }
+    return (hash >>> 0).toString(36);
+  }
+
+  function isProductionVACTQuestion(q) {
+    return Boolean(
+      q && typeof q === 'object' &&
+      q.status === 'production' &&
+      typeof q.question === 'string' && q.question.trim() &&
+      Array.isArray(q.options) && q.options.length === 4 &&
+      q.options.every(option => typeof option === 'string' && option.trim()) &&
+      ['A', 'B', 'C', 'D'].includes(q.correctAnswer) &&
+      q.source && q.source.extractedFromSource === true &&
+      typeof q.source.sourceId === 'string' && q.source.sourceId.trim() &&
+      typeof q.source.sourceFile === 'string' && q.source.sourceFile.trim() &&
+      q.quality && q.quality.answerVerified === true
+    );
+  }
+
+  function copyQuestionProvenance(q) {
+    const source = q?.source && typeof q.source === 'object' ? q.source : null;
+    return {
+      source: source ? { ...source } : q?.source || null,
+      sourceId: q?.sourceId ?? source?.sourceId ?? null,
+      sourceFile: q?.sourceFile ?? source?.sourceFile ?? null,
+      sourcePage: q?.sourcePage ?? source?.sourcePage ?? null,
+      questionSourceId: q?.questionSourceId ?? source?.questionSourceId ?? source?.sourceId ?? null,
+      questionSourceFile: q?.questionSourceFile ?? source?.questionSourceFile ?? source?.sourceFile ?? null,
+      questionSourcePage: q?.questionSourcePage ?? source?.questionSourcePage ?? source?.sourcePage ?? null,
+      solutionSourceId: q?.solutionSourceId ?? source?.solutionSourceId ?? null,
+      solutionSourceFile: q?.solutionSourceFile ?? source?.solutionSourceFile ?? null,
+      solutionSourcePage: q?.solutionSourcePage ?? source?.solutionSourcePage ?? null,
+      examSetId: q?.examSetId ?? source?.examSetId ?? null,
+      quality: q?.quality ? { ...q.quality } : null,
+      stimulus: q?.stimulus ?? null,
+      assets: q?.assets ?? null,
+      answerVerified: q?.quality?.answerVerified === true
+    };
+  }
 
   const ORDERED_SECTION_KEYS = Object.freeze([
     VACT_SECTIONS.VIETNAMESE,
@@ -58,7 +112,7 @@
   /**
    * Generates a multi-section exam based on a V-ACT exam profile.
    *
-   * @param {object|string} profileOrId Exam profile object or ID ('vact_mini_100' | 'vact_full')
+   * @param {object|string} profileOrId Canonical profile object or explicit profile ID
    * @param {object} [options]
    * @param {string} [options.difficulty='balanced'] 'easy' | 'medium' | 'hard' | 'balanced'
    * @param {Array<string>} [options.excludeSignatures=[]]
@@ -67,22 +121,20 @@
    * @returns {object} Generated exam object
    */
   function generateFromProfile(profileOrId, options = {}) {
-    let profile = profileOrId;
-    if (typeof profileOrId === 'string') {
-      if (profileOrId === 'vact_mini_100' || profileOrId === 'mini100') {
-        profile = VACT_MINI_100_PROFILE;
-      } else if (profileOrId === 'vact_full' || profileOrId === 'full120') {
-        profile = VACT_FULL_PROFILE;
-      }
-    }
-
+    const profile = resolveVACTProfile(profileOrId);
     if (!profile || !profile.sections) {
       throw new Error(`Invalid exam profile provided: ${JSON.stringify(profileOrId)}`);
     }
+    const profileValidation = validateVACTProfile(profile);
+    if (!profileValidation.valid) {
+      throw new Error(`Invalid exam profile "${profile.id}": ${profileValidation.errors.join(', ')}`);
+    }
 
-    const examId = `vact_exam_${profile.id}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     const difficulty = options.difficulty || 'balanced';
     const baseSeed = options.seed !== undefined ? String(options.seed) : null;
+    const examId = baseSeed === null
+      ? `vact_exam_${profile.id}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+      : `vact_exam_${profile.id}_seed_${seededIdFragment(baseSeed)}`;
 
     // Track seen signatures to guarantee zero intra-exam duplicate questions
     const seenSignatures = new Set(
@@ -97,6 +149,12 @@
     let generatedTotal = 0;
     let missingTotal = 0;
 
+    const requestedDistribution = {};
+    const actualDistribution = { easy: 0, medium: 0, hard: 0, unclassified: 0 };
+    let classifiedCount = 0;
+    let unclassifiedCount = 0;
+    let redistributionUsed = false;
+
     let questionGlobalIndex = 1;
 
     // Iterate through sections in standard V-ACT order
@@ -108,6 +166,8 @@
       requestedTotal += targetCount;
       const secMeta = VACT_SECTION_META[secKey] || { nameVi: secKey, nameEn: secKey };
       const sectionSeed = baseSeed ? `${baseSeed}_${secKey}_${i}` : undefined;
+
+      requestedDistribution[secKey] = targetCount;
 
       // Section Isolation: generate strictly for this section
       let secResult;
@@ -138,21 +198,24 @@
         };
       }
 
-      const secGen = secResult.generatedCount;
-      const secMissing = Math.max(0, targetCount - secGen);
-      const isSecComplete = secMissing === 0;
-
-      generatedTotal += secGen;
-      missingTotal += secMissing;
-
-      // Tag and number each question with section boundary info
       const sectionQuestions = [];
-      for (const rawQ of secResult.questions) {
+      let invalidProductionCount = 0;
+      let duplicateCount = 0;
+      for (const rawQ of secResult.questions || []) {
+        if (!isProductionVACTQuestion(rawQ)) {
+          invalidProductionCount++;
+          continue;
+        }
         const sig = computeVACTQuestionSignature(rawQ);
+        if (seenSignatures.has(sig)) {
+          duplicateCount++;
+          continue;
+        }
         seenSignatures.add(sig);
 
         const numberedQ = {
           ...rawQ,
+          ...copyQuestionProvenance(rawQ),
           examIndex: questionGlobalIndex,
           sectionKey: secKey,
           sectionName: secMeta.nameVi,
@@ -161,10 +224,48 @@
         questionGlobalIndex++;
         sectionQuestions.push(numberedQ);
         allQuestions.push(numberedQ);
+
+        const difficultyKey = ['easy', 'medium', 'hard'].includes(rawQ.difficulty) ? rawQ.difficulty : 'unclassified';
+        actualDistribution[difficultyKey]++;
+        if (difficultyKey === 'unclassified') unclassifiedCount++;
+        else classifiedCount++;
       }
+
+      const secGen = sectionQuestions.length;
+      const secMissing = Math.max(0, targetCount - secGen);
+      const isSecComplete = secMissing === 0;
+
+      generatedTotal += secGen;
+      missingTotal += secMissing;
 
       if (secResult.shortages && secResult.shortages.length > 0) {
         shortages.push(...secResult.shortages);
+      }
+      if (invalidProductionCount > 0) {
+        shortages.push({
+          scope: 'section',
+          section: secKey,
+          requested: targetCount,
+          generated: secGen,
+          missing: Math.max(0, targetCount - secGen),
+          invalid: invalidProductionCount,
+          reason: 'INVALID_PRODUCTION_RECORD'
+        });
+      }
+      if (duplicateCount > 0) {
+        shortages.push({
+          scope: 'section',
+          section: secKey,
+          requested: targetCount,
+          generated: secGen,
+          missing: Math.max(0, targetCount - secGen),
+          duplicates: duplicateCount,
+          reason: 'DUPLICATE_EXHAUSTION'
+        });
+      }
+
+      if (secResult.diagnostics?.difficultyDistribution) {
+        redistributionUsed = redistributionUsed || secResult.diagnostics.difficultyDistribution.redistributed === true;
       }
 
       sectionsOutput[secKey] = {
@@ -176,7 +277,7 @@
         generated: secGen,
         missing: secMissing,
         isComplete: isSecComplete,
-        questions: sectionQuestions
+      questions: sectionQuestions
       };
     }
 
@@ -196,6 +297,15 @@
       sections: sectionsOutput,
       questions: allQuestions,
       shortages,
+      diagnostics: {
+        profileId: profile.id,
+        requestedDistribution,
+        actualDistribution,
+        classifiedCount,
+        unclassifiedCount,
+        redistributed: redistributionUsed,
+        fallbackUsed: unclassifiedCount > 0
+      },
       createdAt: new Date().toISOString()
     };
   }
@@ -207,6 +317,14 @@
    */
   function generateMini100(options = {}) {
     return generateFromProfile(VACT_MINI_100_PROFILE, options);
+  }
+
+  function generateMini30(options = {}) {
+    return generateFromProfile(VACT_MINI_30_PROFILE, options);
+  }
+
+  function generateMini60(options = {}) {
+    return generateFromProfile(VACT_MINI_60_PROFILE, options);
   }
 
   /**
@@ -336,9 +454,11 @@
         solutionSourceFile: q.source?.solutionSourceFile || null,
         solutionSourcePage: q.source?.solutionSourcePage || null,
         examSetId: q.source?.examSetId || null,
-        answerVerified: Boolean(q.quality?.answerVerified !== false),
+        answerVerified: q.quality?.answerVerified === true,
         quality: q.quality || null,
-        stimulus: q.stimulus || null
+        stimulus: q.stimulus || null,
+        assets: q.assets || null,
+        ...copyQuestionProvenance(q)
       });
 
       questionsList.push({
@@ -359,8 +479,10 @@
         solutionSourceFile: q.source?.solutionSourceFile || null,
         solutionSourcePage: q.source?.solutionSourcePage || null,
         examSetId: q.source?.examSetId || null,
-        answerVerified: Boolean(q.quality?.answerVerified !== false),
-        quality: q.quality || null
+        answerVerified: q.quality?.answerVerified === true,
+        quality: q.quality || null,
+        assets: q.assets || null,
+        ...copyQuestionProvenance(q)
       });
     }
 
@@ -370,21 +492,36 @@
       id: exam.id,
       title: exam.title,
       subject: 'vact',
-      subjectLabel: exam.profileId === 'vact_full' ? 'Full V-ACT 120' : (exam.profileId === 'vact_mini_100' ? 'Mini V-ACT 100' : 'V-ACT'),
+      profileId: exam.profileId,
+      sourceType: exam.profileId === 'vact_full' ? 'vact_full_120' : exam.profileId,
+      subjectLabel: {
+        vact_mini_30: 'Mini V-ACT 30',
+        vact_mini_60: 'Mini V-ACT 60',
+        vact_mini_100: 'Mini V-ACT 100',
+        vact_full: 'Full V-ACT 120'
+      }[exam.profileId] || 'V-ACT',
       timeLimit: exam.timeLimitMinutes,
+      totalQuestions: exam.generatedTotal,
+      mcqCount: answerKeys.length,
+      essayCount: 0,
+      isComplete: exam.isComplete,
       examHtml,
       pdfDataUrl: 'data:text/html;charset=utf-8,' + encodeURIComponent(examHtml),
       answerKeys,
+      questions: questionsList,
       questionsCount: exam.generatedTotal,
       createdAt: exam.createdAt,
       vactMeta: {
         profileId: exam.profileId,
+        profileName: VACT_PROFILES[exam.profileId]?.name || exam.title,
+        timeLimitMinutes: exam.timeLimitMinutes,
         isComplete: exam.isComplete,
         requestedTotal: exam.requestedTotal,
         generatedTotal: exam.generatedTotal,
         missingTotal: exam.missingTotal,
         sections: exam.sections,
-        shortages: exam.shortages
+        shortages: exam.shortages,
+        diagnostics: exam.diagnostics || null
       }
     };
   }
@@ -433,7 +570,10 @@
 
   const VACTExamGenerator = {
     ORDERED_SECTION_KEYS,
+    VACT_PROFILES,
     generateFromProfile,
+    generateMini30,
+    generateMini60,
     generateMini100,
     generateFull120,
     renderExamPaperHtml,
@@ -444,7 +584,10 @@
   return {
     VACTExamGenerator,
     ORDERED_SECTION_KEYS,
+    VACT_PROFILES,
     generateFromProfile,
+    generateMini30,
+    generateMini60,
     generateMini100,
     generateFull120,
     renderExamPaperHtml,

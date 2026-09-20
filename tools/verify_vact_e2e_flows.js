@@ -107,6 +107,11 @@ performanceAnalytics.clearAttempts(E2E_STUDENT);
   assert.equal(sciStats.scientific_reasoning.accuracy, 40);
   console.log('  -> FLOW B SUCCESS: Physics targeted practice recorded & analyzed (40% accuracy)');
 
+  // Composite production profiles must run against the strict source-backed
+  // bank. Legacy-mode section fixtures above are intentionally isolated.
+  vact.VACTInternalBank.setMode('source_backed');
+  vact.VACTCoverage.clearCoverageCache();
+
   // =========================================================================
   // FLOW C: Student -> Mini 100 -> Submit -> Section Analytics
   // =========================================================================
@@ -144,7 +149,7 @@ performanceAnalytics.clearAttempts(E2E_STUDENT);
   assert.ok(miniSectionBreakdown.logic_data);
   assert.ok(miniSectionBreakdown.scientific_reasoning);
   assert.ok(miniSectionBreakdown.vietnamese);
-  assert.equal(miniSectionBreakdown.english, undefined, 'English should be excluded as 0 questions were present');
+  assert.ok(miniSectionBreakdown.english, 'English must be present in a complete source-backed Mini 100 profile');
   console.log('  -> FLOW C SUCCESS: Mini 100 test recorded with section breakdown');
 
   // =========================================================================

@@ -1016,7 +1016,7 @@ GIANG, 8"></textarea>
               📐 1. Toán Phổ Thông Chuẩn SGK (Lớp 6 - 12)
             </button>
             <button type="button" id="tabMathModeDgnl" class="btn btn-secondary" onclick="switchMathGenMode('dgnl')" style="border-radius:var(--radius-full);font-weight:800;padding:0.6rem 1.35rem;border:2px solid #8b5cf6;color:#6d28d9;background:var(--bg-card);">
-              🧠 2. Đánh Giá Năng Lực Chuẩn Hóa (Mini 100 / Full 120) ⭐ MỚI
+              🧠 2. Đánh Giá Năng Lực Chuẩn Hóa (Mini 30 / 60 / 100 / Full 120) ⭐ MỚI
             </button>
           </div>
 
@@ -1047,7 +1047,7 @@ GIANG, 8"></textarea>
                 <label>🎯 Định Hướng Đề Thi</label>
                 <select id="mathGenTrackSelect" onchange="handleTrackChange(this.value)" style="font-weight:700;">
                   <option value="toan" selected>📐 Toán Phổ Thông Chuẩn SGK (Lớp 6 - 12)</option>
-                  <option value="dgnl">🧠 Đánh Giá Năng Lực (Mini 100 / Full 120) ➔ Chuyển Ngay</option>
+                  <option value="dgnl">🧠 Đánh Giá Năng Lực (Mini 30 / 60 / 100 / Full 120) ➔ Chuyển Ngay</option>
                 </select>
               </div>
             </div>
@@ -1268,7 +1268,7 @@ GIANG, 8"></textarea>
           </div><!-- /mathGenControlsContainer -->
           </div><!-- /mathGenStandardPanel -->
 
-          <!-- PANEL 2: ĐÁNH GIÁ NĂNG LỰC (ĐGNL) ĐỘC LẬP (MINI 100 / FULL 120) -->
+          <!-- PANEL 2: ĐÁNH GIÁ NĂNG LỰC (ĐGNL) ĐỘC LẬP (MINI 30 / 60 / 100 / FULL 120) -->
           <div id="mathGenDgnlPanel" class="hidden">
             <div style="background:var(--bg-tertiary);border:2px solid var(--indigo);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.25rem;">
               <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;">
@@ -1280,48 +1280,38 @@ GIANG, 8"></textarea>
                 </span>
               </div>
 
-              <!-- 2 LỰA CHỌN GÓI ĐỀ: MINI TEST 100 CÂU & FULL TEST 120 CÂU -->
+              <!-- 4 LỰA CHỌN PROFILE: MINI 30 / MINI 60 / MINI 100 / FULL 120 -->
               <label style="font-weight:800;display:block;margin-bottom:0.75rem;color:var(--text-primary);">
                 🎯 Chọn Định Dạng Đề Thi ĐGNL:
               </label>
-              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:1rem;margin-bottom:1.25rem;">
-                
-                <!-- MINI TEST 100 CÂU -->
-                <div class="dgnl-package-card" id="cardDgnlMini" onclick="selectDgnlPackage('mini')" style="cursor:pointer;border:2.5px solid var(--indigo);background:var(--bg-card);border-radius:var(--radius-lg);padding:1.15rem;position:relative;box-shadow:0 4px 14px rgba(99,102,241,0.15);transition:all 0.2s ease;">
-                  <input type="radio" name="dgnlPackageRadio" id="dgnlPackageMini" value="mini" checked style="position:absolute;top:1rem;right:1rem;width:1.3rem;height:1.3rem;accent-color:var(--indigo);">
-                  <div style="font-size:1.2rem;font-weight:800;color:var(--indigo);margin-bottom:0.35rem;display:flex;align-items:center;gap:0.4rem;">
-                    <span>⚡</span> Mini Test — 100 Câu
-                  </div>
-                  <div style="font-size:0.88rem;color:var(--text-secondary);margin-bottom:0.75rem;line-height:1.4;">
-                    Đề thi rút gọn tinh chuẩn, phù hợp khảo sát định kỳ hoặc luyện tốc độ giải đề phản xạ.
-                  </div>
-                  <div style="display:flex;flex-direction:column;gap:0.35rem;font-size:0.84rem;font-weight:700;color:var(--text-primary);background:var(--bg-tertiary);padding:0.65rem 0.85rem;border-radius:var(--radius-md);">
-                    <div>📊 <strong>40 câu</strong> Tư duy Định lượng (Toán học)</div>
-                    <div>🧩 <strong>30 câu</strong> Tư duy Logic & Suy luận</div>
-                    <div>📈 <strong>30 câu</strong> Phân tích & Xử lý Số liệu</div>
-                    <div style="color:var(--indigo);margin-top:2px;">⏱️ Thời gian tiêu chuẩn: <strong>90 phút</strong></div>
-                  </div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));gap:1rem;margin-bottom:1.25rem;">
+                <div class="dgnl-package-card" id="cardDgnlMini30" onclick="selectDgnlPackage('vact_mini_30')" style="cursor:pointer;border:2.5px solid var(--indigo);background:var(--bg-card);border-radius:var(--radius-lg);padding:1.15rem;position:relative;box-shadow:0 4px 14px rgba(99,102,241,0.15);transition:all 0.2s ease;">
+                  <input type="radio" name="dgnlPackageRadio" id="dgnlPackageMini30" value="vact_mini_30" checked style="position:absolute;top:1rem;right:1rem;width:1.3rem;height:1.3rem;accent-color:var(--indigo);">
+                  <div style="font-size:1.1rem;font-weight:800;color:var(--indigo);margin-bottom:0.35rem;">⚡ Mini V-ACT 30</div>
+                  <div style="font-size:0.84rem;color:var(--text-secondary);margin-bottom:0.65rem;">30 câu · 40 phút · Luyện nhanh K-EDU</div>
+                  <div style="font-size:0.8rem;font-weight:700;line-height:1.55;background:var(--bg-tertiary);padding:0.6rem 0.75rem;border-radius:var(--radius-md);">🇻🇳 8 · 🇬🇧 8 · 📐 7 · 🧩 3 · 🔬 4</div>
                 </div>
 
-                <!-- FULL TEST 120 CÂU -->
-                <div class="dgnl-package-card" id="cardDgnlFull" onclick="selectDgnlPackage('full')" style="cursor:pointer;border:2px solid var(--border-color);background:var(--bg-card);border-radius:var(--radius-lg);padding:1.15rem;position:relative;opacity:0.85;transition:all 0.2s ease;">
-                  <input type="radio" name="dgnlPackageRadio" id="dgnlPackageFull" value="full" style="position:absolute;top:1rem;right:1rem;width:1.3rem;height:1.3rem;accent-color:var(--indigo);">
-                  <div style="font-size:1.2rem;font-weight:800;color:#7c3aed;margin-bottom:0.35rem;display:flex;align-items:center;gap:0.4rem;">
-                    <span>🏆</span> Full Test — 120 Câu (Chuẩn V-ACT)
-                  </div>
-                  <div style="font-size:0.88rem;color:var(--text-secondary);margin-bottom:0.75rem;line-height:1.4;">
-                    Bộ đề toàn diện mô phỏng chính xác cấu trúc đề thi chính thức ĐHQG-HCM gồm 5 phần độc lập.
-                  </div>
-                  <div style="display:flex;flex-direction:column;gap:0.35rem;font-size:0.84rem;font-weight:700;color:var(--text-primary);background:var(--bg-tertiary);padding:0.65rem 0.85rem;border-radius:var(--radius-md);">
-                    <div>🇻🇳 <strong>30 câu</strong> Sử dụng ngôn ngữ Tiếng Việt</div>
-                    <div>🇬🇧 <strong>30 câu</strong> Sử dụng ngôn ngữ Tiếng Anh</div>
-                    <div>📐 <strong>30 câu</strong> Toán học</div>
-                    <div>🧩 <strong>12 câu</strong> Tư duy Logic & Phân tích số liệu</div>
-                    <div>🔬 <strong>18 câu</strong> Suy luận khoa học</div>
-                    <div style="color:#7c3aed;margin-top:2px;">⏱️ Thời gian tiêu chuẩn: <strong>150 phút</strong></div>
-                  </div>
+                <div class="dgnl-package-card" id="cardDgnlMini60" onclick="selectDgnlPackage('vact_mini_60')" style="cursor:pointer;border:2px solid var(--border-color);background:var(--bg-card);border-radius:var(--radius-lg);padding:1.15rem;position:relative;opacity:0.85;transition:all 0.2s ease;">
+                  <input type="radio" name="dgnlPackageRadio" id="dgnlPackageMini60" value="vact_mini_60" style="position:absolute;top:1rem;right:1rem;width:1.3rem;height:1.3rem;accent-color:var(--indigo);">
+                  <div style="font-size:1.1rem;font-weight:800;color:#2563eb;margin-bottom:0.35rem;">🎯 Mini V-ACT 60</div>
+                  <div style="font-size:0.84rem;color:var(--text-secondary);margin-bottom:0.65rem;">60 câu · 75 phút · Luyện tập K-EDU</div>
+                  <div style="font-size:0.8rem;font-weight:700;line-height:1.55;background:var(--bg-tertiary);padding:0.6rem 0.75rem;border-radius:var(--radius-md);">🇻🇳 15 · 🇬🇧 15 · 📐 15 · 🧩 6 · 🔬 9</div>
                 </div>
 
+                <div class="dgnl-package-card" id="cardDgnlMini100" onclick="selectDgnlPackage('vact_mini_100')" style="cursor:pointer;border:2px solid var(--border-color);background:var(--bg-card);border-radius:var(--radius-lg);padding:1.15rem;position:relative;opacity:0.85;transition:all 0.2s ease;">
+                  <input type="radio" name="dgnlPackageRadio" id="dgnlPackageMini100" value="vact_mini_100" style="position:absolute;top:1rem;right:1rem;width:1.3rem;height:1.3rem;accent-color:var(--indigo);">
+                  <div style="font-size:1.1rem;font-weight:800;color:#4f46e5;margin-bottom:0.35rem;">🧠 Mini V-ACT 100</div>
+                  <div style="font-size:0.84rem;color:var(--text-secondary);margin-bottom:0.65rem;">100 câu · 90 phút · Luyện tập đầy đủ</div>
+                  <div style="font-size:0.8rem;font-weight:700;line-height:1.55;background:var(--bg-tertiary);padding:0.6rem 0.75rem;border-radius:var(--radius-md);">🇻🇳 25 · 🇬🇧 25 · 📐 25 · 🧩 10 · 🔬 15</div>
+                </div>
+
+                <div class="dgnl-package-card" id="cardDgnlFull" onclick="selectDgnlPackage('vact_full')" style="cursor:pointer;border:2px solid var(--border-color);background:var(--bg-card);border-radius:var(--radius-lg);padding:1.15rem;position:relative;opacity:0.85;transition:all 0.2s ease;">
+                  <input type="radio" name="dgnlPackageRadio" id="dgnlPackageFull" value="vact_full" style="position:absolute;top:1rem;right:1rem;width:1.3rem;height:1.3rem;accent-color:var(--indigo);">
+                  <div style="font-size:1.1rem;font-weight:800;color:#7c3aed;margin-bottom:0.35rem;">🏆 Full V-ACT 120</div>
+                  <div style="font-size:0.84rem;color:var(--text-secondary);margin-bottom:0.65rem;">120 câu · 150 phút · Mô phỏng đầy đủ</div>
+                  <div style="font-size:0.8rem;font-weight:700;line-height:1.55;background:var(--bg-tertiary);padding:0.6rem 0.75rem;border-radius:var(--radius-md);">🇻🇳 30 · 🇬🇧 30 · 📐 30 · 🧩 12 · 🔬 18</div>
+                </div>
               </div>
 
               <!-- THIẾT LẬP BỔ SUNG: HỆ THI & THỜI GIAN -->
@@ -1335,13 +1325,13 @@ GIANG, 8"></textarea>
 
                 <div class="form-group" style="margin-bottom:0;">
                   <label style="font-weight:800;color:var(--indigo);">⏱️ Thời Gian Làm Bài (Phút)</label>
-                  <input type="number" id="dgnlTimeLimitInput" value="90" min="10" max="300" style="font-weight:800;border:2px solid var(--indigo);border-radius:var(--radius-md);padding:0.55rem 0.75rem;background:var(--bg-tertiary);width:100%;">
+                  <input type="number" id="dgnlTimeLimitInput" value="40" min="10" max="300" style="font-weight:800;border:2px solid var(--indigo);border-radius:var(--radius-md);padding:0.55rem 0.75rem;background:var(--bg-tertiary);width:100%;">
                 </div>
               </div>
 
               <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
                 <button type="button" id="btnGenerateDgnlExam" class="btn btn-primary btn-lg" onclick="triggerAutoGenerateDgnlExam()" style="background:linear-gradient(135deg, #4f46e5, #7c3aed);font-weight:800;">
-                  🚀 TẠO MINI V-ACT 100 — ĐHQG TP.HCM (100 CÂU — 90 PHÚT)
+                  🚀 TẠO MINI V-ACT 30 — 30 CÂU — 40 PHÚT
                 </button>
                 <button type="button" class="btn btn-secondary btn-lg" onclick="previewDgnlExamDocument()">
                   👁️ Xem Trước Bản In LaTeX

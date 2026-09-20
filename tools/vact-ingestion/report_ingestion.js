@@ -61,8 +61,7 @@ function generateIngestionReport(stats, options = {}) {
 
 ## 5. Năng lực Cung ứng Đề thi (Exam Readiness)
 
-- **Mini V-ACT 100 Ready**: **${stats.mini100Ready ? 'YES' : 'NO'}** (Yêu cầu $\ge 25$ Việt, $\ge 25$ Anh, $\ge 25$ Toán, $\ge 10$ Logic, $\ge 15$ Khoa học)
-- **Full V-ACT 120 Ready**: **${stats.full120Ready ? 'YES' : 'NO'}** (Yêu cầu $\ge 30$ Việt, $\ge 30$ Anh, $\ge 30$ Toán, $\ge 12$ Logic, $\ge 18$ Khoa học)
+${Object.entries(stats.profileReadiness || {}).map(([profileId, readiness]) => `- **${profileId} Ready**: **${readiness.runtimeReady ? 'YES' : 'NO'}** (${readiness.generated}/${readiness.required}; thiếu ${Object.values(readiness.missing || {}).reduce((sum, value) => sum + value, 0)})`).join('\n')}
 - **Số đề thi hoàn chỉnh nguyên gốc (Registered Full Exams)**: ${stats.totalExams || 0} đề
   - Hoàn chỉnh 120/120: ${stats.completeExams || 0} đề
   - Chưa hoàn chỉnh: ${stats.incompleteExams || 0} đề

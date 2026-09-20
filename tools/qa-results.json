@@ -190,6 +190,11 @@
     "error": null
   },
   {
+    "test": "verify_vact_profiles_hardening.js",
+    "passed": true,
+    "error": null
+  },
+  {
     "test": "verify_vact_runtime_bank.js",
     "passed": true,
     "error": null

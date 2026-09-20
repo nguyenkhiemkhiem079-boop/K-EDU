@@ -11,8 +11,9 @@ console.log('Calculating V-ACT Question Bank Coverage & Quality Audit...\n');
 
 const coverageEngine = vact.VACTCoverage;
 const summary = coverageEngine.getSummary({ refresh: true });
-const fullReadiness = coverageEngine.getProfileReadiness('vact_full');
-const miniReadiness = coverageEngine.getProfileReadiness('vact_mini_100');
+const profileReadiness = Object.fromEntries(
+  Object.keys(vact.VACT_PROFILES).map(profileId => [profileId, coverageEngine.getProfileReadiness(profileId)])
+);
 
 // 1. Output Global Bank Status
 console.log('========================================================================================');
@@ -82,15 +83,16 @@ function printProfileReadiness(r) {
   }
 }
 
-printProfileReadiness(miniReadiness);
-printProfileReadiness(fullReadiness);
+Object.values(profileReadiness).forEach(printProfileReadiness);
 
 // 5. Save Machine-Readable JSON
 const machineReport = {
   generatedAt: new Date().toISOString(),
   bankSummary: summary,
-  mini100Readiness: miniReadiness,
-  fullReadiness: fullReadiness
+  profileReadiness,
+  // Legacy report keys retained for downstream readers during migration.
+  mini100Readiness: profileReadiness.vact_mini_100,
+  fullReadiness: profileReadiness.vact_full
 };
 
 const reportPath = path.resolve(__dirname, 'vact-coverage-report.json');

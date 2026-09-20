@@ -404,7 +404,19 @@
         level: q.difficulty || null,
         source: q.source || null,
         quality: q.quality || null,
-        stimulus: q.stimulus || null
+        stimulus: q.stimulus || null,
+        assets: q.assets || null,
+        answerVerified: q.quality?.answerVerified === true,
+        sourceId: q.source?.sourceId || null,
+        sourceFile: q.source?.sourceFile || null,
+        sourcePage: q.source?.sourcePage || null,
+        questionSourceId: q.source?.questionSourceId || q.source?.sourceId || null,
+        questionSourceFile: q.source?.questionSourceFile || q.source?.sourceFile || null,
+        questionSourcePage: q.source?.questionSourcePage || q.source?.sourcePage || null,
+        solutionSourceId: q.source?.solutionSourceId || null,
+        solutionSourceFile: q.source?.solutionSourceFile || null,
+        solutionSourcePage: q.source?.solutionSourcePage || null,
+        examSetId: q.source?.examSetId || null
       });
 
       questionsList.push({
@@ -416,7 +428,20 @@
         skill: q.skill || null,
         difficulty: q.difficulty,
         stimulus: q.stimulus || null,
-        source: q.source || null
+        source: q.source || null,
+        quality: q.quality || null,
+        assets: q.assets || null,
+        answerVerified: q.quality?.answerVerified === true,
+        sourceId: q.source?.sourceId || null,
+        sourceFile: q.source?.sourceFile || null,
+        sourcePage: q.source?.sourcePage || null,
+        questionSourceId: q.source?.questionSourceId || q.source?.sourceId || null,
+        questionSourceFile: q.source?.questionSourceFile || q.source?.sourceFile || null,
+        questionSourcePage: q.source?.questionSourcePage || q.source?.sourcePage || null,
+        solutionSourceId: q.source?.solutionSourceId || null,
+        solutionSourceFile: q.source?.solutionSourceFile || null,
+        solutionSourcePage: q.source?.solutionSourcePage || null,
+        examSetId: q.source?.examSetId || null
       });
     }
 

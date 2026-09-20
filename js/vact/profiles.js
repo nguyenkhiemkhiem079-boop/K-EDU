@@ -1,8 +1,10 @@
 /**
  * K-EDU V-ACT Core Architecture - Exam Profiles & Validation
  * Target Profiles:
- * 1. VACT_FULL_PROFILE: Official 120-question, 150-minute ĐHQG-HCM exam simulation.
- * 2. VACT_MINI_100_PROFILE: 100-question practice mode for school sessions.
+ * 1. VACT_MINI_30_PROFILE: K-EDU quick practice mode.
+ * 2. VACT_MINI_60_PROFILE: K-EDU practice mode.
+ * 3. VACT_MINI_100_PROFILE: 100-question practice mode for school sessions.
+ * 4. VACT_FULL_PROFILE: Official 120-question, 150-minute ĐHQG-HCM exam simulation.
  */
 (function (root, factory) {
   if (typeof module !== 'undefined' && module.exports) {
@@ -60,6 +62,67 @@
       [VACT_SECTIONS.SCIENTIFIC_REASONING]: 15
     })
   });
+
+  /**
+   * Mini V-ACT 30 K-EDU quick practice profile.
+   * This is a K-EDU practice profile, not an official V-ACT structure.
+   */
+  const VACT_MINI_30_PROFILE = Object.freeze({
+    id: 'vact_mini_30',
+    name: 'Mini V-ACT 30 Luyện Tập Nhanh',
+    totalQuestions: 30,
+    timeLimitMinutes: 40,
+    sections: Object.freeze({
+      [VACT_SECTIONS.VIETNAMESE]: 8,
+      [VACT_SECTIONS.ENGLISH]: 8,
+      [VACT_SECTIONS.MATH]: 7,
+      [VACT_SECTIONS.LOGIC_DATA]: 3,
+      [VACT_SECTIONS.SCIENTIFIC_REASONING]: 4
+    })
+  });
+
+  /**
+   * Mini V-ACT 60 K-EDU practice profile.
+   */
+  const VACT_MINI_60_PROFILE = Object.freeze({
+    id: 'vact_mini_60',
+    name: 'Mini V-ACT 60 Luyện Tập',
+    totalQuestions: 60,
+    timeLimitMinutes: 75,
+    sections: Object.freeze({
+      [VACT_SECTIONS.VIETNAMESE]: 15,
+      [VACT_SECTIONS.ENGLISH]: 15,
+      [VACT_SECTIONS.MATH]: 15,
+      [VACT_SECTIONS.LOGIC_DATA]: 6,
+      [VACT_SECTIONS.SCIENTIFIC_REASONING]: 9
+    })
+  });
+
+  const VACT_PROFILES = Object.freeze({
+    vact_mini_30: VACT_MINI_30_PROFILE,
+    vact_mini_60: VACT_MINI_60_PROFILE,
+    vact_mini_100: VACT_MINI_100_PROFILE,
+    vact_full: VACT_FULL_PROFILE
+  });
+
+  const VACT_PROFILE_ALIASES = Object.freeze({
+    mini30: 'vact_mini_30',
+    mini60: 'vact_mini_60',
+    mini100: 'vact_mini_100',
+    full120: 'vact_full',
+    vact_full_120: 'vact_full'
+  });
+
+  function resolveVACTProfile(profileOrId) {
+    if (typeof profileOrId === 'string') {
+      const canonicalId = VACT_PROFILE_ALIASES[profileOrId] || profileOrId;
+      return VACT_PROFILES[canonicalId] || null;
+    }
+    if (profileOrId && typeof profileOrId === 'object' && profileOrId.id) {
+      return VACT_PROFILES[profileOrId.id] || null;
+    }
+    return null;
+  }
 
   /**
    * Validates an exam profile structure and arithmetic consistency.
@@ -121,12 +184,16 @@
   }
 
   // Development assert: Fail loudly if built-in profiles are mathematically inconsistent
-  validateVACTProfile(VACT_FULL_PROFILE, true);
-  validateVACTProfile(VACT_MINI_100_PROFILE, true);
+  Object.values(VACT_PROFILES).forEach(profile => validateVACTProfile(profile, true));
 
   return {
+    VACT_PROFILES,
+    VACT_PROFILE_ALIASES,
+    VACT_MINI_30_PROFILE,
+    VACT_MINI_60_PROFILE,
     VACT_FULL_PROFILE,
     VACT_MINI_100_PROFILE,
+    resolveVACTProfile,
     validateVACTProfile
   };
 });

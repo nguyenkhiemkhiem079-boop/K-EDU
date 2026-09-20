@@ -18,9 +18,10 @@ function generateBankHealthReport() {
   const pendingReviewSources = vact.sourceRegistry.getPendingReviewSources();
   const blockedSources = vact.sourceRegistry.getBlockedSources();
 
-  // Full 120 and Mini 100 readiness
-  const fullReadiness = vact.getProfileReadiness('vact_full');
-  const miniReadiness = vact.getProfileReadiness('vact_mini_100');
+  // Runtime readiness for every canonical profile; long-term coverage targets remain separate.
+  const profileReadiness = Object.fromEntries(
+    Object.keys(vact.VACT_PROFILES).map(profileId => [profileId, vact.getProfileReadiness(profileId)])
+  );
 
   // Near duplicate diagnostics on sample
   const sampleForNearDup = vact.getUniqueUsableQuestions();
@@ -140,10 +141,16 @@ function generateBankHealthReport() {
       blockedSources: blockedSources.map(s => ({ sourceId: s.sourceId, provider: s.provider, rights: s.rights.status }))
     },
     gaps,
-    readiness: {
-      full120: { ready: fullReadiness.ready, totalRequired: fullReadiness.totalRequired, totalMissing: fullReadiness.totalMissing, shortages: fullReadiness.shortages },
-      mini100: { ready: miniReadiness.ready, totalRequired: miniReadiness.totalRequired, totalMissing: miniReadiness.totalMissing, shortages: miniReadiness.shortages }
-    }
+    readiness: Object.fromEntries(
+      Object.entries(profileReadiness).map(([profileId, readiness]) => [profileId, {
+        runtimeReady: readiness.runtimeReady,
+        ready: readiness.ready,
+        totalRequired: readiness.totalRequired,
+        totalMissing: readiness.totalMissing,
+        shortages: readiness.shortages,
+        longTermCoverageTarget: readiness.longTermCoverageTarget
+      }])
+    )
   };
 
   const outputPath = path.join(__dirname, 'vact-bank-health.json');

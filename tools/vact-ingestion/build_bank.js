@@ -8,6 +8,7 @@ const { normalizeQuestion } = require('./normalize_questions');
 const { validateQuestions } = require('./validate_questions');
 const { deduplicateQuestions } = require('./deduplicate_questions');
 const { generateIngestionReport } = require('./report_ingestion');
+const { VACT_PROFILES } = require('../../js/vact/profiles');
 
 async function buildBank(options = {}) {
   console.log('===============================================================');
@@ -116,23 +117,19 @@ async function buildBank(options = {}) {
   console.log(`   - Logic/Data           : ${bySection.logic_data}`);
   console.log(`   - Scientific Reasoning : ${bySection.scientific_reasoning}`);
 
-  // Readiness checks
-  // Mini 100: 25 Viet, 25 Eng, 25 Math, 10 Logic, 15 Sci
-  const mini100Ready = bySection.vietnamese >= 25 &&
-                       bySection.english >= 25 &&
-                       bySection.math >= 25 &&
-                       bySection.logic_data >= 10 &&
-                       bySection.scientific_reasoning >= 15;
+  // Runtime readiness uses the canonical profile registry. It does not replace
+  // the separate long-term coverage targets used by bank-health reporting.
+  const profileReadiness = Object.fromEntries(Object.entries(VACT_PROFILES).map(([profileId, profile]) => {
+    const missing = Object.fromEntries(Object.entries(profile.sections).map(([section, required]) => [section, Math.max(0, required - bySection[section])]))
+    const runtimeReady = Object.values(missing).every(value => value === 0);
+    return [profileId, { runtimeReady, required: profile.totalQuestions, generated: profile.totalQuestions - Object.values(missing).reduce((sum, value) => sum + value, 0), missing }];
+  }));
 
-  // Full 120: 30 Viet, 30 Eng, 30 Math, 12 Logic, 18 Sci
-  const full120Ready = bySection.vietnamese >= 30 &&
-                       bySection.english >= 30 &&
-                       bySection.math >= 30 &&
-                       bySection.logic_data >= 12 &&
-                       bySection.scientific_reasoning >= 18;
-
-  console.log(`   - Mini V-ACT 100 Ready : ${mini100Ready ? 'YES' : 'NO'}`);
-  console.log(`   - Full V-ACT 120 Ready : ${full120Ready ? 'YES' : 'NO'}`);
+  Object.entries(profileReadiness).forEach(([profileId, readiness]) => {
+    console.log(`   - ${profileId} Ready : ${readiness.runtimeReady ? 'YES' : 'NO'}`);
+  });
+  const mini100Ready = profileReadiness.vact_mini_100.runtimeReady;
+  const full120Ready = profileReadiness.vact_full.runtimeReady;
 
   // Count sources by category
   const sourcesByCategory = {};
@@ -153,6 +150,7 @@ async function buildBank(options = {}) {
     reviewRequiredCount: reviewRequired.length,
     invalidCount: invalid.length,
     bySection,
+    profileReadiness,
     mini100Ready,
     full120Ready,
     totalExams: examRecords.length,
