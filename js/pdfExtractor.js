@@ -1,6 +1,12 @@
 /**
  * KhiemEdu PDF & Question Extractor Engine
  * Extracts text from PDF files and parses questions via AI API or Smart Offline Parser.
+ *
+ * Security note: Gemini/Claude integrations intentionally call provider APIs
+ * from the browser with a user-supplied key. This is not a secret-storage
+ * boundary. Never embed a service/private key in this bundle; production
+ * deployments that need secret protection must proxy the call through a
+ * trusted server and apply provider-side restrictions.
  */
 
 const PdfExtractor = {

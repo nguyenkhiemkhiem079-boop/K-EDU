@@ -1,0 +1,63 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function teacher() {
+      return signedIn()
+        && request.auth.token.teacher == true;
+    }
+
+    // Public quiz documents must be produced by toPublicQuizPayload(). The
+    // private answer-key collection below is the actual authorization boundary;
+    // application code must never put answer keys in this collection.
+    match /quizzes/{quizId} {
+      allow read: if true;
+      allow create, update: if teacher()
+        && !request.resource.data.keys().hasAny(['privateAnswerKeys', 'answerKey']);
+      allow delete: if teacher();
+    }
+
+    match /quiz_answer_keys/{quizId} {
+      allow read, create, update, delete: if teacher();
+    }
+
+    // Students may submit only records owned by their Firebase user. Results
+    // are teacher-readable; student review is generated locally after grading
+    // and never requires exposing the teacher result collection.
+    match /results/{resultId} {
+      allow create: if signedIn()
+        && request.resource.data.studentUid == request.auth.uid
+        && !request.resource.data.keys().hasAny(['answerKeys', 'privateAnswerKeys']);
+      allow read, update, delete: if teacher();
+    }
+
+    match /roster/{documentId} {
+      allow read, write: if teacher();
+    }
+
+    match /students/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || teacher());
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['uid', 'email', 'username', 'name', 'className', 'role', 'createdAt', 'updatedAt'])
+        && request.resource.data.uid == uid
+        && request.resource.data.role == 'student'
+        && request.resource.data.name is string
+        && request.resource.data.className is string;
+      allow update: if teacher() || (signedIn() && request.auth.uid == uid
+        && request.resource.data.uid == uid
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.username == resource.data.username
+        && request.resource.data.role == 'student'
+        && request.resource.data.createdAt == resource.data.createdAt);
+      allow delete: if teacher();
+    }
+
+    // Deny every collection not explicitly reviewed above.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

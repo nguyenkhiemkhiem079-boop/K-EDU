@@ -29,6 +29,9 @@
       <p style="color:var(--text-secondary);font-size:0.9rem;font-weight:600;line-height:1.5;">
         Vui lòng nhập <strong>Mã PIN Quản Trị</strong> để mở khóa bàn làm việc, quản lý đề thi và bảng điểm lớp học:
       </p>
+      <p style="color:var(--amber);font-size:0.78rem;font-weight:700;line-height:1.4;">
+        🔐 PIN này chỉ khóa giao diện trên thiết bị hiện tại; không phải xác thực bảo mật cho Firebase Cloud.
+      </p>
       
       <form onsubmit="verifyTeacherAuth(); return false;">
         <input type="password" id="teacherPinInput" class="auth-pin-input" placeholder="••••••" maxlength="12" autocomplete="off" required>
@@ -50,6 +53,9 @@
       <h2 style="font-size:1.6rem;color:var(--text-primary);margin-bottom:0.4rem;">Xác Thực Quyền Hạn: Thầy Khiêm</h2>
       <p style="color:var(--text-secondary);font-size:0.9rem;font-weight:600;line-height:1.5;">
         Đây là Role Tối Cao dành riêng cho Sáng Lập Viên & Master Creator. Vui lòng nhập <strong>Mật Khẩu Thầy Khiêm</strong> để kích hoạt:
+      </p>
+      <p style="color:var(--amber);font-size:0.78rem;font-weight:700;line-height:1.4;">
+        🔐 Đây chỉ là cờ quyền cục bộ; quyền Cloud vẫn phải được cấp bằng Firebase Authentication và custom claim teacher.
       </p>
       
       <form onsubmit="verifyMasterTeacherAuth(); return false;">
@@ -527,7 +533,7 @@ GIANG, 8"></textarea>
                 </div>
               </div>
             </div>
-            <iframe id="studentPdfViewerFrame" class="pdf-render-frame" title="Đề thi gốc"></iframe>
+            <iframe id="studentPdfViewerFrame" class="pdf-render-frame" title="Đề thi gốc" sandbox="allow-same-origin" referrerpolicy="no-referrer"></iframe>
 
             <!-- Floating Jump-to-Sheet Button on Mobile -->
             <div class="mobile-floating-sheet-trigger" id="mobileFloatingSheetTrigger">
@@ -799,13 +805,13 @@ GIANG, 8"></textarea>
                     </select>
                   </div>
                   <div style="flex:1.5;min-width:200px;">
-                    <label style="font-size:0.78rem;font-weight:800;display:block;margin-bottom:0.2rem;">API Key (Nếu dùng Gemini/Claude):</label>
+                    <label style="font-size:0.78rem;font-weight:800;display:block;margin-bottom:0.2rem;">API Key (Nếu dùng Gemini/Claude): <span style="color:var(--rose);">⚠️ Key được gửi trực tiếp từ trình duyệt; không dùng key bí mật dùng chung.</span></label>
                     <input type="password" id="pdfAiApiKeyInput" placeholder="Nhập API Key cá nhân của bạn..." style="font-size:0.82rem;padding:0.35rem 0.5rem;width:100%;">
                   </div>
                 </div>
               </div>
 
-              <iframe id="teacherPdfPreviewFrame" style="width:100%;height:320px;border:2px solid var(--border-color);border-radius:var(--radius-md);background:#fff;" title="Xem trước đề"></iframe>
+              <iframe id="teacherPdfPreviewFrame" style="width:100%;height:320px;border:2px solid var(--border-color);border-radius:var(--radius-md);background:#fff;" title="Xem trước đề" sandbox="allow-same-origin" referrerpolicy="no-referrer"></iframe>
             </div>
           </div>
 
@@ -1494,6 +1500,7 @@ GIANG, 8"></textarea>
           </div>
           <p class="card-subtitle">
             Đồng bộ danh sách học sinh, điểm số trực tuyến và lưu trữ file PDF đề thi không giới hạn thông qua Firebase. Nhấn để mở bảng cấu hình:
+            <br><strong style="color:var(--amber);">⚠️ Firebase API key trên ứng dụng web là thông tin nhận diện công khai; không dán Gemini/Claude/API key bí mật vào trình duyệt.</strong>
           </p>
 
           <div style="margin-top:0.75rem;">
@@ -1535,6 +1542,17 @@ GIANG, 8"></textarea>
               <button type="button" class="btn btn-sky" onclick="handleSyncLocalToFirebase()">☁️ Đồng Bộ Dữ Liệu Lên Cloud</button>
               <button type="button" class="btn btn-secondary" onclick="handleDisableFirebase()">📴 Chạy Offline (Tạm ngắt)</button>
               <button type="button" class="btn btn-danger btn-sm" onclick="handleClearFirebaseConfig()">🗑️ Xóa Credentials</button>
+            </div>
+            <div style="margin-top:1rem;padding:0.8rem;border:1px dashed var(--indigo);border-radius:var(--radius-md);background:rgba(99,102,241,0.06);">
+              <strong style="display:block;margin-bottom:0.35rem;color:var(--indigo);">🔐 Xác thực Giáo viên cho Cloud</strong>
+              <div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.65rem;line-height:1.4;">PIN cục bộ không cấp quyền Firebase. Đăng nhập tài khoản Firebase có custom claim <code>teacher: true</code> để lưu đề, đáp án riêng, roster và xem điểm Cloud. Mật khẩu chỉ dùng trong phiên, không lưu vào trình duyệt.</div>
+              <div style="display:flex;gap:0.55rem;flex-wrap:wrap;align-items:center;">
+                <input type="email" id="firebaseTeacherEmail" placeholder="Email giáo viên" autocomplete="username" style="min-width:190px;flex:1;padding:0.45rem 0.6rem;">
+                <input type="password" id="firebaseTeacherPassword" placeholder="Mật khẩu Firebase" autocomplete="current-password" style="min-width:190px;flex:1;padding:0.45rem 0.6rem;">
+                <button type="button" class="btn btn-primary btn-sm" onclick="handleFirebaseTeacherSignIn()">Đăng nhập Cloud</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="handleFirebaseTeacherSignOut()">Đăng xuất Cloud</button>
+              </div>
+              <div id="firebaseTeacherAuthStatus" style="margin-top:0.55rem;font-size:0.82rem;font-weight:700;"></div>
             </div>
             <div id="firebaseConnectionStatusBox" style="margin-top:0.75rem;font-size:0.875rem;"></div>
           </div>
@@ -1904,6 +1922,7 @@ GIANG, 8"></textarea>
 
   <!-- Firebase App & Services (Compat version for script tags) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
 

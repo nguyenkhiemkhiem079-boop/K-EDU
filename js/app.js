@@ -226,10 +226,10 @@ const AVATARS_COLLECTION = [
 const TeacherAuth = {
   getPin() {
     const stored = localStorage.getItem('khiemedu_teacher_pin');
-    if (!stored || stored === '123456') {
-      return '130909';
-    }
-    return stored;
+    // This is a local-device convenience gate, never cloud authorization.
+    // Do not ship a known fallback credential: anyone with the client bundle
+    // can inspect or change localStorage.
+    return stored && stored !== '123456' ? stored : null;
   },
   setPin(newPin) {
     localStorage.setItem('khiemedu_teacher_pin', newPin);
@@ -332,10 +332,9 @@ function selectAvatar(emoji, name = '') {
 const MasterTeacherAuth = {
   getPassword() {
     const stored = localStorage.getItem('khiemedu_master_pass');
-    if (!stored || stored === 'khiem123') {
-      return '130909';
-    }
-    return stored;
+    // This role flag is also local-only; Firebase custom claims are the
+    // authorization boundary for cloud data.
+    return stored && stored !== 'khiem123' ? stored : null;
   },
   setPassword(newPass) {
     localStorage.setItem('khiemedu_master_pass', newPass);
@@ -400,6 +399,20 @@ function verifyMasterTeacherAuth() {
   const errorEl = document.getElementById('masterTeacherAuthError');
   const enteredPass = (input ? input.value : '').trim();
   const correctPass = MasterTeacherAuth.getPassword();
+
+  // First use configures a device-local convenience secret. It is not a
+  // server credential and must never authorize a Firebase operation.
+  if (!correctPass) {
+    if (enteredPass.length < 4) {
+      if (errorEl) errorEl.textContent = '⚠️ Chưa thiết lập mật khẩu cục bộ. Hãy nhập ít nhất 4 ký tự để thiết lập trên thiết bị này.';
+      return;
+    }
+    MasterTeacherAuth.setPassword(enteredPass);
+    MasterTeacherAuth.setVerified(true);
+    closeMasterTeacherAuthModal();
+    activateMasterTeacherRole();
+    return;
+  }
 
   if (enteredPass === correctPass) {
     MasterTeacherAuth.setVerified(true);
@@ -608,6 +621,21 @@ function verifyTeacherAuth() {
   const errorEl = document.getElementById('teacherAuthError');
   const enteredPin = (input ? input.value : '').trim();
   const correctPin = TeacherAuth.getPin();
+
+  // First use configures a device-local convenience PIN. It is deliberately
+  // not reused as a cloud credential or Firebase authorization signal.
+  if (!correctPin) {
+    if (enteredPin.length < 4) {
+      if (errorEl) errorEl.textContent = '⚠️ Chưa thiết lập PIN cục bộ. Hãy nhập ít nhất 4 ký tự để thiết lập trên thiết bị này.';
+      return;
+    }
+    TeacherAuth.setPin(enteredPin);
+    TeacherAuth.login();
+    closeTeacherAuthModal();
+    showToast('🔓 Đã thiết lập PIN cục bộ trên thiết bị này. Cloud vẫn yêu cầu Firebase Auth.', 'info');
+    switchTab(AppState.pendingTeacherTab || 'teacher');
+    return;
+  }
 
   if (enteredPin === correctPin) {
     TeacherAuth.login();
@@ -8174,6 +8202,57 @@ function updateFirebaseUI() {
       badge.style.color = '';
     }
   }
+  updateFirebaseAuthUI();
+}
+
+async function updateFirebaseAuthUI() {
+  const status = document.getElementById('firebaseTeacherAuthStatus');
+  if (!status || !window.FirebaseEngine?.isActive || typeof window.FirebaseEngine.getAuthState !== 'function') return;
+  const state = await window.FirebaseEngine.getAuthState();
+  if (state.teacher) {
+    status.style.color = 'var(--emerald-shadow)';
+    status.textContent = `✅ Đã xác thực Cloud với quyền giáo viên: ${state.user?.email || state.user?.uid || 'tài khoản Firebase'}`;
+  } else if (state.authenticated && state.anonymous) {
+    status.style.color = 'var(--amber-shadow)';
+    status.textContent = 'ℹ️ Đang ở phiên học sinh ẩn danh. Cloud teacher writes vẫn bị khóa.';
+  } else {
+    status.style.color = 'var(--rose)';
+    status.textContent = '⚠️ Chưa có tài khoản giáo viên Cloud được xác thực.';
+  }
+}
+
+async function handleFirebaseTeacherSignIn() {
+  const email = document.getElementById('firebaseTeacherEmail')?.value.trim();
+  const password = document.getElementById('firebaseTeacherPassword')?.value || '';
+  const status = document.getElementById('firebaseTeacherAuthStatus');
+  if (!email || !password) {
+    if (status) status.textContent = '⚠️ Hãy nhập email và mật khẩu Firebase.';
+    return;
+  }
+  try {
+    if (!window.FirebaseEngine?.isActive) throw new Error('Firebase chưa được kích hoạt.');
+    await window.FirebaseEngine.signInTeacherWithEmail(email, password);
+    const passwordInput = document.getElementById('firebaseTeacherPassword');
+    if (passwordInput) passwordInput.value = '';
+    await updateFirebaseAuthUI();
+    await window.StorageEngine?.processSyncQueues?.();
+    showToast('✅ Đã xác thực giáo viên Cloud và tiếp tục đồng bộ dữ liệu.', 'success');
+  } catch (error) {
+    console.error('[FirebaseAuth] Teacher sign-in failed', { code: error?.code, message: error?.message });
+    if (status) status.textContent = '❌ Đăng nhập thất bại hoặc tài khoản chưa có claim teacher/admin.';
+    showToast('❌ Không thể xác thực giáo viên Cloud. Kiểm tra Firebase Auth và custom claim teacher.', 'error');
+  }
+}
+
+async function handleFirebaseTeacherSignOut() {
+  try {
+    await window.FirebaseEngine?.signOutCloud?.();
+    await updateFirebaseAuthUI();
+    showToast('🔒 Đã đăng xuất tài khoản giáo viên Cloud.', 'info');
+  } catch (error) {
+    console.error('[FirebaseAuth] Teacher sign-out failed', { code: error?.code, message: error?.message });
+    showToast('❌ Không thể đăng xuất Cloud.', 'error');
+  }
 }
 
 async function handleTestFirebaseConnection() {
@@ -8211,8 +8290,9 @@ async function handleTestFirebaseConnection() {
           <div style="background:var(--bg-card);padding:0.5rem 0.75rem;border-radius:6px;color:var(--text-secondary);font-size:0.82rem;border:1px dashed var(--rose);">
             💡 <strong>Hướng dẫn thiết lập 1 phút trên Firebase Console:</strong>
             <ul style="margin:4px 0 0 1rem;padding:0;">
-              <li>Truy cập <a href="https://console.firebase.google.com/project/${escapeHtml(projectId)}/firestore" target="_blank" style="color:var(--primary);font-weight:700;text-decoration:underline;">Firebase Console Firestore</a> &rarr; Bấm <strong>"Create database"</strong> (chọn Test mode).</li>
-              <li>Truy cập <a href="https://console.firebase.google.com/project/${escapeHtml(projectId)}/storage" target="_blank" style="color:var(--primary);font-weight:700;text-decoration:underline;">Firebase Console Storage</a> &rarr; Bấm <strong>"Get started"</strong> (chọn Test mode).</li>
+              <li>Truy cập <a href="https://console.firebase.google.com/project/${escapeHtml(projectId)}/firestore" target="_blank" style="color:var(--primary);font-weight:700;text-decoration:underline;">Firebase Console Firestore</a> &rarr; Bấm <strong>"Create database"</strong>, sau đó deploy <code>firebase/firestore.rules</code>; tuyệt đối không dùng Test mode.</li>
+              <li>Truy cập <a href="https://console.firebase.google.com/project/${escapeHtml(projectId)}/storage" target="_blank" style="color:var(--primary);font-weight:700;text-decoration:underline;">Firebase Console Storage</a> &rarr; Bấm <strong>"Get started"</strong>, sau đó deploy <code>firebase/storage.rules</code>; tuyệt đối không dùng Test mode.</li>
+              <li>Bật Firebase Authentication, tạo tài khoản giáo viên và cấp custom claim <code>teacher: true</code> trước khi đồng bộ dữ liệu production.</li>
             </ul>
           </div>
         </div>
@@ -8467,7 +8547,7 @@ async function executeAdminResetVinhDanh(forcedType = null) {
   if (!TeacherAuth.isLoggedIn()) {
     const pinInput = document.getElementById('adminResetVinhDanhPin');
     const pin = pinInput ? pinInput.value.trim() : '';
-    if (pin === TeacherAuth.getPin() || pin === '130909' || pin === 'thaykhiemkedu') {
+    if (TeacherAuth.getPin() && pin === TeacherAuth.getPin()) {
       TeacherAuth.login();
     } else {
       showToast('❌ Mã PIN Quản Trị không chính xác!', 'error');
@@ -8502,7 +8582,7 @@ async function executeAdminResetVinhDanh(forcedType = null) {
 async function handleQuickResetVinhDanh(type = 'all') {
   if (!TeacherAuth.isLoggedIn()) {
     const pin = prompt('🛡️ QUYỀN ADMIN:\nNhập mã PIN Giáo viên để xác nhận Reset Điểm Vinh Danh:');
-    if (pin === TeacherAuth.getPin() || pin === '130909' || pin === 'thaykhiemkedu') {
+    if (TeacherAuth.getPin() && pin === TeacherAuth.getPin()) {
       TeacherAuth.login();
     } else {
       if (pin !== null) alert('❌ Mã PIN không hợp lệ! Quyền bị từ chối.');

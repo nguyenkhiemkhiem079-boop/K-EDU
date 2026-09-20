@@ -10,7 +10,7 @@ const html = read('index.html');
 const app = read('js/app.js');
 assert.ok(html.includes('js/localStudentProfile.js?v=1.0'));
 assert.ok(!html.includes('student' + 'Accounts.js'));
-assert.ok(!html.includes('firebase-' + 'auth-compat.js'));
+assert.ok(html.includes('firebase-' + 'auth-compat.js'));
 assert.ok(!new RegExp('studentAccount(?:User' + 'name|Pass' + 'word)').test(html));
 assert.ok(!new RegExp('Student' + 'Accounts').test(app));
 

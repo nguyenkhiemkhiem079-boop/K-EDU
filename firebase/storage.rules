@@ -1,0 +1,26 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function teacher() {
+      return signedIn() && request.auth.token.teacher == true;
+    }
+
+    // Quiz documents are public only after their answer-free Firestore record
+    // is published. Upload, replacement and deletion remain teacher-only.
+    match /quizzes/{fileName} {
+      allow read: if true;
+      allow write: if teacher()
+        && request.resource.size < 20 * 1024 * 1024
+        && request.resource.contentType.matches('application/(pdf|xhtml\+xml)|text/html|image/.*');
+      allow delete: if teacher();
+    }
+
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

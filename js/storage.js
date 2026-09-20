@@ -192,9 +192,11 @@ const StorageEngine = {
             }
           }
           else {
-            const record = kind === 'quiz' ? await this.getQuiz(item.id) : await this.get(item.id.replace(STORAGE_PREFIX, ''));
+            const record = kind === 'quiz' ? await this.getQuiz(item.id, { includePrivate: true }) : await this.get(item.id.replace(STORAGE_PREFIX, ''));
             if (!record) throw new Error('SYNC_RECORD_NOT_FOUND');
-            const response = kind === 'quiz' ? await window.FirebaseEngine.saveQuiz(record) : await window.FirebaseEngine.saveResult(record);
+            const response = kind === 'quiz'
+              ? await window.FirebaseEngine.saveQuiz(toPublicQuizPayload(record), { privateAnswerKeys: record.answerKeys })
+              : await window.FirebaseEngine.saveResult(record);
             if (!response || response.success === false) throw new Error(response?.error || 'FIREBASE_SYNC_FAILED');
           }
         } catch (error) {
@@ -372,7 +374,7 @@ const StorageEngine = {
     }
 
     // Check Firebase Cloud
-    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
+    if (window.FirebaseEngine && window.FirebaseEngine.isActive && typeof window.FirebaseEngine.getQuiz === 'function') {
       try {
         const quiz = await window.FirebaseEngine.getQuiz(quizId);
         if (quiz && quiz.pdfDataUrl && quiz.pdfDataUrl.startsWith('http')) {
@@ -558,6 +560,14 @@ const StorageEngine = {
       const privateRecord = await this.getPrivateQuizRecordFromIndexedDB(id);
       let privateQuiz = privateRecord.success ? privateRecord.quiz : null;
       if (!privateQuiz) privateQuiz = await this.get('quiz_private:' + id);
+      if ((!privateQuiz || !Array.isArray(privateQuiz.answerKeys)) && includePrivate && window.FirebaseEngine?.isActive && typeof window.FirebaseEngine.getPrivateAnswerKeys === 'function') {
+        const cloudPrivate = await window.FirebaseEngine.getPrivateAnswerKeys(id);
+        if (cloudPrivate && Array.isArray(cloudPrivate.answerKeys)) {
+          privateQuiz = { id, quizId: id, answerKeys: cloudPrivate.answerKeys, updatedAt: cloudPrivate.updatedAt || record.updatedAt };
+          const storedPrivate = await this.savePrivateQuizRecordToIndexedDB(privateQuiz);
+          if (!storedPrivate.success) await this.set('quiz_private:' + id, privateQuiz);
+        }
+      }
       if (!privateQuiz || !Array.isArray(privateQuiz.answerKeys)) return window.QuizContract ? window.QuizContract.normalizeQuiz(record) : record;
       const merged = { ...record, answerKeys: privateQuiz.answerKeys };
       return window.QuizContract ? window.QuizContract.normalizeQuiz(merged) : merged;
@@ -581,7 +591,7 @@ const StorageEngine = {
       return mergePrivate(stored);
     }
 
-    if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
+    if (window.FirebaseEngine && window.FirebaseEngine.isActive && typeof window.FirebaseEngine.getQuiz === 'function') {
       try {
         const cloudQuiz = await window.FirebaseEngine.getQuiz(id);
         if (cloudQuiz) {
@@ -629,7 +639,7 @@ const StorageEngine = {
     const localKeys = await this.list('quiz:');
     const localList = [];
     for (const key of localKeys) {
-      const q = await this.get(key);
+          const q = await this.getQuiz(String(key).replace(/^quiz:/, ''), { includePrivate: true });
       if (q && !deletedIds.has(q.id)) {
         localList.push(q);
         const stored = normalizeQuizForPersistence(q).quiz;
@@ -980,10 +990,10 @@ const StorageEngine = {
 
         if (window.FirebaseEngine && window.FirebaseEngine.isActive) {
           try {
-            await window.FirebaseEngine.db.collection('quizzes').doc(quiz.id).delete();
-            await window.FirebaseEngine.deletePdf(quiz.id);
+            const deleted = await window.FirebaseEngine.deleteQuiz(quiz.id);
+            if (deleted === false) throw new Error('FIREBASE_DELETE_FAILED');
           } catch (e) {
-            console.warn('[RetentionSweep] Firebase deleteQuiz error:', e);
+            console.warn('[RetentionSweep] Firebase deleteQuiz error:', { quizId: quiz.id, message: e?.message || String(e) });
           }
         }
         quizzesRemoved++;
@@ -1337,7 +1347,7 @@ const StorageEngine = {
       // 1. Đồng bộ Quizzes (bao gồm upload PDF từ IndexedDB lên Storage)
       const quizKeys = await this.list('quiz:');
       for (const key of quizKeys) {
-        const q = await this.get(key);
+        const q = await this.getQuiz(String(key).replace(/^quiz:/, ''), { includePrivate: true });
         if (q) {
           if (typeof q.pdfDataUrl !== 'string' || !q.pdfDataUrl.startsWith('http')) {
             const blob = await this.getPdfBlob(q.id);
@@ -1345,7 +1355,7 @@ const StorageEngine = {
               q.pdfDataUrl = blob;
             }
           }
-          const saved = await window.FirebaseEngine.saveQuiz(q);
+          const saved = await window.FirebaseEngine.saveQuiz(toPublicQuizPayload(q), { privateAnswerKeys: q.answerKeys });
           if (!saved || !saved.success) throw new Error(saved?.error || 'Không đồng bộ được đề ' + q.id);
         }
       }

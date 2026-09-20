@@ -28,8 +28,9 @@ function toPublicQuizPayload(quiz = {}) {
   return publicQuiz;
 }
 
-function toPrivateAnswerPayload(quiz = {}) {
-  return { quizId: quiz.id, updatedAt: quiz.updatedAt || new Date().toISOString(), answerKeys: Array.isArray(quiz.answerKeys) ? JSON.parse(JSON.stringify(quiz.answerKeys)) : [] };
+function toPrivateAnswerPayload(quiz = {}, privateAnswerKeys = null) {
+  const answerKeys = Array.isArray(privateAnswerKeys) ? privateAnswerKeys : quiz.answerKeys;
+  return { quizId: quiz.id, updatedAt: quiz.updatedAt || new Date().toISOString(), answerKeys: Array.isArray(answerKeys) ? JSON.parse(JSON.stringify(answerKeys)) : [] };
 }
 
 const FirebaseEngine = {
@@ -37,6 +38,8 @@ const FirebaseEngine = {
   app: null,
   db: null,
   storage: null,
+  auth: null,
+  authReady: Promise.resolve(null),
 
   defaultConfig: {
     apiKey: "AIzaSyDOXRbpqTVn64gtGh7A5ybBLg7kHi2wtg8",
@@ -97,6 +100,18 @@ const FirebaseEngine = {
         }
         this.db = firebase.firestore();
         this.storage = firebase.storage();
+        this.auth = typeof firebase.auth === 'function' ? firebase.auth() : null;
+        if (this.auth && !this.auth.currentUser && typeof this.auth.signInAnonymously === 'function') {
+          // Anonymous auth is only for student result ownership. Teacher/cloud
+          // writes still require a non-anonymous account with a teacher claim.
+          this.authReady = this.auth.signInAnonymously()
+            .catch(error => {
+              console.warn('[FirebaseAuth] Anonymous student sign-in unavailable; cloud result writes will be disabled.', { code: error?.code, message: error?.message });
+              return null;
+            });
+        } else {
+          this.authReady = Promise.resolve(this.auth?.currentUser || null);
+        }
         this.isActive = true;
 
         // Enable offline persistence for Firestore if possible
@@ -143,6 +158,73 @@ const FirebaseEngine = {
     localStorage.removeItem('khiemedu_firebase_enabled');
     this.isActive = false;
     console.log('☁️ Firebase config cleared.');
+  },
+
+  async getAuthState() {
+    await this.authReady;
+    const user = this.auth?.currentUser || null;
+    if (!user) return { authenticated: false, teacher: false, anonymous: false, user: null };
+    try {
+      const token = await user.getIdTokenResult();
+      const claims = token?.claims || {};
+      const teacher = !user.isAnonymous && (claims.teacher === true || claims.role === 'teacher' || claims.role === 'admin');
+      return { authenticated: true, teacher, anonymous: !!user.isAnonymous, user, claims };
+    } catch (error) {
+      console.error('[FirebaseAuth] Could not read ID token claims.', { code: error?.code, message: error?.message });
+      return { authenticated: true, teacher: false, anonymous: !!user.isAnonymous, user, claims: {}, error };
+    }
+  },
+
+  async isTeacherAuthorized() {
+    const state = await this.getAuthState();
+    return state.teacher === true;
+  },
+
+  async requireTeacherAuthorization() {
+    const state = await this.getAuthState();
+    if (!state.authenticated) {
+      const error = new Error('FIREBASE_TEACHER_AUTH_REQUIRED: hãy đăng nhập tài khoản giáo viên bằng Firebase Authentication.');
+      error.code = 'FIREBASE_TEACHER_AUTH_REQUIRED';
+      throw error;
+    }
+    if (!state.teacher) {
+      const error = new Error('FIREBASE_TEACHER_CLAIM_REQUIRED: tài khoản hiện tại chưa có custom claim teacher/admin.');
+      error.code = 'FIREBASE_TEACHER_CLAIM_REQUIRED';
+      throw error;
+    }
+    return state.user;
+  },
+
+  async requireSignedInUser() {
+    await this.authReady;
+    const user = this.auth?.currentUser || null;
+    if (!user) {
+      const error = new Error('FIREBASE_AUTH_REQUIRED: không thể ghi dữ liệu cloud khi chưa đăng nhập.');
+      error.code = 'FIREBASE_AUTH_REQUIRED';
+      throw error;
+    }
+    return user;
+  },
+
+  async signInTeacherWithEmail(email, password) {
+    if (!this.auth || typeof this.auth.signInWithEmailAndPassword !== 'function') {
+      const error = new Error('FIREBASE_AUTH_UNAVAILABLE');
+      error.code = 'FIREBASE_AUTH_UNAVAILABLE';
+      throw error;
+    }
+    const credential = await this.auth.signInWithEmailAndPassword(String(email || '').trim(), String(password || ''));
+    const state = await this.getAuthState();
+    if (!state.teacher) {
+      await this.auth.signOut();
+      const error = new Error('FIREBASE_TEACHER_CLAIM_REQUIRED');
+      error.code = 'FIREBASE_TEACHER_CLAIM_REQUIRED';
+      throw error;
+    }
+    return credential.user;
+  },
+
+  async signOutCloud() {
+    if (this.auth && typeof this.auth.signOut === 'function') await this.auth.signOut();
   },
 
   // Helper to convert base64, dataUrl, or raw string to Blob
@@ -269,6 +351,7 @@ const FirebaseEngine = {
   async uploadPdf(quizId, base64OrDataUrl, fileName) {
     if (!this.isActive || !this.storage) return null;
     try {
+      await this.requireTeacherAuthorization();
       const isHtml = (fileName && fileName.endsWith('.html')) || (typeof base64OrDataUrl === 'string' && base64OrDataUrl.includes('text/html'));
       const mimeType = isHtml ? 'text/html' : 'application/pdf';
       const ext = isHtml ? '.html' : '.pdf';
@@ -304,6 +387,7 @@ const FirebaseEngine = {
   async deletePdf(quizId) {
     if (!this.isActive || !this.storage) return;
     try {
+      await this.requireTeacherAuthorization();
       // Try deleting both extension variants
       await this.storage.ref().child(`quizzes/pdf_${quizId}`).delete().catch(() => {});
       await this.storage.ref().child(`quizzes/pdf_${quizId}.pdf`).delete().catch(() => {});
@@ -315,9 +399,10 @@ const FirebaseEngine = {
   },
 
   // --- FIRESTORE OPERATIONS ---
-  async saveQuiz(quiz) {
+  async saveQuiz(quiz, options = {}) {
     if (!this.isActive || !this.db) return { success: false, error: 'Firebase is not active' };
     try {
+      await this.requireTeacherAuthorization();
       const quizToSave = { ...quiz };
       let downloadUrl = null;
 
@@ -360,7 +445,7 @@ const FirebaseEngine = {
       }
 
       const publicQuiz = toPublicQuizPayload(quizToSave);
-      const privateAnswerPayload = toPrivateAnswerPayload(quizToSave);
+      const privateAnswerPayload = toPrivateAnswerPayload(quizToSave, options.privateAnswerKeys);
       const privateSetPromise = this.db.collection('quiz_answer_keys').doc(quiz.id).set(privateAnswerPayload);
       const publicSetPromise = this.db.collection('quizzes').doc(quiz.id).set(publicQuiz);
       const setTimer = new Promise((_, reject) => setTimeout(() => reject(new Error('FIREBASE_SYNC_TIMEOUT')), 15000));
@@ -445,6 +530,7 @@ const FirebaseEngine = {
   async deleteQuiz(quizId) {
     if (!this.isActive) return false;
     try {
+      await this.requireTeacherAuthorization();
       await this.db.collection('quizzes').doc(quizId).delete();
       await this.db.collection('quiz_answer_keys').doc(quizId).delete();
       await this.deletePdf(quizId);
@@ -459,8 +545,10 @@ const FirebaseEngine = {
   async saveResult(result) {
     if (!this.isActive) return null;
     try {
+      const user = await this.requireSignedInUser();
       const docId = result.id || `result_${result.quizId}_${Date.now()}`;
-      await this.db.collection('results').doc(docId).set(result);
+      const cloudResult = { ...result, studentUid: user.uid };
+      await this.db.collection('results').doc(docId).set(cloudResult);
       console.log('☁️ Result saved to Firestore:', docId);
       return docId;
     } catch (e) {
@@ -472,6 +560,7 @@ const FirebaseEngine = {
   async deleteResult(resultId) {
     if (!this.isActive) return false;
     try {
+      await this.requireTeacherAuthorization();
       await this.db.collection('results').doc(resultId).delete();
       console.log('☁️ Result deleted from Firestore:', resultId);
       return true;
@@ -484,6 +573,7 @@ const FirebaseEngine = {
   async deleteResultsByQuiz(quizId) {
     if (!this.isActive) return false;
     try {
+      await this.requireTeacherAuthorization();
       const snapshot = await this.db.collection('results').where('quizId', '==', quizId).get();
       const batch = this.db.batch();
       snapshot.forEach(doc => {
@@ -501,6 +591,7 @@ const FirebaseEngine = {
   async deleteAllResults() {
     if (!this.isActive) return false;
     try {
+      await this.requireTeacherAuthorization();
       const snapshot = await this.db.collection('results').get();
       if (snapshot.empty) return true;
       const batch = this.db.batch();
@@ -519,6 +610,7 @@ const FirebaseEngine = {
   async getResultsByQuiz(quizId) {
     if (!this.isActive) return [];
     try {
+      await this.requireTeacherAuthorization();
       const snapshot = await this.db.collection('results').where('quizId', '==', quizId).get();
       const list = [];
       snapshot.forEach(doc => {
@@ -536,6 +628,7 @@ const FirebaseEngine = {
   async getAllResults() {
     if (!this.isActive) return [];
     try {
+      await this.requireTeacherAuthorization();
       const snapshot = await this.db.collection('results').get();
       const list = [];
       snapshot.forEach(doc => {
@@ -553,6 +646,7 @@ const FirebaseEngine = {
   async saveStudentRoster(roster) {
     if (!this.isActive) return false;
     try {
+      await this.requireTeacherAuthorization();
       await this.db.collection('roster').doc('students').set({ list: roster });
       console.log('☁️ Student roster saved to Firestore');
       return true;
@@ -565,10 +659,25 @@ const FirebaseEngine = {
   async getStudentRoster() {
     if (!this.isActive) return null;
     try {
+      await this.requireTeacherAuthorization();
       const doc = await this.db.collection('roster').doc('students').get();
       return doc.exists ? doc.data().list : null;
     } catch (e) {
       console.error('Firestore getStudentRoster error:', e);
+      return null;
+    }
+  },
+
+  async getPrivateAnswerKeys(quizId) {
+    if (!this.isActive || !this.db) return null;
+    try {
+      await this.requireTeacherAuthorization();
+      const doc = await this.db.collection('quiz_answer_keys').doc(quizId).get();
+      if (!doc.exists) return null;
+      const data = doc.data() || {};
+      return { quizId, answerKeys: Array.isArray(data.answerKeys) ? data.answerKeys : [] };
+    } catch (error) {
+      console.error('Firestore getPrivateAnswerKeys error:', error);
       return null;
     }
   }
