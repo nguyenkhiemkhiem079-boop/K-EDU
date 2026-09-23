@@ -313,6 +313,59 @@
   }
 
   /**
+   * Generates multiple V-ACT exams from the same profile with ZERO question
+   * overlap ACROSS the whole batch (not just within each individual exam).
+   *
+   * Without this, calling generateFromProfile() repeatedly for, say, 5 exams
+   * gives each exam its own fresh signature set, so different exams draw
+   * from the same pool independently and end up sharing most of their
+   * questions — unsafe if those exams are handed to different students/
+   * classes sitting at the same time.
+   *
+   * @param {object|string} profileOrId Canonical profile object or explicit profile ID
+   * @param {number} count Number of exams to generate (>= 1)
+   * @param {object} [options] Same options as generateFromProfile, applied to
+   *   every exam in the batch.
+   *   - options.seed, if given, is combined with the exam index so each exam
+   *     stays individually reproducible while remaining distinct from the rest.
+   *   - options.excludeSignatures, if given, seeds the shared exclusion set
+   *     before the first exam (e.g. to also avoid questions already used in
+   *     a previous, earlier batch/session).
+   * @returns {{ exams: object[], usedSignatures: string[], isBatchComplete: boolean }}
+   *   isBatchComplete is false if ANY exam in the batch came up short
+   *   (bank exhausted partway through) — check each exam's own
+   *   `isComplete`/`shortages` fields to see which one(s).
+   */
+  function generateBatch(profileOrId, count, options = {}) {
+    const n = Math.max(1, parseInt(count, 10) || 1);
+    const sharedSignatures = new Set(
+      Array.isArray(options.excludeSignatures) ? options.excludeSignatures : []
+    );
+    const exams = [];
+    let isBatchComplete = true;
+
+    for (let i = 0; i < n; i++) {
+      const examOptions = {
+        ...options,
+        excludeSignatures: Array.from(sharedSignatures),
+        seed: options.seed !== undefined ? `${options.seed}_batch${i + 1}` : undefined
+      };
+      const exam = generateFromProfile(profileOrId, examOptions);
+      exam.questions.forEach(q => {
+        sharedSignatures.add(computeVACTQuestionSignature(q));
+      });
+      if (!exam.isComplete) isBatchComplete = false;
+      exams.push(exam);
+    }
+
+    return {
+      exams,
+      usedSignatures: Array.from(sharedSignatures),
+      isBatchComplete
+    };
+  }
+
+  /**
    * Convenience entry point to generate a Mini V-ACT 100 practice exam.
    * @param {object} [options]
    * @returns {object}
@@ -336,6 +389,17 @@
    */
   function generateFull120(options = {}) {
     return generateFromProfile(VACT_FULL_PROFILE, options);
+  }
+
+  /**
+   * Convenience entry point to generate a batch of Full V-ACT 120 exams
+   * with zero overlap across the batch. See generateBatch() for details.
+   * @param {number} count
+   * @param {object} [options]
+   * @returns {{ exams: object[], usedSignatures: string[], isBatchComplete: boolean }}
+   */
+  function generateFull120Batch(count, options = {}) {
+    return generateBatch(VACT_FULL_PROFILE, count, options);
   }
 
   /**
@@ -574,10 +638,12 @@
     ORDERED_SECTION_KEYS,
     VACT_PROFILES,
     generateFromProfile,
+    generateBatch,
     generateMini30,
     generateMini60,
     generateMini100,
     generateFull120,
+    generateFull120Batch,
     renderExamPaperHtml,
     formatExamAsQuiz,
     computeSectionBreakdown
@@ -588,10 +654,12 @@
     ORDERED_SECTION_KEYS,
     VACT_PROFILES,
     generateFromProfile,
+    generateBatch,
     generateMini30,
     generateMini60,
     generateMini100,
     generateFull120,
+    generateFull120Batch,
     renderExamPaperHtml,
     formatExamAsQuiz,
     computeSectionBreakdown
