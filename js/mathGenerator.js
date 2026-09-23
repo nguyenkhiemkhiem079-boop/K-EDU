@@ -599,6 +599,20 @@ const GradeEngines = {
             correctAnswer: `${k * 2} | x=${k * 2}`,
             explanation: `Theo tính chất dãy tỉ số bằng nhau: $\\dfrac{x}{2} = \\dfrac{y}{3} = \\dfrac{x+y}{2+3} = \\dfrac{${sum}}{5} = ${k} \\implies x = ${k * 2}$.`
           };
+        }),
+        makeTemplate({ topic: 'dai_so', level: 'VD' }, (idx) => {
+          const r1 = Math.floor(Math.random() * 2) + 2;
+          const r2 = r1 + 1;
+          const r3 = r2 + 1;
+          const k = Math.floor(Math.random() * 6) + 3;
+          const total = (r1 + r2 + r3) * k;
+          return {
+            id: `G7_E3_${idx}_${Math.random()}`,
+            grade: 7, level: "VD", type: "essay", topic: "dai_so",
+            question: `[Vận Dụng 🧠] Ba đội công nhân trồng số cây tỉ lệ với $${r1} : ${r2} : ${r3}$. Biết tổng số cây cả ba đội trồng được là $${total}$ cây. Tính số cây đội thứ hai trồng được:`,
+            correctAnswer: `${r2 * k} | ${r2 * k} cây`,
+            explanation: `Gọi số cây ba đội lần lượt là $${r1}k, ${r2}k, ${r3}k$ ($k > 0$). Theo giả thiết: $(${r1}+${r2}+${r3})k = ${total} \\implies k = ${k}$. Vậy đội thứ hai trồng được $${r2} \\times ${k} = ${r2 * k}$ cây.`
+          };
         })
       ];
     }
@@ -672,6 +686,18 @@ const GradeEngines = {
             correctAnswer: `5 | min=5`,
             explanation: `$P = (x - ${a})^2 + 5 \\ge 5$. Giá trị nhỏ nhất là $5$ khi $x = ${a}$.`
           };
+        }),
+        makeTemplate({ topic: 'dai_so', level: 'TH' }, (idx) => {
+          const a = Math.floor(Math.random() * 4) + 2;
+          const x = Math.floor(Math.random() * 6) + 1;
+          const k = 4 * a * x;
+          return {
+            id: `G8_E2_${idx}_${Math.random()}`,
+            grade: 8, level: "TH", type: "essay", topic: "dai_so",
+            question: `[Thông Hiểu 💡] Giải phương trình sau bằng cách áp dụng hằng đẳng thức: $(x + ${a})^2 - (x - ${a})^2 = ${k}$:`,
+            correctAnswer: `${x} | x=${x}`,
+            explanation: `Áp dụng hằng đẳng thức: $(x+${a})^2 - (x-${a})^2 = 4 \\cdot ${a} \\cdot x$. Phương trình trở thành $4 \\times ${a} \\times x = ${k} \\implies x = ${x}$.`
+          };
         })
       ];
     }
@@ -729,6 +755,17 @@ const GradeEngines = {
             question: `[Vận Dụng 🧠] Cho phương trình bậc hai: $x^2 - ${2 * p}x + ${p * p - 4} = 0$. Gọi $x_1, x_2$ là hai nghiệm. Tính giá trị biểu thức $T = x_1^2 + x_2^2$:`,
             correctAnswer: `${2 * p * p + 8} | T=${2 * p * p + 8}`,
             explanation: `Theo Vi-ét: $x_1 + x_2 = ${2*p}, x_1 x_2 = ${p*p - 4}$. Suy ra $T = (x_1 + x_2)^2 - 2x_1 x_2 = ${4*p*p} - 2(${p*p - 4}) = ${2*p*p + 8}$.`
+          };
+        }),
+        makeTemplate({ topic: 'dai_so', level: 'TH' }, (idx) => {
+          const r1 = Math.floor(Math.random() * 4) + 1;
+          const r2 = Math.floor(Math.random() * 5) + 2;
+          return {
+            id: `G9_E2_${idx}_${Math.random()}`,
+            grade: 9, level: "TH", type: "essay", topic: "dai_so",
+            question: `[Thông Hiểu 💡] Cho phương trình bậc hai $x^2 - ${r1 + r2}x + ${r1 * r2} = 0$. Áp dụng hệ thức Vi-ét, tính tổng hai nghiệm $x_1 + x_2$:`,
+            correctAnswer: `${r1 + r2} | x1+x2=${r1 + r2}`,
+            explanation: `Theo định lý Vi-ét, với phương trình $ax^2+bx+c=0$ ta có $x_1 + x_2 = -\\dfrac{b}{a} = ${r1 + r2}$.`
           };
         })
       ];
@@ -959,6 +996,17 @@ const GradeEngines = {
             question: `[Vận Dụng 🧠] Cho cấp số cộng $(u_n)$ có $u_1 = ${u1}$ và công sai $d = ${d}$. Tính số hạng thứ $10$ của cấp số cộng ($u_{10}$):`,
             correctAnswer: `${u1 + 9 * d} | u10=${u1 + 9 * d}`,
             explanation: `$u_{10} = u_1 + 9d = ${u1} + 9 \\cdot ${d} = ${u1 + 9 * d}$.`
+          };
+        }),
+        makeTemplate({ topic: 'dai_so', level: 'TH' }, (idx) => {
+          const a = Math.floor(Math.random() * 4) + 2;
+          const b = Math.floor(Math.random() * 3) + 1;
+          return {
+            id: `G11_E2_${idx}_${Math.random()}`,
+            grade: 11, level: "TH", type: "essay", topic: "dai_so",
+            question: `[Thông Hiểu 💡] Tính giới hạn $\\lim_{n \\to \\infty} \\dfrac{${a}n + 3}{${b}n - 1}$:`,
+            correctAnswer: `${a}/${b} | ${a}/${b}`,
+            explanation: `Chia cả tử và mẫu cho $n$: $\\lim \\dfrac{${a} + 3/n}{${b} - 1/n} = \\dfrac{${a}}{${b}}$.`
           };
         })
       ];
@@ -1567,12 +1615,14 @@ const GradeEngines = {
 
     if (!rawTemplates || !rawTemplates.length) return [];
 
-    // Lọc theo level cho tự luận nếu có yêu cầu level cụ thể
+    // Lọc theo level cho tự luận nếu có yêu cầu level cụ thể.
+    // QUAN TRỌNG: nếu không có template nào đúng mức độ, PHẢI trả về mảng rỗng
+    // thay vì âm thầm dùng lại template của mức độ khác — nếu không, các bước
+    // sau (acceptQuestion) sẽ từ chối do REQUIRED_LEVEL_MISMATCH và báo nhầm
+    // thành "trùng lặp chữ ký nội dung" dù bản chất là thiếu ngân hàng câu hỏi.
     if (type === 'essay' && level && level !== 'all') {
-      const levelMatches = rawTemplates.filter(t => (t.level || '').toUpperCase() === level.toUpperCase());
-      if (levelMatches.length > 0) {
-        rawTemplates = levelMatches;
-      }
+      const acceptedLevels = level.toUpperCase() === 'TH' ? new Set(['NB', 'TH']) : new Set([level.toUpperCase()]);
+      rawTemplates = rawTemplates.filter(t => acceptedLevels.has((t.level || '').toUpperCase()));
     }
 
     // Lọc theo topic
