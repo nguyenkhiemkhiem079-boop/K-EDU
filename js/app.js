@@ -3277,9 +3277,24 @@ async function triggerAutoGenerateMathExam() {
       timeLimit: timeLimitVal
     });
     function formatGenerationShortage(s) {
-      const label = s.part || s.type || s.code || 'Nguồn câu hỏi';
+      // Thông báo thân thiện cho giáo viên: nêu rõ đang thiếu phần nào, VÌ SAO,
+      // và NÊN LÀM GÌ tiếp theo — thay vì chỉ in mã lỗi kỹ thuật khó hiểu.
+      const levelLabels = { essay_TH: 'Tự luận Thông hiểu', essay_VD: 'Tự luận Vận dụng', essay_VDC: 'Tự luận Vận dụng cao', mcq: 'Trắc nghiệm' };
+      const label = levelLabels[s.type] || s.part || s.type || 'Câu hỏi';
       const actual = s.available ?? s.generated ?? 0;
-      return `[${s.code || 'SHORTAGE'}] ${label}: yêu cầu ${s.requested}, hiện có ${actual}`;
+      const requested = s.requested;
+      const missing = s.missing ?? Math.max(0, requested - actual);
+
+      const adviceByCode = {
+        DUPLICATE_EXHAUSTION: `chuyên đề này chỉ tạo ra được ${actual} câu ${label} không trùng lặp. Hãy giảm số lượng xuống ${actual} câu, hoặc chọn "Tất cả chuyên đề" để có nhiều lựa chọn hơn.`,
+        DOCUMENT_POOL_SHORTAGE: `ngân hàng tài liệu chỉ có ${actual}/${requested} câu ${label} phù hợp. Hãy giảm số lượng, hoặc chuyển sang chế độ "Hybrid" để hệ thống tự sinh thêm câu bù vào.`,
+        TEMPLATE_GENERATION_SHORTAGE: `hệ thống chỉ tự sinh được ${actual}/${requested} câu ${label} cho chuyên đề này. Hãy giảm số lượng hoặc chọn "Tất cả chuyên đề".`,
+        VDC_APPROVED_SOURCE_SHORTAGE: `ngân hàng chưa có đủ câu ${label} đã được duyệt (đang có ${actual}/${requested}). Cần bổ sung/duyệt thêm câu VDC vào hệ thống trước — không thể tự sinh thay cho mức Vận dụng cao.`,
+        DIFFICULTY_POOL_SHORTAGE: `chế độ độ khó hiện tại không cho phép câu ${label}. Hãy đổi chế độ độ khó, hoặc bỏ yêu cầu ${label}.`,
+        VALIDATED_POOL_SHORTAGE: `chỉ có ${actual}/${requested} câu ${label} đạt chuẩn kiểm duyệt nội dung. Hãy giảm số lượng yêu cầu.`
+      };
+      const advice = adviceByCode[s.code] || `chỉ tạo được ${actual}/${requested} câu ${label}. Hãy giảm số lượng hoặc điều chỉnh bộ lọc.`;
+      return `Thiếu ${missing} câu ${label} (yêu cầu ${requested}, hiện có ${actual}) — ${advice}`;
     }
 
     let isIncomplete = false;
