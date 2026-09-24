@@ -7030,8 +7030,15 @@ function showToast(msg, type = 'info') {
     document.body.appendChild(container);
   }
 
+  // TRƯỚC ĐÂY: tham số `type` ('success'/'error'/'warn'/'info') được nhận vào
+  // nhưng không hề dùng tới — mọi toast trong toàn app đều hiển thị cùng 1
+  // màu xám trung tính, kể cả cảnh báo lỗi nghiêm trọng. Giờ áp class + icon
+  // đúng theo type để người dùng phân biệt được mức độ quan trọng.
+  const validTypes = ['success', 'error', 'warn', 'info'];
+  const safeType = validTypes.includes(type) ? type : 'info';
+
   const toast = document.createElement('div');
-  toast.className = 'toast';
+  toast.className = `toast toast-${safeType}`;
   toast.innerHTML = `<span>${msg}</span>`;
   container.appendChild(toast);
 
