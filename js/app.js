@@ -4219,6 +4219,15 @@ async function persistTeacherQuiz(quiz) {
     showToast(message, 'error');
     throw new Error(message);
   }
+  // Cảnh báo ngay nếu đề chưa thực sự lên được Cloud — nếu không, giáo viên sẽ
+  // đưa mã đề cho học sinh trên thiết bị khác mà không biết đề chưa hề tồn tại
+  // ngoài chiếc máy này, dẫn tới học sinh báo "không tìm thấy đề".
+  const cloudState = result.cloud?.state;
+  if (cloudState === 'failed') {
+    showToast('⚠️ Đề đã lưu trên máy này nhưng ĐỒNG BỘ CLOUD THẤT BẠI — học sinh dùng thiết bị khác sẽ KHÔNG tìm thấy đề bằng mã cho tới khi bạn bấm "Đồng bộ lại" ở danh sách đề.', 'error');
+  } else if (cloudState === 'unavailable') {
+    showToast('💾 Đề đã lưu, nhưng Cloud Sync đang tắt trên hệ thống này — đề chỉ dùng được trên chính máy/trình duyệt này.', 'warn');
+  }
   return result;
 }
 
@@ -4410,6 +4419,42 @@ function handleTeacherQuizSearch(query) {
 
 function clearTeacherQuizSearch() {
   AppState.teacherQuizSearchQuery = '';
+  renderTeacherQuizManager();
+}
+
+/**
+ * Hiển thị trạng thái đồng bộ Cloud thật sự của một đề thi, để giáo viên biết
+ * chắc học sinh (trên thiết bị khác) có thể tìm thấy đề bằng mã hay chưa.
+ * Trước đây trạng thái này được lưu nhưng KHÔNG BAO GIỜ hiển thị ở đâu cả,
+ * nên giáo viên không có cách nào phát hiện đề bị lỗi đồng bộ cho tới khi
+ * học sinh báo "không tìm thấy đề".
+ */
+function renderCloudSyncBadge(q) {
+  const sync = q.cloudSync || {};
+  const status = sync.status || 'unavailable';
+  if (status === 'synced') {
+    return `<span class="badge-status badge-pass" style="font-size:0.7rem;" title="Đã đồng bộ lên Cloud lúc ${sync.lastSuccessAt ? new Date(sync.lastSuccessAt).toLocaleString('vi-VN') : ''} — học sinh trên thiết bị khác có thể tìm thấy đề này.">☁️ Đã đồng bộ</span>`;
+  }
+  if (status === 'pending') {
+    return `<span class="badge-status" style="font-size:0.7rem;background:var(--amber-light);color:var(--amber-shadow);" title="Đang chờ đồng bộ lên Cloud. Nếu học sinh dùng thiết bị khác mà báo không tìm thấy đề, hãy đợi vài giây rồi bấm Đồng bộ lại.">⏳ Đang đồng bộ...</span>
+      <button class="btn btn-sm btn-outline" style="font-size:0.68rem;padding:1px 6px;margin-left:4px;" onclick="retrySingleQuizSync('${q.id}', this)" title="Thử đồng bộ lại ngay">🔄</button>`;
+  }
+  if (status === 'failed') {
+    return `<span class="badge-status" style="font-size:0.7rem;background:var(--rose-light,#fee2e2);color:var(--rose,#b91c1c);font-weight:800;" title="Đồng bộ Cloud THẤT BẠI: ${escapeHtml(sync.errorMessage || 'Không rõ lỗi')}. Học sinh trên thiết bị KHÁC với máy bạn sẽ KHÔNG tìm thấy đề này bằng mã cho tới khi đồng bộ lại thành công!">❌ Lỗi đồng bộ Cloud</span>
+      <button class="btn btn-sm btn-primary" style="font-size:0.68rem;padding:1px 6px;margin-left:4px;" onclick="retrySingleQuizSync('${q.id}', this)" title="Thử đồng bộ lại ngay">🔄 Đồng bộ lại</button>`;
+  }
+  // 'unavailable' — Firebase không được bật trên hệ thống này (chỉ hoạt động cùng máy/trình duyệt)
+  return `<span class="badge-status" style="font-size:0.7rem;background:var(--bg-tertiary);color:var(--text-muted);" title="Firebase Cloud chưa bật trên hệ thống này — đề chỉ tồn tại trên trình duyệt/máy này. Học sinh cần dùng cùng thiết bị hoặc cần bật Cloud Sync để chia sẻ mã đề cho thiết bị khác.">💾 Chỉ lưu máy này</span>`;
+}
+
+async function retrySingleQuizSync(quizId, btnEl) {
+  if (btnEl) { btnEl.disabled = true; btnEl.textContent = '⏳...'; }
+  const result = await StorageEngine.retryCloudSync(quizId);
+  if (result.success) {
+    showToast('✅ Đã đồng bộ đề thi lên Cloud — học sinh giờ đã có thể tìm thấy đề!', 'success');
+  } else {
+    showToast('❌ Đồng bộ thất bại: ' + (result.error || 'Vui lòng kiểm tra kết nối mạng và thử lại.'), 'error');
+  }
   renderTeacherQuizManager();
 }
 
@@ -4666,6 +4711,7 @@ async function renderTeacherQuizManager() {
                     <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;">
                       Mã đề: <code style="font-weight:800;color:var(--indigo);background:var(--bg-tertiary);padding:1px 5px;border-radius:4px;">${q.id}</code>
                     </div>
+                    <div style="margin-top:4px;">${renderCloudSyncBadge(q)}</div>
                   </td>
                   <td>${statusColumnHtml}</td>
                   <td>${targetLabel}</td>

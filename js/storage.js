@@ -178,12 +178,32 @@ const StorageEngine = {
     await this.set(key, next);
   },
 
+  /**
+   * Cho giáo viên chủ động bấm "Đồng bộ lại" khi thấy đề đang ở trạng thái
+   * lỗi/chưa đồng bộ, thay vì phải chờ tự động hoặc không biết phải làm gì.
+   * Đặt lại attempts về 0 để có đủ 3 lượt thử mới, rồi chạy đồng bộ ngay.
+   */
+  async retryCloudSync(quizId) {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      return { success: false, code: 'OFFLINE', error: 'Thiết bị đang offline, không thể đồng bộ.' };
+    }
+    if (!window.FirebaseEngine?.isActive) {
+      return { success: false, code: 'FIREBASE_INACTIVE', error: 'Firebase Cloud chưa được kích hoạt trên hệ thống này.' };
+    }
+    await this._updateQuizSyncStatus(quizId, { status: 'pending', errorCode: null, errorMessage: null });
+    await this.enqueueSync('quiz', quizId);
+    await this.processSyncQueues();
+    const updated = await this.getQuiz(quizId);
+    return { success: updated?.cloudSync?.status === 'synced', cloudSync: updated?.cloudSync || null };
+  },
+
   async processSyncQueues() {
     if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
     if (!window.FirebaseEngine?.isActive) return;
     for (const [kind, key] of [['quiz', QUIZ_SYNC_QUEUE_KEY], ['result', RESULT_SYNC_QUEUE_KEY]]) {
       const queue = await this.get(key) || []; const remaining = [];
       for (const item of queue) {
+        const now = new Date().toISOString();
         try {
           if (item.action === 'delete') {
             if (kind === 'quiz') {
@@ -198,13 +218,55 @@ const StorageEngine = {
               ? await window.FirebaseEngine.saveQuiz(toPublicQuizPayload(record), { privateAnswerKeys: record.answerKeys })
               : await window.FirebaseEngine.saveResult(record);
             if (!response || response.success === false) throw new Error(response?.error || 'FIREBASE_SYNC_FAILED');
+            // QUAN TRỌNG: đánh dấu đã đồng bộ thành công — trước đây trạng thái luôn
+            // dừng ở "pending" mãi mãi kể cả khi đồng bộ thành công, khiến không ai
+            // biết chắc học sinh đã thấy được đề hay chưa.
+            if (kind === 'quiz') {
+              await this._updateQuizSyncStatus(item.id, { status: 'synced', lastAttemptAt: now, lastSuccessAt: now, errorCode: null, errorMessage: null });
+            }
           }
         } catch (error) {
-          console.error('[StorageEngine] sync failure', { kind, id: item.id, action: item.action, error: error?.message || String(error) });
-          if ((item.attempts || 0) < 2) remaining.push({ ...item, attempts: (item.attempts || 0) + 1, error: error.message });
+          const errMsg = error?.message || String(error);
+          console.error('[StorageEngine] sync failure', { kind, id: item.id, action: item.action, error: errMsg });
+          const nextAttempts = (item.attempts || 0) + 1;
+          if (nextAttempts < 3) {
+            remaining.push({ ...item, attempts: nextAttempts, error: errMsg });
+            if (kind === 'quiz' && item.action !== 'delete') {
+              await this._updateQuizSyncStatus(item.id, { status: 'pending', lastAttemptAt: now, errorCode: 'RETRY_PENDING', errorMessage: errMsg });
+            }
+          } else {
+            // Hết số lần thử — TRƯỚC ĐÂY mục này bị âm thầm loại khỏi hàng đợi mà
+            // không ai được báo, khiến đề tồn tại trên máy giáo viên nhưng KHÔNG BAO
+            // GIỜ lên cloud, nên học sinh nhập mã sẽ luôn báo "không tìm thấy đề".
+            // GIỜ: đánh dấu rõ ràng là "failed" để giao diện giáo viên hiển thị cảnh báo.
+            if (kind === 'quiz' && item.action !== 'delete') {
+              await this._updateQuizSyncStatus(item.id, { status: 'failed', lastAttemptAt: now, errorCode: 'SYNC_GIVE_UP', errorMessage: errMsg });
+            }
+          }
         }
       }
       await this.set(key, remaining);
+    }
+  },
+
+  /**
+   * Cập nhật riêng trường cloudSync của một đề thi đã lưu, không đụng tới các
+   * trường khác. Dùng để phản ánh trung thực trạng thái đồng bộ cloud thật sự
+   * (synced / pending / failed) thay vì để mãi ở "pending" hoặc biến mất âm thầm.
+   */
+  async _updateQuizSyncStatus(quizId, cloudSyncPatch) {
+    try {
+      const indexed = await this.getQuizRecordFromIndexedDB(quizId);
+      let record = indexed.success ? indexed.quiz : await this.get('quiz:' + quizId);
+      if (!record) return false;
+      record = { ...record, cloudSync: { ...(record.cloudSync || {}), ...cloudSyncPatch } };
+      const saveResult = await this.saveQuizRecordToIndexedDB(record);
+      if (!saveResult.success) await this.set('quiz:' + quizId, record);
+      if (this.channel) this.channel.postMessage({ type: 'quiz_sync_status_changed', quizId, cloudSync: record.cloudSync });
+      return true;
+    } catch (err) {
+      console.warn('[StorageEngine] _updateQuizSyncStatus failed', quizId, err);
+      return false;
     }
   },
 
@@ -541,13 +603,19 @@ const StorageEngine = {
     if (privateRecordResult.success) await this.savePrivateQuizRecordToIndexedDB(privateQuiz);
     else if (privateFallbackSaved) await this.set('quiz_private:' + quizToSave.id, privateQuiz);
     await this.enqueueSync('quiz', quizToSave.id);
-    if (!offline) this.processSyncQueues();
+    // QUAN TRỌNG: trước đây dòng dưới KHÔNG được await — hàm saveQuiz() trả về
+    // "success" ngay lập tức trong khi việc đồng bộ lên Cloud (thứ học sinh ở
+    // thiết bị KHÁC cần để tìm ra đề) vẫn chạy nền và có thể âm thầm thất bại.
+    // Giờ đợi luôn lượt thử đồng bộ đầu tiên để biết chắc kết quả thật.
+    if (!offline) await this.processSyncQueues();
+    const finalRecord = await this.getQuizRecordFromIndexedDB(quizToSave.id);
+    const finalCloudSync = (finalRecord.success && finalRecord.quiz && finalRecord.quiz.cloudSync) || quizToSave.cloudSync;
     return {
       success: true,
       localSaved: true,
       local: { quizRecord: !!(recordResult.success || fallbackSaved), privateAnswerKey: !!(privateRecordResult.success || privateFallbackSaved), attachment: attachmentSaved, fallback: localStorageFallback || privateStorageFallback },
-      cloudSaved: false,
-      cloud: { state: quizToSave.cloudSync.status },
+      cloudSaved: finalCloudSync.status === 'synced',
+      cloud: { state: finalCloudSync.status, errorMessage: finalCloudSync.errorMessage || null },
       code: null
     };
   },
