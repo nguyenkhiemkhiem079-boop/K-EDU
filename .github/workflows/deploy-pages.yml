@@ -1,0 +1,65 @@
+name: Deploy to GitHub Pages
+
+# Tự động chạy khi có commit mới vào nhánh main.
+# QUAN TRỌNG: job "deploy" chỉ chạy nếu job "qa" (54+ QA suite) pass — tránh
+# lặp lại sự cố "push code lên GitHub nhưng web vẫn chạy bản cũ/lỗi" vì không
+# ai deploy lại, đồng thời không bao giờ đẩy lên production một bản đã fail QA.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {} # cho phép bấm chạy tay từ tab Actions khi cần
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: true
+
+jobs:
+  qa:
+    name: Run QA suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          lfs: false # site không cần nội dung PDF nguồn (Git LFS) để chạy
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run full QA suite (node tools/run-all-qa.js)
+        run: npm test
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: qa
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          lfs: false
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload site as Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
