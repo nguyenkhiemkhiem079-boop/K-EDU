@@ -425,7 +425,7 @@ const GradeEngines = {
           };
         }),
         makeTemplate({ topic: 'so_hoc', level: 'VD' }, (idx) => {
-          const p = Math.floor(Math.random() * 4) + 2;
+          const p = Math.floor(Math.random() * 12) + 2;
           const val = Math.pow(2, p) * 3;
           return {
             id: `G6_E3_${idx}_${Math.random()}`,
@@ -433,6 +433,22 @@ const GradeEngines = {
             question: `[Vận Dụng 🧠] Tìm số tự nhiên $x$ thỏa mãn đẳng thức: $2^{x+2} - 2^x = ${val}$:`,
             correctAnswer: `${p} | x=${p}`,
             explanation: `$2^x(4 - 1) = ${val} \\iff 3 \\cdot 2^x = ${val} \\iff 2^x = 2^${p} \\implies x = ${p}$.`
+          };
+        }),
+        makeTemplate({ topic: 'so_hoc', level: 'VD' }, (idx) => {
+          const aOptions = [4, 6, 8, 9, 10, 12, 14, 15];
+          const bOptions = [15, 18, 20, 21, 25, 27, 28, 30];
+          const a = aOptions[Math.floor(Math.random() * aOptions.length)];
+          const b = bOptions[Math.floor(Math.random() * bOptions.length)];
+          const gcd = (x, y) => (y === 0 ? x : gcd(y, x % y));
+          const g = gcd(a, b);
+          const lcm = (a * b) / g;
+          return {
+            id: `G6_E4_${idx}_${Math.random()}`,
+            grade: 6, level: "VD", type: "essay", topic: "so_hoc",
+            question: `[Vận Dụng 🧠] Tìm bội chung nhỏ nhất (BCNN) của $${a}$ và $${b}$:`,
+            correctAnswer: `${lcm} | BCNN=${lcm}`,
+            explanation: `Ta có ƯCLN($${a}, ${b}$) $= ${g}$. Suy ra BCNN($${a}, ${b}$) $= \\dfrac{${a} \\times ${b}}{${g}} = ${lcm}$.`
           };
         })
       ];
@@ -590,7 +606,7 @@ const GradeEngines = {
           };
         }),
         makeTemplate({ topic: 'dai_so', level: 'TH' }, (idx) => {
-          const k = Math.floor(Math.random() * 4) + 2;
+          const k = Math.floor(Math.random() * 12) + 2;
           const sum = k * 5;
           return {
             id: `G7_E2_${idx}_${Math.random()}`,
@@ -598,6 +614,20 @@ const GradeEngines = {
             question: `[Thông Hiểu 💡] Cho biết $\\dfrac{x}{2} = \\dfrac{y}{3}$ và $x + y = ${sum}$. Tìm giá trị của $x$:`,
             correctAnswer: `${k * 2} | x=${k * 2}`,
             explanation: `Theo tính chất dãy tỉ số bằng nhau: $\\dfrac{x}{2} = \\dfrac{y}{3} = \\dfrac{x+y}{2+3} = \\dfrac{${sum}}{5} = ${k} \\implies x = ${k * 2}$.`
+          };
+        }),
+        makeTemplate({ topic: 'dai_so', level: 'TH' }, (idx) => {
+          const divisorsOf12 = [1, 2, 3, 4, 6, 12];
+          const y1 = Math.floor(Math.random() * 8) + 2;
+          const x1 = 12;
+          const x2 = divisorsOf12[Math.floor(Math.random() * divisorsOf12.length)];
+          const y2 = (y1 * x1) / x2;
+          return {
+            id: `G7_E4_${idx}_${Math.random()}`,
+            grade: 7, level: "TH", type: "essay", topic: "dai_so",
+            question: `[Thông Hiểu 💡] Hai đại lượng $x$ và $y$ tỉ lệ nghịch với nhau. Biết $x = ${x1}$ thì $y = ${y1}$. Tính $y$ khi $x = ${x2}$:`,
+            correctAnswer: `${y2} | y=${y2}`,
+            explanation: `Vì $x, y$ tỉ lệ nghịch nên tích $xy$ không đổi: $x_1y_1 = ${x1} \\times ${y1} = ${x1 * y1}$. Khi $x = ${x2}$: $y = \\dfrac{${x1 * y1}}{${x2}} = ${y2}$.`
           };
         }),
         makeTemplate({ topic: 'dai_so', level: 'VD' }, (idx) => {
@@ -678,13 +708,25 @@ const GradeEngines = {
     if (type === 'essay') {
       return [
         makeTemplate({ topic: 'dai_so', level: 'VD' }, (idx) => {
-          const a = Math.floor(Math.random() * 5) + 2;
+          const a = Math.floor(Math.random() * 12) + 2;
           return {
             id: `G8_E1_${idx}_${Math.random()}`,
             grade: 8, level: "VD", type: "essay", topic: "dai_so",
             question: `[Vận Dụng 🧠] Tìm giá trị nhỏ nhất của biểu thức $P = x^2 - ${2 * a}x + ${a * a + 5}$:`,
             correctAnswer: `5 | min=5`,
             explanation: `$P = (x - ${a})^2 + 5 \\ge 5$. Giá trị nhỏ nhất là $5$ khi $x = ${a}$.`
+          };
+        }),
+        makeTemplate({ topic: 'dai_so', level: 'VD' }, (idx) => {
+          const r1 = Math.floor(Math.random() * 6) + 1;
+          const r2 = r1 + Math.floor(Math.random() * 6) + 1;
+          const sum = r1 + r2, prod = r1 * r2;
+          return {
+            id: `G8_E4_${idx}_${Math.random()}`,
+            grade: 8, level: "VD", type: "essay", topic: "dai_so",
+            question: `[Vận Dụng 🧠] Cho biết $x^2 - ${sum}x + ${prod} = (x-a)(x-b)$ với $a < b$. Tính giá trị của $b$:`,
+            correctAnswer: `${r2} | b=${r2}`,
+            explanation: `Cần tìm hai số có tổng $${sum}$ và tích $${prod}$: đó là $${r1}$ và $${r2}$. Vì $a < b$ nên $a = ${r1}, b = ${r2}$.`
           };
         }),
         makeTemplate({ topic: 'dai_so', level: 'TH' }, (idx) => {
@@ -748,13 +790,27 @@ const GradeEngines = {
     if (type === 'essay') {
       return [
         makeTemplate({ topic: 'dai_so', level: 'VD' }, (idx) => {
-          const p = Math.floor(Math.random() * 3) + 2;
+          const p = Math.floor(Math.random() * 12) + 2;
           return {
             id: `G9_E1_${idx}_${Math.random()}`,
             grade: 9, level: "VD", type: "essay", topic: "dai_so",
             question: `[Vận Dụng 🧠] Cho phương trình bậc hai: $x^2 - ${2 * p}x + ${p * p - 4} = 0$. Gọi $x_1, x_2$ là hai nghiệm. Tính giá trị biểu thức $T = x_1^2 + x_2^2$:`,
             correctAnswer: `${2 * p * p + 8} | T=${2 * p * p + 8}`,
             explanation: `Theo Vi-ét: $x_1 + x_2 = ${2*p}, x_1 x_2 = ${p*p - 4}$. Suy ra $T = (x_1 + x_2)^2 - 2x_1 x_2 = ${4*p*p} - 2(${p*p - 4}) = ${2*p*p + 8}$.`
+          };
+        }),
+        makeTemplate({ topic: 'hinh_hoc', level: 'VD' }, (idx) => {
+          const width = Math.floor(Math.random() * 6) + 4;
+          const d = Math.floor(Math.random() * 5) + 2;
+          const length = width + d;
+          const perimeter = 2 * (width + length);
+          const area = width * length;
+          return {
+            id: `G9_E3_${idx}_${Math.random()}`,
+            grade: 9, level: "VD", type: "essay", topic: "hinh_hoc",
+            question: `[Vận Dụng 🧠] Một hình chữ nhật có chu vi $${perimeter}$ m, chiều dài hơn chiều rộng $${d}$ m. Tính diện tích hình chữ nhật:`,
+            correctAnswer: `${area} | ${area} m^2`,
+            explanation: `Gọi chiều rộng là $x$ (m), chiều dài là $x + ${d}$. Ta có $2(x + x + ${d}) = ${perimeter} \\implies x = ${width}$. Chiều dài $= ${length}$ m. Diện tích $= ${width} \\times ${length} = ${area}$ m².`
           };
         }),
         makeTemplate({ topic: 'dai_so', level: 'TH' }, (idx) => {

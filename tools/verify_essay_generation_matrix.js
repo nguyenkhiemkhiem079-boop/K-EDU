@@ -102,6 +102,33 @@ exams.forEach((exam, i) => {
 });
 console.log(`  => [TEST 3 PASSED] All ${exams.length} batch exams produced their 1 requested essay question.\n`);
 
+console.log('👉 [TEST 4] 10 TH + 10 VD essay questions succeed for every grade/term (2026-09-24 volume-shortage incident)\n');
+
+// On 2026-09-24 it was found that requesting 10 TH/10 VD essay questions
+// failed for grade 6 VD, 7 TH, 8 VD, 9 VD — not because of a level-mismatch
+// bug this time, but because each combo's ONLY template used a random
+// number range narrow enough (3-5 distinct values) to exhaust the
+// duplicate-signature guard well before reaching 10 unique questions.
+// Fix: widened parameter ranges and added a second, structurally different
+// template to each affected (grade, level) pair.
+for (const grade of GRADES) {
+  for (const level of LEVELS) {
+    for (const term of TERMS) {
+      const matrix = { TH: 0, VD: 0, VDC: 0 };
+      matrix[level] = 10;
+      const result = MathEngine.generateExam({
+        grade, term, topic: 'all', sourceMode: 'hybrid',
+        mcqCount: 0, essayMatrix: matrix
+      });
+      assert.strictEqual(
+        result.essayCount, 10,
+        `VOLUME REGRESSION: grade ${grade} level ${level} term ${term} only produced ${result.essayCount}/10 essay questions (warning: ${result.warning}). Check the template pool's random-number range for this (grade, level) — it may have shrunk back to too few distinct combinations.`
+      );
+    }
+  }
+}
+console.log(`  => [TEST 4 PASSED] All ${GRADES.length * LEVELS.length * TERMS.length} combinations produce 10/10 essay questions at once (enough headroom for real classroom use).\n`);
+
 console.log('================================================================');
 console.log('✅ ALL ESSAY GENERATION MATRIX TESTS PASSED');
 console.log('================================================================');
