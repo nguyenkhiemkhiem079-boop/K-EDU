@@ -129,6 +129,30 @@ for (const grade of GRADES) {
 }
 console.log(`  => [TEST 4 PASSED] All ${GRADES.length * LEVELS.length * TERMS.length} combinations produce 10/10 essay questions at once (enough headroom for real classroom use).\n`);
 
+console.log('👉 [TEST 5] 30 essay questions per level succeed for every grade/term (2026-09-24 capacity-expansion, round 2)\n');
+
+// After TEST 4's fix, a full capacity audit found 5 MORE (grade, level)
+// combos still capped low even though they weren't part of the original
+// 10-question complaint: grade 7 VD (12), grade 8 TH (23), grade 9 TH (17),
+// grade 11 TH (12), grade 11 VD (16). Widened ranges + reduced (r1,r2)
+// range overlap (which caused swap-collisions) push every combo's real
+// ceiling to 39+. This test locks in a 30-question floor for all of them.
+for (const grade of GRADES) {
+  for (const level of LEVELS) {
+    const matrix = { TH: 0, VD: 0, VDC: 0 };
+    matrix[level] = 30;
+    const result = MathEngine.generateExam({
+      grade, term: 'GK1', topic: 'all', sourceMode: 'hybrid',
+      mcqCount: 0, essayMatrix: matrix
+    });
+    assert.strictEqual(
+      result.essayCount, 30,
+      `CAPACITY REGRESSION: grade ${grade} level ${level} only produced ${result.essayCount}/30 essay questions (warning: ${result.warning}). This combo's template pool capacity may have shrunk below the 2026-09-24 audit's 39-question minimum.`
+    );
+  }
+}
+console.log(`  => [TEST 5 PASSED] All ${GRADES.length * LEVELS.length} (grade, level) combos produce 30 unique essay questions on a single request.\n`);
+
 console.log('================================================================');
 console.log('✅ ALL ESSAY GENERATION MATRIX TESTS PASSED');
 console.log('================================================================');

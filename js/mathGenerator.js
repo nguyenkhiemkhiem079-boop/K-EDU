@@ -631,10 +631,10 @@ const GradeEngines = {
           };
         }),
         makeTemplate({ topic: 'dai_so', level: 'VD' }, (idx) => {
-          const r1 = Math.floor(Math.random() * 2) + 2;
+          const r1 = Math.floor(Math.random() * 4) + 2;
           const r2 = r1 + 1;
           const r3 = r2 + 1;
-          const k = Math.floor(Math.random() * 6) + 3;
+          const k = Math.floor(Math.random() * 18) + 3;
           const total = (r1 + r2 + r3) * k;
           return {
             id: `G7_E3_${idx}_${Math.random()}`,
@@ -730,8 +730,8 @@ const GradeEngines = {
           };
         }),
         makeTemplate({ topic: 'dai_so', level: 'TH' }, (idx) => {
-          const a = Math.floor(Math.random() * 4) + 2;
-          const x = Math.floor(Math.random() * 6) + 1;
+          const a = Math.floor(Math.random() * 8) + 2;
+          const x = Math.floor(Math.random() * 10) + 1;
           const k = 4 * a * x;
           return {
             id: `G8_E2_${idx}_${Math.random()}`,
@@ -814,8 +814,8 @@ const GradeEngines = {
           };
         }),
         makeTemplate({ topic: 'dai_so', level: 'TH' }, (idx) => {
-          const r1 = Math.floor(Math.random() * 4) + 1;
-          const r2 = Math.floor(Math.random() * 5) + 2;
+          const r1 = Math.floor(Math.random() * 6) + 1;
+          const r2 = Math.floor(Math.random() * 9) + 7;
           return {
             id: `G9_E2_${idx}_${Math.random()}`,
             grade: 9, level: "TH", type: "essay", topic: "dai_so",
@@ -1044,8 +1044,8 @@ const GradeEngines = {
     if (type === 'essay') {
       return [
         makeTemplate({ topic: 'dai_so', level: 'VD' }, (idx) => {
-          const u1 = Math.floor(Math.random() * 4) + 2;
-          const d = Math.floor(Math.random() * 4) + 3;
+          const u1 = Math.floor(Math.random() * 15) + 1;
+          const d = Math.floor(Math.random() * 11) + 2;
           return {
             id: `G11_E1_${idx}_${Math.random()}`,
             grade: 11, level: "VD", type: "essay", topic: "dai_so",
@@ -1055,8 +1055,8 @@ const GradeEngines = {
           };
         }),
         makeTemplate({ topic: 'dai_so', level: 'TH' }, (idx) => {
-          const a = Math.floor(Math.random() * 4) + 2;
-          const b = Math.floor(Math.random() * 3) + 1;
+          const a = Math.floor(Math.random() * 11) + 2;
+          const b = Math.floor(Math.random() * 6) + 1;
           return {
             id: `G11_E2_${idx}_${Math.random()}`,
             grade: 11, level: "TH", type: "essay", topic: "dai_so",
