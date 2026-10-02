@@ -5629,6 +5629,8 @@ function updateMobileSheetBadges() {
 /* Timer & Anti Cheat */
 function startExamTimer(seconds) {
   AppState.secondsLeft = seconds;
+  // Cho phép cảnh báo phát lại nếu bắt đầu/khôi phục 1 phiên làm bài mới.
+  AppState._finalMinuteWarned = seconds > 60 ? false : true;
   updateExamTimerUI();
 
   if (AppState.timerInterval) clearInterval(AppState.timerInterval);
@@ -5636,7 +5638,12 @@ function startExamTimer(seconds) {
     AppState.secondsLeft--;
     updateExamTimerUI();
 
-    if (AppState.secondsLeft <= 60 && AppState.secondsLeft > 0) {
+    // CHỈ phát cảnh báo ĐÚNG 1 LẦN khi vừa chạm mốc còn 60 giây — trước đây
+    // điều kiện "<= 60 && > 0" đúng ở MỌI giây từ 60 xuống 1, khiến học sinh
+    // nghe liên tục 60 tiếng bíp dồn dập ngay phút cuối làm bài, đúng lúc
+    // cần tập trung nhất để hoàn thành bài thi.
+    if (!AppState._finalMinuteWarned && AppState.secondsLeft <= 60 && AppState.secondsLeft > 0) {
+      AppState._finalMinuteWarned = true;
       SoundEngine.playWarning();
     }
 
@@ -5923,7 +5930,17 @@ function checkAnswerMatch(given, correct) {
   return false;
 }
 
-function matchSingleMathAnswer(gStr, cStr) {
+// Chuẩn hoá ký hiệu số mũ Unicode (², ³ — thường gặp khi giáo viên copy từ
+// Word/PDF, ví dụ "20 m²", "15 cm³") về dạng số thường ("20 m2", "15 cm3")
+// để việc tách đơn vị bên dưới nhận diện được. Thiếu bước này, học sinh trả
+// lời đúng số nhưng khác ký hiệu mũ với đáp án mẫu sẽ bị chấm SAI.
+function normalizeSuperscriptUnits(str) {
+  return String(str).replace(/²/g, '2').replace(/³/g, '3');
+}
+
+function matchSingleMathAnswer(gStrRaw, cStrRaw) {
+  const gStr = normalizeSuperscriptUnits(gStrRaw);
+  const cStr = normalizeSuperscriptUnits(cStrRaw);
   const unitRegex = /\s*(cm[23]?|m[23]?|mm|km(\/h)?|kg|g|độ|°|rad)\s*$/i;
   let gClean = gStr.replace(unitRegex, '').trim().toLowerCase().replace(/\s+/g, '');
   let cClean = cStr.replace(unitRegex, '').trim().toLowerCase().replace(/\s+/g, '');
